@@ -6,6 +6,22 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================================
+-- FUNCIÓN HELPER: is_admin() — SECURITY DEFINER para evitar
+-- recursión infinita en policies que comprueban rol admin
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.usuarios
+    WHERE id = auth.uid() AND rol = 'admin'
+  );
+$$;
+
+-- ============================================================
 -- USUARIOS
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.usuarios (
@@ -25,7 +41,7 @@ CREATE POLICY "usuarios_self_read" ON public.usuarios
 
 CREATE POLICY "usuarios_admin_all" ON public.usuarios
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.usuarios WHERE id = auth.uid() AND rol = 'admin')
+    public.is_admin()
   );
 
 -- ============================================================
@@ -54,7 +70,7 @@ CREATE POLICY "alumnos_self_read" ON public.alumnos
 
 CREATE POLICY "alumnos_admin_all" ON public.alumnos
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.usuarios WHERE id = auth.uid() AND rol = 'admin')
+    public.is_admin()
   );
 
 -- ============================================================
@@ -80,7 +96,7 @@ CREATE POLICY "profesores_self_read" ON public.profesores
 
 CREATE POLICY "profesores_admin_all" ON public.profesores
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.usuarios WHERE id = auth.uid() AND rol = 'admin')
+    public.is_admin()
   );
 
 -- Añadir FK de alumnos → profesores (ahora que profesores ya existe)
@@ -159,7 +175,7 @@ CREATE POLICY "sesiones_alumno_confirm" ON public.sesiones
 
 CREATE POLICY "sesiones_admin_all" ON public.sesiones
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.usuarios WHERE id = auth.uid() AND rol = 'admin')
+    public.is_admin()
   );
 
 -- ============================================================
@@ -189,7 +205,7 @@ CREATE POLICY "informes_alumno_read" ON public.informes
 
 CREATE POLICY "informes_admin_all" ON public.informes
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.usuarios WHERE id = auth.uid() AND rol = 'admin')
+    public.is_admin()
   );
 
 -- ============================================================
@@ -214,7 +230,7 @@ ALTER TABLE public.material ENABLE ROW LEVEL SECURITY;
 -- Solo política de admin por ahora; la de alumnos se añade después de crear material_alumno
 CREATE POLICY "material_admin_all" ON public.material
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.usuarios WHERE id = auth.uid() AND rol = 'admin')
+    public.is_admin()
   );
 
 -- ============================================================
@@ -241,7 +257,7 @@ CREATE POLICY "material_alumno_read_own" ON public.material_alumno
 
 CREATE POLICY "material_alumno_admin_all" ON public.material_alumno
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.usuarios WHERE id = auth.uid() AND rol = 'admin')
+    public.is_admin()
   );
 
 -- Ahora material_alumno ya existe, se puede crear esta policy con JOIN
@@ -282,7 +298,7 @@ CREATE POLICY "tests_alumno_read" ON public.tests
 
 CREATE POLICY "tests_admin_all" ON public.tests
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.usuarios WHERE id = auth.uid() AND rol = 'admin')
+    public.is_admin()
   );
 
 -- ============================================================
@@ -309,7 +325,7 @@ CREATE POLICY "preguntas_alumno_read" ON public.preguntas_test
 
 CREATE POLICY "preguntas_admin_all" ON public.preguntas_test
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.usuarios WHERE id = auth.uid() AND rol = 'admin')
+    public.is_admin()
   );
 
 -- ============================================================
@@ -337,7 +353,7 @@ CREATE POLICY "resultados_alumno_own" ON public.resultados_test
 
 CREATE POLICY "resultados_admin_all" ON public.resultados_test
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.usuarios WHERE id = auth.uid() AND rol = 'admin')
+    public.is_admin()
   );
 
 -- ============================================================
@@ -368,7 +384,7 @@ CREATE POLICY "cal_alumno_own" ON public.calendario_alumno
 
 CREATE POLICY "cal_alumno_admin" ON public.calendario_alumno
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.usuarios WHERE id = auth.uid() AND rol = 'admin')
+    public.is_admin()
   );
 
 -- ============================================================
@@ -398,7 +414,7 @@ CREATE POLICY "cal_profesor_own" ON public.calendario_profesor
 
 CREATE POLICY "cal_profesor_admin" ON public.calendario_profesor
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.usuarios WHERE id = auth.uid() AND rol = 'admin')
+    public.is_admin()
   );
 
 -- ============================================================
@@ -435,7 +451,7 @@ CREATE POLICY "avisos_read" ON public.avisos
 
 CREATE POLICY "avisos_admin_all" ON public.avisos
   FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.usuarios WHERE id = auth.uid() AND rol = 'admin')
+    public.is_admin()
   );
 
 -- ============================================================
