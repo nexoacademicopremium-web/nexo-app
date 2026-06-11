@@ -992,7 +992,7 @@ async function guardarProfesor(e) {
           rol: 'profesor'
         }
       });
-      if (fnErr || !newUser?.user_id) throw new Error('Error al crear usuario');
+      if (fnErr || !newUser?.user_id) throw new Error(fnErr?.message || newUser?.error || 'Error al crear usuario');
 
       await db.from('profesores').insert({
         usuario_id:     newUser.user_id,
