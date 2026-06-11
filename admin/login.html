@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Nexo Académico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  :root {
+    --dark:#04071b; --navy:#154ca9; --blue:#6eaef0; --bg:#060d20;
+    --surface:#0a1530; --border:#1a2a4a; --border2:#0f1f35;
+    --txt:#e0eaf8; --muted:#4a6080; --soft:#a8c8f0;
+    --green:#1a7f5e; --red:#c0392b; --red-lt:#2d0d0d;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+  body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+
+  .login-wrap{width:100%;max-width:380px}
+  .brand{text-align:center;margin-bottom:32px}
+  .brand .t1{color:#fff;font-size:18px;font-weight:600;letter-spacing:2px;display:block}
+  .brand .t2{color:var(--blue);font-size:10px;letter-spacing:3px;text-transform:uppercase;margin-top:3px;display:block}
+  .brand .admin-badge{display:inline-block;background:#0a1a30;border:0.5px solid var(--border);border-radius:20px;padding:3px 12px;font-size:10px;color:var(--muted);margin-top:10px;letter-spacing:1px}
+
+  .card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:28px}
+  label{display:block;color:var(--soft);font-size:11px;font-weight:500;margin-bottom:6px;margin-top:16px}
+  .input-wrap{position:relative}
+  .input-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:17px}
+  input{width:100%;background:var(--dark);border:0.5px solid var(--border);border-radius:8px;padding:11px 12px 11px 40px;color:var(--txt);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+  input:focus{border-color:var(--blue)}
+  input::placeholder{color:var(--muted)}
+
+  .btn{width:100%;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:24px;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+  .btn:hover{background:#1a5cc9}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+
+  .error-msg{background:var(--red-lt);border:0.5px solid var(--red);border-radius:7px;padding:10px 14px;color:#f08080;font-size:12px;margin-top:14px;display:none}
+
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="brand">
+    <span class="t1">NEXO</span>
+    <span class="t2">Académico</span>
+    <div><span class="admin-badge">PANEL DE ADMINISTRACIÓN</span></div>
+  </div>
+
+  <div class="card">
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <label>Email</label>
+      <div class="input-wrap">
+        <i class="ti ti-mail"></i>
+        <input type="email" id="email" placeholder="admin@nexoacademico.es" required autocomplete="email">
+      </div>
+      <label>Contraseña</label>
+      <div class="input-wrap">
+        <i class="ti ti-lock"></i>
+        <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+      <div class="error-msg" id="error-msg"></div>
+      <button type="submit" class="btn" id="btn-login">
+        <i class="ti ti-shield-check"></i> Acceder
+      </button>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script>
+async function handleLogin(e) {
+  e.preventDefault();
+  const btn   = document.getElementById('btn-login');
+  const errEl = document.getElementById('error-msg');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div>';
+  errEl.style.display = 'none';
+
+  try {
+    const { data, error } = await db.auth.signInWithPassword({
+      email: document.getElementById('email').value.trim(),
+      password: document.getElementById('password').value
+    });
+    if (error) throw new Error('Credenciales incorrectas.');
+
+    const { data: usuario } = await db
+      .from('usuarios')
+      .select('rol, activo')
+      .eq('id', data.user.id)
+      .single();
+
+    if (!usuario || usuario.rol !== 'admin') {
+      await db.auth.signOut();
+      throw new Error('Esta cuenta no tiene permisos de administrador.');
+    }
+    if (!usuario.activo) {
+      await db.auth.signOut();
+      throw new Error('Cuenta desactivada.');
+    }
+
+    window.location.href = BASE_PATH + '/admin/index.html';
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-shield-check"></i> Acceder';
+  }
+}
+
+(async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    const { data: u } = await db.from('usuarios').select('rol').eq('id', session.user.id).single();
+    if (u?.rol === 'admin') window.location.href = '/admin/index.html';
+  }
+})();
+</script>
+</body>
+</html>

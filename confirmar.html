@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirmar sesión — Nexo Académico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  :root {
+    --dark:#04071b; --navy:#154ca9; --blue:#6eaef0; --bg:#060d20;
+    --surface:#0a1530; --border:#1a2a4a; --txt:#e0eaf8; --muted:#4a6080; --soft:#a8c8f0;
+    --green:#1a7f5e; --green-lt:#0d2d1e; --red:#c0392b; --red-lt:#2d0d0d; --amber:#b45309;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+  body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+
+  .wrap{width:100%;max-width:440px}
+  .brand{text-align:center;margin-bottom:28px}
+  .brand .t1{color:#fff;font-size:16px;font-weight:600;letter-spacing:2px}
+  .brand .t2{color:var(--blue);font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-top:2px;display:block}
+
+  .card{background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:32px;text-align:center}
+  .icon-wrap{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:30px}
+  .icon-ok{background:var(--green-lt);border:2px solid var(--green);color:var(--green)}
+  .icon-pend{background:#0a1a30;border:2px solid var(--blue);color:var(--blue)}
+  .icon-err{background:var(--red-lt);border:2px solid var(--red);color:var(--red)}
+  .icon-done{background:var(--green-lt);border:2px solid var(--green);color:var(--green)}
+  .icon-rej{background:var(--red-lt);border:2px solid var(--red);color:var(--red)}
+
+  h2{color:#fff;font-size:18px;font-weight:600;margin-bottom:8px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:24px;line-height:1.6}
+
+  .detail-grid{background:#04071b;border:0.5px solid var(--border);border-radius:10px;padding:16px;text-align:left;margin-bottom:24px}
+  .detail-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #0f1f35;font-size:13px}
+  .detail-row:last-child{border-bottom:none}
+  .detail-row span{color:var(--muted)}
+  .detail-row b{color:#fff}
+
+  .btn-group{display:flex;gap:10px}
+  .btn-confirmar{flex:1;background:var(--green);color:#fff;border:none;border-radius:8px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
+  .btn-confirmar:hover{background:#1e9470}
+  .btn-rechazar{flex:1;background:var(--red-lt);color:var(--red);border:0.5px solid var(--red);border-radius:8px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .15s}
+  .btn-rechazar:hover{background:#3d1010}
+  .btn-volver{display:block;margin-top:16px;color:var(--blue);font-size:13px;text-align:center;text-decoration:none}
+
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spinner{width:24px;height:24px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="brand">
+    <span class="t1">NEXO</span>
+    <span class="t2">Académico</span>
+  </div>
+
+  <div class="card" id="card-content">
+    <div class="spinner"></div>
+    <h2 style="margin-top:16px">Cargando...</h2>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script>
+const params  = new URLSearchParams(window.location.search);
+const sid     = params.get('id');
+const token   = params.get('token');
+const action  = params.get('action'); // 'confirmar' | 'rechazar' | null
+
+async function loadSession() {
+  if (!sid || !token) {
+    renderError('Enlace inválido o incompleto.');
+    return;
+  }
+
+  // Fetch session details (public RPC without auth)
+  const { data: sesion, error } = await db
+    .from('sesiones')
+    .select(`
+      *,
+      alumno:alumnos(usuario_id, usuario:usuarios(nombre, apellidos)),
+      profesor:profesores(usuario_id, usuario:usuarios(nombre, apellidos))
+    `)
+    .eq('id', sid)
+    .eq('confirmation_token', token)
+    .single();
+
+  if (error || !sesion) {
+    renderError('Enlace inválido o sesión no encontrada.');
+    return;
+  }
+
+  if (sesion.estado !== 'pendiente_confirmacion') {
+    const msg = {
+      confirmada: 'Esta sesión ya fue confirmada anteriormente.',
+      rechazada:  'Esta sesión fue rechazada anteriormente.',
+      cancelada:  'Esta sesión fue cancelada.'
+    }[sesion.estado] || 'Esta sesión ya fue procesada.';
+    renderAlready(sesion.estado, msg);
+    return;
+  }
+
+  if (action === 'confirmar' || action === 'rechazar') {
+    await processAction(action, sesion);
+  } else {
+    renderChoice(sesion);
+  }
+}
+
+function renderDetails(sesion) {
+  const prof = sesion.profesor?.usuario;
+  const alumno = sesion.alumno?.usuario;
+  return `
+    <div class="detail-grid">
+      <div class="detail-row"><span>Profesor</span><b>${prof ? prof.nombre + ' ' + prof.apellidos : '—'}</b></div>
+      <div class="detail-row"><span>Asignatura</span><b>${sesion.asignatura}</b></div>
+      <div class="detail-row"><span>Fecha</span><b>${formatDate(sesion.fecha)}</b></div>
+      <div class="detail-row"><span>Hora</span><b>${sesion.hora_inicio ? sesion.hora_inicio.substring(0,5) + 'h' : '—'}</b></div>
+      <div class="detail-row"><span>Duración</span><b>${sesion.duracion_minutos} minutos</b></div>
+      ${sesion.contenido_trabajado ? `<div class="detail-row"><span>Contenido</span><b>${sesion.contenido_trabajado}</b></div>` : ''}
+    </div>
+  `;
+}
+
+function renderChoice(sesion) {
+  document.getElementById('card-content').innerHTML = `
+    <div class="icon-wrap icon-pend"><i class="ti ti-clock-check"></i></div>
+    <h2>Confirma tu clase</h2>
+    <p class="sub">Tu profesor ha registrado la siguiente sesión.<br>¿Asististe a esta clase?</p>
+    ${renderDetails(sesion)}
+    <div class="btn-group">
+      <button class="btn-rechazar" onclick="processAction('rechazar')">
+        <i class="ti ti-x"></i> No asistí
+      </button>
+      <button class="btn-confirmar" onclick="processAction('confirmar')">
+        <i class="ti ti-check"></i> Sí, confirmo
+      </button>
+    </div>
+    <a href="login.html" class="btn-volver">Ir a mi panel</a>
+  `;
+}
+
+async function processAction(act, sesionData) {
+  const card = document.getElementById('card-content');
+  card.innerHTML = '<div class="spinner" style="margin-top:20px"></div><h2 style="margin-top:16px;color:#fff">Procesando...</h2>';
+
+  const { data, error } = await db.rpc('process_session_confirmation', {
+    p_session_id: sid,
+    p_token: token,
+    p_action: act
+  });
+
+  if (error || !data?.success) {
+    renderError(data?.error || 'Error al procesar. Inténtalo de nuevo.');
+    return;
+  }
+
+  if (act === 'confirmar') {
+    card.innerHTML = `
+      <div class="icon-wrap icon-done"><i class="ti ti-circle-check"></i></div>
+      <h2>¡Sesión confirmada!</h2>
+      <p class="sub">La clase ha sido confirmada y las horas han sido descontadas de tu bono. ¡Sigue así!</p>
+      <a href="login.html" class="btn-volver" style="display:inline-block;background:var(--navy);color:#fff;padding:12px 28px;border-radius:8px;font-weight:600;text-decoration:none">Ir a mi panel</a>
+    `;
+  } else {
+    card.innerHTML = `
+      <div class="icon-wrap icon-rej"><i class="ti ti-circle-x"></i></div>
+      <h2>Sesión rechazada</h2>
+      <p class="sub">Has indicado que no asististe. El profesor ha sido notificado y las horas no se descuentan.</p>
+      <a href="https://wa.me/${WHATSAPP_MANU}?text=Hola%20Manu%2C%20he%20rechazado%20una%20sesión%20por%20error%20o%20quiero%20comentarte%20algo." target="_blank" style="display:inline-block;background:var(--amber);color:#fff;padding:10px 22px;border-radius:8px;font-weight:600;text-decoration:none;margin-bottom:12px">
+        <i class="ti ti-brand-whatsapp"></i> ¿Fue un error? Contacta con Nexo
+      </a><br>
+      <a href="login.html" class="btn-volver">Ir a mi panel</a>
+    `;
+  }
+}
+
+function renderError(msg) {
+  document.getElementById('card-content').innerHTML = `
+    <div class="icon-wrap icon-err"><i class="ti ti-alert-triangle"></i></div>
+    <h2>Enlace inválido</h2>
+    <p class="sub">${msg}</p>
+    <a href="login.html" class="btn-volver" style="display:inline-block;background:var(--navy);color:#fff;padding:12px 28px;border-radius:8px;font-weight:600;text-decoration:none">Ir al inicio</a>
+  `;
+}
+
+function renderAlready(estado, msg) {
+  const icon = estado === 'confirmada' ? 'icon-done ti-circle-check' : 'icon-err ti-circle-x';
+  document.getElementById('card-content').innerHTML = `
+    <div class="icon-wrap ${icon.split(' ')[0]}"><i class="ti ${icon.split(' ')[1]}"></i></div>
+    <h2>${estado === 'confirmada' ? 'Ya confirmada' : 'Ya procesada'}</h2>
+    <p class="sub">${msg}</p>
+    <a href="login.html" class="btn-volver" style="display:inline-block;background:var(--navy);color:#fff;padding:12px 28px;border-radius:8px;font-weight:600;text-decoration:none">Ir a mi panel</a>
+  `;
+}
+
+function formatDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('es-ES', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+
+loadSession();
+</script>
+</body>
+</html>

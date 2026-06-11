@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acceso — Nexo Académico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  :root {
+    --dark:#04071b; --navy:#154ca9; --blue:#6eaef0; --bg:#060d20;
+    --surface:#0a1530; --border:#1a2a4a; --border2:#0f1f35;
+    --txt:#e0eaf8; --muted:#4a6080; --soft:#a8c8f0;
+    --green:#1a7f5e; --green-lt:#0d2d1e;
+    --amber:#b45309; --amber-lt:#2d1e0d;
+    --red:#c0392b; --red-lt:#2d0d0d;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+  body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+
+  .login-wrap{width:100%;max-width:400px}
+  .brand{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:36px}
+  .brand-txt .t1{color:#fff;font-size:18px;font-weight:600;letter-spacing:2px;display:block;line-height:1}
+  .brand-txt .t2{color:var(--blue);font-size:10px;letter-spacing:3px;text-transform:uppercase;margin-top:3px;display:block}
+
+  .role-tabs{display:flex;gap:8px;margin-bottom:24px}
+  .role-tab{flex:1;padding:12px;border-radius:8px;border:0.5px solid var(--border);
+    background:var(--surface);color:var(--muted);font-size:13px;font-weight:500;
+    cursor:pointer;text-align:center;transition:all .15s;display:flex;
+    align-items:center;justify-content:center;gap:8px;font-family:inherit}
+  .role-tab i{font-size:18px}
+  .role-tab.active{background:#0a1a30;border-color:var(--blue);color:var(--blue)}
+  .role-tab:hover:not(.active){background:var(--border2);color:var(--soft)}
+
+  .card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:28px}
+  .card-title{color:#fff;font-size:16px;font-weight:600;margin-bottom:6px}
+  .card-sub{color:var(--muted);font-size:12px;margin-bottom:24px}
+
+  label{display:block;color:var(--soft);font-size:11px;font-weight:500;margin-bottom:6px;margin-top:16px}
+  .input-wrap{position:relative}
+  .input-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:17px}
+  input{
+    width:100%;background:var(--dark);border:0.5px solid var(--border);
+    border-radius:8px;padding:11px 12px 11px 40px;color:var(--txt);
+    font-size:13px;font-family:inherit;outline:none;transition:border-color .15s
+  }
+  input:focus{border-color:var(--blue)}
+  input::placeholder{color:var(--muted)}
+
+  .btn{
+    width:100%;background:var(--navy);color:#fff;border:none;
+    border-radius:8px;padding:13px;font-size:14px;font-weight:600;
+    cursor:pointer;font-family:inherit;margin-top:24px;
+    transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px
+  }
+  .btn:hover{background:#1a5cc9}
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .btn i{font-size:17px}
+
+  .error-msg{
+    background:var(--red-lt);border:0.5px solid var(--red);border-radius:7px;
+    padding:10px 14px;color:#f08080;font-size:12px;margin-top:14px;display:none
+  }
+
+  .footer-link{text-align:center;margin-top:20px;color:var(--muted);font-size:12px}
+  .footer-link a{color:var(--blue);text-decoration:none}
+
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+</style>
+</head>
+<body>
+
+<div class="login-wrap">
+  <div class="brand">
+    <div class="brand-txt">
+      <span class="t1">NEXO</span>
+      <span class="t2">Académico</span>
+    </div>
+  </div>
+
+  <div class="role-tabs">
+    <button class="role-tab active" id="tab-alumno" onclick="setRole('alumno')">
+      <i class="ti ti-user-graduate"></i> Soy alumno
+    </button>
+    <button class="role-tab" id="tab-profesor" onclick="setRole('profesor')">
+      <i class="ti ti-chalkboard"></i> Soy profesor
+    </button>
+  </div>
+
+  <div class="card">
+    <div class="card-title" id="card-title">Acceso al área del alumno</div>
+    <div class="card-sub" id="card-sub">Introduce tus credenciales para acceder a tu panel.</div>
+
+    <form id="login-form" onsubmit="handleLogin(event)">
+      <label>Correo electrónico</label>
+      <div class="input-wrap">
+        <i class="ti ti-mail"></i>
+        <input type="email" id="email" placeholder="tu@email.com" required autocomplete="email">
+      </div>
+
+      <label>Contraseña</label>
+      <div class="input-wrap">
+        <i class="ti ti-lock"></i>
+        <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+
+      <div class="error-msg" id="error-msg"></div>
+
+      <button type="submit" class="btn" id="btn-login">
+        <i class="ti ti-login"></i> Entrar
+      </button>
+    </form>
+  </div>
+
+  <div class="footer-link">
+    ¿Problema para acceder? <a href="https://wa.me/34611492592" target="_blank">Contacta con Nexo</a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script>
+let currentRole = 'alumno';
+
+function setRole(role) {
+  currentRole = role;
+  document.getElementById('tab-alumno').classList.toggle('active', role === 'alumno');
+  document.getElementById('tab-profesor').classList.toggle('active', role === 'profesor');
+  document.getElementById('card-title').textContent =
+    role === 'alumno' ? 'Acceso al área del alumno' : 'Acceso al área del profesor';
+  document.getElementById('card-sub').textContent =
+    role === 'alumno'
+      ? 'Introduce tus credenciales para acceder a tu panel.'
+      : 'Introduce tus credenciales para acceder al panel de profesores.';
+  document.getElementById('error-msg').style.display = 'none';
+}
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const btn    = document.getElementById('btn-login');
+  const errEl  = document.getElementById('error-msg');
+  const email  = document.getElementById('email').value.trim();
+  const pass   = document.getElementById('password').value;
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div>';
+  errEl.style.display = 'none';
+
+  try {
+    const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
+
+    if (error) {
+      throw new Error('Credenciales incorrectas. Revisa tu email y contraseña.');
+    }
+
+    // Verify role
+    const { data: usuario } = await db
+      .from('usuarios')
+      .select('rol, activo')
+      .eq('id', data.user.id)
+      .single();
+
+    if (!usuario || !usuario.activo) {
+      await db.auth.signOut();
+      throw new Error('Tu cuenta está desactivada. Contacta con Nexo.');
+    }
+
+    if (usuario.rol !== currentRole && usuario.rol !== 'admin') {
+      await db.auth.signOut();
+      throw new Error(
+        currentRole === 'alumno'
+          ? 'Esta cuenta no es de alumno. ¿Eres profesor?'
+          : 'Esta cuenta no es de profesor. ¿Eres alumno?'
+      );
+    }
+
+    // Redirect by role
+    if (usuario.rol === 'alumno')   window.location.href = BASE_PATH + '/alumno/index.html';
+    else if (usuario.rol === 'profesor') window.location.href = BASE_PATH + '/profesor/index.html';
+    else if (usuario.rol === 'admin')    window.location.href = BASE_PATH + '/admin/index.html';
+
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-login"></i> Entrar';
+  }
+}
+
+// Pre-select role from URL param (e.g. ?rol=profesor from the web snippet)
+const _rolParam = new URLSearchParams(window.location.search).get('rol');
+if (_rolParam === 'profesor' || _rolParam === 'alumno') setRole(_rolParam);
+
+// If already logged in, redirect
+(async () => {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    const { data: u } = await db.from('usuarios').select('rol').eq('id', session.user.id).single();
+    if (u?.rol === 'alumno')   window.location.href = BASE_PATH + '/alumno/index.html';
+    if (u?.rol === 'profesor') window.location.href = BASE_PATH + '/profesor/index.html';
+    if (u?.rol === 'admin')    window.location.href = BASE_PATH + '/admin/index.html';
+  }
+})();
+</script>
+</body>
+</html>

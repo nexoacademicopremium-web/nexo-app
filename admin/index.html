@@ -1,0 +1,1374 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Nexo Académico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  :root {
+    --dark:#04071b; --navy:#154ca9; --blue:#6eaef0; --bg:#060d20;
+    --surface:#0a1530; --border:#1a2a4a; --border2:#0f1f35;
+    --txt:#e0eaf8; --muted:#4a6080; --soft:#a8c8f0;
+    --green:#1a7f5e; --green-lt:#0d2d1e;
+    --amber:#b45309; --amber-lt:#2d1e0d;
+    --red:#c0392b; --red-lt:#2d0d0d;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:54px;background:var(--dark);border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+  .topbar-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+  .t1{color:#fff;font-size:14px;font-weight:600;letter-spacing:2px}
+  .t2{color:var(--blue);font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-top:2px}
+  .admin-badge{background:#0f2240;border:.5px solid var(--border);border-radius:20px;padding:2px 10px;font-size:10px;color:var(--muted);letter-spacing:.8px;margin-left:8px}
+  .topbar-right{display:flex;align-items:center;gap:12px}
+  .avatar{width:34px;height:34px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:12px;font-weight:600;border:1.5px solid var(--border);cursor:pointer;position:relative}
+  .avatar-menu{position:absolute;top:42px;right:0;background:var(--surface);border:.5px solid var(--border);border-radius:8px;min-width:150px;display:none;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  .avatar-menu a{display:flex;align-items:center;gap:8px;padding:10px 14px;color:var(--txt);font-size:13px;text-decoration:none;cursor:pointer}
+  .avatar-menu a:hover{background:var(--border2)}
+  .sidebar{position:fixed;top:54px;left:0;bottom:0;width:220px;background:var(--dark);border-right:.5px solid var(--border);display:flex;flex-direction:column;padding:18px 0 16px;overflow-y:auto}
+  .nav-section{padding:0 16px 8px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:500}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;color:var(--muted);font-size:13px;cursor:pointer;border-left:2.5px solid transparent;transition:all .15s;margin-bottom:1px;text-decoration:none}
+  .nav-item:hover{color:var(--soft);background:#0a1530}
+  .nav-item.active{color:var(--blue);border-left-color:var(--blue);background:#0a1a30}
+  .nav-item i{font-size:17px;flex-shrink:0}
+  .nav-divider{height:.5px;background:var(--border);margin:10px 16px}
+  .nav-bottom{margin-top:auto;padding-top:8px}
+  .main{margin-left:220px;margin-top:54px;padding:24px 26px;min-height:calc(100vh-54px)}
+  .section{display:none}
+  .section.active{display:block}
+  .page-title{color:#fff;font-size:20px;font-weight:600;margin-bottom:3px}
+  .page-sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+
+  .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+  .kpi{background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:14px 16px;border-top:3px solid}
+  .kpi.blue{border-top-color:var(--blue)}
+  .kpi.green{border-top-color:var(--green)}
+  .kpi.navy{border-top-color:var(--navy)}
+  .kpi.amber{border-top-color:var(--amber)}
+  .kpi.red{border-top-color:var(--red)}
+  .kpi-label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;font-weight:500;margin-bottom:6px}
+  .kpi-val{color:#fff;font-size:24px;font-weight:600;line-height:1}
+  .kpi-sub{color:var(--muted);font-size:11px;margin-top:4px}
+
+  .card{background:var(--surface);border:.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+  .card-head{padding:13px 16px;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .card-title{color:var(--soft);font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px}
+  .card-title i{font-size:15px;color:var(--blue)}
+
+  .btn-primary{background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:7px;font-family:inherit;transition:background .15s;text-decoration:none}
+  .btn-primary:hover{background:#1a5cc9}
+  .btn-primary i{font-size:15px}
+  .btn-ghost{background:transparent;color:var(--blue);border:.5px solid var(--border);border-radius:7px;padding:7px 13px;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit;transition:all .15s}
+  .btn-ghost:hover{background:var(--border2)}
+  .btn-danger{background:var(--red-lt);color:var(--red);border:.5px solid var(--red);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit;transition:background .15s}
+  .btn-danger:hover{background:#3d1010}
+  .btn-edit{background:#0a1a30;color:var(--blue);border:.5px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit}
+
+  .search-bar{display:flex;align-items:center;gap:10px;background:var(--surface);border:.5px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:16px}
+  .search-bar i{color:var(--muted);font-size:17px;flex-shrink:0}
+  .search-bar input{background:none;border:none;outline:none;color:var(--txt);font-size:13px;font-family:inherit;flex:1}
+  .search-bar input::placeholder{color:var(--muted)}
+
+  .tabla{width:100%;border-collapse:collapse}
+  .tabla th{text-align:left;padding:10px 14px;color:var(--muted);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.6px;border-bottom:.5px solid var(--border)}
+  .tabla td{padding:11px 14px;border-bottom:.5px solid var(--border2);vertical-align:middle;font-size:13px}
+  .tabla tr:last-child td{border-bottom:none}
+  .tabla tr:hover td{background:var(--border2)}
+
+  .pill{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;display:inline-block}
+  .pill-eso{background:#0f2240;color:var(--blue)}
+  .pill-bach{background:#1a0f30;color:#9b7ef0}
+  .pill-ok{background:var(--green-lt);color:var(--green)}
+  .pill-warn{background:var(--amber-lt);color:var(--amber)}
+  .pill-red{background:var(--red-lt);color:var(--red)}
+  .pill-grey{background:var(--border2);color:var(--muted)}
+
+  .status-pill{font-size:10px;padding:2px 9px;border-radius:20px;font-weight:500;white-space:nowrap}
+  .st-ok{background:var(--green-lt);color:var(--green)}
+  .st-pend{background:var(--amber-lt);color:var(--amber)}
+  .st-red{background:var(--red-lt);color:var(--red)}
+  .st-grey{background:var(--border2);color:var(--muted)}
+
+  .alerta{background:var(--red-lt);border:.5px solid var(--red);border-left:3px solid var(--red);border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+  .alerta i{color:var(--red);font-size:16px;flex-shrink:0}
+  .alerta-txt{color:#f08080;font-size:12px;line-height:1.5}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(4,7,27,.88);z-index:200;align-items:center;justify-content:center}
+  .modal-overlay.open{display:flex}
+  .modal-box{background:var(--surface);border:.5px solid var(--border);border-radius:14px;padding:28px;max-width:560px;width:95%;max-height:90vh;overflow-y:auto}
+  .modal-title{color:#fff;font-size:16px;font-weight:600;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+  .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:22px;line-height:1}
+  .modal-close:hover{color:var(--txt)}
+  label.fl{display:block;color:var(--soft);font-size:11px;font-weight:500;margin-bottom:5px;margin-top:14px}
+  .fi{width:100%;background:var(--dark);border:.5px solid var(--border);border-radius:7px;padding:10px 12px;color:var(--txt);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+  .fi:focus{border-color:var(--blue)}
+  .fi-grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+  .btn-cancel{background:transparent;color:var(--muted);border:.5px solid var(--border);border-radius:7px;padding:9px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+
+  .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+  .empty-state i{font-size:36px;margin-bottom:12px;display:block;color:var(--border)}
+
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spinner{display:inline-block;width:20px;height:20px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+  .loading-section{display:flex;justify-content:center;padding:40px;gap:10px;align-items:center;color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <a href="#" class="topbar-brand">
+    <div style="display:flex;align-items:center;gap:4px">
+      <span class="t1">NEXO</span>
+      <span class="t2" style="align-self:flex-end;margin-bottom:1px">Académico</span>
+      <span class="admin-badge">ADMIN</span>
+    </div>
+  </a>
+  <div class="topbar-right">
+    <span style="color:var(--soft);font-size:13px" id="topbar-name">Manu</span>
+    <div class="avatar" id="avatar-btn" onclick="toggleMenu()">M
+      <div class="avatar-menu" id="avatar-menu">
+        <a onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="nav-section">Gestión</div>
+  <div class="nav-item active" id="nav-dashboard" onclick="showSection('dashboard')"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
+  <div class="nav-item" id="nav-alumnos" onclick="showSection('alumnos')"><i class="ti ti-user-graduate"></i> Alumnos</div>
+  <div class="nav-item" id="nav-profesores" onclick="showSection('profesores')"><i class="ti ti-chalkboard"></i> Profesores</div>
+  <div class="nav-item" id="nav-sesiones" onclick="showSection('sesiones')"><i class="ti ti-calendar-check"></i> Sesiones</div>
+  <div class="nav-section" style="margin-top:8px">Contenido</div>
+  <div class="nav-item" id="nav-material" onclick="showSection('material')"><i class="ti ti-files"></i> Material</div>
+  <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i> Tests</div>
+  <div class="nav-item" id="nav-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i> Avisos</div>
+  <div class="nav-divider"></div>
+  <div class="nav-bottom">
+    <div class="nav-item" onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+<!-- ═══ DASHBOARD ═══ -->
+<div class="section active" id="section-dashboard">
+  <h1 class="page-title">Panel de administración</h1>
+  <p class="page-sub" id="dash-sub">Resumen de Nexo Académico</p>
+  <div class="kpi-grid" id="dash-kpis">
+    <div class="loading-section"><div class="spinner"></div></div>
+  </div>
+  <div id="dash-alertas"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card">
+      <div class="card-head"><div class="card-title"><i class="ti ti-clock"></i> Sesiones pendientes de confirmar</div></div>
+      <div id="dash-pendientes">
+        <div class="loading-section"><div class="spinner"></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title"><i class="ti ti-alert-triangle"></i> Alertas de bonos bajos</div></div>
+      <div id="dash-bonos-bajos">
+        <div class="loading-section"><div class="spinner"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ALUMNOS ═══ -->
+<div class="section" id="section-alumnos">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div><h1 class="page-title" style="margin:0">Alumnos</h1><p class="page-sub" style="margin:0" id="alumnos-sub">—</p></div>
+    <button class="btn-primary" onclick="abrirModalAlumno()"><i class="ti ti-plus"></i> Nuevo alumno</button>
+  </div>
+  <div class="search-bar">
+    <i class="ti ti-search"></i>
+    <input type="text" id="q-alumnos" placeholder="Buscar por nombre, nivel, asignatura..." oninput="filtrar('alumnos')">
+  </div>
+  <div class="card">
+    <table class="tabla">
+      <thead><tr>
+        <th>Alumno</th><th>Nivel</th><th>Asignaturas</th><th>Profesor</th><th>Bono</th><th>Estado</th><th>Acciones</th>
+      </tr></thead>
+      <tbody id="tbody-alumnos"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ PROFESORES ═══ -->
+<div class="section" id="section-profesores">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div><h1 class="page-title" style="margin:0">Profesores</h1><p class="page-sub" style="margin:0" id="profesores-sub">—</p></div>
+    <button class="btn-primary" onclick="abrirModalProfesor()"><i class="ti ti-plus"></i> Nuevo profesor</button>
+  </div>
+  <div class="search-bar">
+    <i class="ti ti-search"></i>
+    <input type="text" id="q-profesores" placeholder="Buscar por nombre, especialidad..." oninput="filtrar('profesores')">
+  </div>
+  <div class="card">
+    <table class="tabla">
+      <thead><tr>
+        <th>Profesor</th><th>Especialidades</th><th>Zona</th><th>Alumnos</th><th>Estado</th><th>Acciones</th>
+      </tr></thead>
+      <tbody id="tbody-profesores"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ SESIONES ═══ -->
+<div class="section" id="section-sesiones">
+  <h1 class="page-title">Sesiones</h1>
+  <p class="page-sub">Todas las sesiones del sistema</p>
+  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+    <select class="fi" id="fil-ses-estado" onchange="loadSesionesAdmin()" style="width:auto;padding:8px 12px">
+      <option value="">Todos los estados</option>
+      <option value="pendiente_confirmacion">Pendientes</option>
+      <option value="confirmada">Confirmadas</option>
+      <option value="rechazada">Rechazadas</option>
+      <option value="cancelada">Canceladas</option>
+    </select>
+    <select class="fi" id="fil-ses-profesor" onchange="loadSesionesAdmin()" style="width:auto;padding:8px 12px">
+      <option value="">Todos los profesores</option>
+    </select>
+    <select class="fi" id="fil-ses-mes" onchange="loadSesionesAdmin()" style="width:auto;padding:8px 12px">
+      <option value="">Todos los meses</option>
+    </select>
+  </div>
+  <div class="card">
+    <div id="sesiones-tabla">
+      <div class="loading-section"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MATERIAL ═══ -->
+<div class="section" id="section-material">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div><h1 class="page-title" style="margin:0">Material</h1><p class="page-sub" style="margin:0">Recursos educativos</p></div>
+    <button class="btn-primary" onclick="abrirModalMaterial()"><i class="ti ti-plus"></i> Añadir material</button>
+  </div>
+  <div class="card">
+    <table class="tabla">
+      <thead><tr><th>Título</th><th>Nivel</th><th>Asignatura</th><th>Bloque</th><th>Tipo</th><th>Visible</th><th>Acciones</th></tr></thead>
+      <tbody id="tbody-material"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ═══ TESTS ═══ -->
+<div class="section" id="section-tests">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div><h1 class="page-title" style="margin:0">Tests</h1><p class="page-sub" style="margin:0">Gestión de tests y preguntas</p></div>
+    <button class="btn-primary" onclick="abrirModalTest()"><i class="ti ti-plus"></i> Nuevo test</button>
+  </div>
+  <div class="card" id="tests-lista">
+    <div class="loading-section"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- ═══ AVISOS ═══ -->
+<div class="section" id="section-avisos">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div><h1 class="page-title" style="margin:0">Avisos</h1><p class="page-sub" style="margin:0">Mensajes a alumnos y profesores</p></div>
+    <button class="btn-primary" onclick="abrirModalAviso()"><i class="ti ti-plus"></i> Nuevo aviso</button>
+  </div>
+  <div class="card">
+    <div id="avisos-tabla">
+      <div class="loading-section"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .main -->
+
+<!-- ═══ MODALES ═══ -->
+
+<!-- MODAL ALUMNO -->
+<div class="modal-overlay" id="modal-alumno">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-title"><span id="modal-alumno-titulo">Nuevo alumno</span><button class="modal-close" onclick="cerrarModal('modal-alumno')">×</button></div>
+    <form id="form-alumno" onsubmit="guardarAlumno(event)">
+      <div class="fi-grid2">
+        <div><label class="fl">Nombre *</label><input class="fi" id="a-nombre" required></div>
+        <div><label class="fl">Apellidos *</label><input class="fi" id="a-apellidos" required></div>
+      </div>
+      <label class="fl">Email *</label><input class="fi" id="a-email" type="email" required>
+      <label class="fl">Contraseña <span style="color:var(--muted);font-size:10px">(solo al crear)</span></label>
+      <input class="fi" id="a-password" type="text" placeholder="nexo2025AB">
+      <div class="fi-grid2">
+        <div>
+          <label class="fl">Nivel *</label>
+          <select class="fi" id="a-nivel" required>
+            <option value="">—</option>
+            <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
+            <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
+            <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
+          </select>
+        </div>
+        <div>
+          <label class="fl">Modalidad</label>
+          <select class="fi" id="a-modalidad">
+            <option value="presencial">Presencial</option>
+            <option value="online">Online</option>
+          </select>
+        </div>
+      </div>
+      <label class="fl">Asignaturas <span style="color:var(--muted);font-size:10px">(separadas por coma)</span></label>
+      <input class="fi" id="a-asignaturas" placeholder="Matemáticas, Física">
+      <label class="fl">Profesor asignado</label>
+      <select class="fi" id="a-profesor"></select>
+      <div class="fi-grid2">
+        <div>
+          <label class="fl">Horas bono total</label>
+          <input class="fi" id="a-bono-total" type="number" min="0" step="0.5" value="8">
+        </div>
+        <div>
+          <label class="fl">Horas bono restantes</label>
+          <input class="fi" id="a-bono-rest" type="number" min="0" step="0.5" value="8">
+        </div>
+      </div>
+      <label class="fl">Horario habitual</label>
+      <input class="fi" id="a-horario" placeholder="Lunes y Miércoles 17:00h">
+      <label class="fl">Dirección</label>
+      <input class="fi" id="a-direccion">
+      <label class="fl">Teléfono familia</label>
+      <input class="fi" id="a-telefono">
+      <label class="fl">Fecha inicio</label>
+      <input class="fi" id="a-fecha-inicio" type="date">
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-alumno')">Cancelar</button>
+        <button type="submit" class="btn-primary" id="btn-guardar-alumno"><i class="ti ti-check"></i> Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL INFORME -->
+<div class="modal-overlay" id="modal-informe">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-title"><span>Subir informe</span><button class="modal-close" onclick="cerrarModal('modal-informe')">×</button></div>
+    <form id="form-informe" onsubmit="subirInforme(event)">
+      <label class="fl">Alumno</label>
+      <input class="fi" id="inf-alumno-nombre" readonly>
+      <input type="hidden" id="inf-alumno-id">
+      <label class="fl">Título</label>
+      <input class="fi" id="inf-titulo" required placeholder="Informe mensual — Junio 2025">
+      <label class="fl">Tipo</label>
+      <select class="fi" id="inf-tipo">
+        <option value="mensual">Mensual</option>
+        <option value="semanal">Semanal</option>
+      </select>
+      <label class="fl">Fecha</label>
+      <input class="fi" id="inf-fecha" type="date" required>
+      <label class="fl">Archivo PDF</label>
+      <input class="fi" id="inf-archivo" type="file" accept=".pdf,.doc,.docx">
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-informe')">Cancelar</button>
+        <button type="submit" class="btn-primary">Subir</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL PROFESOR -->
+<div class="modal-overlay" id="modal-profesor">
+  <div class="modal-box">
+    <div class="modal-title"><span id="modal-prof-titulo">Nuevo profesor</span><button class="modal-close" onclick="cerrarModal('modal-profesor')">×</button></div>
+    <form id="form-profesor" onsubmit="guardarProfesor(event)">
+      <div class="fi-grid2">
+        <div><label class="fl">Nombre *</label><input class="fi" id="p-nombre" required></div>
+        <div><label class="fl">Apellidos *</label><input class="fi" id="p-apellidos" required></div>
+      </div>
+      <label class="fl">Email *</label><input class="fi" id="p-email" type="email" required>
+      <label class="fl">Contraseña <span style="color:var(--muted);font-size:10px">(solo al crear)</span></label>
+      <input class="fi" id="p-password" type="text" placeholder="nexo2025CM">
+      <label class="fl">Especialidades <span style="color:var(--muted);font-size:10px">(separadas por coma)</span></label>
+      <input class="fi" id="p-especialidades" placeholder="Matemáticas, Física">
+      <div class="fi-grid2">
+        <div><label class="fl">Zona</label><input class="fi" id="p-zona" placeholder="Valencia Norte"></div>
+        <div><label class="fl">Teléfono</label><input class="fi" id="p-telefono" type="tel"></div>
+      </div>
+      <label class="fl">Estudios</label>
+      <input class="fi" id="p-estudios" placeholder="Ingeniería Industrial · UPV">
+      <div class="fi-grid2">
+        <div>
+          <label class="fl">Nivel máximo</label>
+          <select class="fi" id="p-nivel-max">
+            <option value="">—</option>
+            <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
+            <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
+            <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
+          </select>
+        </div>
+        <div><label class="fl">Fecha inicio</label><input class="fi" id="p-fecha-inicio" type="date"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-profesor')">Cancelar</button>
+        <button type="submit" class="btn-primary"><i class="ti ti-check"></i> Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL MATERIAL -->
+<div class="modal-overlay" id="modal-material">
+  <div class="modal-box">
+    <div class="modal-title"><span id="modal-mat-titulo">Añadir material</span><button class="modal-close" onclick="cerrarModal('modal-material')">×</button></div>
+    <form id="form-material" onsubmit="guardarMaterial(event)">
+      <label class="fl">Título *</label><input class="fi" id="mat-titulo" required>
+      <label class="fl">Descripción</label><input class="fi" id="mat-descripcion">
+      <div class="fi-grid2">
+        <div>
+          <label class="fl">Nivel</label>
+          <select class="fi" id="mat-nivel">
+            <option value="todos">Todos</option>
+            <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
+            <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
+            <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
+          </select>
+        </div>
+        <div>
+          <label class="fl">Tipo</label>
+          <select class="fi" id="mat-tipo">
+            <option value="pdf">PDF</option>
+            <option value="recurso">Recurso</option>
+          </select>
+        </div>
+      </div>
+      <label class="fl">Asignatura</label><input class="fi" id="mat-asignatura" placeholder="Matemáticas">
+      <label class="fl">Bloque / Tema</label><input class="fi" id="mat-bloque" placeholder="Álgebra">
+      <label class="fl">Archivo</label>
+      <input class="fi" id="mat-archivo" type="file" accept=".pdf,.docx,.pptx">
+      <label class="fl">O pega URL del archivo</label>
+      <input class="fi" id="mat-url" placeholder="https://...">
+      <label class="fl">Asignar a alumno específico <span style="color:var(--muted);font-size:10px">(opcional)</span></label>
+      <select class="fi" id="mat-alumno-especifico">
+        <option value="">Para su nivel en general</option>
+      </select>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-material')">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL TEST -->
+<div class="modal-overlay" id="modal-test">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-title"><span id="modal-test-titulo">Nuevo test</span><button class="modal-close" onclick="cerrarModal('modal-test')">×</button></div>
+    <form id="form-test" onsubmit="guardarTest(event)">
+      <label class="fl">Título *</label><input class="fi" id="t-titulo" required>
+      <div class="fi-grid2">
+        <div>
+          <label class="fl">Asignatura</label>
+          <input class="fi" id="t-asignatura" placeholder="Matemáticas">
+        </div>
+        <div>
+          <label class="fl">Nivel</label>
+          <select class="fi" id="t-nivel">
+            <option value="">—</option>
+            <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
+            <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
+            <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
+          </select>
+        </div>
+      </div>
+      <label class="fl">Bloque / Tema</label><input class="fi" id="t-bloque">
+      <div style="margin-top:20px;border-top:.5px solid var(--border);padding-top:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <span style="color:var(--soft);font-size:13px;font-weight:500">Preguntas</span>
+          <button type="button" class="btn-ghost" onclick="addPregunta()"><i class="ti ti-plus"></i> Añadir pregunta</button>
+        </div>
+        <div id="preguntas-container"></div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-test')">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar test</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL AVISO -->
+<div class="modal-overlay" id="modal-aviso">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-title"><span>Nuevo aviso</span><button class="modal-close" onclick="cerrarModal('modal-aviso')">×</button></div>
+    <form id="form-aviso" onsubmit="guardarAviso(event)">
+      <label class="fl">Destinatario</label>
+      <select class="fi" id="av-destinatario-tipo" onchange="toggleDestinatario()">
+        <option value="todos">Todos</option>
+        <option value="profesor">Todos los profesores</option>
+        <option value="alumno">Todos los alumnos</option>
+        <option value="especifico">Usuario específico</option>
+      </select>
+      <div id="av-especifico-wrap" style="display:none">
+        <label class="fl">Seleccionar usuario</label>
+        <select class="fi" id="av-usuario-especifico"></select>
+      </div>
+      <label class="fl">Título *</label><input class="fi" id="av-titulo" required>
+      <label class="fl">Contenido *</label>
+      <textarea class="fi" id="av-contenido" rows="5" required style="resize:vertical;line-height:1.6"></textarea>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-aviso')">Cancelar</button>
+        <button type="submit" class="btn-primary">Publicar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL CANCELAR SESIÓN -->
+<div class="modal-overlay" id="modal-cancelar-sesion">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-title"><span style="color:var(--red)">Cancelar sesión</span><button class="modal-close" onclick="cerrarModal('modal-cancelar-sesion')">×</button></div>
+    <p style="color:var(--soft);font-size:13px;margin-bottom:18px">Esta acción cancelará la sesión definitivamente.</p>
+    <input type="hidden" id="cancel-ses-id">
+    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;color:var(--soft);font-size:13px;margin-bottom:18px">
+      <input type="checkbox" id="cancel-revertir" style="accent-color:var(--blue)">
+      Revertir horas al bono del alumno (si estaba confirmada)
+    </label>
+    <div class="modal-footer">
+      <button type="button" class="btn-cancel" onclick="cerrarModal('modal-cancelar-sesion')">Volver</button>
+      <button type="button" class="btn-danger" onclick="confirmarCancelacion()">Cancelar sesión</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+// ============================================================
+// State
+// ============================================================
+let ctx = null;
+let allAlumnos = [], allProfesores = [], allUsuarios = [];
+let editAlumnoId = null, editProfesorId = null, editMaterialId = null, editTestId = null;
+let preguntasCount = 0;
+
+// ============================================================
+// Init
+// ============================================================
+(async () => {
+  ctx = await requireAuth('admin');
+  if (!ctx) return;
+  document.getElementById('topbar-name').textContent = ctx.usuario.nombre;
+  await Promise.all([loadAll(), loadDashboard()]);
+})();
+
+async function loadAll() {
+  const [{ data: alumnos }, { data: profesores }, { data: usuarios }] = await Promise.all([
+    db.from('alumnos').select('*, usuario:usuarios(nombre, apellidos, email)').order('created_at', { ascending: false }),
+    db.from('profesores').select('*, usuario:usuarios(nombre, apellidos, email)').order('created_at', { ascending: false }),
+    db.from('usuarios').select('*').in('rol', ['alumno', 'profesor']).eq('activo', true)
+  ]);
+  allAlumnos   = alumnos   || [];
+  allProfesores = profesores || [];
+  allUsuarios  = usuarios  || [];
+
+  // Populate selects
+  const profSel = document.getElementById('a-profesor');
+  profSel.innerHTML = '<option value="">Sin profesor asignado</option>';
+  allProfesores.forEach(p => {
+    const u = p.usuario || {};
+    const o = new Option(`${u.nombre} ${u.apellidos}`, p.id);
+    profSel.appendChild(o);
+  });
+
+  const matAlumSel = document.getElementById('mat-alumno-especifico');
+  matAlumSel.innerHTML = '<option value="">Para su nivel en general</option>';
+  allAlumnos.forEach(a => {
+    const u = a.usuario || {};
+    const o = new Option(`${u.nombre} ${u.apellidos}`, a.id);
+    matAlumSel.appendChild(o);
+  });
+
+  const avUserSel = document.getElementById('av-usuario-especifico');
+  avUserSel.innerHTML = '';
+  allUsuarios.forEach(u => {
+    const o = new Option(`${u.nombre} ${u.apellidos} (${u.rol})`, u.id);
+    avUserSel.appendChild(o);
+  });
+
+  // Sesiones filtros
+  const filProf = document.getElementById('fil-ses-profesor');
+  allProfesores.forEach(p => {
+    const u = p.usuario || {};
+    const o = new Option(`${u.nombre} ${u.apellidos}`, p.id);
+    filProf.appendChild(o);
+  });
+  const now = new Date();
+  const filMes = document.getElementById('fil-ses-mes');
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val = d.toISOString().substring(0,7);
+    filMes.add(new Option(d.toLocaleDateString('es-ES',{month:'long',year:'numeric'}), val));
+  }
+}
+
+// ============================================================
+// Navigation
+// ============================================================
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  document.getElementById('nav-' + id).classList.add('active');
+  window.scrollTo(0, 0);
+  const loaders = {
+    dashboard: loadDashboard,
+    alumnos:   loadTablaAlumnos,
+    profesores: loadTablaProfesores,
+    sesiones:  loadSesionesAdmin,
+    material:  loadTablaMaterial,
+    tests:     loadListaTests,
+    avisos:    loadTablaAvisos,
+  };
+  if (loaders[id]) loaders[id]();
+}
+
+function toggleMenu() {
+  const m = document.getElementById('avatar-menu');
+  m.style.display = m.style.display === 'block' ? 'none' : 'block';
+}
+document.addEventListener('click', e => {
+  if (!document.getElementById('avatar-btn').contains(e.target))
+    document.getElementById('avatar-menu').style.display = 'none';
+});
+
+function cerrarModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function loadDashboard() {
+  const now = new Date();
+  const mesIni = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+
+  const [
+    { count: nAlumnos },
+    { count: nProfs },
+    { data: sesMes },
+    { data: sesPend },
+    { data: bonos }
+  ] = await Promise.all([
+    db.from('alumnos').select('id', { count: 'exact', head: true }).eq('activo', true),
+    db.from('profesores').select('id', { count: 'exact', head: true }).eq('activo', true),
+    db.from('sesiones').select('duracion_minutos, estado').gte('fecha', mesIni),
+    db.from('sesiones').select('*, alumno:alumnos(usuario:usuarios(nombre, apellidos)), profesor:profesores(usuario:usuarios(nombre, apellidos))').eq('estado', 'pendiente_confirmacion').order('registrada_at', { ascending: false }).limit(10),
+    db.from('alumnos').select('*, usuario:usuarios(nombre, apellidos)').lte('horas_bono_restantes', 3).eq('activo', true)
+  ]);
+
+  const hMes = ((sesMes || []).reduce((a, s) => a + (s.duracion_minutos || 0), 0) / 60).toFixed(1);
+  const nPend = sesPend?.length || 0;
+
+  document.getElementById('dash-kpis').innerHTML = `
+    <div class="kpi blue"><div class="kpi-label">Alumnos activos</div><div class="kpi-val">${nAlumnos || 0}</div></div>
+    <div class="kpi green"><div class="kpi-label">Profesores activos</div><div class="kpi-val">${nProfs || 0}</div></div>
+    <div class="kpi navy"><div class="kpi-label">Sesiones este mes</div><div class="kpi-val">${(sesMes||[]).length}</div><div class="kpi-sub">${hMes}h trabajadas</div></div>
+    <div class="kpi ${nPend > 0 ? 'amber' : 'navy'}"><div class="kpi-label">Pendientes confirmar</div><div class="kpi-val">${nPend}</div></div>
+    <div class="kpi ${(bonos?.length||0) > 0 ? 'red' : 'green'}"><div class="kpi-label">Bonos bajos</div><div class="kpi-val">${bonos?.length||0}</div></div>
+  `;
+
+  // Pendientes
+  const pendEl = document.getElementById('dash-pendientes');
+  if (!sesPend || sesPend.length === 0) {
+    pendEl.innerHTML = `<div class="empty-state"><i class="ti ti-check"></i><p>Sin sesiones pendientes</p></div>`;
+  } else {
+    pendEl.innerHTML = `<table class="tabla">
+      <tbody>
+        ${sesPend.map(s => {
+          const a = s.alumno?.usuario;
+          const p = s.profesor?.usuario;
+          return `<tr>
+            <td style="color:#fff">${a ? a.nombre + ' ' + a.apellidos : '—'}</td>
+            <td>${s.asignatura}</td>
+            <td>${formatShortDate(s.fecha)}</td>
+            <td>${p ? p.nombre : '—'}</td>
+            <td><button class="btn-danger" onclick="abrirCancelar('${s.id}')">Cancelar</button></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+  }
+
+  // Bonos bajos
+  const bonosEl = document.getElementById('dash-bonos-bajos');
+  if (!bonos || bonos.length === 0) {
+    bonosEl.innerHTML = `<div class="empty-state"><i class="ti ti-check"></i><p>Todos los bonos en orden</p></div>`;
+  } else {
+    bonosEl.innerHTML = `<table class="tabla">
+      <tbody>
+        ${bonos.map(a => {
+          const u = a.usuario || {};
+          return `<tr>
+            <td style="color:#fff">${u.nombre} ${u.apellidos}</td>
+            <td><span class="pill pill-warn">${a.horas_bono_restantes}h restantes</span></td>
+            <td><a href="https://wa.me/${WHATSAPP_MANU}?text=Bono%20bajo%20de%20${encodeURIComponent(u.nombre)}" target="_blank" class="btn-edit">WhatsApp</a></td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+  }
+}
+
+// ============================================================
+// ALUMNOS
+// ============================================================
+async function loadTablaAlumnos() {
+  document.getElementById('alumnos-sub').textContent = `${allAlumnos.length} alumnos en el sistema`;
+
+  const mesIni = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+  const { data: horasData } = await db
+    .from('sesiones')
+    .select('alumno_id, duracion_minutos')
+    .gte('fecha', mesIni)
+    .in('estado', ['confirmada','pendiente_confirmacion']);
+  const h = {};
+  (horasData||[]).forEach(s => { h[s.alumno_id] = (h[s.alumno_id]||0) + s.duracion_minutos / 60; });
+
+  renderTablaAlumnos(allAlumnos, h);
+}
+
+function renderTablaAlumnos(lista, horasByAlumno = {}) {
+  const tbody = document.getElementById('tbody-alumnos');
+  if (lista.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Sin alumnos</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lista.map(a => {
+    const u = a.usuario || {};
+    const profNom = allProfesores.find(p => p.id === a.profesor_id)?.usuario;
+    const h = (horasByAlumno[a.id]||0).toFixed(1);
+    const bonoOk = a.horas_bono_restantes > 3;
+    return `<tr>
+      <td><b style="color:#fff">${u.nombre} ${u.apellidos}</b><br><span style="color:var(--muted);font-size:11px">${u.email}</span></td>
+      <td><span class="pill ${a.nivel?.includes('BACH') ? 'pill-bach' : 'pill-eso'}">${nivelLabel(a.nivel)}</span></td>
+      <td>${(a.asignaturas||[]).join(', ') || '—'}</td>
+      <td>${profNom ? profNom.nombre + ' ' + profNom.apellidos : '<span style="color:var(--muted)">Sin asignar</span>'}</td>
+      <td><span class="pill ${bonoOk ? 'pill-ok' : 'pill-warn'}">${a.horas_bono_restantes}h / ${a.horas_bono_total}h</span></td>
+      <td><span class="pill ${a.activo ? 'pill-ok' : 'pill-grey'}">${a.activo ? 'Activo' : 'Inactivo'}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn-edit" onclick="editarAlumno('${a.id}')">Editar</button>
+        <button class="btn-edit" style="margin-left:4px" onclick="abrirModalInforme('${a.id}','${u.nombre} ${u.apellidos}')">Informe</button>
+        <button class="btn-danger" style="margin-left:4px" onclick="toggleActivo('alumno','${a.id}',${!a.activo})">${a.activo ? 'Desactivar' : 'Activar'}</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function filtrar(tipo) {
+  const q = document.getElementById('q-' + tipo).value.toLowerCase();
+  if (tipo === 'alumnos') {
+    const res = allAlumnos.filter(a => {
+      const u = a.usuario || {};
+      return `${u.nombre} ${u.apellidos} ${(a.asignaturas||[]).join(' ')} ${a.nivel}`.toLowerCase().includes(q);
+    });
+    renderTablaAlumnos(res);
+  } else {
+    const res = allProfesores.filter(p => {
+      const u = p.usuario || {};
+      return `${u.nombre} ${u.apellidos} ${(p.especialidades||[]).join(' ')} ${p.zona||''}`.toLowerCase().includes(q);
+    });
+    renderTablaProfesores(res);
+  }
+}
+
+function abrirModalAlumno() {
+  editAlumnoId = null;
+  document.getElementById('form-alumno').reset();
+  document.getElementById('modal-alumno-titulo').textContent = 'Nuevo alumno';
+  document.getElementById('a-password').required = true;
+  document.getElementById('modal-alumno').classList.add('open');
+}
+
+function editarAlumno(id) {
+  editAlumnoId = id;
+  const a = allAlumnos.find(x => x.id === id);
+  if (!a) return;
+  const u = a.usuario || {};
+  document.getElementById('modal-alumno-titulo').textContent = 'Editar alumno';
+  document.getElementById('a-nombre').value       = u.nombre || '';
+  document.getElementById('a-apellidos').value    = u.apellidos || '';
+  document.getElementById('a-email').value        = u.email || '';
+  document.getElementById('a-password').value     = '';
+  document.getElementById('a-password').required  = false;
+  document.getElementById('a-nivel').value        = a.nivel || '';
+  document.getElementById('a-modalidad').value    = a.modalidad || 'presencial';
+  document.getElementById('a-asignaturas').value  = (a.asignaturas||[]).join(', ');
+  document.getElementById('a-profesor').value     = a.profesor_id || '';
+  document.getElementById('a-bono-total').value   = a.horas_bono_total || 0;
+  document.getElementById('a-bono-rest').value    = a.horas_bono_restantes || 0;
+  document.getElementById('a-horario').value      = a.horario_habitual || '';
+  document.getElementById('a-direccion').value    = a.direccion || '';
+  document.getElementById('a-telefono').value     = a.telefono_familia || '';
+  document.getElementById('a-fecha-inicio').value = a.fecha_inicio || '';
+  document.getElementById('modal-alumno').classList.add('open');
+}
+
+async function guardarAlumno(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-guardar-alumno');
+  btn.disabled = true;
+  const asigs = document.getElementById('a-asignaturas').value.split(',').map(s => s.trim()).filter(Boolean);
+
+  try {
+    if (!editAlumnoId) {
+      // Create auth user via Edge Function
+      const email    = document.getElementById('a-email').value;
+      const password = document.getElementById('a-password').value;
+      const nombre   = document.getElementById('a-nombre').value;
+      const apellidos = document.getElementById('a-apellidos').value;
+
+      const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
+        body: { email, password, nombre, apellidos, rol: 'alumno' }
+      });
+      if (fnErr || !newUser?.user_id) throw new Error(fnErr?.message || 'Error al crear usuario');
+
+      await db.from('alumnos').insert({
+        usuario_id:          newUser.user_id,
+        nivel:               document.getElementById('a-nivel').value,
+        asignaturas:         asigs,
+        profesor_id:         document.getElementById('a-profesor').value || null,
+        horario_habitual:    document.getElementById('a-horario').value || null,
+        modalidad:           document.getElementById('a-modalidad').value,
+        direccion:           document.getElementById('a-direccion').value || null,
+        telefono_familia:    document.getElementById('a-telefono').value || null,
+        horas_bono_total:    parseFloat(document.getElementById('a-bono-total').value) || 0,
+        horas_bono_restantes: parseFloat(document.getElementById('a-bono-rest').value) || 0,
+        fecha_inicio:        document.getElementById('a-fecha-inicio').value || null,
+      });
+    } else {
+      const alumno = allAlumnos.find(x => x.id === editAlumnoId);
+      await db.from('usuarios').update({
+        nombre:    document.getElementById('a-nombre').value,
+        apellidos: document.getElementById('a-apellidos').value,
+      }).eq('id', alumno.usuario_id);
+
+      await db.from('alumnos').update({
+        nivel:               document.getElementById('a-nivel').value,
+        asignaturas:         asigs,
+        profesor_id:         document.getElementById('a-profesor').value || null,
+        horario_habitual:    document.getElementById('a-horario').value || null,
+        modalidad:           document.getElementById('a-modalidad').value,
+        direccion:           document.getElementById('a-direccion').value || null,
+        telefono_familia:    document.getElementById('a-telefono').value || null,
+        horas_bono_total:    parseFloat(document.getElementById('a-bono-total').value) || 0,
+        horas_bono_restantes: parseFloat(document.getElementById('a-bono-rest').value) || 0,
+        fecha_inicio:        document.getElementById('a-fecha-inicio').value || null,
+      }).eq('id', editAlumnoId);
+    }
+
+    showToast(editAlumnoId ? 'Alumno actualizado' : 'Alumno creado');
+    cerrarModal('modal-alumno');
+    await loadAll();
+    await loadTablaAlumnos();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+  btn.disabled = false;
+}
+
+// ============================================================
+// INFORMES
+// ============================================================
+function abrirModalInforme(alumnoId, alumnoNombre) {
+  document.getElementById('inf-alumno-id').value = alumnoId;
+  document.getElementById('inf-alumno-nombre').value = alumnoNombre;
+  document.getElementById('inf-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('modal-informe').classList.add('open');
+}
+
+async function subirInforme(e) {
+  e.preventDefault();
+  const file      = document.getElementById('inf-archivo').files[0];
+  const alumnoId  = document.getElementById('inf-alumno-id').value;
+  let archivo_url = null;
+
+  if (file) {
+    const ext = file.name.split('.').pop();
+    const path = `informes/${alumnoId}/${Date.now()}.${ext}`;
+    const { data: up, error: upErr } = await db.storage.from('nexo-files').upload(path, file);
+    if (upErr) { showToast('Error al subir archivo', 'error'); return; }
+    const { data: url } = db.storage.from('nexo-files').getPublicUrl(path);
+    archivo_url = url.publicUrl;
+  }
+
+  await db.from('informes').insert({
+    alumno_id:  alumnoId,
+    tipo:       document.getElementById('inf-tipo').value,
+    titulo:     document.getElementById('inf-titulo').value,
+    fecha:      document.getElementById('inf-fecha').value,
+    archivo_url,
+    subido_por: ctx.usuario.id,
+  });
+
+  showToast('Informe subido correctamente');
+  cerrarModal('modal-informe');
+  document.getElementById('form-informe').reset();
+}
+
+// ============================================================
+// PROFESORES
+// ============================================================
+async function loadTablaProfesores() {
+  document.getElementById('profesores-sub').textContent = `${allProfesores.length} profesores en el sistema`;
+  renderTablaProfesores(allProfesores);
+}
+
+function renderTablaProfesores(lista) {
+  const tbody = document.getElementById('tbody-profesores');
+  if (lista.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Sin profesores</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = lista.map(p => {
+    const u = p.usuario || {};
+    const nAlumnos = allAlumnos.filter(a => a.profesor_id === p.id).length;
+    return `<tr>
+      <td><b style="color:#fff">${u.nombre} ${u.apellidos}</b><br><span style="color:var(--muted);font-size:11px">${u.email}</span></td>
+      <td>${(p.especialidades||[]).join(', ') || '—'}</td>
+      <td>${p.zona || '—'}</td>
+      <td><span class="pill pill-ok">${nAlumnos} alumno${nAlumnos !== 1 ? 's' : ''}</span></td>
+      <td><span class="pill ${p.activo ? 'pill-ok' : 'pill-grey'}">${p.activo ? 'Activo' : 'Inactivo'}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn-edit" onclick="editarProfesor('${p.id}')">Editar</button>
+        <button class="btn-danger" style="margin-left:4px" onclick="toggleActivo('profesor','${p.id}',${!p.activo})">${p.activo ? 'Desactivar' : 'Activar'}</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function abrirModalProfesor() {
+  editProfesorId = null;
+  document.getElementById('form-profesor').reset();
+  document.getElementById('modal-prof-titulo').textContent = 'Nuevo profesor';
+  document.getElementById('p-password').required = true;
+  document.getElementById('modal-profesor').classList.add('open');
+}
+
+function editarProfesor(id) {
+  editProfesorId = id;
+  const p = allProfesores.find(x => x.id === id);
+  if (!p) return;
+  const u = p.usuario || {};
+  document.getElementById('modal-prof-titulo').textContent = 'Editar profesor';
+  document.getElementById('p-nombre').value        = u.nombre || '';
+  document.getElementById('p-apellidos').value     = u.apellidos || '';
+  document.getElementById('p-email').value         = u.email || '';
+  document.getElementById('p-password').value      = '';
+  document.getElementById('p-password').required   = false;
+  document.getElementById('p-especialidades').value = (p.especialidades||[]).join(', ');
+  document.getElementById('p-zona').value          = p.zona || '';
+  document.getElementById('p-telefono').value      = p.telefono || '';
+  document.getElementById('p-estudios').value      = p.estudios || '';
+  document.getElementById('p-nivel-max').value     = p.nivel_max || '';
+  document.getElementById('p-fecha-inicio').value  = p.fecha_inicio || '';
+  document.getElementById('modal-profesor').classList.add('open');
+}
+
+async function guardarProfesor(e) {
+  e.preventDefault();
+  const esps = document.getElementById('p-especialidades').value.split(',').map(s => s.trim()).filter(Boolean);
+
+  try {
+    if (!editProfesorId) {
+      const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
+        body: {
+          email:    document.getElementById('p-email').value,
+          password: document.getElementById('p-password').value,
+          nombre:   document.getElementById('p-nombre').value,
+          apellidos: document.getElementById('p-apellidos').value,
+          rol: 'profesor'
+        }
+      });
+      if (fnErr || !newUser?.user_id) throw new Error('Error al crear usuario');
+
+      await db.from('profesores').insert({
+        usuario_id:     newUser.user_id,
+        especialidades: esps,
+        zona:           document.getElementById('p-zona').value || null,
+        telefono:       document.getElementById('p-telefono').value || null,
+        estudios:       document.getElementById('p-estudios').value || null,
+        nivel_max:      document.getElementById('p-nivel-max').value || null,
+        fecha_inicio:   document.getElementById('p-fecha-inicio').value || null,
+      });
+    } else {
+      const prof = allProfesores.find(x => x.id === editProfesorId);
+      await db.from('usuarios').update({
+        nombre: document.getElementById('p-nombre').value,
+        apellidos: document.getElementById('p-apellidos').value,
+      }).eq('id', prof.usuario_id);
+
+      await db.from('profesores').update({
+        especialidades: esps,
+        zona:           document.getElementById('p-zona').value || null,
+        telefono:       document.getElementById('p-telefono').value || null,
+        estudios:       document.getElementById('p-estudios').value || null,
+        nivel_max:      document.getElementById('p-nivel-max').value || null,
+        fecha_inicio:   document.getElementById('p-fecha-inicio').value || null,
+      }).eq('id', editProfesorId);
+    }
+
+    showToast(editProfesorId ? 'Profesor actualizado' : 'Profesor creado');
+    cerrarModal('modal-profesor');
+    await loadAll();
+    await loadTablaProfesores();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+async function toggleActivo(tipo, id, nuevoEstado) {
+  if (!confirm(`¿${nuevoEstado ? 'Activar' : 'Desactivar'} este ${tipo}?`)) return;
+  const tabla = tipo === 'alumno' ? 'alumnos' : 'profesores';
+  await db.from(tabla).update({ activo: nuevoEstado }).eq('id', id);
+  showToast(`${tipo.charAt(0).toUpperCase()+tipo.slice(1)} ${nuevoEstado ? 'activado' : 'desactivado'}`);
+  await loadAll();
+  if (tipo === 'alumno') await loadTablaAlumnos(); else await loadTablaProfesores();
+}
+
+// ============================================================
+// SESIONES ADMIN
+// ============================================================
+async function loadSesionesAdmin() {
+  const sesEl = document.getElementById('sesiones-tabla');
+  sesEl.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+
+  let query = db.from('sesiones')
+    .select('*, alumno:alumnos(usuario:usuarios(nombre, apellidos)), profesor:profesores(usuario:usuarios(nombre, apellidos))')
+    .order('fecha', { ascending: false });
+
+  const estVal = document.getElementById('fil-ses-estado').value;
+  if (estVal) query = query.eq('estado', estVal);
+  const pVal = document.getElementById('fil-ses-profesor').value;
+  if (pVal) query = query.eq('profesor_id', pVal);
+  const mVal = document.getElementById('fil-ses-mes').value;
+  if (mVal) query = query.gte('fecha', mVal + '-01').lte('fecha', mVal + '-31');
+
+  const { data: sesiones } = await query.limit(100);
+
+  const pillMap = { confirmada:'st-ok Confirmada', pendiente_confirmacion:'st-pend Pendiente', rechazada:'st-red Rechazada', cancelada:'st-grey Cancelada' };
+
+  sesEl.innerHTML = !sesiones || sesiones.length === 0
+    ? `<div class="empty-state"><i class="ti ti-calendar-off"></i><p>Sin sesiones en este período</p></div>`
+    : `<table class="tabla">
+        <thead><tr><th>Fecha</th><th>Alumno</th><th>Profesor</th><th>Asignatura</th><th>Duración</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody>
+          ${sesiones.map(s => {
+            const [pc, pt] = (pillMap[s.estado]||'st-grey —').split(' ');
+            const a = s.alumno?.usuario;
+            const p = s.profesor?.usuario;
+            return `<tr>
+              <td>${formatShortDate(s.fecha)}</td>
+              <td style="color:#fff">${a ? a.nombre + ' ' + a.apellidos : '—'}</td>
+              <td>${p ? p.nombre + ' ' + p.apellidos : '—'}</td>
+              <td>${s.asignatura}</td>
+              <td>${s.duracion_minutos} min</td>
+              <td><span class="status-pill ${pc}">${pt}</span></td>
+              <td>${s.estado !== 'cancelada' ? `<button class="btn-danger" onclick="abrirCancelar('${s.id}')">Cancelar</button>` : '<span style="color:var(--muted);font-size:11px">—</span>'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>`;
+}
+
+function abrirCancelar(sesId) {
+  document.getElementById('cancel-ses-id').value = sesId;
+  document.getElementById('cancel-revertir').checked = false;
+  document.getElementById('modal-cancelar-sesion').classList.add('open');
+}
+
+async function confirmarCancelacion() {
+  const id  = document.getElementById('cancel-ses-id').value;
+  const rev = document.getElementById('cancel-revertir').checked;
+  const { data } = await db.rpc('cancelar_sesion_admin', { p_session_id: id, p_revertir_horas: rev });
+  if (!data?.success) { showToast('Error al cancelar', 'error'); return; }
+  showToast('Sesión cancelada');
+  cerrarModal('modal-cancelar-sesion');
+  await loadDashboard();
+  if (document.getElementById('section-sesiones').classList.contains('active')) loadSesionesAdmin();
+}
+
+// ============================================================
+// MATERIAL
+// ============================================================
+async function loadTablaMaterial() {
+  const { data: material } = await db.from('material').select('*').order('created_at', { ascending: false });
+  const tbody = document.getElementById('tbody-material');
+  if (!material || material.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Sin material</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = material.map(m => `<tr>
+    <td style="color:#fff">${m.titulo}</td>
+    <td>${nivelLabel(m.nivel)}</td>
+    <td>${m.asignatura || '—'}</td>
+    <td>${m.bloque_tema || '—'}</td>
+    <td><span class="pill pill-eso">${m.tipo?.toUpperCase()}</span></td>
+    <td><span class="pill ${m.visible ? 'pill-ok' : 'pill-grey'}">${m.visible ? 'Visible' : 'Oculto'}</span></td>
+    <td style="white-space:nowrap">
+      ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" class="btn-edit">Ver</a>` : ''}
+      <button class="btn-danger" style="margin-left:4px" onclick="toggleVisible('material','${m.id}',${!m.visible})">${m.visible ? 'Ocultar' : 'Mostrar'}</button>
+    </td>
+  </tr>`).join('');
+}
+
+function abrirModalMaterial() {
+  editMaterialId = null;
+  document.getElementById('form-material').reset();
+  document.getElementById('modal-mat-titulo').textContent = 'Añadir material';
+  document.getElementById('modal-material').classList.add('open');
+}
+
+async function guardarMaterial(e) {
+  e.preventDefault();
+  const file = document.getElementById('mat-archivo').files[0];
+  let url = document.getElementById('mat-url').value.trim();
+
+  if (file) {
+    const ext = file.name.split('.').pop();
+    const path = `material/${Date.now()}.${ext}`;
+    const { error: upErr } = await db.storage.from('nexo-files').upload(path, file);
+    if (upErr) { showToast('Error al subir archivo', 'error'); return; }
+    const { data: urlData } = db.storage.from('nexo-files').getPublicUrl(path);
+    url = urlData.publicUrl;
+  }
+
+  const { data: mat, error } = await db.from('material').insert({
+    titulo:       document.getElementById('mat-titulo').value,
+    descripcion:  document.getElementById('mat-descripcion').value || null,
+    nivel:        document.getElementById('mat-nivel').value,
+    asignatura:   document.getElementById('mat-asignatura').value || null,
+    bloque_tema:  document.getElementById('mat-bloque').value || null,
+    tipo:         document.getElementById('mat-tipo').value,
+    archivo_url:  url || null,
+    subido_por:   ctx.usuario.id,
+  }).select().single();
+
+  if (error) { showToast('Error al guardar material', 'error'); return; }
+
+  const alumnoEsp = document.getElementById('mat-alumno-especifico').value;
+  if (alumnoEsp && mat) {
+    await db.from('material_alumno').insert({ material_id: mat.id, alumno_id: alumnoEsp, asignado_por: ctx.usuario.id });
+  }
+
+  showToast('Material añadido');
+  cerrarModal('modal-material');
+  await loadTablaMaterial();
+}
+
+async function toggleVisible(tabla, id, estado) {
+  await db.from(tabla).update({ visible: estado }).eq('id', id);
+  showToast('Visibilidad actualizada');
+  if (tabla === 'material') loadTablaMaterial();
+  else if (tabla === 'tests') loadListaTests();
+}
+
+// ============================================================
+// TESTS
+// ============================================================
+async function loadListaTests() {
+  const { data: tests } = await db.from('tests').select('*, preguntas:preguntas_test(id)').order('created_at', { ascending: false });
+  const el = document.getElementById('tests-lista');
+  if (!tests || tests.length === 0) {
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-list-check"></i><p>Sin tests creados todavía</p></div>`;
+    return;
+  }
+  el.innerHTML = `<table class="tabla">
+    <thead><tr><th>Título</th><th>Nivel</th><th>Asignatura</th><th>Preguntas</th><th>Visible</th><th>Acciones</th></tr></thead>
+    <tbody>
+      ${tests.map(t => `<tr>
+        <td style="color:#fff">${t.titulo}</td>
+        <td>${nivelLabel(t.nivel)}</td>
+        <td>${t.asignatura || '—'}</td>
+        <td>${t.preguntas?.length || 0}</td>
+        <td><span class="pill ${t.visible ? 'pill-ok' : 'pill-grey'}">${t.visible ? 'Visible' : 'Oculto'}</span></td>
+        <td style="white-space:nowrap">
+          <button class="btn-edit" onclick="editarTest('${t.id}')">Editar</button>
+          <button class="btn-danger" style="margin-left:4px" onclick="toggleVisible('tests','${t.id}',${!t.visible})">${t.visible ? 'Ocultar' : 'Mostrar'}</button>
+        </td>
+      </tr>`).join('')}
+    </tbody>
+  </table>`;
+}
+
+let preguntasEdit = [];
+
+function abrirModalTest() {
+  editTestId = null;
+  preguntasCount = 0;
+  preguntasEdit = [];
+  document.getElementById('form-test').reset();
+  document.getElementById('modal-test-titulo').textContent = 'Nuevo test';
+  document.getElementById('preguntas-container').innerHTML = '';
+  addPregunta();
+  document.getElementById('modal-test').classList.add('open');
+}
+
+async function editarTest(id) {
+  editTestId = id;
+  const { data: test } = await db.from('tests').select('*').eq('id', id).single();
+  const { data: preguntas } = await db.from('preguntas_test').select('*').eq('test_id', id).order('orden');
+  document.getElementById('modal-test-titulo').textContent = 'Editar test';
+  document.getElementById('t-titulo').value     = test.titulo || '';
+  document.getElementById('t-asignatura').value = test.asignatura || '';
+  document.getElementById('t-nivel').value      = test.nivel || '';
+  document.getElementById('t-bloque').value     = test.bloque_tema || '';
+  preguntasCount = 0;
+  document.getElementById('preguntas-container').innerHTML = '';
+  (preguntas || []).forEach(p => addPregunta(p));
+  document.getElementById('modal-test').classList.add('open');
+}
+
+function addPregunta(data = null) {
+  const i = preguntasCount++;
+  const div = document.createElement('div');
+  div.id = `preg-wrap-${i}`;
+  div.style.cssText = 'background:var(--dark);border:.5px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px';
+  div.innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+      <span style="color:var(--soft);font-size:12px;font-weight:500">Pregunta ${i+1}</span>
+      <button type="button" onclick="document.getElementById('preg-wrap-${i}').remove()" class="btn-cancel" style="padding:3px 8px;font-size:11px">✕</button>
+    </div>
+    <label class="fl" style="margin-top:0">Enunciado *</label>
+    <textarea class="fi" id="preg-enunciado-${i}" rows="2" required style="resize:vertical">${data?.enunciado || ''}</textarea>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <div><label class="fl" style="margin-top:0">Opción A *</label><input class="fi" id="preg-a-${i}" value="${data?.opcion_a || ''}" required></div>
+      <div><label class="fl" style="margin-top:0">Opción B *</label><input class="fi" id="preg-b-${i}" value="${data?.opcion_b || ''}" required></div>
+      <div><label class="fl" style="margin-top:0">Opción C *</label><input class="fi" id="preg-c-${i}" value="${data?.opcion_c || ''}" required></div>
+      <div><label class="fl" style="margin-top:0">Opción D *</label><input class="fi" id="preg-d-${i}" value="${data?.opcion_d || ''}" required></div>
+    </div>
+    <label class="fl">Respuesta correcta *</label>
+    <select class="fi" id="preg-correct-${i}" required>
+      <option value="a" ${data?.respuesta_correcta === 'a' ? 'selected' : ''}>A</option>
+      <option value="b" ${data?.respuesta_correcta === 'b' ? 'selected' : ''}>B</option>
+      <option value="c" ${data?.respuesta_correcta === 'c' ? 'selected' : ''}>C</option>
+      <option value="d" ${data?.respuesta_correcta === 'd' ? 'selected' : ''}>D</option>
+    </select>
+  `;
+  document.getElementById('preguntas-container').appendChild(div);
+}
+
+async function guardarTest(e) {
+  e.preventDefault();
+  const testData = {
+    titulo:     document.getElementById('t-titulo').value,
+    asignatura: document.getElementById('t-asignatura').value || null,
+    nivel:      document.getElementById('t-nivel').value || null,
+    bloque_tema: document.getElementById('t-bloque').value || null,
+    creado_por: ctx.usuario.id,
+  };
+
+  let testId = editTestId;
+  if (!editTestId) {
+    const { data: nt, error } = await db.from('tests').insert(testData).select().single();
+    if (error) { showToast('Error al guardar test', 'error'); return; }
+    testId = nt.id;
+  } else {
+    await db.from('tests').update(testData).eq('id', testId);
+    await db.from('preguntas_test').delete().eq('test_id', testId);
+  }
+
+  // Collect and save preguntas
+  const container = document.getElementById('preguntas-container');
+  const wraps = container.querySelectorAll('[id^="preg-wrap-"]');
+  const pregs = [];
+  wraps.forEach((wrap, idx) => {
+    const n = wrap.id.replace('preg-wrap-', '');
+    const enunciado = document.getElementById(`preg-enunciado-${n}`)?.value;
+    if (!enunciado) return;
+    pregs.push({
+      test_id: testId,
+      enunciado,
+      opcion_a: document.getElementById(`preg-a-${n}`)?.value || '',
+      opcion_b: document.getElementById(`preg-b-${n}`)?.value || '',
+      opcion_c: document.getElementById(`preg-c-${n}`)?.value || '',
+      opcion_d: document.getElementById(`preg-d-${n}`)?.value || '',
+      respuesta_correcta: document.getElementById(`preg-correct-${n}`)?.value || 'a',
+      orden: idx
+    });
+  });
+  if (pregs.length > 0) await db.from('preguntas_test').insert(pregs);
+
+  showToast('Test guardado');
+  cerrarModal('modal-test');
+  await loadListaTests();
+}
+
+// ============================================================
+// AVISOS
+// ============================================================
+async function loadTablaAvisos() {
+  const { data: avisos } = await db.from('avisos').select('*').order('created_at', { ascending: false });
+  const el = document.getElementById('avisos-tabla');
+  if (!avisos || avisos.length === 0) {
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-bell-off"></i><p>Sin avisos enviados</p></div>`;
+    return;
+  }
+  el.innerHTML = `<table class="tabla">
+    <thead><tr><th>Título</th><th>Destinatario</th><th>Fecha</th><th>Visible</th><th>Acciones</th></tr></thead>
+    <tbody>
+      ${avisos.map(a => {
+        const dest = a.destinatario_id
+          ? (allUsuarios.find(u => u.id === a.destinatario_id)?.nombre || 'Usuario específico')
+          : a.destinatario_rol === 'todos' ? 'Todos' : a.destinatario_rol === 'profesor' ? 'Profesores' : 'Alumnos';
+        return `<tr>
+          <td style="color:#fff">${a.titulo}</td>
+          <td>${dest}</td>
+          <td>${formatShortDate(a.created_at?.split('T')[0])}</td>
+          <td><span class="pill ${a.visible ? 'pill-ok' : 'pill-grey'}">${a.visible ? 'Visible' : 'Oculto'}</span></td>
+          <td><button class="btn-danger" onclick="ocultarAviso('${a.id}')">Ocultar</button></td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+function abrirModalAviso() {
+  document.getElementById('form-aviso').reset();
+  document.getElementById('av-especifico-wrap').style.display = 'none';
+  document.getElementById('modal-aviso').classList.add('open');
+}
+
+function toggleDestinatario() {
+  const v = document.getElementById('av-destinatario-tipo').value;
+  document.getElementById('av-especifico-wrap').style.display = v === 'especifico' ? 'block' : 'none';
+}
+
+async function guardarAviso(e) {
+  e.preventDefault();
+  const tipo = document.getElementById('av-destinatario-tipo').value;
+  const aviso = {
+    titulo:          document.getElementById('av-titulo').value,
+    contenido:       document.getElementById('av-contenido').value,
+    creado_por:      ctx.usuario.id,
+    destinatario_rol: tipo === 'especifico' ? null : tipo,
+    destinatario_id:  tipo === 'especifico' ? document.getElementById('av-usuario-especifico').value : null,
+  };
+
+  const { error } = await db.from('avisos').insert(aviso);
+  if (error) { showToast('Error al publicar aviso', 'error'); return; }
+  showToast('Aviso publicado');
+  cerrarModal('modal-aviso');
+  await loadTablaAvisos();
+}
+
+async function ocultarAviso(id) {
+  await db.from('avisos').update({ visible: false }).eq('id', id);
+  showToast('Aviso ocultado');
+  await loadTablaAvisos();
+}
+</script>
+</body>
+</html>

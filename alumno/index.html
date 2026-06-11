@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Área Alumno — Nexo Académico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+  :root {
+    --dark:#04071b; --navy:#154ca9; --blue:#6eaef0; --bg:#060d20;
+    --surface:#0a1530; --border:#1a2a4a; --border2:#0f1f35;
+    --txt:#e0eaf8; --muted:#4a6080; --soft:#a8c8f0;
+    --green:#1a7f5e; --green-lt:#0d2d1e;
+    --amber:#b45309; --amber-lt:#2d1e0d;
+    --red:#c0392b; --red-lt:#2d0d0d;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:54px;background:var(--dark);border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+  .topbar-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
+  .t1{color:#fff;font-size:14px;font-weight:600;letter-spacing:2px;display:block;line-height:1}
+  .t2{color:var(--blue);font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-top:2px;display:block}
+  .topbar-right{display:flex;align-items:center;gap:12px}
+  .topbar-name{color:var(--soft);font-size:13px}
+  .avatar{width:34px;height:34px;border-radius:50%;background:var(--navy);display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:12px;font-weight:600;border:1.5px solid var(--border);cursor:pointer;position:relative}
+  .avatar-menu{position:absolute;top:42px;right:0;background:var(--surface);border:.5px solid var(--border);border-radius:8px;min-width:150px;display:none;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  .avatar-menu a{display:flex;align-items:center;gap:8px;padding:10px 14px;color:var(--txt);font-size:13px;text-decoration:none;cursor:pointer}
+  .avatar-menu a:hover{background:var(--border2)}
+  .avatar-menu a i{color:var(--muted);font-size:16px}
+  .sidebar{position:fixed;top:54px;left:0;bottom:0;width:210px;background:var(--dark);border-right:.5px solid var(--border);display:flex;flex-direction:column;padding:18px 0 16px}
+  .nav-section{padding:0 16px 8px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:500}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;color:var(--muted);font-size:13px;border-left:2.5px solid transparent;margin-bottom:1px;cursor:pointer;transition:all .15s;text-decoration:none;position:relative}
+  .nav-item:hover{color:var(--soft);background:#0a1530}
+  .nav-item.active{color:var(--blue);border-left-color:var(--blue);background:#0a1a30}
+  .nav-item i{font-size:17px;flex-shrink:0}
+  .nav-divider{height:.5px;background:var(--border);margin:10px 16px}
+  .nav-bottom{margin-top:auto;padding-top:8px}
+  .badge-nav{background:var(--red);color:#fff;font-size:9px;font-weight:600;padding:1px 5px;border-radius:10px;margin-left:auto}
+
+  .main{margin-left:210px;margin-top:54px;padding:24px 26px;min-height:calc(100vh - 54px)}
+  .page-title{color:#fff;font-size:20px;font-weight:600;margin-bottom:3px}
+  .page-sub{color:var(--muted);font-size:13px;margin-bottom:20px}
+
+  .section{display:none}
+  .section.active{display:block}
+
+  .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+  .kpi{background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:16px 18px;border-top:3px solid}
+  .kpi.blue{border-top-color:var(--blue)}
+  .kpi.amber{border-top-color:var(--amber)}
+  .kpi.green{border-top-color:var(--green)}
+  .kpi-label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;font-weight:500;margin-bottom:7px}
+  .kpi-val{color:#fff;font-size:26px;font-weight:600;line-height:1}
+  .kpi-sub{color:var(--muted);font-size:11px;margin-top:5px}
+  .prog-bg{background:var(--border2);border-radius:20px;height:6px;overflow:hidden;margin-top:8px}
+  .prog-bar{height:6px;border-radius:20px;transition:width .5s ease}
+
+  .alerta{background:var(--amber-lt);border:.5px solid var(--amber);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:11px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+  .alerta i{color:var(--amber);font-size:18px;flex-shrink:0}
+  .alerta-txt{flex:1;color:#e8c080;font-size:13px;line-height:1.5}
+  .alerta-txt b{color:#f0a830}
+  .alerta-btn{background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;font-family:inherit;text-decoration:none;display:inline-block}
+
+  .card{background:var(--surface);border:.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+  .card-head{padding:13px 16px;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .card-title{color:var(--soft);font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px}
+  .card-title i{font-size:15px;color:var(--blue)}
+  .card-body{padding:14px 16px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .col-stack{display:flex;flex-direction:column;gap:16px}
+
+  .pill{font-size:10px;padding:2px 9px;border-radius:20px;font-weight:500;display:inline-block}
+  .pill-eso{background:#0f2240;color:var(--blue)}
+  .pill-bach{background:#1a0f30;color:#9b7ef0}
+  .pill-new{background:#0f2240;color:var(--blue)}
+  .pill-seen{background:#0f1f35;color:var(--muted)}
+  .pill-pend{background:var(--amber-lt);color:var(--amber)}
+  .pill-ok{background:var(--green-lt);color:var(--green)}
+  .pill-red{background:var(--red-lt);color:var(--red)}
+
+  .inf-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:.5px solid var(--border2);cursor:pointer}
+  .inf-row:last-child{border-bottom:none}
+  .inf-row:hover .inf-name{color:var(--blue)}
+  .inf-ico{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .inf-ico.m{background:#0f2240} .inf-ico.m i{color:var(--blue);font-size:16px}
+  .inf-ico.s{background:#0d2d1e} .inf-ico.s i{color:var(--green);font-size:16px}
+  .inf-name{color:var(--txt);font-size:12px;font-weight:500}
+  .inf-sub{color:var(--muted);font-size:10px;margin-top:1px}
+  .dl{width:26px;height:26px;border-radius:6px;background:#0f2240;border:.5px solid var(--border);display:flex;align-items:center;justify-content:center;margin-left:auto;flex-shrink:0}
+  .dl i{font-size:13px;color:var(--blue)}
+
+  .ev-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:.5px solid var(--border2)}
+  .ev-row:last-child{border-bottom:none}
+  .ev-label{color:var(--soft);font-size:11px;flex:1}
+  .ev-bar-bg{width:72px;height:5px;background:var(--border2);border-radius:20px;overflow:hidden;margin:0 10px}
+  .ev-bar{height:5px;border-radius:20px}
+  .ev-num{color:#fff;font-size:11px;font-weight:500;min-width:24px;text-align:right}
+  .ev-delta{font-size:10px;min-width:32px;text-align:right}
+
+  .profe-card{display:flex;align-items:center;gap:14px;padding:14px 16px}
+  .profe-av{width:48px;height:48px;border-radius:50%;background:#0f2240;display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:15px;font-weight:600;flex-shrink:0;border:2px solid var(--navy)}
+  .profe-name{color:#fff;font-size:14px;font-weight:500;margin-bottom:2px}
+  .profe-det{color:var(--muted);font-size:11px;margin-bottom:5px}
+  .profe-tags{display:flex;gap:5px;flex-wrap:wrap}
+  .tag{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:500}
+  .tag-b{background:#0f2240;color:var(--blue)}
+  .tag-g{background:#0d2d1e;color:var(--green)}
+
+  .asig-card{background:var(--dark);border:.5px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all .15s;text-decoration:none;display:block}
+  .asig-card:hover{border-color:var(--blue);background:#0a1530}
+  .asig-icon{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
+  .asig-icon i{font-size:20px;color:#fff}
+  .asig-name{color:#fff;font-size:13px;font-weight:500;margin-bottom:3px}
+  .asig-det{color:var(--muted);font-size:11px}
+  .asig-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+
+  .recurso-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:.5px solid var(--border2);cursor:pointer;transition:background .1s}
+  .recurso-row:last-child{border-bottom:none}
+  .recurso-row:hover{background:var(--border2)}
+  .recurso-ico{width:34px;height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .recurso-name{color:var(--txt);font-size:12px;font-weight:500}
+  .recurso-sub{color:var(--muted);font-size:10px;margin-top:1px}
+  .recurso-badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;margin-left:auto;white-space:nowrap}
+  .badge-pdf{background:#0f2240;color:var(--blue)}
+  .badge-test{background:#0d2d1e;color:var(--green)}
+  .badge-ok{background:var(--green-lt);color:var(--green)}
+
+  /* TESTS */
+  .test-pregunta{background:var(--dark);border:.5px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
+  .test-enunciado{color:#fff;font-size:14px;font-weight:500;margin-bottom:14px;line-height:1.5}
+  .test-opciones{display:flex;flex-direction:column;gap:8px}
+  .test-opcion{display:flex;align-items:center;gap:12px;padding:10px 14px;border:.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s}
+  .test-opcion:hover{border-color:var(--blue);background:#0a1a30}
+  .test-opcion.selected{border-color:var(--blue);background:#0a1a30}
+  .test-opcion.correct{border-color:var(--green);background:var(--green-lt)}
+  .test-opcion.wrong{border-color:var(--red);background:var(--red-lt)}
+  .test-opcion input[type=radio]{accent-color:var(--blue)}
+  .test-opcion-txt{color:var(--txt);font-size:13px}
+
+  /* CALENDARIO */
+  .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+  .cal-nav h3{color:#fff;font-size:15px;font-weight:600}
+  .cal-nav-btn{background:var(--surface);border:.5px solid var(--border);color:var(--soft);border-radius:7px;padding:6px 12px;cursor:pointer;font-size:16px;line-height:1;transition:background .15s;font-family:inherit}
+  .cal-nav-btn:hover{background:var(--border2)}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .cal-h{color:var(--muted);font-size:10px;text-align:center;padding:4px 0;font-weight:500}
+  .cal-day{border-radius:6px;padding:5px 3px;min-height:60px;cursor:pointer;transition:background .1s;position:relative;border:.5px solid transparent}
+  .cal-day:hover{background:var(--border2)}
+  .cal-day.other{opacity:.25;pointer-events:none}
+  .cal-day.today{background:#0a1a30;border-color:var(--blue)}
+  .cal-day.has-event{border-color:var(--border)}
+  .cal-num{color:var(--soft);font-size:11px;text-align:right;padding-right:3px;margin-bottom:2px}
+  .cal-day.today .cal-num{color:var(--blue);font-weight:600}
+  .cal-ev{font-size:9px;padding:1px 4px;border-radius:3px;margin-top:1px;white-space:nowrap;overflow:hidden;font-weight:500}
+  .cal-ev.ev-blue{background:#0f2240;color:var(--blue)}
+  .cal-ev.ev-green{background:var(--green-lt);color:var(--green)}
+  .cal-ev.ev-amber{background:var(--amber-lt);color:var(--amber)}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(4,7,27,.85);z-index:200;align-items:center;justify-content:center}
+  .modal-overlay.open{display:flex}
+  .modal-box{background:var(--surface);border:.5px solid var(--border);border-radius:14px;padding:28px;max-width:440px;width:90%;max-height:90vh;overflow-y:auto}
+  .modal-title{color:#fff;font-size:16px;font-weight:600;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between}
+  .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:22px;line-height:1}
+  .modal-close:hover{color:var(--txt)}
+  label.field-label{display:block;color:var(--soft);font-size:11px;font-weight:500;margin-bottom:5px;margin-top:14px}
+  .field-input{width:100%;background:var(--dark);border:.5px solid var(--border);border-radius:7px;padding:10px 12px;color:var(--txt);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+  .field-input:focus{border-color:var(--blue)}
+  .modal-footer{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+  .btn-primary{background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 18px;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:background .15s}
+  .btn-primary:hover{background:#1a5cc9}
+  .btn-ghost{background:transparent;color:var(--muted);border:.5px solid var(--border);border-radius:7px;padding:9px 14px;font-size:13px;cursor:pointer;font-family:inherit}
+
+  /* Sesiones pendientes */
+  .ses-pend-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:.5px solid var(--border2);background:var(--amber-lt)}
+  .ses-pend-row:last-child{border-bottom:none}
+  .ses-info{flex:1}
+  .ses-title{color:#fff;font-size:13px;font-weight:500;margin-bottom:2px}
+  .ses-sub{color:var(--muted);font-size:11px}
+  .btn-confirm{background:var(--green);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;margin-left:4px}
+  .btn-reject{background:var(--red-lt);color:var(--red);border:.5px solid var(--red);border-radius:6px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;margin-left:4px}
+
+  .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+  .empty-state i{font-size:36px;margin-bottom:12px;display:block;color:var(--border)}
+  .empty-state p{font-size:13px}
+
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .spinner{display:inline-block;width:20px;height:20px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
+  .loading-section{display:flex;justify-content:center;padding:40px;color:var(--muted);gap:10px;align-items:center}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <a href="https://nexoacademico.es" class="topbar-brand">
+    <div><span class="t1">NEXO</span><span class="t2">Académico</span></div>
+  </a>
+  <div class="topbar-right">
+    <span class="topbar-name" id="topbar-name">—</span>
+    <div class="avatar" id="avatar-btn" onclick="toggleAvatarMenu()">
+      <span id="avatar-initials">?</span>
+      <div class="avatar-menu" id="avatar-menu">
+        <a onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="nav-section">Mi área</div>
+  <div class="nav-item active" id="nav-inicio" onclick="showSection('inicio')"><i class="ti ti-layout-dashboard"></i> Inicio</div>
+  <div class="nav-item" id="nav-sesiones" onclick="showSection('sesiones')"><i class="ti ti-calendar-check"></i> Mis sesiones<span class="badge-nav" id="badge-sesiones" style="display:none">!</span></div>
+  <div class="nav-item" id="nav-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i> Mis informes</div>
+  <div class="nav-item" id="nav-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i> Mi profesor</div>
+  <div class="nav-item" id="nav-estudiar" onclick="showSection('estudiar')"><i class="ti ti-book"></i> Estudiar</div>
+  <div class="nav-item" id="nav-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i> Mi calendario</div>
+  <div class="nav-divider"></div>
+  <div class="nav-bottom">
+    <a href="https://nexoacademico.es" class="nav-item"><i class="ti ti-arrow-left"></i> Web principal</a>
+    <div class="nav-item" onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</div>
+  </div>
+</nav>
+
+<!-- ═══ INICIO ═══ -->
+<div class="main">
+<div class="section active" id="section-inicio">
+  <h1 class="page-title" id="greeting">Hola</h1>
+  <p class="page-sub" id="greeting-sub">—</p>
+
+  <div id="alerta-bono" style="display:none" class="alerta">
+    <i class="ti ti-alert-triangle"></i>
+    <div class="alerta-txt"><b id="alerta-bono-txt">Bono bajo.</b> Contacta con Nexo para renovar.</div>
+    <a id="alerta-bono-btn" href="#" target="_blank" class="alerta-btn">Renovar bono ↗</a>
+  </div>
+
+  <div id="alerta-sesiones" style="display:none" class="alerta" style="background:var(--navy);border-color:var(--blue)">
+    <i class="ti ti-bell" style="color:var(--blue)"></i>
+    <div class="alerta-txt" style="color:var(--soft)"><b id="alerta-sesiones-txt">Tienes sesiones pendientes de confirmar.</b></div>
+    <button class="alerta-btn" style="background:var(--navy);border:.5px solid var(--blue)" onclick="showSection('sesiones')">Revisar →</button>
+  </div>
+
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi blue">
+      <div class="kpi-label">Horas restantes bono</div>
+      <div class="kpi-val" id="kpi-horas-rest">—</div>
+      <div class="kpi-sub" id="kpi-bono-total">—</div>
+      <div class="prog-bg"><div class="prog-bar" id="prog-bono" style="width:0%;background:var(--blue)"></div></div>
+    </div>
+    <div class="kpi amber">
+      <div class="kpi-label">Sesiones este mes</div>
+      <div class="kpi-val" id="kpi-sesiones-mes">—</div>
+      <div class="kpi-sub" id="kpi-sesiones-sub">—</div>
+    </div>
+    <div class="kpi green">
+      <div class="kpi-label">Próxima clase</div>
+      <div class="kpi-val" id="kpi-proxima-fecha" style="font-size:16px;margin-top:4px">—</div>
+      <div class="kpi-sub" id="kpi-proxima-sub">—</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="col-stack">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title"><i class="ti ti-file-analytics"></i> Informes recientes</div>
+          <button onclick="showSection('informes')" style="background:transparent;color:var(--blue);border:.5px solid var(--border);border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit">Ver todos</button>
+        </div>
+        <div class="card-body" style="padding:8px 14px" id="informes-recientes">
+          <div class="loading-section"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title"><i class="ti ti-chart-line"></i> Evolución del mes</div>
+        </div>
+        <div class="card-body" style="padding:8px 14px" id="evolucion-mes">
+          <div class="loading-section"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-stack">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title"><i class="ti ti-coin"></i> Estado del bono</div>
+        </div>
+        <div class="card-body" id="bono-card">
+          <div class="loading-section"><div class="spinner"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title"><i class="ti ti-calendar"></i> Próximas clases</div>
+        </div>
+        <div class="card-body" style="padding:8px 14px" id="proximas-clases">
+          <div class="loading-section"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SESIONES PENDIENTES ═══ -->
+<div class="section" id="section-sesiones">
+  <h1 class="page-title">Mis sesiones</h1>
+  <p class="page-sub">Confirma o rechaza las clases registradas por tu profesor</p>
+  <div id="sesiones-pendientes-list"></div>
+  <div class="card" style="margin-top:8px">
+    <div class="card-head"><div class="card-title"><i class="ti ti-history"></i> Historial de sesiones</div></div>
+    <div id="sesiones-historial" style="padding:0">
+      <div class="loading-section"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ INFORMES ═══ -->
+<div class="section" id="section-informes">
+  <h1 class="page-title">Mis informes</h1>
+  <p class="page-sub">Informes de seguimiento elaborados por Nexo Académico</p>
+  <div class="card">
+    <div class="card-head"><div class="card-title"><i class="ti ti-report-analytics"></i> Informes mensuales</div></div>
+    <div class="card-body" style="padding:8px 14px" id="informes-mensuales">
+      <div class="loading-section"><div class="spinner"></div></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="card-title"><i class="ti ti-report"></i> Informes semanales</div></div>
+    <div class="card-body" style="padding:8px 14px" id="informes-semanales">
+      <div class="loading-section"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MI PROFESOR ═══ -->
+<div class="section" id="section-profesor">
+  <h1 class="page-title">Mi profesor</h1>
+  <p class="page-sub">Información de tu profesor asignado</p>
+  <div id="profesor-content">
+    <div class="loading-section"><div class="spinner"></div></div>
+  </div>
+</div>
+
+<!-- ═══ ESTUDIAR ═══ -->
+<div class="section" id="section-estudiar">
+  <h1 class="page-title">Estudiar</h1>
+  <p class="page-sub" id="estudiar-sub">Material y tests de tus asignaturas</p>
+
+  <div id="estudiar-asignaturas">
+    <div class="loading-section"><div class="spinner"></div></div>
+  </div>
+
+  <div id="estudiar-detalle" style="display:none">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <button onclick="volverAsignaturas()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:20px">←</button>
+      <h2 id="detalle-titulo" style="color:#fff;font-size:16px;font-weight:600"></h2>
+    </div>
+    <div id="detalle-material"></div>
+  </div>
+</div>
+
+<!-- ═══ TEST MODAL / INLINE ═══ -->
+<div class="section" id="section-test">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+    <button onclick="showSection('estudiar')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:20px">←</button>
+    <h1 class="page-title" id="test-titulo" style="margin:0">Test</h1>
+  </div>
+  <div id="test-content"></div>
+</div>
+
+<!-- ═══ CALENDARIO ═══ -->
+<div class="section" id="section-calendario">
+  <h1 class="page-title">Mi calendario</h1>
+  <p class="page-sub">Tu agenda personal de clases</p>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
+    <button class="btn-primary" onclick="abrirModalEvento()"><i class="ti ti-plus" style="font-size:15px"></i> Añadir entrada</button>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <div class="cal-nav">
+        <button class="cal-nav-btn" onclick="cambiarMes(-1)">‹</button>
+        <h3 id="cal-titulo">—</h3>
+        <button class="cal-nav-btn" onclick="cambiarMes(1)">›</button>
+      </div>
+      <div class="cal-grid" id="cal-headers">
+        <div class="cal-h">L</div><div class="cal-h">M</div><div class="cal-h">X</div>
+        <div class="cal-h">J</div><div class="cal-h">V</div><div class="cal-h">S</div><div class="cal-h">D</div>
+      </div>
+      <div class="cal-grid" id="cal-days" style="margin-top:4px"></div>
+    </div>
+  </div>
+</div>
+</div><!-- end .main -->
+
+<!-- MODAL EVENTO CALENDARIO -->
+<div class="modal-overlay" id="modal-evento">
+  <div class="modal-box">
+    <div class="modal-title">
+      <span id="modal-evento-title">Nueva entrada</span>
+      <button class="modal-close" onclick="cerrarModalEvento()">×</button>
+    </div>
+    <form id="form-evento" onsubmit="guardarEvento(event)">
+      <label class="field-label">Título / Asignatura</label>
+      <input class="field-input" id="ev-titulo" type="text" placeholder="Ej: Repaso de álgebra" required>
+      <label class="field-label">Asignatura</label>
+      <input class="field-input" id="ev-asignatura" type="text" placeholder="Matemáticas">
+      <label class="field-label">Fecha</label>
+      <input class="field-input" id="ev-fecha" type="date" required>
+      <label class="field-label">Hora de inicio</label>
+      <input class="field-input" id="ev-hora" type="time">
+      <label class="field-label">Duración (minutos)</label>
+      <select class="field-input" id="ev-duracion">
+        <option value="60">60 minutos</option>
+        <option value="90">90 minutos</option>
+        <option value="120">120 minutos</option>
+      </select>
+      <label class="field-label">Notas</label>
+      <textarea class="field-input" id="ev-notas" rows="3" style="resize:vertical" placeholder="Opcional"></textarea>
+      <div class="modal-footer">
+        <button type="button" class="btn-ghost" onclick="cerrarModalEvento()">Cancelar</button>
+        <button type="submit" class="btn-primary">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/config.js"></script>
+<script src="../js/auth.js"></script>
+<script>
+// ============================================================
+// State
+// ============================================================
+let ctx = null; // { session, usuario, alumnoData, profesorData }
+let calMes  = new Date().getMonth();
+let calYear = new Date().getFullYear();
+let calEventos = [];
+let editEventoId = null;
+
+// ============================================================
+// Init
+// ============================================================
+(async () => {
+  ctx = await requireAuth('alumno');
+  if (!ctx) return;
+
+  const { usuario, alumnoData } = ctx;
+  document.getElementById('topbar-name').textContent = usuario.nombre;
+  document.getElementById('avatar-initials').textContent = getInitials(usuario.nombre, usuario.apellidos);
+  document.getElementById('greeting').textContent = 'Hola, ' + usuario.nombre;
+
+  if (alumnoData) {
+    document.getElementById('greeting-sub').textContent =
+      `${nivelLabel(alumnoData.nivel)} · ${(alumnoData.asignaturas||[]).join(', ')} · ${new Date().toLocaleDateString('es-ES',{month:'long',year:'numeric'})}`;
+  }
+
+  await Promise.all([
+    loadDashboard(),
+    checkPendingSessions()
+  ]);
+
+  // Check URL params for email confirmation
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('seccion') === 'sesiones') showSection('sesiones');
+})();
+
+// ============================================================
+// Navigation
+// ============================================================
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  const navEl = document.getElementById('nav-' + id);
+  if (navEl) navEl.classList.add('active');
+  window.scrollTo(0, 0);
+
+  const loaders = {
+    sesiones:   loadSesiones,
+    informes:   loadInformes,
+    profesor:   loadProfesor,
+    estudiar:   loadEstudiar,
+    calendario: loadCalendario,
+  };
+  if (loaders[id]) loaders[id]();
+}
+
+function toggleAvatarMenu() {
+  const m = document.getElementById('avatar-menu');
+  m.style.display = m.style.display === 'block' ? 'none' : 'block';
+}
+document.addEventListener('click', e => {
+  if (!document.getElementById('avatar-btn').contains(e.target))
+    document.getElementById('avatar-menu').style.display = 'none';
+});
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function loadDashboard() {
+  const alumno = ctx.alumnoData;
+  if (!alumno) return;
+
+  const hRest  = parseFloat(alumno.horas_bono_restantes) || 0;
+  const hTotal = parseFloat(alumno.horas_bono_total) || 0;
+  const pct    = hTotal > 0 ? Math.round((hRest / hTotal) * 100) : 0;
+  const hUsed  = hTotal - hRest;
+
+  document.getElementById('kpi-horas-rest').textContent = hRest.toFixed(1) + 'h';
+  document.getElementById('kpi-bono-total').textContent = `de ${hTotal}h contratadas`;
+  const barColor = hRest <= 2 ? 'var(--red)' : hRest <= 3 ? 'var(--amber)' : 'var(--blue)';
+  document.getElementById('prog-bono').style.width = pct + '%';
+  document.getElementById('prog-bono').style.background = barColor;
+
+  if (hRest <= 3) {
+    const a = document.getElementById('alerta-bono');
+    a.style.display = 'flex';
+    document.getElementById('alerta-bono-txt').textContent =
+      `Quedan ${hRest.toFixed(1)} horas en tu bono. Renueva para no interrumpir las clases.`;
+    document.getElementById('alerta-bono-btn').href =
+      `https://wa.me/${WHATSAPP_MANU}?text=Hola%20Manu%2C%20quiero%20renovar%20el%20bono%20de%20${encodeURIComponent(ctx.usuario.nombre)}.`;
+  }
+
+  // Sesiones este mes
+  const now = new Date();
+  const mesInicio = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const { data: sesionesMes } = await db
+    .from('sesiones')
+    .select('id, duracion_minutos, estado')
+    .eq('alumno_id', alumno.id)
+    .gte('fecha', mesInicio)
+    .in('estado', ['confirmada', 'pendiente_confirmacion']);
+
+  const totalMes = sesionesMes?.length || 0;
+  const horasMes = (sesionesMes || []).reduce((s, x) => s + (x.duracion_minutos / 60), 0);
+  document.getElementById('kpi-sesiones-mes').textContent = totalMes;
+  document.getElementById('kpi-sesiones-sub').textContent = `${horasMes.toFixed(1)}h trabajadas`;
+
+  // Próximas clases desde calendario personal
+  const hoy = now.toISOString().split('T')[0];
+  const { data: proximas } = await db
+    .from('calendario_alumno')
+    .select('*')
+    .eq('alumno_id', alumno.id)
+    .gte('fecha', hoy)
+    .order('fecha', { ascending: true })
+    .order('hora_inicio', { ascending: true })
+    .limit(3);
+
+  const proxEl = document.getElementById('proximas-clases');
+  if (!proximas || proximas.length === 0) {
+    proxEl.innerHTML = `<div class="empty-state"><i class="ti ti-calendar"></i><p>Sin clases programadas</p></div>`;
+    document.getElementById('kpi-proxima-fecha').textContent = '—';
+    document.getElementById('kpi-proxima-sub').textContent = 'Sin clases programadas';
+  } else {
+    const p = proximas[0];
+    const dp = new Date(p.fecha + 'T00:00:00');
+    const diff = Math.ceil((dp - now) / 86400000);
+    document.getElementById('kpi-proxima-fecha').textContent = formatShortDate(p.fecha);
+    document.getElementById('kpi-proxima-sub').textContent =
+      (p.hora_inicio ? formatTime(p.hora_inicio) + 'h · ' : '') + p.duracion_minutos + ' min' +
+      (diff === 0 ? ' · Hoy' : diff === 1 ? ' · Mañana' : '');
+
+    proxEl.innerHTML = proximas.map(c => {
+      const dc = new Date(c.fecha + 'T00:00:00');
+      const df = Math.ceil((dc - now) / 86400000);
+      const lbl = df === 0 ? 'Hoy' : df === 1 ? 'Mañana' : `En ${df} días`;
+      return `
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:.5px solid var(--border2)">
+          <div style="width:36px;height:36px;border-radius:8px;background:#0f2240;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0">
+            <div style="color:var(--blue);font-size:12px;font-weight:500;line-height:1">${dc.getDate().toString().padStart(2,'0')}</div>
+            <div style="color:var(--muted);font-size:9px">${dc.toLocaleDateString('es-ES',{month:'short'}).toUpperCase()}</div>
+          </div>
+          <div style="flex:1">
+            <div style="color:#fff;font-size:12px;font-weight:500">${c.asignatura || c.titulo}</div>
+            <div style="color:var(--muted);font-size:11px">${c.hora_inicio ? formatTime(c.hora_inicio) + 'h · ' : ''}${c.duracion_minutos} min${c.profesor_nombre ? ' · ' + c.profesor_nombre : ''}</div>
+          </div>
+          <span style="color:var(--blue);font-size:11px;font-weight:500">${lbl}</span>
+        </div>
+      `;
+    }).join('');
+    if (proximas.length < 3) proxEl.innerHTML += '<div style="border-bottom:none"></div>';
+  }
+
+  // Bono card
+  document.getElementById('bono-card').innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+      <div>
+        <div style="color:var(--muted);font-size:10px;margin-bottom:3px">Bono activo</div>
+        <div style="color:#fff;font-size:13px;font-weight:500">Bono ${hTotal}h</div>
+      </div>
+      <div style="text-align:right">
+        <div style="color:var(--muted);font-size:10px;margin-bottom:3px">Consumido</div>
+        <div style="color:${barColor};font-size:13px;font-weight:500">${(100-pct)}%</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px">
+      <span>${hUsed.toFixed(1)}h consumidas</span><b style="color:#fff">${hRest.toFixed(1)}h restantes</b>
+    </div>
+    <div class="prog-bg"><div class="prog-bar" style="width:${100-pct}%;background:${barColor}"></div></div>
+    ${hRest <= 3 ? `
+    <div style="margin-top:12px;background:#1a0a00;border:.5px solid var(--amber);border-radius:7px;padding:9px 11px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div style="color:#e8c080;font-size:11px">Quedan ${hRest.toFixed(1)}h — renueva para no interrumpir</div>
+      <a href="https://wa.me/${WHATSAPP_MANU}?text=Hola%20Manu%2C%20quiero%20renovar%20el%20bono%20de%20${encodeURIComponent(ctx.usuario.nombre)}." target="_blank" style="background:var(--amber);color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:11px;font-weight:500;text-decoration:none;white-space:nowrap">Renovar ↗</a>
+    </div>` : ''}
+  `;
+
+  // Informes recientes
+  const { data: informes } = await db
+    .from('informes')
+    .select('*')
+    .eq('alumno_id', alumno.id)
+    .eq('visible', true)
+    .order('created_at', { ascending: false })
+    .limit(3);
+
+  const infEl = document.getElementById('informes-recientes');
+  if (!informes || informes.length === 0) {
+    infEl.innerHTML = `<div class="empty-state"><i class="ti ti-file-off"></i><p>Sin informes disponibles</p></div>`;
+  } else {
+    infEl.innerHTML = informes.map(inf => `
+      <div class="inf-row" onclick="${inf.archivo_url ? `window.open('${inf.archivo_url}','_blank')` : ''}">
+        <div class="inf-ico ${inf.tipo === 'mensual' ? 'm' : 's'}">
+          <i class="ti ${inf.tipo === 'mensual' ? 'ti-report-analytics' : 'ti-report'}"></i>
+        </div>
+        <div style="flex:1">
+          <div class="inf-name">${inf.titulo}</div>
+          <div class="inf-sub">${formatShortDate(inf.fecha)}</div>
+        </div>
+        <span class="pill pill-new">${inf.tipo === 'mensual' ? 'Mensual' : 'Semanal'}</span>
+        ${inf.archivo_url ? `<div class="dl" style="margin-left:8px"><i class="ti ti-download"></i></div>` : ''}
+      </div>
+    `).join('');
+  }
+
+  // Evolución (medias de valoraciones de sesiones confirmadas)
+  const { data: valSesiones } = await db
+    .from('sesiones')
+    .select('valoracion_comprension, valoracion_aplicacion, valoracion_motivacion')
+    .eq('alumno_id', alumno.id)
+    .eq('estado', 'confirmada')
+    .order('fecha', { ascending: false })
+    .limit(8);
+
+  const evEl = document.getElementById('evolucion-mes');
+  if (!valSesiones || valSesiones.length === 0) {
+    evEl.innerHTML = `<div class="empty-state"><i class="ti ti-chart-off"></i><p>Sin datos de evolución todavía</p></div>`;
+  } else {
+    const avg = arr => arr.filter(Boolean).reduce((a, b) => a + b, 0) / (arr.filter(Boolean).length || 1);
+    const comp  = avg(valSesiones.map(s => s.valoracion_comprension)).toFixed(1);
+    const motiv = avg(valSesiones.map(s => s.valoracion_motivacion)).toFixed(1);
+    const aplic = avg(valSesiones.map(s => s.valoracion_aplicacion)).toFixed(1);
+    const metrics = [
+      { label:'Comprensión', val: comp,  color:'var(--blue)',  pct: comp*10 },
+      { label:'Motivación',  val: motiv, color:'var(--green)', pct: motiv*10 },
+      { label:'Aplicación',  val: aplic, color:'var(--amber)', pct: aplic*10 },
+    ];
+    evEl.innerHTML = metrics.map(m => `
+      <div class="ev-row">
+        <div class="ev-label">${m.label}</div>
+        <div class="ev-bar-bg"><div class="ev-bar" style="width:${m.pct}%;background:${m.color}"></div></div>
+        <div class="ev-num">${m.val}</div>
+      </div>
+    `).join('');
+  }
+}
+
+async function checkPendingSessions() {
+  if (!ctx.alumnoData) return;
+  const { data } = await db
+    .from('sesiones')
+    .select('id')
+    .eq('alumno_id', ctx.alumnoData.id)
+    .eq('estado', 'pendiente_confirmacion');
+  const count = data?.length || 0;
+  if (count > 0) {
+    document.getElementById('badge-sesiones').style.display = 'inline-block';
+    document.getElementById('badge-sesiones').textContent = count;
+    const a = document.getElementById('alerta-sesiones');
+    a.style.display = 'flex';
+    document.getElementById('alerta-sesiones-txt').textContent =
+      `Tienes ${count} sesión${count > 1 ? 'es' : ''} pendiente${count > 1 ? 's' : ''} de confirmar.`;
+  }
+}
+
+// ============================================================
+// SESIONES
+// ============================================================
+async function loadSesiones() {
+  if (!ctx.alumnoData) return;
+  const alumnoId = ctx.alumnoData.id;
+
+  const { data: pendientes } = await db
+    .from('sesiones')
+    .select('*, profesor:profesores(usuario:usuarios(nombre, apellidos))')
+    .eq('alumno_id', alumnoId)
+    .eq('estado', 'pendiente_confirmacion')
+    .order('fecha', { ascending: false });
+
+  const pendEl = document.getElementById('sesiones-pendientes-list');
+  if (!pendientes || pendientes.length === 0) {
+    pendEl.innerHTML = '';
+  } else {
+    pendEl.innerHTML = `
+      <div class="card" style="margin-bottom:16px;border-color:var(--amber)">
+        <div class="card-head" style="border-bottom-color:var(--amber)">
+          <div class="card-title" style="color:var(--amber)"><i class="ti ti-bell" style="color:var(--amber)"></i> Sesiones pendientes de confirmar</div>
+        </div>
+        ${pendientes.map(s => {
+          const prof = s.profesor?.usuario;
+          return `
+            <div class="ses-pend-row">
+              <div class="ses-info">
+                <div class="ses-title">${s.asignatura} · ${prof ? prof.nombre + ' ' + prof.apellidos : 'Tu profesor'}</div>
+                <div class="ses-sub">${formatDate(s.fecha)}${s.hora_inicio ? ' · ' + formatTime(s.hora_inicio) + 'h' : ''} · ${s.duracion_minutos} min${s.contenido_trabajado ? ' · ' + s.contenido_trabajado : ''}</div>
+              </div>
+              <button class="btn-reject" onclick="procesarSesion('${s.id}','rechazar')"><i class="ti ti-x"></i> No asistí</button>
+              <button class="btn-confirm" onclick="procesarSesion('${s.id}','confirmar')"><i class="ti ti-check"></i> Confirmar</button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  }
+
+  const { data: historial } = await db
+    .from('sesiones')
+    .select('*, profesor:profesores(usuario:usuarios(nombre, apellidos))')
+    .eq('alumno_id', alumnoId)
+    .not('estado', 'eq', 'pendiente_confirmacion')
+    .order('fecha', { ascending: false })
+    .limit(20);
+
+  const histEl = document.getElementById('sesiones-historial');
+  if (!historial || historial.length === 0) {
+    histEl.innerHTML = `<div class="empty-state"><i class="ti ti-history"></i><p>Sin historial de sesiones</p></div>`;
+    return;
+  }
+
+  const statusMap = {
+    confirmada: ['st-ok','Confirmada'], rechazada:['st-red','Rechazada'], cancelada:['st-grey','Cancelada']
+  };
+
+  histEl.innerHTML = `<table style="width:100%;border-collapse:collapse">
+    <thead><tr>
+      <th style="text-align:left;padding:10px 14px;color:var(--muted);font-size:10px;font-weight:500;text-transform:uppercase;border-bottom:.5px solid var(--border)">Fecha</th>
+      <th style="text-align:left;padding:10px 14px;color:var(--muted);font-size:10px;font-weight:500;text-transform:uppercase;border-bottom:.5px solid var(--border)">Asignatura</th>
+      <th style="text-align:left;padding:10px 14px;color:var(--muted);font-size:10px;font-weight:500;text-transform:uppercase;border-bottom:.5px solid var(--border)">Duración</th>
+      <th style="text-align:left;padding:10px 14px;color:var(--muted);font-size:10px;font-weight:500;text-transform:uppercase;border-bottom:.5px solid var(--border)">Estado</th>
+    </tr></thead>
+    <tbody>
+      ${historial.map(s => {
+        const [cls, txt] = statusMap[s.estado] || ['st-grey', s.estado];
+        return `<tr>
+          <td style="padding:11px 14px;border-bottom:.5px solid var(--border2);font-size:12px">${formatShortDate(s.fecha)}</td>
+          <td style="padding:11px 14px;border-bottom:.5px solid var(--border2);font-size:12px;color:#fff">${s.asignatura}</td>
+          <td style="padding:11px 14px;border-bottom:.5px solid var(--border2);font-size:12px">${s.duracion_minutos} min</td>
+          <td style="padding:11px 14px;border-bottom:.5px solid var(--border2)"><span class="status-pill ${cls}">${txt}</span></td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+async function procesarSesion(sesionId, accion) {
+  const { data, error } = await db.rpc('confirmar_sesion_alumno', {
+    p_session_id: sesionId,
+    p_action: accion
+  });
+  if (error || !data?.success) {
+    showToast(data?.error || 'Error al procesar la sesión', 'error'); return;
+  }
+  showToast(accion === 'confirmar' ? '✓ Sesión confirmada. Horas descontadas del bono.' : '✓ Sesión rechazada. El profesor será notificado.');
+  await checkPendingSessions();
+  await loadSesiones();
+  await loadDashboard();
+}
+
+// ============================================================
+// INFORMES
+// ============================================================
+async function loadInformes() {
+  if (!ctx.alumnoData) return;
+  const { data: informes } = await db
+    .from('informes')
+    .select('*')
+    .eq('alumno_id', ctx.alumnoData.id)
+    .eq('visible', true)
+    .order('fecha', { ascending: false });
+
+  const mensuales = (informes || []).filter(i => i.tipo === 'mensual');
+  const semanales = (informes || []).filter(i => i.tipo === 'semanal');
+
+  const renderList = items => items.length === 0
+    ? `<div class="empty-state"><i class="ti ti-file-off"></i><p>Sin informes disponibles</p></div>`
+    : items.map(inf => `
+        <div class="inf-row" onclick="${inf.archivo_url ? `window.open('${inf.archivo_url}','_blank')` : ''}">
+          <div class="inf-ico ${inf.tipo === 'mensual' ? 'm' : 's'}">
+            <i class="ti ${inf.tipo === 'mensual' ? 'ti-report-analytics' : 'ti-report'}"></i>
+          </div>
+          <div style="flex:1">
+            <div class="inf-name">${inf.titulo}</div>
+            <div class="inf-sub">${formatDate(inf.fecha)}</div>
+          </div>
+          ${inf.archivo_url ? `
+            <div class="dl"><i class="ti ti-download"></i></div>
+          ` : '<span style="color:var(--muted);font-size:11px">Sin archivo</span>'}
+        </div>
+      `).join('');
+
+  document.getElementById('informes-mensuales').innerHTML = renderList(mensuales);
+  document.getElementById('informes-semanales').innerHTML = renderList(semanales);
+}
+
+// ============================================================
+// MI PROFESOR
+// ============================================================
+async function loadProfesor() {
+  if (!ctx.alumnoData?.profesor_id) {
+    document.getElementById('profesor-content').innerHTML =
+      `<div class="empty-state"><i class="ti ti-user-off"></i><p>Aún no tienes un profesor asignado.<br>Contacta con Nexo para más información.</p></div>`;
+    return;
+  }
+
+  const { data: prof } = await db
+    .from('profesores')
+    .select('*, usuario:usuarios(nombre, apellidos, email)')
+    .eq('id', ctx.alumnoData.profesor_id)
+    .single();
+
+  if (!prof) return;
+  const u = prof.usuario;
+  const initials = getInitials(u.nombre, u.apellidos);
+
+  // Count sessions together
+  const { count: sesCnt } = await db
+    .from('sesiones')
+    .select('id', { count: 'exact', head: true })
+    .eq('alumno_id', ctx.alumnoData.id)
+    .eq('profesor_id', prof.id)
+    .eq('estado', 'confirmada');
+
+  const totalH = ((sesCnt || 0) * (ctx.alumnoData.horas_bono_total / Math.max(sesCnt || 1, 1))).toFixed(0);
+
+  document.getElementById('profesor-content').innerHTML = `
+    <div class="card" style="margin-bottom:16px">
+      <div class="profe-card">
+        <div class="profe-av">${initials}</div>
+        <div style="flex:1">
+          <div class="profe-name">${u.nombre} ${u.apellidos}</div>
+          <div class="profe-det">${prof.estudios || 'Profesor'} · ${prof.zona || 'Valencia'}</div>
+          <div class="profe-tags">
+            ${(prof.especialidades || []).map(e => `<span class="tag tag-b">${e}</span>`).join('')}
+            ${prof.nivel_max ? `<span class="tag tag-g">Hasta ${nivelLabel(prof.nivel_max)}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title"><i class="ti ti-info-circle"></i> Información</div></div>
+      <div class="card-body" style="padding:8px 16px">
+        <div class="ev-row"><div class="ev-label">Asignatura</div><b style="color:#fff;font-size:12px">${(ctx.alumnoData.asignaturas||[]).join(', ') || '—'}</b></div>
+        <div class="ev-row"><div class="ev-label">Horario habitual</div><b style="color:#fff;font-size:12px">${ctx.alumnoData.horario_habitual || '—'}</b></div>
+        <div class="ev-row"><div class="ev-label">Modalidad</div><b style="color:#fff;font-size:12px">${ctx.alumnoData.modalidad === 'presencial' ? 'Presencial a domicilio' : 'Online'}</b></div>
+        <div class="ev-row"><div class="ev-label">Sesiones juntos</div><b style="color:#fff;font-size:12px">${sesCnt || 0} sesiones confirmadas</b></div>
+        <div class="ev-row"><div class="ev-label">Desde</div><b style="color:#fff;font-size:12px">${formatDate(ctx.alumnoData.fecha_inicio)}</b></div>
+      </div>
+    </div>
+    <div style="margin-top:16px;background:#0a1a30;border:.5px solid var(--border);border-left:3px solid var(--blue);border-radius:0 8px 8px 0;padding:12px 16px">
+      <div style="color:var(--muted);font-size:11px;margin-bottom:4px">¿Algún problema o quieres hacer un cambio?</div>
+      <a href="https://wa.me/${WHATSAPP_MANU}?text=Hola%20Manu%2C%20tengo%20una%20consulta%20sobre%20mi%20profesor." target="_blank" style="color:var(--blue);font-size:12px;font-weight:500;text-decoration:none">Contactar con Nexo ↗</a>
+    </div>
+  `;
+}
+
+// ============================================================
+// ESTUDIAR
+// ============================================================
+async function loadEstudiar() {
+  if (!ctx.alumnoData) return;
+  const alumno = ctx.alumnoData;
+
+  // Get material assigned to this student
+  const { data: matAlumno } = await db
+    .from('material_alumno')
+    .select('material_id')
+    .eq('alumno_id', alumno.id);
+
+  const matIds = (matAlumno || []).map(m => m.material_id);
+
+  let query = db.from('material').select('*').eq('visible', true);
+  if (matIds.length > 0) {
+    query = query.or(`id.in.(${matIds.join(',')}),nivel.eq.todos,nivel.eq.${alumno.nivel}`);
+  } else {
+    query = query.or(`nivel.eq.todos,nivel.eq.${alumno.nivel}`);
+  }
+
+  const { data: material } = await query.order('asignatura').order('bloque_tema');
+
+  // Group by asignatura
+  const byAsig = {};
+  (material || []).forEach(m => {
+    const k = m.asignatura || 'General';
+    if (!byAsig[k]) byAsig[k] = [];
+    byAsig[k].push(m);
+  });
+
+  // Also fetch tests
+  const { data: tests } = await db
+    .from('tests')
+    .select('*, resultado:resultados_test(nota)')
+    .eq('visible', true)
+    .eq('nivel', alumno.nivel);
+
+  const byAsigTests = {};
+  (tests || []).forEach(t => {
+    const k = t.asignatura || 'General';
+    if (!byAsigTests[k]) byAsigTests[k] = [];
+    byAsigTests[k].push(t);
+  });
+
+  const colors = ['#154ca9','#1a7f5e','#7c3aed','#b45309','#0891b2','#9d174d'];
+  const icons  = ['ti-math-function','ti-atom','ti-shape','ti-chart-bar','ti-trending-up','ti-microscope','ti-language','ti-globe'];
+  const allAsigs = [...new Set([...Object.keys(byAsig), ...Object.keys(byAsigTests)])];
+  document.getElementById('estudiar-sub').textContent =
+    `Material y tests · ${allAsigs.length} asignaturas disponibles`;
+
+  if (allAsigs.length === 0) {
+    document.getElementById('estudiar-asignaturas').innerHTML =
+      `<div class="empty-state"><i class="ti ti-book-off"></i><p>Sin material disponible por el momento</p></div>`;
+    return;
+  }
+
+  document.getElementById('estudiar-asignaturas').innerHTML = `
+    <div class="asig-grid">
+      ${allAsigs.map((asig, i) => {
+        const nMat = (byAsig[asig] || []).length;
+        const nTest = (byAsigTests[asig] || []).length;
+        return `
+          <div class="asig-card" onclick="mostrarDetalle('${encodeURIComponent(asig)}')">
+            <div class="asig-icon" style="background:${colors[i % colors.length]}">
+              <i class="ti ${icons[i % icons.length]}"></i>
+            </div>
+            <div class="asig-name">${asig}</div>
+            <div class="asig-det">${nMat} recurso${nMat !== 1 ? 's' : ''} · ${nTest} test${nTest !== 1 ? 's' : ''}</div>
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+
+  window._estudiarData = { byAsig, byAsigTests };
+}
+
+function mostrarDetalle(asigEnc) {
+  const asig = decodeURIComponent(asigEnc);
+  const { byAsig, byAsigTests } = window._estudiarData || {};
+  const material = byAsig?.[asig] || [];
+  const tests    = byAsigTests?.[asig] || [];
+
+  document.getElementById('detalle-titulo').textContent = asig;
+  document.getElementById('estudiar-asignaturas').style.display = 'none';
+  document.getElementById('estudiar-detalle').style.display = 'block';
+
+  const tipoIcon = t => ({pdf:'ti-file-text',test:'ti-player-play',recurso:'ti-layout-grid'}[t] || 'ti-file');
+  const tipoBadge = t => ({pdf:'badge-pdf PDF',test:'badge-test Test',recurso:'badge-pdf Recurso'}[t] || 'badge-pdf Recurso');
+
+  document.getElementById('detalle-material').innerHTML = `
+    ${material.length > 0 ? `
+      <div class="card">
+        <div class="card-head"><div class="card-title"><i class="ti ti-files"></i> Material disponible</div></div>
+        ${material.map(m => {
+          const [badgeCls, badgeTxt] = tipoBadge(m.tipo).split(' ');
+          return `
+            <div class="recurso-row" onclick="${m.archivo_url ? `window.open('${m.archivo_url}','_blank')` : ''}">
+              <div class="recurso-ico" style="background:#0f2240">
+                <i class="ti ${tipoIcon(m.tipo)}" style="color:var(--blue);font-size:17px"></i>
+              </div>
+              <div style="flex:1">
+                <div class="recurso-name">${m.titulo}</div>
+                <div class="recurso-sub">${m.bloque_tema || m.descripcion || ''}</div>
+              </div>
+              <span class="recurso-badge ${badgeCls}">${badgeTxt}</span>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    ` : ''}
+    ${tests.length > 0 ? `
+      <div class="card" style="margin-top:12px">
+        <div class="card-head"><div class="card-title"><i class="ti ti-list-check"></i> Tests</div></div>
+        ${tests.map(t => {
+          const nota = t.resultado?.[0]?.nota;
+          return `
+            <div class="recurso-row" onclick="iniciarTest('${t.id}','${encodeURIComponent(t.titulo)}')">
+              <div class="recurso-ico" style="background:#0d2d1e">
+                <i class="ti ti-player-play" style="color:var(--green);font-size:17px"></i>
+              </div>
+              <div style="flex:1">
+                <div class="recurso-name">${t.titulo}</div>
+                <div class="recurso-sub">${t.bloque_tema || ''}</div>
+              </div>
+              ${nota != null ? `<span class="recurso-badge badge-ok">Nota: ${nota}</span>` : '<span class="recurso-badge badge-test">Nuevo</span>'}
+            </div>
+          `;
+        }).join('')}
+      </div>
+    ` : ''}
+  `;
+}
+
+function volverAsignaturas() {
+  document.getElementById('estudiar-asignaturas').style.display = '';
+  document.getElementById('estudiar-detalle').style.display = 'none';
+}
+
+// ============================================================
+// TESTS
+// ============================================================
+let testState = { testId: null, preguntas: [], respuestas: {}, enviado: false };
+
+async function iniciarTest(testId, tituloEnc) {
+  const titulo = decodeURIComponent(tituloEnc);
+  showSection('test');
+  document.getElementById('test-titulo').textContent = titulo;
+  document.getElementById('test-content').innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+
+  const { data: preguntas } = await db
+    .from('preguntas_test')
+    .select('*')
+    .eq('test_id', testId)
+    .order('orden');
+
+  if (!preguntas || preguntas.length === 0) {
+    document.getElementById('test-content').innerHTML = `<div class="empty-state"><i class="ti ti-question-mark"></i><p>Este test no tiene preguntas todavía</p></div>`;
+    return;
+  }
+
+  testState = { testId, preguntas, respuestas: {}, enviado: false };
+  renderTest();
+}
+
+function renderTest() {
+  const { preguntas, respuestas, enviado } = testState;
+  const content = document.getElementById('test-content');
+  const respondidas = Object.keys(respuestas).length;
+
+  content.innerHTML = `
+    <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <span style="color:var(--muted);font-size:13px">${respondidas} de ${preguntas.length} respondidas</span>
+      ${!enviado && respondidas === preguntas.length ? `<button class="btn-primary" onclick="enviarTest()"><i class="ti ti-send"></i> Enviar test</button>` : ''}
+    </div>
+    ${preguntas.map((p, i) => `
+      <div class="test-pregunta" id="preg-${p.id}">
+        <div class="test-enunciado">${i+1}. ${p.enunciado}</div>
+        <div class="test-opciones">
+          ${['a','b','c','d'].map(op => `
+            <label class="test-opcion ${respuestas[p.id] === op ? 'selected' : ''} ${enviado ? (op === p.respuesta_correcta ? 'correct' : respuestas[p.id] === op ? 'wrong' : '') : ''}">
+              <input type="radio" name="p_${p.id}" value="${op}" ${respuestas[p.id] === op ? 'checked' : ''} ${enviado ? 'disabled' : ''} onchange="seleccionarRespuesta('${p.id}','${op}')">
+              <span class="test-opcion-txt"><b style="color:var(--blue)">${op.toUpperCase()})</b> ${p['opcion_' + op]}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `).join('')}
+    ${enviado ? '' : respondidas === preguntas.length ? `<div style="text-align:right;margin-top:16px"><button class="btn-primary" onclick="enviarTest()"><i class="ti ti-send"></i> Enviar test</button></div>` : ''}
+  `;
+}
+
+function seleccionarRespuesta(pregId, opcion) {
+  if (testState.enviado) return;
+  testState.respuestas[pregId] = opcion;
+  renderTest();
+}
+
+async function enviarTest() {
+  const { testId, preguntas, respuestas } = testState;
+  let correctas = 0;
+  preguntas.forEach(p => { if (respuestas[p.id] === p.respuesta_correcta) correctas++; });
+  const nota = parseFloat((correctas / preguntas.length * 10).toFixed(2));
+  testState.enviado = true;
+
+  await db.from('resultados_test').upsert({
+    test_id: testId,
+    alumno_id: ctx.alumnoData.id,
+    respuestas: respuestas,
+    nota: nota
+  }, { onConflict: 'test_id,alumno_id' });
+
+  renderTest();
+
+  // Append result summary
+  const content = document.getElementById('test-content');
+  const resultDiv = document.createElement('div');
+  resultDiv.style.cssText = 'background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:24px;text-align:center;margin-top:16px';
+  resultDiv.innerHTML = `
+    <div style="font-size:40px;font-weight:700;color:${nota >= 5 ? 'var(--green)' : 'var(--red)'};margin-bottom:8px">${nota}</div>
+    <div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:4px">${nota >= 9 ? '¡Excelente!' : nota >= 7 ? '¡Muy bien!' : nota >= 5 ? 'Aprobado' : 'Sigue practicando'}</div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:20px">${correctas} de ${preguntas.length} respuestas correctas</div>
+    <button class="btn-primary" onclick="showSection('estudiar')">← Volver a Estudiar</button>
+  `;
+  content.prepend(resultDiv);
+  window.scrollTo(0, 0);
+}
+
+// ============================================================
+// CALENDARIO
+// ============================================================
+async function loadCalendario() {
+  await renderCalendario();
+}
+
+async function renderCalendario() {
+  if (!ctx.alumnoData) return;
+  const { data: eventos } = await db
+    .from('calendario_alumno')
+    .select('*')
+    .eq('alumno_id', ctx.alumnoData.id)
+    .gte('fecha', new Date(calYear, calMes, 1).toISOString().split('T')[0])
+    .lte('fecha', new Date(calYear, calMes + 1, 0).toISOString().split('T')[0]);
+
+  calEventos = eventos || [];
+
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  document.getElementById('cal-titulo').textContent = `${meses[calMes]} ${calYear}`;
+
+  const primerDia = new Date(calYear, calMes, 1).getDay();
+  const offset = primerDia === 0 ? 6 : primerDia - 1;
+  const totalDias = new Date(calYear, calMes + 1, 0).getDate();
+  const hoy = new Date().toISOString().split('T')[0];
+
+  const evByDay = {};
+  calEventos.forEach(e => {
+    if (!evByDay[e.fecha]) evByDay[e.fecha] = [];
+    evByDay[e.fecha].push(e);
+  });
+
+  let html = '';
+  // Offset days
+  for (let i = 0; i < offset; i++) {
+    const prevDia = new Date(calYear, calMes, -offset + i + 1);
+    html += `<div class="cal-day other"><div class="cal-num">${prevDia.getDate()}</div></div>`;
+  }
+  for (let d = 1; d <= totalDias; d++) {
+    const dateStr = `${calYear}-${String(calMes+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday = dateStr === hoy;
+    const evs = evByDay[dateStr] || [];
+    const evColors = ['ev-blue','ev-green','ev-amber'];
+    html += `<div class="cal-day${isToday ? ' today' : ''}${evs.length ? ' has-event' : ''}" onclick="clickDia('${dateStr}')">
+      <div class="cal-num">${d}</div>
+      ${evs.slice(0,2).map((e,i) => `<div class="cal-ev ${evColors[i%3]}">${e.asignatura || e.titulo}</div>`).join('')}
+      ${evs.length > 2 ? `<div style="font-size:8px;color:var(--muted);margin-top:1px">+${evs.length-2} más</div>` : ''}
+    </div>`;
+  }
+
+  document.getElementById('cal-days').innerHTML = html;
+}
+
+function cambiarMes(delta) {
+  calMes += delta;
+  if (calMes > 11) { calMes = 0; calYear++; }
+  if (calMes < 0)  { calMes = 11; calYear--; }
+  renderCalendario();
+}
+
+function clickDia(dateStr) {
+  const evs = calEventos.filter(e => e.fecha === dateStr);
+  if (evs.length > 0) {
+    // Show events for that day
+    const evHtml = evs.map(e => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:.5px solid var(--border2)">
+        <div>
+          <div style="color:#fff;font-size:13px;font-weight:500">${e.titulo}</div>
+          <div style="color:var(--muted);font-size:11px">${e.asignatura || ''}${e.hora_inicio ? ' · ' + formatTime(e.hora_inicio) + 'h' : ''} · ${e.duracion_minutos} min</div>
+          ${e.notas ? `<div style="color:var(--muted);font-size:11px;margin-top:2px">${e.notas}</div>` : ''}
+        </div>
+        <button onclick="eliminarEvento('${e.id}')" style="background:var(--red-lt);color:var(--red);border:.5px solid var(--red);border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit">Borrar</button>
+      </div>
+    `).join('');
+    document.getElementById('modal-evento-title').textContent = formatDate(dateStr);
+    document.getElementById('form-evento').style.display = 'none';
+    const existingList = document.getElementById('modal-ev-list');
+    if (existingList) existingList.remove();
+    const list = document.createElement('div');
+    list.id = 'modal-ev-list';
+    list.innerHTML = evHtml + `<div style="margin-top:16px;text-align:right"><button class="btn-ghost" onclick="prepararNuevoEvento('${dateStr}')"><i class="ti ti-plus"></i> Añadir</button></div>`;
+    document.querySelector('#modal-evento .modal-box').appendChild(list);
+    document.getElementById('modal-evento').classList.add('open');
+  } else {
+    prepararNuevoEvento(dateStr);
+  }
+}
+
+function prepararNuevoEvento(dateStr) {
+  const list = document.getElementById('modal-ev-list');
+  if (list) list.remove();
+  document.getElementById('form-evento').style.display = 'block';
+  document.getElementById('modal-evento-title').textContent = 'Nueva entrada';
+  document.getElementById('ev-fecha').value = dateStr;
+  editEventoId = null;
+  document.getElementById('modal-evento').classList.add('open');
+}
+
+function abrirModalEvento() {
+  document.getElementById('form-evento').reset();
+  const list = document.getElementById('modal-ev-list');
+  if (list) list.remove();
+  document.getElementById('form-evento').style.display = 'block';
+  document.getElementById('modal-evento-title').textContent = 'Nueva entrada';
+  editEventoId = null;
+  document.getElementById('modal-evento').classList.add('open');
+}
+
+function cerrarModalEvento() {
+  document.getElementById('modal-evento').classList.remove('open');
+  document.getElementById('form-evento').reset();
+  const list = document.getElementById('modal-ev-list');
+  if (list) list.remove();
+  document.getElementById('form-evento').style.display = 'block';
+}
+
+async function guardarEvento(e) {
+  e.preventDefault();
+  const ev = {
+    alumno_id:        ctx.alumnoData.id,
+    titulo:           document.getElementById('ev-titulo').value,
+    asignatura:       document.getElementById('ev-asignatura').value || null,
+    fecha:            document.getElementById('ev-fecha').value,
+    hora_inicio:      document.getElementById('ev-hora').value || null,
+    duracion_minutos: parseInt(document.getElementById('ev-duracion').value),
+    notas:            document.getElementById('ev-notas').value || null,
+  };
+
+  const { error } = editEventoId
+    ? await db.from('calendario_alumno').update(ev).eq('id', editEventoId)
+    : await db.from('calendario_alumno').insert(ev);
+
+  if (error) { showToast('Error al guardar', 'error'); return; }
+  showToast('Entrada guardada');
+  cerrarModalEvento();
+  await renderCalendario();
+}
+
+async function eliminarEvento(id) {
+  await db.from('calendario_alumno').delete().eq('id', id);
+  showToast('Entrada eliminada');
+  cerrarModalEvento();
+  await renderCalendario();
+}
+</script>
+<style>
+.status-pill{font-size:10px;padding:2px 9px;border-radius:20px;font-weight:500}
+.st-ok{background:var(--green-lt);color:var(--green)}
+.st-pend{background:var(--amber-lt);color:var(--amber)}
+.st-red{background:var(--red-lt);color:var(--red)}
+.st-grey{background:var(--border2);color:var(--muted)}
+</style>
+</body>
+</html>
