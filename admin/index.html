@@ -359,55 +359,6 @@
 
 <!-- ═══════════════════════════════ MODALES ═══════════════════════════════ -->
 
-<!-- MODAL ALUMNO (solo creación) -->
-<div class="modal-overlay" id="modal-alumno">
-  <div class="modal-box" style="max-width:640px">
-    <div class="modal-title"><span>Nuevo alumno</span><button class="modal-close" onclick="cerrarModal('modal-alumno')">×</button></div>
-    <form id="form-alumno" onsubmit="guardarAlumno(event)">
-      <div class="fi-grid2">
-        <div><label class="fl">Nombre *</label><input class="fi" id="a-nombre" required></div>
-        <div><label class="fl">Apellidos *</label><input class="fi" id="a-apellidos" required></div>
-      </div>
-      <label class="fl">Email *</label><input class="fi" id="a-email" type="email" required>
-      <label class="fl">Contraseña inicial * <span style="color:var(--muted);font-size:10px">— se puede cambiar después desde la ficha</span></label>
-      <input class="fi" id="a-password" type="text" placeholder="nexo2025AB" required>
-      <div class="fi-grid2">
-        <div>
-          <label class="fl">Nivel *</label>
-          <select class="fi" id="a-nivel" required>
-            <option value="">—</option>
-            <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
-            <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
-            <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
-          </select>
-        </div>
-        <div>
-          <label class="fl">Modalidad</label>
-          <select class="fi" id="a-modalidad">
-            <option value="presencial">Presencial</option>
-            <option value="online">Online</option>
-          </select>
-        </div>
-      </div>
-      <div class="fi-grid2">
-        <div><label class="fl">Teléfono familia</label><input class="fi" id="a-telefono" type="tel" placeholder="600 000 000"></div>
-        <div><label class="fl">Fecha inicio</label><input class="fi" id="a-fecha-inicio" type="date"></div>
-      </div>
-      <label class="fl">Horario habitual</label>
-      <input class="fi" id="a-horario" placeholder="Lunes y Miércoles 17:00h">
-      <label class="fl">Dirección</label>
-      <input class="fi" id="a-direccion">
-      <label class="fl">Asignaturas de repaso</label>
-      <div id="modal-alumno-asig-list" style="margin-top:4px"></div>
-      <label class="fl">Observaciones</label>
-      <textarea class="fi" id="a-observaciones" rows="2" placeholder="Notas internas..."></textarea>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-alumno')">Cancelar</button>
-        <button type="submit" class="btn-primary" id="btn-guardar-alumno"><i class="ti ti-check"></i> Crear alumno</button>
-      </div>
-    </form>
-  </div>
-</div>
 
 <!-- MODAL INFORME -->
 <div class="modal-overlay" id="modal-informe">
@@ -436,47 +387,6 @@
   </div>
 </div>
 
-<!-- MODAL PROFESOR (solo creación) -->
-<div class="modal-overlay" id="modal-profesor">
-  <div class="modal-box" style="max-width:640px">
-    <div class="modal-title"><span>Nuevo profesor</span><button class="modal-close" onclick="cerrarModal('modal-profesor')">×</button></div>
-    <form id="form-profesor" onsubmit="guardarProfesor(event)">
-      <div class="fi-grid2">
-        <div><label class="fl">Nombre *</label><input class="fi" id="p-nombre" required></div>
-        <div><label class="fl">Apellidos *</label><input class="fi" id="p-apellidos" required></div>
-      </div>
-      <label class="fl">Email *</label><input class="fi" id="p-email" type="email" required>
-      <label class="fl">Contraseña inicial * <span style="color:var(--muted);font-size:10px">— se puede cambiar después desde la ficha</span></label>
-      <input class="fi" id="p-password" type="text" placeholder="nexo2025CM" required>
-      <div class="fi-grid2">
-        <div><label class="fl">Teléfono</label><input class="fi" id="p-telefono" type="tel" placeholder="600 000 000"></div>
-        <div><label class="fl">Zona</label><input class="fi" id="p-zona" placeholder="Valencia Norte"></div>
-      </div>
-      <label class="fl">Estudios</label>
-      <input class="fi" id="p-estudios" placeholder="Ingeniería Industrial · UPV">
-      <div class="fi-grid2">
-        <div>
-          <label class="fl">Nivel máximo</label>
-          <select class="fi" id="p-nivel-max">
-            <option value="">—</option>
-            <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
-            <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
-            <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
-          </select>
-        </div>
-        <div><label class="fl">Fecha inicio</label><input class="fi" id="p-fecha-inicio" type="date"></div>
-      </div>
-      <label class="fl">Asignaturas que imparte</label>
-      <div id="modal-prof-asig-list" style="margin-top:4px"></div>
-      <label class="fl">Observaciones</label>
-      <textarea class="fi" id="p-observaciones" rows="2" placeholder="Notas internas..."></textarea>
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-profesor')">Cancelar</button>
-        <button type="submit" class="btn-primary" id="btn-guardar-profesor"><i class="ti ti-check"></i> Crear profesor</button>
-      </div>
-    </form>
-  </div>
-</div>
 
 <!-- MODAL FICHA PROFESOR (unificada) -->
 <div class="modal-overlay" id="modal-ficha-profesor">
@@ -526,12 +436,12 @@
       </div>
     </div>
 
-    <!-- 3. CAMBIAR CONTRASEÑA -->
+    <!-- 3. CONTRASEÑA -->
     <div class="ficha-section">
-      <div class="ficha-sec-title"><i class="ti ti-lock"></i> Cambiar contraseña</div>
+      <div class="ficha-sec-title" id="ficha-prof-pwd-title"><i class="ti ti-lock"></i> Cambiar contraseña</div>
       <div style="display:flex;gap:8px;align-items:flex-end">
         <div style="flex:1">
-          <label class="fl" style="margin-top:0">Nueva contraseña</label>
+          <label class="fl" id="fich-prof-pwd-label" style="margin-top:0">Nueva contraseña</label>
           <input class="fi" id="fich-prof-password" type="text" placeholder="mínimo 6 caracteres" autocomplete="new-password">
         </div>
         <button class="btn-primary" id="btn-cambiar-pwd-prof" onclick="cambiarPasswordProfesor()" style="flex-shrink:0;margin-bottom:1px">
@@ -610,7 +520,7 @@
     </div>
 
     <!-- 3. PROFESORES ASIGNADOS -->
-    <div class="ficha-section">
+    <div class="ficha-section" id="ficha-section-profs">
       <div class="ficha-sec-title"><i class="ti ti-chalkboard"></i> Profesores asignados</div>
       <div id="ficha-profs-lista">
         <div class="loading-section" style="padding:16px"><div class="spinner"></div></div>
@@ -632,12 +542,12 @@
       </div>
     </div>
 
-    <!-- 4. CAMBIAR CONTRASEÑA -->
+    <!-- 4. CONTRASEÑA -->
     <div class="ficha-section">
-      <div class="ficha-sec-title"><i class="ti ti-lock"></i> Cambiar contraseña</div>
+      <div class="ficha-sec-title" id="ficha-pwd-title"><i class="ti ti-lock"></i> Cambiar contraseña</div>
       <div style="display:flex;gap:8px;align-items:flex-end">
         <div style="flex:1">
-          <label class="fl" style="margin-top:0">Nueva contraseña</label>
+          <label class="fl" id="fich-pwd-label" style="margin-top:0">Nueva contraseña</label>
           <input class="fi" id="fich-password" type="text" placeholder="mínimo 6 caracteres" autocomplete="new-password">
         </div>
         <button class="btn-primary" id="btn-cambiar-pwd" onclick="cambiarPasswordAlumno()" style="flex-shrink:0;margin-bottom:1px">
@@ -1144,84 +1054,37 @@ function filtrar(tipo) {
   }
 }
 
-function renderCreacionAsigCheckboxes(containerId) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  if (allAsignaturas.length === 0) {
-    el.innerHTML = '<p style="color:var(--muted);font-size:12px">Sin asignaturas en el catálogo.</p>';
-    return;
-  }
-  el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">` +
-    allAsignaturas.map(a =>
-      `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:6px;border:.5px solid transparent;background:transparent" class="asig-chk-label">
-        <input type="checkbox" value="${a.id}" class="asig-chk" style="accent-color:var(--blue);flex-shrink:0" onchange="this.closest('label').style.border=this.checked?'.5px solid var(--blue)':'transparent';this.closest('label').style.background=this.checked?'#0a1a30':'transparent';this.nextElementSibling.style.color=this.checked?'#fff':'var(--muted)'">
-        <span style="font-size:12px;color:var(--muted)">${a.nombre}</span>
-      </label>`
-    ).join('') +
-  `</div>`;
+// Modo creación: fichaAlumnoId === null; modo edición: fichaAlumnoId = UUID
+function fichaAlumnoModoCreacion() {
+  document.getElementById('ficha-titulo').textContent        = 'Nuevo alumno';
+  document.getElementById('ficha-section-profs').style.display = 'none';
+  document.getElementById('ficha-pwd-title').innerHTML       = '<i class="ti ti-lock"></i> Contraseña inicial';
+  document.getElementById('fich-pwd-label').textContent      = 'Contraseña inicial *';
+  document.getElementById('fich-password').placeholder       = 'nexo2025AB';
+  document.getElementById('btn-guardar-ficha').innerHTML     = '<i class="ti ti-user-plus"></i> Crear alumno';
 }
-
-function getCheckedAsigIds(containerId) {
-  return [...document.querySelectorAll(`#${containerId} input.asig-chk:checked`)]
-    .map(cb => parseInt(cb.value));
+function fichaAlumnoModoEdicion(a) {
+  const u = a.usuario || {};
+  document.getElementById('ficha-titulo').textContent        = `${u.nombre || '?'} ${u.apellidos || ''}`;
+  document.getElementById('ficha-section-profs').style.display = '';
+  document.getElementById('ficha-pwd-title').innerHTML       = '<i class="ti ti-lock"></i> Cambiar contraseña';
+  document.getElementById('fich-pwd-label').textContent      = 'Nueva contraseña';
+  document.getElementById('fich-password').placeholder       = 'mínimo 6 caracteres';
+  document.getElementById('btn-guardar-ficha').innerHTML     = '<i class="ti ti-device-floppy"></i> Guardar cambios';
 }
 
 function abrirModalAlumno() {
-  document.getElementById('form-alumno').reset();
-  renderCreacionAsigCheckboxes('modal-alumno-asig-list');
-  document.getElementById('modal-alumno').classList.add('open');
-}
-
-async function guardarAlumno(e) {
-  e.preventDefault();
-  const btn = document.getElementById('btn-guardar-alumno');
-  btn.disabled = true;
-
-  try {
-    const email       = document.getElementById('a-email').value.trim();
-    const password    = document.getElementById('a-password').value;
-    const nombre      = document.getElementById('a-nombre').value.trim();
-    const apellidos   = document.getElementById('a-apellidos').value.trim();
-    const nivel       = document.getElementById('a-nivel').value;
-    const asigIds     = getCheckedAsigIds('modal-alumno-asig-list');
-
-    if (!password) throw new Error('La contraseña inicial es obligatoria');
-
-    const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
-      body: { email, password, nombre, apellidos, rol: 'alumno' }
-    });
-    if (fnErr) throw new Error('Error en el servidor: ' + fnErr.message);
-    if (!newUser?.user_id) throw new Error(newUser?.error || 'No se recibió el ID del nuevo usuario');
-
-    const { data: newAlumno, error: insErr } = await db.from('alumnos').insert({
-      usuario_id:       newUser.user_id,
-      nivel,
-      modalidad:        document.getElementById('a-modalidad').value,
-      telefono_familia: document.getElementById('a-telefono').value || null,
-      fecha_inicio:     document.getElementById('a-fecha-inicio').value || null,
-      horario_habitual: document.getElementById('a-horario').value || null,
-      direccion:        document.getElementById('a-direccion').value || null,
-      observaciones:    document.getElementById('a-observaciones').value || null,
-    }).select('id').single();
-
-    if (insErr) throw new Error('Usuario creado pero error al guardar datos: ' + insErr.message);
-
-    if (asigIds.length && newAlumno?.id) {
-      await db.from('alumno_asignaturas').insert(
-        asigIds.map(asignatura_id => ({ alumno_id: newAlumno.id, asignatura_id }))
-      );
-    }
-
-    showToast('Alumno creado correctamente');
-    cerrarModal('modal-alumno');
-    await loadAll();
-    await loadTablaAlumnos();
-  } catch (err) {
-    console.error('[Nexo] guardarAlumno:', err);
-    showToast(err.message, 'error');
-  } finally {
-    btn.disabled = false;
-  }
+  fichaAlumnoId = null;
+  ['fich-nombre','fich-apellidos','fich-email','fich-nivel','fich-modalidad',
+   'fich-telefono','fich-fecha-inicio','fich-horario','fich-direccion',
+   'fich-password','fich-observaciones'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = '';
+  });
+  fichaAlumnoModoCreacion();
+  document.getElementById('ficha-profs-lista').innerHTML = '';
+  document.getElementById('modal-ficha').classList.add('open');
+  refreshFichaAsignaturas();
 }
 
 // ============================================================
@@ -1313,80 +1176,38 @@ function renderTablaProfesores(lista) {
   }).join('');
 }
 
-function abrirModalProfesor() {
-  document.getElementById('form-profesor').reset();
-  renderCreacionAsigCheckboxes('modal-prof-asig-list');
-  document.getElementById('modal-profesor').classList.add('open');
+// ============================================================
+// FICHA DE PROFESOR (unificada — creación y edición)
+// ============================================================
+function fichaProfModoCreacion() {
+  document.getElementById('ficha-prof-titulo').textContent     = 'Nuevo profesor';
+  document.getElementById('ficha-prof-pwd-title').innerHTML    = '<i class="ti ti-lock"></i> Contraseña inicial';
+  document.getElementById('fich-prof-pwd-label').textContent   = 'Contraseña inicial *';
+  document.getElementById('fich-prof-password').placeholder    = 'nexo2025CM';
+  document.getElementById('btn-guardar-ficha-prof').innerHTML  = '<i class="ti ti-user-plus"></i> Crear profesor';
 }
-
-function editarProfesor(id) {
-  editProfesorId = id;
-  const p = allProfesores.find(x => x.id === id);
-  if (!p) return;
+function fichaProfModoEdicion(p) {
   const u = p.usuario || {};
-  document.getElementById('modal-prof-titulo').textContent = 'Editar profesor';
-  document.getElementById('p-nombre').value         = u.nombre || '';
-  document.getElementById('p-apellidos').value      = u.apellidos || '';
-  document.getElementById('p-email').value          = u.email || '';
-  document.getElementById('p-password').value       = '';
-  document.getElementById('modal-profesor').classList.add('open');
+  document.getElementById('ficha-prof-titulo').textContent     = `${u.nombre || '?'} ${u.apellidos || ''}`;
+  document.getElementById('ficha-prof-pwd-title').innerHTML    = '<i class="ti ti-lock"></i> Cambiar contraseña';
+  document.getElementById('fich-prof-pwd-label').textContent   = 'Nueva contraseña';
+  document.getElementById('fich-prof-password').placeholder    = 'mínimo 6 caracteres';
+  document.getElementById('btn-guardar-ficha-prof').innerHTML  = '<i class="ti ti-device-floppy"></i> Guardar cambios';
 }
 
-async function guardarProfesor(e) {
-  e.preventDefault();
-  const btn = document.getElementById('btn-guardar-profesor');
-  btn.disabled = true;
-
-  try {
-    const email     = document.getElementById('p-email').value.trim();
-    const password  = document.getElementById('p-password').value;
-    const nombre    = document.getElementById('p-nombre').value.trim();
-    const apellidos = document.getElementById('p-apellidos').value.trim();
-    const asigIds   = getCheckedAsigIds('modal-prof-asig-list');
-
-    if (!password) throw new Error('La contraseña inicial es obligatoria');
-
-    const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
-      body: { email, password, nombre, apellidos, rol: 'profesor' }
-    });
-    if (fnErr) throw new Error('Error en el servidor: ' + fnErr.message);
-    if (!newUser?.user_id) throw new Error(newUser?.error || 'No se recibió el ID del nuevo usuario');
-
-    const asigNombres = asigIds.map(id => allAsignaturas.find(a => a.id === id)?.nombre).filter(Boolean);
-
-    const { data: newProf, error: insErr } = await db.from('profesores').insert({
-      usuario_id:     newUser.user_id,
-      especialidades: asigNombres,
-      zona:           document.getElementById('p-zona').value || null,
-      telefono:       document.getElementById('p-telefono').value || null,
-      estudios:       document.getElementById('p-estudios').value || null,
-      nivel_max:      document.getElementById('p-nivel-max').value || null,
-      fecha_inicio:   document.getElementById('p-fecha-inicio').value || null,
-      observaciones:  document.getElementById('p-observaciones').value || null,
-    }).select('id').single();
-    if (insErr) throw new Error('Usuario creado pero error al guardar datos: ' + insErr.message);
-
-    if (asigIds.length && newProf?.id) {
-      await db.from('profesor_asignaturas').insert(
-        asigIds.map(asignatura_id => ({ profesor_id: newProf.id, asignatura_id }))
-      );
-    }
-
-    showToast('Profesor creado correctamente');
-    cerrarModal('modal-profesor');
-    await loadAll();
-    await loadTablaProfesores();
-  } catch (err) {
-    console.error('[Nexo] guardarProfesor:', err);
-    showToast(err.message, 'error');
-  } finally {
-    btn.disabled = false;
-  }
+function abrirModalProfesor() {
+  fichaProfesorId = null;
+  ['fich-prof-nombre','fich-prof-apellidos','fich-prof-email','fich-prof-telefono',
+   'fich-prof-zona','fich-prof-estudios','fich-prof-nivel-max','fich-prof-fecha-inicio',
+   'fich-prof-password','fich-prof-observaciones'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = '';
+  });
+  fichaProfModoCreacion();
+  document.getElementById('modal-ficha-profesor').classList.add('open');
+  refreshFichaProfAsignaturas();
 }
 
-// ============================================================
-// FICHA DE PROFESOR (unificada)
-// ============================================================
 async function abrirFichaProfesor(profId) {
   fichaProfesorId = profId;
   const p = allProfesores.find(x => x.id === profId);
@@ -1405,6 +1226,7 @@ async function abrirFichaProfesor(profId) {
   document.getElementById('fich-prof-password').value         = '';
   document.getElementById('fich-prof-observaciones').value    = p.observaciones || '';
 
+  fichaProfModoEdicion(p);
   document.getElementById('modal-ficha-profesor').classList.add('open');
   await refreshFichaProfAsignaturas();
 }
@@ -1413,10 +1235,14 @@ async function guardarFichaProfesor() {
   const btn = document.getElementById('btn-guardar-ficha-prof');
   btn.disabled = true;
 
-  const nombre      = document.getElementById('fich-prof-nombre').value.trim();
-  const apellidos   = document.getElementById('fich-prof-apellidos').value.trim();
-  const email       = document.getElementById('fich-prof-email').value.trim();
-  const telefono    = document.getElementById('fich-prof-telefono').value.trim();
+  const nombre        = document.getElementById('fich-prof-nombre').value.trim();
+  const apellidos     = document.getElementById('fich-prof-apellidos').value.trim();
+  const email         = document.getElementById('fich-prof-email').value.trim();
+  const telefono      = document.getElementById('fich-prof-telefono').value.trim();
+  const zona          = document.getElementById('fich-prof-zona').value.trim();
+  const estudios      = document.getElementById('fich-prof-estudios').value.trim();
+  const nivel_max     = document.getElementById('fich-prof-nivel-max').value;
+  const fecha_inicio  = document.getElementById('fich-prof-fecha-inicio').value;
   const observaciones = document.getElementById('fich-prof-observaciones').value.trim();
 
   if (!nombre || !apellidos || !email) {
@@ -1425,11 +1251,50 @@ async function guardarFichaProfesor() {
     return;
   }
 
-  const zona         = document.getElementById('fich-prof-zona').value.trim();
-  const estudios     = document.getElementById('fich-prof-estudios').value.trim();
-  const nivel_max    = document.getElementById('fich-prof-nivel-max').value;
-  const fecha_inicio = document.getElementById('fich-prof-fecha-inicio').value;
+  // ── MODO CREACIÓN ──
+  if (fichaProfesorId === null) {
+    const password = document.getElementById('fich-prof-password').value;
+    if (!password) { showToast('La contraseña inicial es obligatoria', 'error'); btn.disabled = false; return; }
 
+    try {
+      const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
+        body: { email, password, nombre, apellidos, rol: 'profesor' }
+      });
+      if (fnErr) throw new Error('Error en el servidor: ' + fnErr.message);
+      if (!newUser?.user_id) throw new Error(newUser?.error || 'No se recibió el ID del nuevo usuario');
+
+      const asigIds = [...document.querySelectorAll('#ficha-prof-asignaturas-lista input[type=checkbox]:checked')]
+        .map(cb => parseInt(cb.value));
+      const asigNombres = asigIds.map(id => allAsignaturas.find(a => a.id === id)?.nombre).filter(Boolean);
+
+      const { data: newProf, error: insErr } = await db.from('profesores').insert({
+        usuario_id: newUser.user_id,
+        especialidades: asigNombres,
+        telefono: telefono || null, zona: zona || null,
+        estudios: estudios || null, nivel_max: nivel_max || null,
+        fecha_inicio: fecha_inicio || null, observaciones: observaciones || null,
+      }).select('id').single();
+      if (insErr) throw new Error('Usuario creado pero error al guardar datos: ' + insErr.message);
+
+      if (asigIds.length && newProf?.id) {
+        await db.from('profesor_asignaturas').insert(
+          asigIds.map(asignatura_id => ({ profesor_id: newProf.id, asignatura_id }))
+        );
+      }
+
+      showToast('Profesor creado correctamente');
+      cerrarModal('modal-ficha-profesor');
+      await loadAll();
+      await loadTablaProfesores();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+    return;
+  }
+
+  // ── MODO EDICIÓN ──
   const p = allProfesores.find(x => x.id === fichaProfesorId);
 
   const [resUser, resProf] = await Promise.all([
@@ -1502,20 +1367,7 @@ async function cambiarPasswordProfesor() {
   btn.disabled = false;
 }
 
-async function refreshFichaProfAsignaturas() {
-  const el = document.getElementById('ficha-prof-asignaturas-lista');
-  el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
-
-  const { data, error } = await db.from('profesor_asignaturas')
-    .select('asignatura_id')
-    .eq('profesor_id', fichaProfesorId);
-
-  if (error) {
-    el.innerHTML = `<p style="color:var(--red);font-size:12px">${error.message}</p>`;
-    return;
-  }
-
-  const asignadas = new Set((data || []).map(r => r.asignatura_id));
+function renderFichaProfAsigCheckboxes(el, asignadas) {
   if (allAsignaturas.length === 0) {
     el.innerHTML = '<p style="color:var(--muted);font-size:12px">Sin asignaturas en el catálogo.</p>';
     return;
@@ -1523,15 +1375,31 @@ async function refreshFichaProfAsignaturas() {
   el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">` +
     allAsignaturas.map(a => {
       const checked = asignadas.has(a.id);
-      return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:6px;border:.5px solid ${checked ? 'var(--blue)' : 'transparent'};background:${checked ? '#0a1a30' : 'transparent'}">
-        <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleFichaProfAsignatura(${a.id},this.checked)" style="accent-color:var(--blue);flex-shrink:0">
+      return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:6px;border:.5px solid ${checked ? 'var(--blue)' : 'transparent'};background:${checked ? '#0a1a30' : 'transparent'}" onchange="this.style.border=this.querySelector('input').checked?'.5px solid var(--blue)':'transparent';this.style.background=this.querySelector('input').checked?'#0a1a30':'transparent';this.querySelector('span').style.color=this.querySelector('input').checked?'#fff':'var(--muted)'">
+        <input type="checkbox" value="${a.id}" ${checked ? 'checked' : ''} onchange="toggleFichaProfAsignatura(${a.id},this.checked)" style="accent-color:var(--blue);flex-shrink:0">
         <span style="font-size:12px;color:${checked ? '#fff' : 'var(--muted)'}">${a.nombre}</span>
       </label>`;
     }).join('') +
   `</div>`;
 }
 
+async function refreshFichaProfAsignaturas() {
+  const el = document.getElementById('ficha-prof-asignaturas-lista');
+
+  if (fichaProfesorId === null) {
+    renderFichaProfAsigCheckboxes(el, new Set());
+    return;
+  }
+
+  el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
+  const { data, error } = await db.from('profesor_asignaturas')
+    .select('asignatura_id').eq('profesor_id', fichaProfesorId);
+  if (error) { el.innerHTML = `<p style="color:var(--red);font-size:12px">${error.message}</p>`; return; }
+  renderFichaProfAsigCheckboxes(el, new Set((data || []).map(r => r.asignatura_id)));
+}
+
 async function toggleFichaProfAsignatura(asignaturaId, checked) {
+  if (fichaProfesorId === null) return; // modo creación: solo visual
   if (checked) {
     const { error } = await db.from('profesor_asignaturas').insert({
       profesor_id: fichaProfesorId, asignatura_id: asignaturaId,
@@ -1563,9 +1431,8 @@ async function abrirFicha(alumnoId) {
   if (!a) return;
   const u = a.usuario || {};
 
-  document.getElementById('ficha-titulo').textContent = `${u.nombre || '?'} ${u.apellidos || ''}`;
+  fichaAlumnoModoEdicion(a);
 
-  // Datos básicos
   document.getElementById('fich-nombre').value        = u.nombre || '';
   document.getElementById('fich-apellidos').value     = u.apellidos || '';
   document.getElementById('fich-email').value         = u.email || '';
@@ -1578,7 +1445,6 @@ async function abrirFicha(alumnoId) {
   document.getElementById('fich-password').value      = '';
   document.getElementById('fich-observaciones').value = a.observaciones || '';
 
-  // Selector de profesores para añadir
   const sel = document.getElementById('ficha-add-prof');
   sel.innerHTML = '<option value="">— Seleccionar —</option>';
   allProfesores.forEach(p => {
@@ -1613,6 +1479,48 @@ async function guardarFicha() {
     return;
   }
 
+  // ── MODO CREACIÓN ──
+  if (fichaAlumnoId === null) {
+    const password = document.getElementById('fich-password').value;
+    if (!password) { showToast('La contraseña inicial es obligatoria', 'error'); btn.disabled = false; return; }
+
+    try {
+      const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
+        body: { email, password, nombre, apellidos, rol: 'alumno' }
+      });
+      if (fnErr) throw new Error('Error en el servidor: ' + fnErr.message);
+      if (!newUser?.user_id) throw new Error(newUser?.error || 'No se recibió el ID del nuevo usuario');
+
+      const { data: newAlumno, error: insErr } = await db.from('alumnos').insert({
+        usuario_id: newUser.user_id, nivel, modalidad,
+        telefono_familia: telefono || null, fecha_inicio: fecha_inicio || null,
+        horario_habitual: horario || null, direccion: direccion || null,
+        observaciones: observaciones || null,
+      }).select('id').single();
+      if (insErr) throw new Error('Usuario creado pero error al guardar datos: ' + insErr.message);
+
+      // Insertar asignaturas seleccionadas
+      const asigIds = [...document.querySelectorAll('#ficha-asignaturas-lista input[type=checkbox]:checked')]
+        .map(cb => parseInt(cb.value));
+      if (asigIds.length && newAlumno?.id) {
+        await db.from('alumno_asignaturas').insert(
+          asigIds.map(asignatura_id => ({ alumno_id: newAlumno.id, asignatura_id }))
+        );
+      }
+
+      showToast('Alumno creado correctamente');
+      cerrarModal('modal-ficha');
+      await loadAll();
+      await loadTablaAlumnos();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+    return;
+  }
+
+  // ── MODO EDICIÓN ──
   const a = allAlumnos.find(x => x.id === fichaAlumnoId);
   const userId = a?.usuario_id || a?.usuario?.id;
 
@@ -1917,17 +1825,7 @@ function abrirInformeParaFicha() {
   abrirModalInforme(fichaAlumnoId, `${u.nombre || ''} ${u.apellidos || ''}`);
 }
 
-async function refreshFichaAsignaturas() {
-  const el = document.getElementById('ficha-asignaturas-lista');
-  el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
-  const { data, error } = await db.from('alumno_asignaturas')
-    .select('asignatura_id')
-    .eq('alumno_id', fichaAlumnoId);
-  if (error) {
-    el.innerHTML = `<p style="color:var(--red);font-size:12px">${error.message}</p>`;
-    return;
-  }
-  const asignadas = new Set((data || []).map(r => r.asignatura_id));
+function renderFichaAsigCheckboxes(el, asignadas) {
   if (allAsignaturas.length === 0) {
     el.innerHTML = '<p style="color:var(--muted);font-size:12px">Sin asignaturas en el catálogo.</p>';
     return;
@@ -1935,15 +1833,32 @@ async function refreshFichaAsignaturas() {
   el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">` +
     allAsignaturas.map(a => {
       const checked = asignadas.has(a.id);
-      return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:6px;border:.5px solid ${checked ? 'var(--blue)' : 'transparent'};background:${checked ? '#0a1a30' : 'transparent'}">
-        <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleFichaAsignatura(${a.id},this.checked)" style="accent-color:var(--blue);flex-shrink:0">
+      return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:6px;border:.5px solid ${checked ? 'var(--blue)' : 'transparent'};background:${checked ? '#0a1a30' : 'transparent'}" onchange="this.style.border=this.querySelector('input').checked?'.5px solid var(--blue)':'transparent';this.style.background=this.querySelector('input').checked?'#0a1a30':'transparent';this.querySelector('span').style.color=this.querySelector('input').checked?'#fff':'var(--muted)'">
+        <input type="checkbox" value="${a.id}" ${checked ? 'checked' : ''} onchange="toggleFichaAsignatura(${a.id},this.checked)" style="accent-color:var(--blue);flex-shrink:0">
         <span style="font-size:12px;color:${checked ? '#fff' : 'var(--muted)'}">${a.nombre}</span>
       </label>`;
     }).join('') +
   `</div>`;
 }
 
+async function refreshFichaAsignaturas() {
+  const el = document.getElementById('ficha-asignaturas-lista');
+
+  // Modo creación: mostrar todas desmarcadas, sin guardar en DB al hacer toggle
+  if (fichaAlumnoId === null) {
+    renderFichaAsigCheckboxes(el, new Set());
+    return;
+  }
+
+  el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
+  const { data, error } = await db.from('alumno_asignaturas')
+    .select('asignatura_id').eq('alumno_id', fichaAlumnoId);
+  if (error) { el.innerHTML = `<p style="color:var(--red);font-size:12px">${error.message}</p>`; return; }
+  renderFichaAsigCheckboxes(el, new Set((data || []).map(r => r.asignatura_id)));
+}
+
 async function toggleFichaAsignatura(asignaturaId, checked) {
+  if (fichaAlumnoId === null) return; // modo creación: solo visual, se guarda al crear
   if (checked) {
     const { error } = await db.from('alumno_asignaturas').insert({
       alumno_id: fichaAlumnoId, asignatura_id: asignaturaId,
