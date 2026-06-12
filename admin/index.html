@@ -36,7 +36,7 @@
   .nav-item i{font-size:17px;flex-shrink:0}
   .nav-divider{height:.5px;background:var(--border);margin:10px 16px}
   .nav-bottom{margin-top:auto;padding-top:8px}
-  .main{margin-left:220px;margin-top:54px;padding:24px 26px;min-height:calc(100vh-54px)}
+  .main{margin-left:220px;margin-top:54px;padding:24px 26px;min-height:calc(100vh - 54px)}
   .section{display:none}
   .section.active{display:block}
   .page-title{color:#fff;font-size:20px;font-weight:600;margin-bottom:3px}
@@ -60,12 +60,17 @@
 
   .btn-primary{background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 16px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:7px;font-family:inherit;transition:background .15s;text-decoration:none}
   .btn-primary:hover{background:#1a5cc9}
+  .btn-primary:disabled{opacity:.5;cursor:default}
   .btn-primary i{font-size:15px}
   .btn-ghost{background:transparent;color:var(--blue);border:.5px solid var(--border);border-radius:7px;padding:7px 13px;font-size:12px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:inherit;transition:all .15s}
   .btn-ghost:hover{background:var(--border2)}
   .btn-danger{background:var(--red-lt);color:var(--red);border:.5px solid var(--red);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit;transition:background .15s}
   .btn-danger:hover{background:#3d1010}
   .btn-edit{background:#0a1a30;color:var(--blue);border:.5px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit}
+  .btn-edit:hover{background:#0f2240}
+  .btn-ficha{background:#0a2d1a;color:#2ecc71;border:.5px solid #1a5e30;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
+  .btn-ficha:hover{background:#0d3d22}
+  .btn-ficha i{font-size:13px}
 
   .search-bar{display:flex;align-items:center;gap:10px;background:var(--surface);border:.5px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:16px}
   .search-bar i{color:var(--muted);font-size:17px;flex-shrink:0}
@@ -116,6 +121,23 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   .spinner{display:inline-block;width:20px;height:20px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
   .loading-section{display:flex;justify-content:center;padding:40px;gap:10px;align-items:center;color:var(--muted)}
+
+  /* FICHA ALUMNO */
+  .ficha-section{border:.5px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px}
+  .ficha-sec-title{color:var(--soft);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+  .ficha-sec-title i{color:var(--blue);font-size:15px}
+  .bono-bar-wrap{background:var(--dark);border-radius:20px;height:8px;overflow:hidden;margin-bottom:5px}
+  .bono-bar-fill{height:100%;border-radius:20px;transition:width .4s}
+  .prof-tag{display:flex;align-items:center;justify-content:space-between;background:var(--dark);border:.5px solid var(--border);border-radius:8px;padding:9px 12px;margin-bottom:6px}
+  .prof-tag-left{display:flex;align-items:center;gap:10px}
+  .prof-tag-left i{color:var(--blue);font-size:15px;flex-shrink:0}
+  .prof-tag-name{color:#fff;font-size:13px;font-weight:500}
+  .prof-tag-asig{color:var(--muted);font-size:11px;margin-top:1px}
+  .prof-tag-rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0 4px}
+  .prof-tag-rm:hover{color:var(--red)}
+  .add-prof-row{display:flex;gap:8px;align-items:flex-end;margin-top:10px}
+  .add-prof-row .fi{margin-bottom:0}
+  .fi-sm{flex:1;min-width:0}
 </style>
 </head>
 <body>
@@ -196,7 +218,7 @@
   <div class="card">
     <table class="tabla">
       <thead><tr>
-        <th>Alumno</th><th>Nivel</th><th>Asignaturas</th><th>Profesor</th><th>Bono</th><th>Estado</th><th>Acciones</th>
+        <th>Alumno</th><th>Nivel</th><th>Asignaturas</th><th>Profesores</th><th>Bono</th><th>Estado</th><th>Acciones</th>
       </tr></thead>
       <tbody id="tbody-alumnos"></tbody>
     </table>
@@ -257,7 +279,7 @@
   </div>
   <div class="card">
     <table class="tabla">
-      <thead><tr><th>Título</th><th>Nivel</th><th>Asignatura</th><th>Bloque</th><th>Tipo</th><th>Visible</th><th>Acciones</th></tr></thead>
+      <thead><tr><th>Título</th><th>Nivel</th><th>Asignatura</th><th>Bloque</th><th>Asignado a</th><th>Tipo</th><th>Visible</th><th>Acciones</th></tr></thead>
       <tbody id="tbody-material"></tbody>
     </table>
   </div>
@@ -289,7 +311,7 @@
 
 </div><!-- end .main -->
 
-<!-- ═══ MODALES ═══ -->
+<!-- ═══════════════════════════════ MODALES ═══════════════════════════════ -->
 
 <!-- MODAL ALUMNO -->
 <div class="modal-overlay" id="modal-alumno">
@@ -323,7 +345,7 @@
       </div>
       <label class="fl">Asignaturas <span style="color:var(--muted);font-size:10px">(separadas por coma)</span></label>
       <input class="fi" id="a-asignaturas" placeholder="Matemáticas, Física">
-      <label class="fl">Profesor asignado</label>
+      <label class="fl">Profesor principal asignado</label>
       <select class="fi" id="a-profesor"></select>
       <div class="fi-grid2">
         <div>
@@ -359,20 +381,20 @@
       <label class="fl">Alumno</label>
       <input class="fi" id="inf-alumno-nombre" readonly>
       <input type="hidden" id="inf-alumno-id">
-      <label class="fl">Título</label>
+      <label class="fl">Título *</label>
       <input class="fi" id="inf-titulo" required placeholder="Informe mensual — Junio 2025">
       <label class="fl">Tipo</label>
       <select class="fi" id="inf-tipo">
         <option value="mensual">Mensual</option>
         <option value="semanal">Semanal</option>
       </select>
-      <label class="fl">Fecha</label>
+      <label class="fl">Fecha *</label>
       <input class="fi" id="inf-fecha" type="date" required>
       <label class="fl">Archivo PDF</label>
       <input class="fi" id="inf-archivo" type="file" accept=".pdf,.doc,.docx">
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModal('modal-informe')">Cancelar</button>
-        <button type="submit" class="btn-primary">Subir</button>
+        <button type="submit" class="btn-primary" id="btn-subir-informe">Subir</button>
       </div>
     </form>
   </div>
@@ -412,9 +434,75 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModal('modal-profesor')">Cancelar</button>
-        <button type="submit" class="btn-primary"><i class="ti ti-check"></i> Guardar</button>
+        <button type="submit" class="btn-primary" id="btn-guardar-profesor"><i class="ti ti-check"></i> Guardar</button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- MODAL FICHA ALUMNO -->
+<div class="modal-overlay" id="modal-ficha">
+  <div class="modal-box" style="max-width:700px">
+    <div class="modal-title">
+      <div style="display:flex;align-items:center;gap:10px">
+        <i class="ti ti-user" style="color:var(--blue);font-size:18px"></i>
+        <span id="ficha-titulo">Ficha del alumno</span>
+      </div>
+      <button class="modal-close" onclick="cerrarModal('modal-ficha')">×</button>
+    </div>
+
+    <!-- BONO -->
+    <div class="ficha-section">
+      <div class="ficha-sec-title"><i class="ti ti-clock-hour-4"></i> Bono de horas</div>
+      <div id="ficha-bono-visual"></div>
+      <div class="fi-grid2" style="margin-top:12px">
+        <div>
+          <label class="fl" style="margin-top:0">Horas totales del bono</label>
+          <input class="fi" id="ficha-bono-total" type="number" min="0" step="0.5" placeholder="10">
+        </div>
+        <div>
+          <label class="fl" style="margin-top:0">Horas restantes</label>
+          <input class="fi" id="ficha-bono-rest" type="number" min="0" step="0.5" placeholder="8">
+        </div>
+      </div>
+      <div style="text-align:right;margin-top:10px">
+        <button class="btn-primary" onclick="guardarBono()" id="btn-guardar-bono"><i class="ti ti-device-floppy"></i> Guardar bono</button>
+      </div>
+    </div>
+
+    <!-- PROFESORES ASIGNADOS -->
+    <div class="ficha-section">
+      <div class="ficha-sec-title"><i class="ti ti-chalkboard"></i> Profesores asignados</div>
+      <div id="ficha-profs-lista">
+        <div class="loading-section" style="padding:16px"><div class="spinner"></div></div>
+      </div>
+      <div class="add-prof-row">
+        <div class="fi-sm">
+          <label class="fl" style="margin-top:0">Profesor</label>
+          <select class="fi" id="ficha-add-prof">
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+        <div class="fi-sm">
+          <label class="fl" style="margin-top:0">Asignatura (opcional)</label>
+          <input class="fi" id="ficha-add-asig" placeholder="Matemáticas">
+        </div>
+        <button class="btn-primary" onclick="asignarProfesorFicha()" style="flex-shrink:0;align-self:flex-end;margin-bottom:1px"><i class="ti ti-plus"></i> Asignar</button>
+      </div>
+    </div>
+
+    <!-- ÚLTIMAS SESIONES -->
+    <div class="ficha-section">
+      <div class="ficha-sec-title"><i class="ti ti-calendar-check"></i> Últimas sesiones</div>
+      <div id="ficha-sesiones">
+        <div class="loading-section" style="padding:16px"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModal('modal-ficha')">Cerrar</button>
+      <button class="btn-primary" onclick="editarAlumnoDesdeficha()"><i class="ti ti-edit"></i> Editar datos</button>
+    </div>
   </div>
 </div>
 
@@ -446,16 +534,16 @@
       <label class="fl">Asignatura</label><input class="fi" id="mat-asignatura" placeholder="Matemáticas">
       <label class="fl">Bloque / Tema</label><input class="fi" id="mat-bloque" placeholder="Álgebra">
       <label class="fl">Archivo</label>
-      <input class="fi" id="mat-archivo" type="file" accept=".pdf,.docx,.pptx">
+      <input class="fi" id="mat-archivo" type="file" accept=".pdf,.docx,.pptx,.jpg,.png">
       <label class="fl">O pega URL del archivo</label>
       <input class="fi" id="mat-url" placeholder="https://...">
-      <label class="fl">Asignar a alumno específico <span style="color:var(--muted);font-size:10px">(opcional)</span></label>
+      <label class="fl">Asignar a alumno específico <span style="color:var(--muted);font-size:10px">(opcional — si no, es material general del nivel)</span></label>
       <select class="fi" id="mat-alumno-especifico">
         <option value="">Para su nivel en general</option>
       </select>
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModal('modal-material')">Cancelar</button>
-        <button type="submit" class="btn-primary">Guardar</button>
+        <button type="submit" class="btn-primary" id="btn-guardar-material">Guardar</button>
       </div>
     </form>
   </div>
@@ -468,10 +556,7 @@
     <form id="form-test" onsubmit="guardarTest(event)">
       <label class="fl">Título *</label><input class="fi" id="t-titulo" required>
       <div class="fi-grid2">
-        <div>
-          <label class="fl">Asignatura</label>
-          <input class="fi" id="t-asignatura" placeholder="Matemáticas">
-        </div>
+        <div><label class="fl">Asignatura</label><input class="fi" id="t-asignatura" placeholder="Matemáticas"></div>
         <div>
           <label class="fl">Nivel</label>
           <select class="fi" id="t-nivel">
@@ -551,7 +636,10 @@
 // ============================================================
 let ctx = null;
 let allAlumnos = [], allProfesores = [], allUsuarios = [];
+let alumnoProfesorMap = {};   // alumno_id -> [{id, profesor_id, asignatura}]
+let materialAlumnoMap = {};   // material_id -> [{alumno_id}]
 let editAlumnoId = null, editProfesorId = null, editMaterialId = null, editTestId = null;
+let fichaAlumnoId = null;
 let preguntasCount = 0;
 
 // ============================================================
@@ -564,53 +652,103 @@ let preguntasCount = 0;
   await Promise.all([loadAll(), loadDashboard()]);
 })();
 
+// ============================================================
+// loadAll — queries individuales sin JOINs embebidos
+// ============================================================
 async function loadAll() {
-  const [{ data: alumnos }, { data: profesores }, { data: usuarios }] = await Promise.all([
-    db.from('alumnos').select('*, usuario:usuarios(nombre, apellidos, email)').order('created_at', { ascending: false }),
-    db.from('profesores').select('*, usuario:usuarios(nombre, apellidos, email)').order('created_at', { ascending: false }),
-    db.from('usuarios').select('*').in('rol', ['alumno', 'profesor']).eq('activo', true)
-  ]);
-  allAlumnos   = alumnos   || [];
-  allProfesores = profesores || [];
-  allUsuarios  = usuarios  || [];
+  try {
+    const [
+      { data: alumnos,     error: e1 },
+      { data: profesores,  error: e2 },
+      { data: usuarios,    error: e3 },
+      { data: alumnoProfs, error: e4 },
+      { data: matAlumnos,  error: e5 },
+    ] = await Promise.all([
+      db.from('alumnos').select('*').order('created_at', { ascending: false }),
+      db.from('profesores').select('*').order('created_at', { ascending: false }),
+      db.from('usuarios').select('*').neq('rol', 'admin'),
+      db.from('alumno_profesor').select('*'),
+      db.from('material_alumno').select('*'),
+    ]);
 
-  // Populate selects
-  const profSel = document.getElementById('a-profesor');
-  profSel.innerHTML = '<option value="">Sin profesor asignado</option>';
-  allProfesores.forEach(p => {
-    const u = p.usuario || {};
-    const o = new Option(`${u.nombre} ${u.apellidos}`, p.id);
-    profSel.appendChild(o);
-  });
+    // Log errores pero no abortar — la tabla alumno_profesor puede no existir aún
+    if (e1) console.error('[Nexo] Error alumnos:', e1.message);
+    if (e2) console.error('[Nexo] Error profesores:', e2.message);
+    if (e3) console.error('[Nexo] Error usuarios:', e3.message);
+    if (e4) console.warn('[Nexo] alumno_profesor:', e4.message, '— ejecuta la migración en Supabase');
+    if (e5) console.warn('[Nexo] material_alumno:', e5.message);
 
-  const matAlumSel = document.getElementById('mat-alumno-especifico');
-  matAlumSel.innerHTML = '<option value="">Para su nivel en general</option>';
-  allAlumnos.forEach(a => {
-    const u = a.usuario || {};
-    const o = new Option(`${u.nombre} ${u.apellidos}`, a.id);
-    matAlumSel.appendChild(o);
-  });
+    if (e1 || e2) {
+      showToast('Error al cargar datos. Revisa la consola (F12).', 'error');
+    }
 
-  const avUserSel = document.getElementById('av-usuario-especifico');
-  avUserSel.innerHTML = '';
-  allUsuarios.forEach(u => {
-    const o = new Option(`${u.nombre} ${u.apellidos} (${u.rol})`, u.id);
-    avUserSel.appendChild(o);
-  });
+    // Mapa de usuarios por ID para unir en JS
+    const usuarioMap = {};
+    (usuarios || []).forEach(u => { usuarioMap[u.id] = u; });
 
-  // Sesiones filtros
-  const filProf = document.getElementById('fil-ses-profesor');
-  allProfesores.forEach(p => {
-    const u = p.usuario || {};
-    const o = new Option(`${u.nombre} ${u.apellidos}`, p.id);
-    filProf.appendChild(o);
-  });
-  const now = new Date();
-  const filMes = document.getElementById('fil-ses-mes');
-  for (let i = 0; i < 12; i++) {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const val = d.toISOString().substring(0,7);
-    filMes.add(new Option(d.toLocaleDateString('es-ES',{month:'long',year:'numeric'}), val));
+    allUsuarios   = usuarios || [];
+    allAlumnos    = (alumnos || []).map(a => ({ ...a, usuario: usuarioMap[a.usuario_id] || null }));
+    allProfesores = (profesores || []).map(p => ({ ...p, usuario: usuarioMap[p.usuario_id] || null }));
+
+    // Mapa alumno → profesores asignados
+    alumnoProfesorMap = {};
+    (alumnoProfs || []).forEach(ap => {
+      if (!alumnoProfesorMap[ap.alumno_id]) alumnoProfesorMap[ap.alumno_id] = [];
+      alumnoProfesorMap[ap.alumno_id].push(ap);
+    });
+
+    // Mapa material → alumnos asignados
+    materialAlumnoMap = {};
+    (matAlumnos || []).forEach(ma => {
+      if (!materialAlumnoMap[ma.material_id]) materialAlumnoMap[ma.material_id] = [];
+      materialAlumnoMap[ma.material_id].push(ma.alumno_id);
+    });
+
+    // Populate: selector de profesor en modal alumno
+    const profSel = document.getElementById('a-profesor');
+    profSel.innerHTML = '<option value="">Sin profesor principal</option>';
+    allProfesores.forEach(p => {
+      const u = p.usuario || {};
+      profSel.add(new Option(`${u.nombre || '?'} ${u.apellidos || ''}`, p.id));
+    });
+
+    // Populate: selector de alumno en modal material
+    const matAlumSel = document.getElementById('mat-alumno-especifico');
+    matAlumSel.innerHTML = '<option value="">Para su nivel en general</option>';
+    allAlumnos.forEach(a => {
+      const u = a.usuario || {};
+      matAlumSel.add(new Option(`${u.nombre || '?'} ${u.apellidos || ''}`, a.id));
+    });
+
+    // Populate: selector de usuario en modal avisos
+    const avUserSel = document.getElementById('av-usuario-especifico');
+    avUserSel.innerHTML = '';
+    allUsuarios.forEach(u => {
+      avUserSel.add(new Option(`${u.nombre} ${u.apellidos} (${u.rol})`, u.id));
+    });
+
+    // Populate: filtro de profesor en sesiones
+    const filProf = document.getElementById('fil-ses-profesor');
+    // Keep first option, reset rest
+    while (filProf.options.length > 1) filProf.remove(1);
+    allProfesores.forEach(p => {
+      const u = p.usuario || {};
+      filProf.add(new Option(`${u.nombre || '?'} ${u.apellidos || ''}`, p.id));
+    });
+
+    // Populate: filtro de meses en sesiones (solo si vacío)
+    const filMes = document.getElementById('fil-ses-mes');
+    if (filMes.options.length <= 1) {
+      const now = new Date();
+      for (let i = 0; i < 12; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const val = d.toISOString().substring(0, 7);
+        filMes.add(new Option(d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }), val));
+      }
+    }
+  } catch (err) {
+    console.error('[Nexo] Error inesperado en loadAll:', err);
+    showToast('Error inesperado al cargar datos', 'error');
   }
 }
 
@@ -624,13 +762,13 @@ function showSection(id) {
   document.getElementById('nav-' + id).classList.add('active');
   window.scrollTo(0, 0);
   const loaders = {
-    dashboard: loadDashboard,
-    alumnos:   loadTablaAlumnos,
+    dashboard:  loadDashboard,
+    alumnos:    loadTablaAlumnos,
     profesores: loadTablaProfesores,
-    sesiones:  loadSesionesAdmin,
-    material:  loadTablaMaterial,
-    tests:     loadListaTests,
-    avisos:    loadTablaAvisos,
+    sesiones:   loadSesionesAdmin,
+    material:   loadTablaMaterial,
+    tests:      loadListaTests,
+    avisos:     loadTablaAvisos,
   };
   if (loaders[id]) loaders[id]();
 }
@@ -665,8 +803,12 @@ async function loadDashboard() {
     db.from('alumnos').select('id', { count: 'exact', head: true }).eq('activo', true),
     db.from('profesores').select('id', { count: 'exact', head: true }).eq('activo', true),
     db.from('sesiones').select('duracion_minutos, estado').gte('fecha', mesIni),
-    db.from('sesiones').select('*, alumno:alumnos(usuario:usuarios(nombre, apellidos)), profesor:profesores(usuario:usuarios(nombre, apellidos))').eq('estado', 'pendiente_confirmacion').order('registrada_at', { ascending: false }).limit(10),
-    db.from('alumnos').select('*, usuario:usuarios(nombre, apellidos)').lte('horas_bono_restantes', 3).eq('activo', true)
+    db.from('sesiones').select('id, asignatura, fecha, registrada_at, alumno_id, profesor_id')
+      .eq('estado', 'pendiente_confirmacion')
+      .order('registrada_at', { ascending: false })
+      .limit(10),
+    db.from('alumnos').select('id, horas_bono_restantes, horas_bono_total, usuario_id')
+      .lte('horas_bono_restantes', 3).eq('activo', true)
   ]);
 
   const hMes = ((sesMes || []).reduce((a, s) => a + (s.duracion_minutos || 0), 0) / 60).toFixed(1);
@@ -680,26 +822,29 @@ async function loadDashboard() {
     <div class="kpi ${(bonos?.length||0) > 0 ? 'red' : 'green'}"><div class="kpi-label">Bonos bajos</div><div class="kpi-val">${bonos?.length||0}</div></div>
   `;
 
-  // Pendientes
+  // Sesiones pendientes
   const pendEl = document.getElementById('dash-pendientes');
   if (!sesPend || sesPend.length === 0) {
     pendEl.innerHTML = `<div class="empty-state"><i class="ti ti-check"></i><p>Sin sesiones pendientes</p></div>`;
   } else {
-    pendEl.innerHTML = `<table class="tabla">
-      <tbody>
-        ${sesPend.map(s => {
-          const a = s.alumno?.usuario;
-          const p = s.profesor?.usuario;
-          return `<tr>
-            <td style="color:#fff">${a ? a.nombre + ' ' + a.apellidos : '—'}</td>
-            <td>${s.asignatura}</td>
-            <td>${formatShortDate(s.fecha)}</td>
-            <td>${p ? p.nombre : '—'}</td>
-            <td><button class="btn-danger" onclick="abrirCancelar('${s.id}')">Cancelar</button></td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>`;
+    const alumnoMap = {};
+    allAlumnos.forEach(a => { alumnoMap[a.id] = a; });
+    const profMap = {};
+    allProfesores.forEach(p => { profMap[p.id] = p; });
+
+    pendEl.innerHTML = `<table class="tabla"><tbody>
+      ${sesPend.map(s => {
+        const a = alumnoMap[s.alumno_id]?.usuario || {};
+        const p = profMap[s.profesor_id]?.usuario || {};
+        return `<tr>
+          <td style="color:#fff">${a.nombre ? a.nombre + ' ' + a.apellidos : '—'}</td>
+          <td>${s.asignatura}</td>
+          <td>${formatShortDate(s.fecha)}</td>
+          <td>${p.nombre || '—'}</td>
+          <td><button class="btn-danger" onclick="abrirCancelar('${s.id}')">Cancelar</button></td>
+        </tr>`;
+      }).join('')}
+    </tbody></table>`;
   }
 
   // Bonos bajos
@@ -707,18 +852,19 @@ async function loadDashboard() {
   if (!bonos || bonos.length === 0) {
     bonosEl.innerHTML = `<div class="empty-state"><i class="ti ti-check"></i><p>Todos los bonos en orden</p></div>`;
   } else {
-    bonosEl.innerHTML = `<table class="tabla">
-      <tbody>
-        ${bonos.map(a => {
-          const u = a.usuario || {};
-          return `<tr>
-            <td style="color:#fff">${u.nombre} ${u.apellidos}</td>
-            <td><span class="pill pill-warn">${a.horas_bono_restantes}h restantes</span></td>
-            <td><a href="https://wa.me/${WHATSAPP_MANU}?text=Bono%20bajo%20de%20${encodeURIComponent(u.nombre)}" target="_blank" class="btn-edit">WhatsApp</a></td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>`;
+    bonosEl.innerHTML = `<table class="tabla"><tbody>
+      ${bonos.map(a => {
+        const u = allAlumnos.find(x => x.id === a.id)?.usuario || {};
+        return `<tr>
+          <td style="color:#fff">${u.nombre || '?'} ${u.apellidos || ''}</td>
+          <td><span class="pill pill-warn">${a.horas_bono_restantes}h restantes</span></td>
+          <td>
+            <button class="btn-edit" onclick="abrirFicha('${a.id}')">Ficha</button>
+            <a href="https://wa.me/${WHATSAPP_MANU}?text=Bono%20bajo%20de%20${encodeURIComponent((u.nombre||'') + ' ' + (u.apellidos||''))}" target="_blank" class="btn-edit" style="margin-left:4px">WhatsApp</a>
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody></table>`;
   }
 }
 
@@ -733,11 +879,11 @@ async function loadTablaAlumnos() {
     .from('sesiones')
     .select('alumno_id, duracion_minutos')
     .gte('fecha', mesIni)
-    .in('estado', ['confirmada','pendiente_confirmacion']);
-  const h = {};
-  (horasData||[]).forEach(s => { h[s.alumno_id] = (h[s.alumno_id]||0) + s.duracion_minutos / 60; });
+    .in('estado', ['confirmada', 'pendiente_confirmacion']);
+  const hMap = {};
+  (horasData || []).forEach(s => { hMap[s.alumno_id] = (hMap[s.alumno_id] || 0) + s.duracion_minutos / 60; });
 
-  renderTablaAlumnos(allAlumnos, h);
+  renderTablaAlumnos(allAlumnos, hMap);
 }
 
 function renderTablaAlumnos(lista, horasByAlumno = {}) {
@@ -748,19 +894,37 @@ function renderTablaAlumnos(lista, horasByAlumno = {}) {
   }
   tbody.innerHTML = lista.map(a => {
     const u = a.usuario || {};
-    const profNom = allProfesores.find(p => p.id === a.profesor_id)?.usuario;
-    const h = (horasByAlumno[a.id]||0).toFixed(1);
     const bonoOk = a.horas_bono_restantes > 3;
+    const bonoLow = a.horas_bono_restantes <= 1;
+
+    // Profesores: primero los de alumno_profesor, luego fallback a profesor_id
+    const profsAsig = alumnoProfesorMap[a.id] || [];
+    let profCell;
+    if (profsAsig.length > 0) {
+      profCell = profsAsig.map(ap => {
+        const p = allProfesores.find(x => x.id === ap.profesor_id);
+        const pu = p?.usuario || {};
+        const label = pu.nombre ? pu.nombre.split(' ')[0] : '?';
+        return `<span class="pill pill-eso" style="margin:1px">${label}${ap.asignatura ? ' · ' + ap.asignatura : ''}</span>`;
+      }).join('');
+    } else if (a.profesor_id) {
+      const profNom = allProfesores.find(p => p.id === a.profesor_id)?.usuario || {};
+      profCell = profNom.nombre ? `${profNom.nombre} ${profNom.apellidos}` : '<span style="color:var(--muted)">Sin asignar</span>';
+    } else {
+      profCell = '<span style="color:var(--muted)">Sin asignar</span>';
+    }
+
     return `<tr>
-      <td><b style="color:#fff">${u.nombre} ${u.apellidos}</b><br><span style="color:var(--muted);font-size:11px">${u.email}</span></td>
-      <td><span class="pill ${a.nivel?.includes('BACH') ? 'pill-bach' : 'pill-eso'}">${nivelLabel(a.nivel)}</span></td>
-      <td>${(a.asignaturas||[]).join(', ') || '—'}</td>
-      <td>${profNom ? profNom.nombre + ' ' + profNom.apellidos : '<span style="color:var(--muted)">Sin asignar</span>'}</td>
-      <td><span class="pill ${bonoOk ? 'pill-ok' : 'pill-warn'}">${a.horas_bono_restantes}h / ${a.horas_bono_total}h</span></td>
+      <td><b style="color:#fff">${u.nombre || '?'} ${u.apellidos || ''}</b><br><span style="color:var(--muted);font-size:11px">${u.email || ''}</span></td>
+      <td><span class="pill ${(a.nivel||'').includes('BACH') ? 'pill-bach' : 'pill-eso'}">${nivelLabel(a.nivel)}</span></td>
+      <td style="max-width:160px;white-space:normal">${(a.asignaturas || []).join(', ') || '—'}</td>
+      <td style="max-width:180px">${profCell}</td>
+      <td><span class="pill ${bonoLow ? 'pill-red' : bonoOk ? 'pill-ok' : 'pill-warn'}">${a.horas_bono_restantes}h / ${a.horas_bono_total}h</span></td>
       <td><span class="pill ${a.activo ? 'pill-ok' : 'pill-grey'}">${a.activo ? 'Activo' : 'Inactivo'}</span></td>
       <td style="white-space:nowrap">
-        <button class="btn-edit" onclick="editarAlumno('${a.id}')">Editar</button>
-        <button class="btn-edit" style="margin-left:4px" onclick="abrirModalInforme('${a.id}','${u.nombre} ${u.apellidos}')">Informe</button>
+        <button class="btn-ficha" onclick="abrirFicha('${a.id}')"><i class="ti ti-id-badge"></i> Ficha</button>
+        <button class="btn-edit" style="margin-left:4px" onclick="editarAlumno('${a.id}')">Editar</button>
+        <button class="btn-edit" style="margin-left:4px" onclick="abrirModalInforme('${a.id}','${(u.nombre||'') + ' ' + (u.apellidos||'')}')">Informe</button>
         <button class="btn-danger" style="margin-left:4px" onclick="toggleActivo('alumno','${a.id}',${!a.activo})">${a.activo ? 'Desactivar' : 'Activar'}</button>
       </td>
     </tr>`;
@@ -816,6 +980,11 @@ function editarAlumno(id) {
   document.getElementById('modal-alumno').classList.add('open');
 }
 
+function editarAlumnoDesdeficha() {
+  cerrarModal('modal-ficha');
+  editarAlumno(fichaAlumnoId);
+}
+
 async function guardarAlumno(e) {
   e.preventDefault();
   const btn = document.getElementById('btn-guardar-alumno');
@@ -824,98 +993,135 @@ async function guardarAlumno(e) {
 
   try {
     if (!editAlumnoId) {
-      // Create auth user via Edge Function
-      const email    = document.getElementById('a-email').value;
-      const password = document.getElementById('a-password').value;
-      const nombre   = document.getElementById('a-nombre').value;
-      const apellidos = document.getElementById('a-apellidos').value;
+      // ── CREAR NUEVO ──
+      const email     = document.getElementById('a-email').value.trim();
+      const password  = document.getElementById('a-password').value;
+      const nombre    = document.getElementById('a-nombre').value.trim();
+      const apellidos = document.getElementById('a-apellidos').value.trim();
+
+      if (!password) throw new Error('La contraseña es obligatoria para crear un alumno');
 
       const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
         body: { email, password, nombre, apellidos, rol: 'alumno' }
       });
-      if (fnErr || !newUser?.user_id) throw new Error(fnErr?.message || 'Error al crear usuario');
+      if (fnErr) throw new Error('Error en el servidor: ' + fnErr.message);
+      if (!newUser?.user_id) throw new Error(newUser?.error || 'No se recibió el ID del nuevo usuario');
 
-      await db.from('alumnos').insert({
-        usuario_id:          newUser.user_id,
-        nivel:               document.getElementById('a-nivel').value,
-        asignaturas:         asigs,
-        profesor_id:         document.getElementById('a-profesor').value || null,
-        horario_habitual:    document.getElementById('a-horario').value || null,
-        modalidad:           document.getElementById('a-modalidad').value,
-        direccion:           document.getElementById('a-direccion').value || null,
-        telefono_familia:    document.getElementById('a-telefono').value || null,
-        horas_bono_total:    parseFloat(document.getElementById('a-bono-total').value) || 0,
+      const profId = document.getElementById('a-profesor').value || null;
+
+      const { data: newAlumno, error: insErr } = await db.from('alumnos').insert({
+        usuario_id:           newUser.user_id,
+        nivel:                document.getElementById('a-nivel').value,
+        asignaturas:          asigs,
+        profesor_id:          profId,
+        horario_habitual:     document.getElementById('a-horario').value || null,
+        modalidad:            document.getElementById('a-modalidad').value,
+        direccion:            document.getElementById('a-direccion').value || null,
+        telefono_familia:     document.getElementById('a-telefono').value || null,
+        horas_bono_total:     parseFloat(document.getElementById('a-bono-total').value) || 0,
         horas_bono_restantes: parseFloat(document.getElementById('a-bono-rest').value) || 0,
-        fecha_inicio:        document.getElementById('a-fecha-inicio').value || null,
-      });
+        fecha_inicio:         document.getElementById('a-fecha-inicio').value || null,
+      }).select('id').single();
+
+      if (insErr) throw new Error('Usuario creado pero error al guardar ficha: ' + insErr.message);
+
+      // Si hay profesor, insertar también en alumno_profesor
+      if (profId && newAlumno?.id) {
+        const { error: apErr } = await db.from('alumno_profesor').insert({
+          alumno_id: newAlumno.id, profesor_id: profId
+        });
+        if (apErr) console.warn('[Nexo] alumno_profesor insert:', apErr.message);
+      }
+
     } else {
+      // ── EDITAR EXISTENTE ──
       const alumno = allAlumnos.find(x => x.id === editAlumnoId);
-      await db.from('usuarios').update({
-        nombre:    document.getElementById('a-nombre').value,
-        apellidos: document.getElementById('a-apellidos').value,
-      }).eq('id', alumno.usuario_id);
+      if (!alumno) throw new Error('Alumno no encontrado');
 
-      await db.from('alumnos').update({
-        nivel:               document.getElementById('a-nivel').value,
-        asignaturas:         asigs,
-        profesor_id:         document.getElementById('a-profesor').value || null,
-        horario_habitual:    document.getElementById('a-horario').value || null,
-        modalidad:           document.getElementById('a-modalidad').value,
-        direccion:           document.getElementById('a-direccion').value || null,
-        telefono_familia:    document.getElementById('a-telefono').value || null,
-        horas_bono_total:    parseFloat(document.getElementById('a-bono-total').value) || 0,
+      const { error: uErr } = await db.from('usuarios').update({
+        nombre:    document.getElementById('a-nombre').value.trim(),
+        apellidos: document.getElementById('a-apellidos').value.trim(),
+      }).eq('id', alumno.usuario_id);
+      if (uErr) throw new Error('Error al actualizar nombre: ' + uErr.message);
+
+      const { error: aErr } = await db.from('alumnos').update({
+        nivel:                document.getElementById('a-nivel').value,
+        asignaturas:          asigs,
+        profesor_id:          document.getElementById('a-profesor').value || null,
+        horario_habitual:     document.getElementById('a-horario').value || null,
+        modalidad:            document.getElementById('a-modalidad').value,
+        direccion:            document.getElementById('a-direccion').value || null,
+        telefono_familia:     document.getElementById('a-telefono').value || null,
+        horas_bono_total:     parseFloat(document.getElementById('a-bono-total').value) || 0,
         horas_bono_restantes: parseFloat(document.getElementById('a-bono-rest').value) || 0,
-        fecha_inicio:        document.getElementById('a-fecha-inicio').value || null,
+        fecha_inicio:         document.getElementById('a-fecha-inicio').value || null,
       }).eq('id', editAlumnoId);
+      if (aErr) throw new Error('Error al actualizar alumno: ' + aErr.message);
     }
 
-    showToast(editAlumnoId ? 'Alumno actualizado' : 'Alumno creado');
+    showToast(editAlumnoId ? 'Alumno actualizado' : 'Alumno creado correctamente');
     cerrarModal('modal-alumno');
     await loadAll();
     await loadTablaAlumnos();
   } catch (err) {
+    console.error('[Nexo] guardarAlumno:', err);
     showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
   }
-  btn.disabled = false;
 }
 
 // ============================================================
 // INFORMES
 // ============================================================
 function abrirModalInforme(alumnoId, alumnoNombre) {
-  document.getElementById('inf-alumno-id').value = alumnoId;
+  document.getElementById('inf-alumno-id').value    = alumnoId;
   document.getElementById('inf-alumno-nombre').value = alumnoNombre;
-  document.getElementById('inf-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('inf-fecha').value         = new Date().toISOString().split('T')[0];
+  document.getElementById('form-informe').reset();
+  document.getElementById('inf-alumno-id').value    = alumnoId;
+  document.getElementById('inf-alumno-nombre').value = alumnoNombre;
+  document.getElementById('inf-fecha').value         = new Date().toISOString().split('T')[0];
   document.getElementById('modal-informe').classList.add('open');
 }
 
 async function subirInforme(e) {
   e.preventDefault();
-  const file      = document.getElementById('inf-archivo').files[0];
-  const alumnoId  = document.getElementById('inf-alumno-id').value;
-  let archivo_url = null;
+  const btn = document.getElementById('btn-subir-informe');
+  btn.disabled = true;
 
-  if (file) {
-    const ext = file.name.split('.').pop();
-    const path = `informes/${alumnoId}/${Date.now()}.${ext}`;
-    const { data: up, error: upErr } = await db.storage.from('nexo-files').upload(path, file);
-    if (upErr) { showToast('Error al subir archivo', 'error'); return; }
-    const { data: url } = db.storage.from('nexo-files').getPublicUrl(path);
-    archivo_url = url.publicUrl;
+  try {
+    const file     = document.getElementById('inf-archivo').files[0];
+    const alumnoId = document.getElementById('inf-alumno-id').value;
+    let archivo_url = null;
+
+    if (file) {
+      const ext  = file.name.split('.').pop();
+      const path = `informes/${alumnoId}/${Date.now()}.${ext}`;
+      const { error: upErr } = await db.storage.from('nexo-files').upload(path, file);
+      if (upErr) throw new Error('Error al subir archivo: ' + upErr.message);
+      const { data: url } = db.storage.from('nexo-files').getPublicUrl(path);
+      archivo_url = url.publicUrl;
+    }
+
+    const { error } = await db.from('informes').insert({
+      alumno_id:  alumnoId,
+      tipo:       document.getElementById('inf-tipo').value,
+      titulo:     document.getElementById('inf-titulo').value,
+      fecha:      document.getElementById('inf-fecha').value,
+      archivo_url,
+      subido_por: ctx.usuario.id,
+    });
+    if (error) throw new Error('Error al guardar informe: ' + error.message);
+
+    showToast('Informe subido correctamente');
+    cerrarModal('modal-informe');
+    document.getElementById('form-informe').reset();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
   }
-
-  await db.from('informes').insert({
-    alumno_id:  alumnoId,
-    tipo:       document.getElementById('inf-tipo').value,
-    titulo:     document.getElementById('inf-titulo').value,
-    fecha:      document.getElementById('inf-fecha').value,
-    archivo_url,
-    subido_por: ctx.usuario.id,
-  });
-
-  showToast('Informe subido correctamente');
-  cerrarModal('modal-informe');
-  document.getElementById('form-informe').reset();
 }
 
 // ============================================================
@@ -934,9 +1140,12 @@ function renderTablaProfesores(lista) {
   }
   tbody.innerHTML = lista.map(p => {
     const u = p.usuario || {};
-    const nAlumnos = allAlumnos.filter(a => a.profesor_id === p.id).length;
+    // Contar alumnos: desde alumno_profesor + fallback a profesor_id en alumnos
+    const nViaJunction = Object.values(alumnoProfesorMap).filter(aps => aps.some(ap => ap.profesor_id === p.id)).length;
+    const nViaFk       = allAlumnos.filter(a => a.profesor_id === p.id).length;
+    const nAlumnos     = nViaJunction || nViaFk;
     return `<tr>
-      <td><b style="color:#fff">${u.nombre} ${u.apellidos}</b><br><span style="color:var(--muted);font-size:11px">${u.email}</span></td>
+      <td><b style="color:#fff">${u.nombre || '?'} ${u.apellidos || ''}</b><br><span style="color:var(--muted);font-size:11px">${u.email || ''}</span></td>
       <td>${(p.especialidades||[]).join(', ') || '—'}</td>
       <td>${p.zona || '—'}</td>
       <td><span class="pill pill-ok">${nAlumnos} alumno${nAlumnos !== 1 ? 's' : ''}</span></td>
@@ -963,38 +1172,43 @@ function editarProfesor(id) {
   if (!p) return;
   const u = p.usuario || {};
   document.getElementById('modal-prof-titulo').textContent = 'Editar profesor';
-  document.getElementById('p-nombre').value        = u.nombre || '';
-  document.getElementById('p-apellidos').value     = u.apellidos || '';
-  document.getElementById('p-email').value         = u.email || '';
-  document.getElementById('p-password').value      = '';
-  document.getElementById('p-password').required   = false;
+  document.getElementById('p-nombre').value         = u.nombre || '';
+  document.getElementById('p-apellidos').value      = u.apellidos || '';
+  document.getElementById('p-email').value          = u.email || '';
+  document.getElementById('p-password').value       = '';
+  document.getElementById('p-password').required    = false;
   document.getElementById('p-especialidades').value = (p.especialidades||[]).join(', ');
-  document.getElementById('p-zona').value          = p.zona || '';
-  document.getElementById('p-telefono').value      = p.telefono || '';
-  document.getElementById('p-estudios').value      = p.estudios || '';
-  document.getElementById('p-nivel-max').value     = p.nivel_max || '';
-  document.getElementById('p-fecha-inicio').value  = p.fecha_inicio || '';
+  document.getElementById('p-zona').value           = p.zona || '';
+  document.getElementById('p-telefono').value       = p.telefono || '';
+  document.getElementById('p-estudios').value       = p.estudios || '';
+  document.getElementById('p-nivel-max').value      = p.nivel_max || '';
+  document.getElementById('p-fecha-inicio').value   = p.fecha_inicio || '';
   document.getElementById('modal-profesor').classList.add('open');
 }
 
 async function guardarProfesor(e) {
   e.preventDefault();
+  const btn = document.getElementById('btn-guardar-profesor');
+  btn.disabled = true;
   const esps = document.getElementById('p-especialidades').value.split(',').map(s => s.trim()).filter(Boolean);
 
   try {
     if (!editProfesorId) {
-      const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
-        body: {
-          email:    document.getElementById('p-email').value,
-          password: document.getElementById('p-password').value,
-          nombre:   document.getElementById('p-nombre').value,
-          apellidos: document.getElementById('p-apellidos').value,
-          rol: 'profesor'
-        }
-      });
-      if (fnErr || !newUser?.user_id) throw new Error(fnErr?.message || newUser?.error || 'Error al crear usuario');
+      // ── CREAR NUEVO ──
+      const email     = document.getElementById('p-email').value.trim();
+      const password  = document.getElementById('p-password').value;
+      const nombre    = document.getElementById('p-nombre').value.trim();
+      const apellidos = document.getElementById('p-apellidos').value.trim();
 
-      await db.from('profesores').insert({
+      if (!password) throw new Error('La contraseña es obligatoria para crear un profesor');
+
+      const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
+        body: { email, password, nombre, apellidos, rol: 'profesor' }
+      });
+      if (fnErr) throw new Error('Error en el servidor: ' + fnErr.message);
+      if (!newUser?.user_id) throw new Error(newUser?.error || 'No se recibió el ID del nuevo usuario');
+
+      const { error: insErr } = await db.from('profesores').insert({
         usuario_id:     newUser.user_id,
         especialidades: esps,
         zona:           document.getElementById('p-zona').value || null,
@@ -1003,14 +1217,20 @@ async function guardarProfesor(e) {
         nivel_max:      document.getElementById('p-nivel-max').value || null,
         fecha_inicio:   document.getElementById('p-fecha-inicio').value || null,
       });
-    } else {
-      const prof = allProfesores.find(x => x.id === editProfesorId);
-      await db.from('usuarios').update({
-        nombre: document.getElementById('p-nombre').value,
-        apellidos: document.getElementById('p-apellidos').value,
-      }).eq('id', prof.usuario_id);
+      if (insErr) throw new Error('Usuario creado pero error al guardar ficha: ' + insErr.message);
 
-      await db.from('profesores').update({
+    } else {
+      // ── EDITAR EXISTENTE ──
+      const prof = allProfesores.find(x => x.id === editProfesorId);
+      if (!prof) throw new Error('Profesor no encontrado');
+
+      const { error: uErr } = await db.from('usuarios').update({
+        nombre:    document.getElementById('p-nombre').value.trim(),
+        apellidos: document.getElementById('p-apellidos').value.trim(),
+      }).eq('id', prof.usuario_id);
+      if (uErr) throw new Error('Error al actualizar nombre: ' + uErr.message);
+
+      const { error: pErr } = await db.from('profesores').update({
         especialidades: esps,
         zona:           document.getElementById('p-zona').value || null,
         telefono:       document.getElementById('p-telefono').value || null,
@@ -1018,24 +1238,233 @@ async function guardarProfesor(e) {
         nivel_max:      document.getElementById('p-nivel-max').value || null,
         fecha_inicio:   document.getElementById('p-fecha-inicio').value || null,
       }).eq('id', editProfesorId);
+      if (pErr) throw new Error('Error al actualizar profesor: ' + pErr.message);
     }
 
-    showToast(editProfesorId ? 'Profesor actualizado' : 'Profesor creado');
+    showToast(editProfesorId ? 'Profesor actualizado' : 'Profesor creado correctamente');
     cerrarModal('modal-profesor');
     await loadAll();
     await loadTablaProfesores();
   } catch (err) {
+    console.error('[Nexo] guardarProfesor:', err);
     showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
   }
 }
 
 async function toggleActivo(tipo, id, nuevoEstado) {
   if (!confirm(`¿${nuevoEstado ? 'Activar' : 'Desactivar'} este ${tipo}?`)) return;
   const tabla = tipo === 'alumno' ? 'alumnos' : 'profesores';
-  await db.from(tabla).update({ activo: nuevoEstado }).eq('id', id);
-  showToast(`${tipo.charAt(0).toUpperCase()+tipo.slice(1)} ${nuevoEstado ? 'activado' : 'desactivado'}`);
+  const { error } = await db.from(tabla).update({ activo: nuevoEstado }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast(`${tipo.charAt(0).toUpperCase() + tipo.slice(1)} ${nuevoEstado ? 'activado' : 'desactivado'}`);
   await loadAll();
   if (tipo === 'alumno') await loadTablaAlumnos(); else await loadTablaProfesores();
+}
+
+// ============================================================
+// FICHA DE ALUMNO — bono + profesores + sesiones
+// ============================================================
+async function abrirFicha(alumnoId) {
+  fichaAlumnoId = alumnoId;
+  const a = allAlumnos.find(x => x.id === alumnoId);
+  if (!a) return;
+  const u = a.usuario || {};
+
+  document.getElementById('ficha-titulo').textContent = `${u.nombre || '?'} ${u.apellidos || ''}`;
+  document.getElementById('ficha-bono-total').value = a.horas_bono_total || 0;
+  document.getElementById('ficha-bono-rest').value  = a.horas_bono_restantes || 0;
+  renderBonoVisual(a.horas_bono_total || 0, a.horas_bono_restantes || 0);
+
+  // Selector de profesores para añadir
+  const sel = document.getElementById('ficha-add-prof');
+  sel.innerHTML = '<option value="">— Seleccionar —</option>';
+  allProfesores.forEach(p => {
+    const pu = p.usuario || {};
+    sel.add(new Option(`${pu.nombre || '?'} ${pu.apellidos || ''}`, p.id));
+  });
+  document.getElementById('ficha-add-asig').value = '';
+
+  document.getElementById('modal-ficha').classList.add('open');
+
+  // Cargar en paralelo
+  await Promise.all([refreshFichaProfs(), refreshFichaSesiones()]);
+}
+
+function renderBonoVisual(total, rest) {
+  const pct   = total > 0 ? Math.min(100, (rest / total) * 100) : 0;
+  const color = rest <= 1 ? 'var(--red)' : rest <= 3 ? 'var(--amber)' : 'var(--blue)';
+  const label = rest <= 1 ? 'Bono crítico' : rest <= 3 ? 'Bono bajo' : 'Bono disponible';
+  document.getElementById('ficha-bono-visual').innerHTML = `
+    <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+      <span style="color:var(--muted);font-size:11px">${label}</span>
+      <span style="color:#fff;font-size:13px;font-weight:600">${rest}h <span style="color:var(--muted);font-weight:400">/ ${total}h</span></span>
+    </div>
+    <div class="bono-bar-wrap">
+      <div class="bono-bar-fill" style="width:${pct}%;background:${color}"></div>
+    </div>
+    <p style="color:var(--muted);font-size:11px;margin-top:4px">${pct.toFixed(0)}% del bono disponible</p>
+  `;
+}
+
+async function guardarBono() {
+  const btn   = document.getElementById('btn-guardar-bono');
+  btn.disabled = true;
+  const total = parseFloat(document.getElementById('ficha-bono-total').value) || 0;
+  const rest  = parseFloat(document.getElementById('ficha-bono-rest').value) || 0;
+
+  if (rest > total) {
+    showToast('Las horas restantes no pueden superar el total', 'error');
+    btn.disabled = false;
+    return;
+  }
+
+  const { error } = await db.from('alumnos').update({
+    horas_bono_total:     total,
+    horas_bono_restantes: rest,
+  }).eq('id', fichaAlumnoId);
+
+  if (error) {
+    showToast('Error al guardar bono: ' + error.message, 'error');
+    btn.disabled = false;
+    return;
+  }
+
+  showToast('Bono actualizado correctamente');
+  renderBonoVisual(total, rest);
+
+  // Actualizar estado local sin recargar todo
+  const idx = allAlumnos.findIndex(a => a.id === fichaAlumnoId);
+  if (idx >= 0) {
+    allAlumnos[idx].horas_bono_total     = total;
+    allAlumnos[idx].horas_bono_restantes = rest;
+  }
+
+  // Refrescar tabla si visible
+  if (document.getElementById('section-alumnos').classList.contains('active')) {
+    renderTablaAlumnos(allAlumnos);
+  }
+  btn.disabled = false;
+}
+
+async function refreshFichaProfs() {
+  const el = document.getElementById('ficha-profs-lista');
+  el.innerHTML = '<div class="loading-section" style="padding:12px"><div class="spinner"></div></div>';
+
+  const { data, error } = await db.from('alumno_profesor').select('*').eq('alumno_id', fichaAlumnoId);
+  if (error) {
+    el.innerHTML = `<p style="color:var(--muted);font-size:12px">La tabla de relación no está disponible aún. Ejecuta la migración en Supabase.</p>`;
+    return;
+  }
+
+  alumnoProfesorMap[fichaAlumnoId] = data || [];
+  renderFichaProfs();
+}
+
+function renderFichaProfs() {
+  const profs = alumnoProfesorMap[fichaAlumnoId] || [];
+  const el    = document.getElementById('ficha-profs-lista');
+  if (profs.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:4px 0">Sin profesores asignados todavía.</p>';
+    return;
+  }
+  el.innerHTML = profs.map(ap => {
+    const p  = allProfesores.find(x => x.id === ap.profesor_id);
+    const pu = p?.usuario || {};
+    return `<div class="prof-tag">
+      <div class="prof-tag-left">
+        <i class="ti ti-chalkboard"></i>
+        <div>
+          <div class="prof-tag-name">${pu.nombre || '?'} ${pu.apellidos || ''}</div>
+          <div class="prof-tag-asig">${ap.asignatura || 'Todas las asignaturas'}</div>
+        </div>
+      </div>
+      <button class="prof-tag-rm" onclick="quitarProfesorFicha('${ap.id}')" title="Quitar profesor">✕</button>
+    </div>`;
+  }).join('');
+}
+
+async function asignarProfesorFicha() {
+  const profId = document.getElementById('ficha-add-prof').value;
+  if (!profId) { showToast('Selecciona un profesor', 'error'); return; }
+  const asig = document.getElementById('ficha-add-asig').value.trim() || null;
+
+  const { error } = await db.from('alumno_profesor').insert({
+    alumno_id:   fichaAlumnoId,
+    profesor_id: profId,
+    asignatura:  asig,
+  });
+
+  if (error) {
+    const msg = error.code === '23505'
+      ? 'Este profesor ya está asignado a este alumno'
+      : 'Error al asignar: ' + error.message;
+    showToast(msg, 'error');
+    return;
+  }
+
+  showToast('Profesor asignado correctamente');
+  document.getElementById('ficha-add-prof').value = '';
+  document.getElementById('ficha-add-asig').value = '';
+  await refreshFichaProfs();
+
+  // Refrescar tabla si visible
+  if (document.getElementById('section-alumnos').classList.contains('active')) {
+    renderTablaAlumnos(allAlumnos);
+  }
+}
+
+async function quitarProfesorFicha(relId) {
+  if (!confirm('¿Quitar este profesor del alumno?')) return;
+  const { error } = await db.from('alumno_profesor').delete().eq('id', relId);
+  if (error) { showToast('Error al quitar: ' + error.message, 'error'); return; }
+  showToast('Profesor quitado');
+  await refreshFichaProfs();
+  if (document.getElementById('section-alumnos').classList.contains('active')) {
+    renderTablaAlumnos(allAlumnos);
+  }
+}
+
+async function refreshFichaSesiones() {
+  const el = document.getElementById('ficha-sesiones');
+  el.innerHTML = '<div class="loading-section" style="padding:12px"><div class="spinner"></div></div>';
+
+  const { data: sesiones, error } = await db.from('sesiones')
+    .select('id, asignatura, fecha, duracion_minutos, estado, profesor_id')
+    .eq('alumno_id', fichaAlumnoId)
+    .order('fecha', { ascending: false })
+    .limit(6);
+
+  if (error || !sesiones || sesiones.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:4px 0">Sin sesiones registradas.</p>';
+    return;
+  }
+
+  const pillMap = {
+    confirmada: ['st-ok', 'Confirmada'],
+    pendiente_confirmacion: ['st-pend', 'Pendiente'],
+    rechazada: ['st-red', 'Rechazada'],
+    cancelada: ['st-grey', 'Cancelada'],
+  };
+
+  el.innerHTML = `<table class="tabla" style="margin-top:0">
+    <thead><tr><th>Fecha</th><th>Asignatura</th><th>Profesor</th><th>Duración</th><th>Estado</th></tr></thead>
+    <tbody>
+      ${sesiones.map(s => {
+        const [pc, pt] = pillMap[s.estado] || ['st-grey', s.estado];
+        const p = allProfesores.find(x => x.id === s.profesor_id);
+        const pu = p?.usuario || {};
+        return `<tr>
+          <td>${formatShortDate(s.fecha)}</td>
+          <td>${s.asignatura}</td>
+          <td>${pu.nombre ? pu.nombre + ' ' + pu.apellidos : '—'}</td>
+          <td>${s.duracion_minutos} min</td>
+          <td><span class="status-pill ${pc}">${pt}</span></td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
 }
 
 // ============================================================
@@ -1046,7 +1475,7 @@ async function loadSesionesAdmin() {
   sesEl.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
 
   let query = db.from('sesiones')
-    .select('*, alumno:alumnos(usuario:usuarios(nombre, apellidos)), profesor:profesores(usuario:usuarios(nombre, apellidos))')
+    .select('id, asignatura, fecha, duracion_minutos, estado, alumno_id, profesor_id')
     .order('fecha', { ascending: false });
 
   const estVal = document.getElementById('fil-ses-estado').value;
@@ -1056,9 +1485,24 @@ async function loadSesionesAdmin() {
   const mVal = document.getElementById('fil-ses-mes').value;
   if (mVal) query = query.gte('fecha', mVal + '-01').lte('fecha', mVal + '-31');
 
-  const { data: sesiones } = await query.limit(100);
+  const { data: sesiones, error } = await query.limit(100);
 
-  const pillMap = { confirmada:'st-ok Confirmada', pendiente_confirmacion:'st-pend Pendiente', rechazada:'st-red Rechazada', cancelada:'st-grey Cancelada' };
+  if (error) {
+    sesEl.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error al cargar sesiones: ${error.message}</p></div>`;
+    return;
+  }
+
+  const pillMap = {
+    confirmada: ['st-ok', 'Confirmada'],
+    pendiente_confirmacion: ['st-pend', 'Pendiente'],
+    rechazada: ['st-red', 'Rechazada'],
+    cancelada: ['st-grey', 'Cancelada'],
+  };
+
+  const alumnoMap = {};
+  allAlumnos.forEach(a => { alumnoMap[a.id] = a; });
+  const profMap = {};
+  allProfesores.forEach(p => { profMap[p.id] = p; });
 
   sesEl.innerHTML = !sesiones || sesiones.length === 0
     ? `<div class="empty-state"><i class="ti ti-calendar-off"></i><p>Sin sesiones en este período</p></div>`
@@ -1066,13 +1510,13 @@ async function loadSesionesAdmin() {
         <thead><tr><th>Fecha</th><th>Alumno</th><th>Profesor</th><th>Asignatura</th><th>Duración</th><th>Estado</th><th>Acciones</th></tr></thead>
         <tbody>
           ${sesiones.map(s => {
-            const [pc, pt] = (pillMap[s.estado]||'st-grey —').split(' ');
-            const a = s.alumno?.usuario;
-            const p = s.profesor?.usuario;
+            const [pc, pt] = pillMap[s.estado] || ['st-grey', s.estado];
+            const a  = alumnoMap[s.alumno_id]?.usuario || {};
+            const p  = profMap[s.profesor_id]?.usuario || {};
             return `<tr>
               <td>${formatShortDate(s.fecha)}</td>
-              <td style="color:#fff">${a ? a.nombre + ' ' + a.apellidos : '—'}</td>
-              <td>${p ? p.nombre + ' ' + p.apellidos : '—'}</td>
+              <td style="color:#fff">${a.nombre ? a.nombre + ' ' + a.apellidos : '—'}</td>
+              <td>${p.nombre ? p.nombre + ' ' + p.apellidos : '—'}</td>
               <td>${s.asignatura}</td>
               <td>${s.duracion_minutos} min</td>
               <td><span class="status-pill ${pc}">${pt}</span></td>
@@ -1092,8 +1536,11 @@ function abrirCancelar(sesId) {
 async function confirmarCancelacion() {
   const id  = document.getElementById('cancel-ses-id').value;
   const rev = document.getElementById('cancel-revertir').checked;
-  const { data } = await db.rpc('cancelar_sesion_admin', { p_session_id: id, p_revertir_horas: rev });
-  if (!data?.success) { showToast('Error al cancelar', 'error'); return; }
+  const { data, error } = await db.rpc('cancelar_sesion_admin', { p_session_id: id, p_revertir_horas: rev });
+  if (error || !data?.success) {
+    showToast('Error al cancelar: ' + (error?.message || data?.error), 'error');
+    return;
+  }
   showToast('Sesión cancelada');
   cerrarModal('modal-cancelar-sesion');
   await loadDashboard();
@@ -1104,24 +1551,41 @@ async function confirmarCancelacion() {
 // MATERIAL
 // ============================================================
 async function loadTablaMaterial() {
-  const { data: material } = await db.from('material').select('*').order('created_at', { ascending: false });
+  const { data: material, error } = await db.from('material').select('*').order('created_at', { ascending: false });
   const tbody = document.getElementById('tbody-material');
-  if (!material || material.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Sin material</td></tr>`;
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--red)">Error: ${error.message}</td></tr>`;
     return;
   }
-  tbody.innerHTML = material.map(m => `<tr>
-    <td style="color:#fff">${m.titulo}</td>
-    <td>${nivelLabel(m.nivel)}</td>
-    <td>${m.asignatura || '—'}</td>
-    <td>${m.bloque_tema || '—'}</td>
-    <td><span class="pill pill-eso">${m.tipo?.toUpperCase()}</span></td>
-    <td><span class="pill ${m.visible ? 'pill-ok' : 'pill-grey'}">${m.visible ? 'Visible' : 'Oculto'}</span></td>
-    <td style="white-space:nowrap">
-      ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" class="btn-edit">Ver</a>` : ''}
-      <button class="btn-danger" style="margin-left:4px" onclick="toggleVisible('material','${m.id}',${!m.visible})">${m.visible ? 'Ocultar' : 'Mostrar'}</button>
-    </td>
-  </tr>`).join('');
+  if (!material || material.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">Sin material</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = material.map(m => {
+    // Alumnos asignados desde materialAlumnoMap
+    const alIds = materialAlumnoMap[m.id] || [];
+    let asigCell = '—';
+    if (alIds.length > 0) {
+      asigCell = alIds.map(aid => {
+        const a = allAlumnos.find(x => x.id === aid);
+        const u = a?.usuario || {};
+        return `<span class="pill pill-eso" style="margin:1px">${u.nombre ? u.nombre.split(' ')[0] : '?'}</span>`;
+      }).join('');
+    }
+    return `<tr>
+      <td style="color:#fff">${m.titulo}</td>
+      <td>${nivelLabel(m.nivel)}</td>
+      <td>${m.asignatura || '—'}</td>
+      <td>${m.bloque_tema || '—'}</td>
+      <td>${asigCell}</td>
+      <td><span class="pill pill-eso">${(m.tipo||'').toUpperCase()}</span></td>
+      <td><span class="pill ${m.visible ? 'pill-ok' : 'pill-grey'}">${m.visible ? 'Visible' : 'Oculto'}</span></td>
+      <td style="white-space:nowrap">
+        ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" class="btn-edit">Ver</a>` : ''}
+        <button class="btn-danger" style="margin-left:4px" onclick="toggleVisible('material','${m.id}',${!m.visible})">${m.visible ? 'Ocultar' : 'Mostrar'}</button>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 function abrirModalMaterial() {
@@ -1133,43 +1597,61 @@ function abrirModalMaterial() {
 
 async function guardarMaterial(e) {
   e.preventDefault();
-  const file = document.getElementById('mat-archivo').files[0];
-  let url = document.getElementById('mat-url').value.trim();
+  const btn = document.getElementById('btn-guardar-material');
+  btn.disabled = true;
 
-  if (file) {
-    const ext = file.name.split('.').pop();
-    const path = `material/${Date.now()}.${ext}`;
-    const { error: upErr } = await db.storage.from('nexo-files').upload(path, file);
-    if (upErr) { showToast('Error al subir archivo', 'error'); return; }
-    const { data: urlData } = db.storage.from('nexo-files').getPublicUrl(path);
-    url = urlData.publicUrl;
+  try {
+    const file = document.getElementById('mat-archivo').files[0];
+    let url    = document.getElementById('mat-url').value.trim();
+
+    if (file) {
+      const ext  = file.name.split('.').pop();
+      const path = `material/${Date.now()}.${ext}`;
+      const { error: upErr } = await db.storage.from('nexo-files').upload(path, file);
+      if (upErr) throw new Error('Error al subir archivo: ' + upErr.message);
+      const { data: urlData } = db.storage.from('nexo-files').getPublicUrl(path);
+      url = urlData.publicUrl;
+    }
+
+    if (!file && !url) throw new Error('Añade un archivo o una URL');
+
+    const { data: mat, error: matErr } = await db.from('material').insert({
+      titulo:      document.getElementById('mat-titulo').value,
+      descripcion: document.getElementById('mat-descripcion').value || null,
+      nivel:       document.getElementById('mat-nivel').value,
+      asignatura:  document.getElementById('mat-asignatura').value || null,
+      bloque_tema: document.getElementById('mat-bloque').value || null,
+      tipo:        document.getElementById('mat-tipo').value,
+      archivo_url: url || null,
+      subido_por:  ctx.usuario.id,
+    }).select('id').single();
+
+    if (matErr) throw new Error('Error al guardar material: ' + matErr.message);
+
+    const alumnoEsp = document.getElementById('mat-alumno-especifico').value;
+    if (alumnoEsp && mat?.id) {
+      const { error: maErr } = await db.from('material_alumno').insert({
+        material_id: mat.id,
+        alumno_id:   alumnoEsp,
+        asignado_por: ctx.usuario.id,
+      });
+      if (maErr) console.warn('[Nexo] material_alumno insert:', maErr.message);
+    }
+
+    showToast('Material añadido correctamente');
+    cerrarModal('modal-material');
+    await loadAll();
+    await loadTablaMaterial();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
   }
-
-  const { data: mat, error } = await db.from('material').insert({
-    titulo:       document.getElementById('mat-titulo').value,
-    descripcion:  document.getElementById('mat-descripcion').value || null,
-    nivel:        document.getElementById('mat-nivel').value,
-    asignatura:   document.getElementById('mat-asignatura').value || null,
-    bloque_tema:  document.getElementById('mat-bloque').value || null,
-    tipo:         document.getElementById('mat-tipo').value,
-    archivo_url:  url || null,
-    subido_por:   ctx.usuario.id,
-  }).select().single();
-
-  if (error) { showToast('Error al guardar material', 'error'); return; }
-
-  const alumnoEsp = document.getElementById('mat-alumno-especifico').value;
-  if (alumnoEsp && mat) {
-    await db.from('material_alumno').insert({ material_id: mat.id, alumno_id: alumnoEsp, asignado_por: ctx.usuario.id });
-  }
-
-  showToast('Material añadido');
-  cerrarModal('modal-material');
-  await loadTablaMaterial();
 }
 
 async function toggleVisible(tabla, id, estado) {
-  await db.from(tabla).update({ visible: estado }).eq('id', id);
+  const { error } = await db.from(tabla).update({ visible: estado }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
   showToast('Visibilidad actualizada');
   if (tabla === 'material') loadTablaMaterial();
   else if (tabla === 'tests') loadListaTests();
@@ -1179,8 +1661,14 @@ async function toggleVisible(tabla, id, estado) {
 // TESTS
 // ============================================================
 async function loadListaTests() {
-  const { data: tests } = await db.from('tests').select('*, preguntas:preguntas_test(id)').order('created_at', { ascending: false });
+  const { data: tests, error } = await db.from('tests')
+    .select('*, preguntas:preguntas_test(id)')
+    .order('created_at', { ascending: false });
   const el = document.getElementById('tests-lista');
+  if (error) {
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error: ${error.message}</p></div>`;
+    return;
+  }
   if (!tests || tests.length === 0) {
     el.innerHTML = `<div class="empty-state"><i class="ti ti-list-check"></i><p>Sin tests creados todavía</p></div>`;
     return;
@@ -1206,7 +1694,7 @@ async function loadListaTests() {
 let preguntasEdit = [];
 
 function abrirModalTest() {
-  editTestId = null;
+  editTestId    = null;
   preguntasCount = 0;
   preguntasEdit = [];
   document.getElementById('form-test').reset();
@@ -1218,7 +1706,7 @@ function abrirModalTest() {
 
 async function editarTest(id) {
   editTestId = id;
-  const { data: test } = await db.from('tests').select('*').eq('id', id).single();
+  const { data: test }      = await db.from('tests').select('*').eq('id', id).single();
   const { data: preguntas } = await db.from('preguntas_test').select('*').eq('test_id', id).order('orden');
   document.getElementById('modal-test-titulo').textContent = 'Editar test';
   document.getElementById('t-titulo').value     = test.titulo || '';
@@ -1232,13 +1720,13 @@ async function editarTest(id) {
 }
 
 function addPregunta(data = null) {
-  const i = preguntasCount++;
+  const i   = preguntasCount++;
   const div = document.createElement('div');
-  div.id = `preg-wrap-${i}`;
+  div.id    = `preg-wrap-${i}`;
   div.style.cssText = 'background:var(--dark);border:.5px solid var(--border);border-radius:8px;padding:14px;margin-bottom:10px';
   div.innerHTML = `
     <div style="display:flex;justify-content:space-between;margin-bottom:10px">
-      <span style="color:var(--soft);font-size:12px;font-weight:500">Pregunta ${i+1}</span>
+      <span style="color:var(--soft);font-size:12px;font-weight:500">Pregunta ${i + 1}</span>
       <button type="button" onclick="document.getElementById('preg-wrap-${i}').remove()" class="btn-cancel" style="padding:3px 8px;font-size:11px">✕</button>
     </div>
     <label class="fl" style="margin-top:0">Enunciado *</label>
@@ -1263,45 +1751,49 @@ function addPregunta(data = null) {
 async function guardarTest(e) {
   e.preventDefault();
   const testData = {
-    titulo:     document.getElementById('t-titulo').value,
-    asignatura: document.getElementById('t-asignatura').value || null,
-    nivel:      document.getElementById('t-nivel').value || null,
+    titulo:      document.getElementById('t-titulo').value,
+    asignatura:  document.getElementById('t-asignatura').value || null,
+    nivel:       document.getElementById('t-nivel').value || null,
     bloque_tema: document.getElementById('t-bloque').value || null,
-    creado_por: ctx.usuario.id,
+    creado_por:  ctx.usuario.id,
   };
 
   let testId = editTestId;
   if (!editTestId) {
     const { data: nt, error } = await db.from('tests').insert(testData).select().single();
-    if (error) { showToast('Error al guardar test', 'error'); return; }
+    if (error) { showToast('Error al guardar test: ' + error.message, 'error'); return; }
     testId = nt.id;
   } else {
-    await db.from('tests').update(testData).eq('id', testId);
+    const { error } = await db.from('tests').update(testData).eq('id', testId);
+    if (error) { showToast('Error: ' + error.message, 'error'); return; }
     await db.from('preguntas_test').delete().eq('test_id', testId);
   }
 
-  // Collect and save preguntas
   const container = document.getElementById('preguntas-container');
-  const wraps = container.querySelectorAll('[id^="preg-wrap-"]');
-  const pregs = [];
+  const wraps     = container.querySelectorAll('[id^="preg-wrap-"]');
+  const pregs     = [];
   wraps.forEach((wrap, idx) => {
     const n = wrap.id.replace('preg-wrap-', '');
     const enunciado = document.getElementById(`preg-enunciado-${n}`)?.value;
     if (!enunciado) return;
     pregs.push({
-      test_id: testId,
+      test_id:            testId,
       enunciado,
-      opcion_a: document.getElementById(`preg-a-${n}`)?.value || '',
-      opcion_b: document.getElementById(`preg-b-${n}`)?.value || '',
-      opcion_c: document.getElementById(`preg-c-${n}`)?.value || '',
-      opcion_d: document.getElementById(`preg-d-${n}`)?.value || '',
+      opcion_a:           document.getElementById(`preg-a-${n}`)?.value || '',
+      opcion_b:           document.getElementById(`preg-b-${n}`)?.value || '',
+      opcion_c:           document.getElementById(`preg-c-${n}`)?.value || '',
+      opcion_d:           document.getElementById(`preg-d-${n}`)?.value || '',
       respuesta_correcta: document.getElementById(`preg-correct-${n}`)?.value || 'a',
-      orden: idx
+      orden:              idx,
     });
   });
-  if (pregs.length > 0) await db.from('preguntas_test').insert(pregs);
 
-  showToast('Test guardado');
+  if (pregs.length > 0) {
+    const { error } = await db.from('preguntas_test').insert(pregs);
+    if (error) { showToast('Test guardado pero error en preguntas: ' + error.message, 'error'); }
+  }
+
+  showToast('Test guardado correctamente');
   cerrarModal('modal-test');
   await loadListaTests();
 }
@@ -1310,8 +1802,12 @@ async function guardarTest(e) {
 // AVISOS
 // ============================================================
 async function loadTablaAvisos() {
-  const { data: avisos } = await db.from('avisos').select('*').order('created_at', { ascending: false });
+  const { data: avisos, error } = await db.from('avisos').select('*').order('created_at', { ascending: false });
   const el = document.getElementById('avisos-tabla');
+  if (error) {
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error: ${error.message}</p></div>`;
+    return;
+  }
   if (!avisos || avisos.length === 0) {
     el.innerHTML = `<div class="empty-state"><i class="ti ti-bell-off"></i><p>Sin avisos enviados</p></div>`;
     return;
@@ -1322,7 +1818,9 @@ async function loadTablaAvisos() {
       ${avisos.map(a => {
         const dest = a.destinatario_id
           ? (allUsuarios.find(u => u.id === a.destinatario_id)?.nombre || 'Usuario específico')
-          : a.destinatario_rol === 'todos' ? 'Todos' : a.destinatario_rol === 'profesor' ? 'Profesores' : 'Alumnos';
+          : a.destinatario_rol === 'todos' ? 'Todos'
+          : a.destinatario_rol === 'profesor' ? 'Profesores'
+          : 'Alumnos';
         return `<tr>
           <td style="color:#fff">${a.titulo}</td>
           <td>${dest}</td>
@@ -1350,22 +1848,23 @@ async function guardarAviso(e) {
   e.preventDefault();
   const tipo = document.getElementById('av-destinatario-tipo').value;
   const aviso = {
-    titulo:          document.getElementById('av-titulo').value,
-    contenido:       document.getElementById('av-contenido').value,
-    creado_por:      ctx.usuario.id,
+    titulo:           document.getElementById('av-titulo').value,
+    contenido:        document.getElementById('av-contenido').value,
+    creado_por:       ctx.usuario.id,
     destinatario_rol: tipo === 'especifico' ? null : tipo,
     destinatario_id:  tipo === 'especifico' ? document.getElementById('av-usuario-especifico').value : null,
   };
 
   const { error } = await db.from('avisos').insert(aviso);
-  if (error) { showToast('Error al publicar aviso', 'error'); return; }
-  showToast('Aviso publicado');
+  if (error) { showToast('Error al publicar: ' + error.message, 'error'); return; }
+  showToast('Aviso publicado correctamente');
   cerrarModal('modal-aviso');
   await loadTablaAvisos();
 }
 
 async function ocultarAviso(id) {
-  await db.from('avisos').update({ visible: false }).eq('id', id);
+  const { error } = await db.from('avisos').update({ visible: false }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
   showToast('Aviso ocultado');
   await loadTablaAvisos();
 }

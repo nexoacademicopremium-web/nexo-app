@@ -598,6 +598,43 @@ END;
 $$;
 
 -- ============================================================
+-- ALUMNO_PROFESOR — Relación many-to-many (un alumno puede tener
+-- varios profesores por asignatura, un profesor varios alumnos)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.alumno_profesor (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  alumno_id   UUID NOT NULL REFERENCES public.alumnos(id)   ON DELETE CASCADE,
+  profesor_id UUID NOT NULL REFERENCES public.profesores(id) ON DELETE CASCADE,
+  asignatura  TEXT,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(alumno_id, profesor_id)
+);
+
+ALTER TABLE public.alumno_profesor ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "alumno_profesor_admin_all" ON public.alumno_profesor
+  FOR ALL USING (public.is_admin());
+
+CREATE POLICY "alumno_profesor_alumno_read" ON public.alumno_profesor
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.alumnos a
+      WHERE a.usuario_id = auth.uid() AND a.id = public.alumno_profesor.alumno_id
+    )
+  );
+
+CREATE POLICY "alumno_profesor_profesor_read" ON public.alumno_profesor
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.profesores p
+      WHERE p.usuario_id = auth.uid() AND p.id = public.alumno_profesor.profesor_id
+    )
+  );
+
+CREATE INDEX IF NOT EXISTS idx_alumno_profesor_alumno   ON public.alumno_profesor(alumno_id);
+CREATE INDEX IF NOT EXISTS idx_alumno_profesor_profesor ON public.alumno_profesor(profesor_id);
+
+-- ============================================================
 -- Índices de rendimiento
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_alumnos_usuario   ON public.alumnos(usuario_id);
