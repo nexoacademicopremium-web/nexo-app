@@ -172,9 +172,24 @@ async function handleLogin(e) {
       await db.auth.signOut();
       throw new Error(
         currentRole === 'alumno'
-          ? 'Esta cuenta no es de alumno. ¿Eres profesor?'
-          : 'Esta cuenta no es de profesor. ¿Eres alumno?'
+          ? 'Esta cuenta no es de alumno. ¿Eres profesor? Cambia la pestaña.'
+          : 'Esta cuenta no es de profesor. ¿Eres alumno? Cambia la pestaña.'
       );
+    }
+
+    // Verificar que existe un perfil en la tabla correspondiente
+    if (currentRole === 'alumno') {
+      const { data: alumnoRow } = await db.from('alumnos').select('id').eq('usuario_id', data.user.id).maybeSingle();
+      if (!alumnoRow) {
+        await db.auth.signOut();
+        throw new Error('Estas credenciales no corresponden a ningún alumno. Contacta con Nexo para acceder.');
+      }
+    } else if (currentRole === 'profesor') {
+      const { data: profRow } = await db.from('profesores').select('id').eq('usuario_id', data.user.id).maybeSingle();
+      if (!profRow) {
+        await db.auth.signOut();
+        throw new Error('Estas credenciales no corresponden a ningún profesor. Contacta con Nexo para acceder.');
+      }
     }
 
     // Redirect by role

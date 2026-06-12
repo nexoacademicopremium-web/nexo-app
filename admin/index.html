@@ -499,6 +499,17 @@
       </div>
     </div>
 
+    <!-- INFORMES DEL ALUMNO -->
+    <div class="ficha-section">
+      <div class="ficha-sec-title"><i class="ti ti-file-analytics"></i> Informes del alumno</div>
+      <div id="ficha-informes-lista">
+        <div class="loading-section" style="padding:12px"><div class="spinner"></div></div>
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:10px;justify-content:center" onclick="abrirInformeParaFicha()">
+        <i class="ti ti-plus"></i> Subir informe
+      </button>
+    </div>
+
     <div class="modal-footer">
       <button class="btn-cancel" onclick="cerrarModal('modal-ficha')">Cerrar</button>
       <button class="btn-primary" onclick="editarAlumnoDesdeficha()"><i class="ti ti-edit"></i> Editar datos</button>
@@ -650,6 +661,11 @@ let preguntasCount = 0;
   if (!ctx) return;
   document.getElementById('topbar-name').textContent = ctx.usuario.nombre;
   await Promise.all([loadAll(), loadDashboard()]);
+  // Restaurar última sección visitada
+  const savedSeccion = localStorage.getItem('nexo-seccion-admin');
+  if (savedSeccion && savedSeccion !== 'dashboard' && document.getElementById('section-' + savedSeccion)) {
+    showSection(savedSeccion);
+  }
 })();
 
 // ============================================================
@@ -761,6 +777,7 @@ function showSection(id) {
   document.getElementById('section-' + id).classList.add('active');
   document.getElementById('nav-' + id).classList.add('active');
   window.scrollTo(0, 0);
+  localStorage.setItem('nexo-seccion-admin', id);
   const loaders = {
     dashboard:  loadDashboard,
     alumnos:    loadTablaAlumnos,
@@ -1117,6 +1134,8 @@ async function subirInforme(e) {
     showToast('Informe subido correctamente');
     cerrarModal('modal-informe');
     document.getElementById('form-informe').reset();
+    // Si venimos de la ficha, reabrirla para ver el informe recién subido
+    if (fichaAlumnoId === alumnoId) abrirFicha(fichaAlumnoId);
   } catch (err) {
     showToast(err.message, 'error');
   } finally {
@@ -1289,7 +1308,7 @@ async function abrirFicha(alumnoId) {
   document.getElementById('modal-ficha').classList.add('open');
 
   // Cargar en paralelo
-  await Promise.all([refreshFichaProfs(), refreshFichaSesiones()]);
+  await Promise.all([refreshFichaProfs(), refreshFichaSesiones(), refreshFichaInformes()]);
 }
 
 function renderBonoVisual(total, rest) {
@@ -1467,6 +1486,43 @@ async function refreshFichaSesiones() {
   </table>`;
 }
 
+async function refreshFichaInformes() {
+  const el = document.getElementById('ficha-informes-lista');
+  el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
+
+  const { data, error } = await db.from('informes')
+    .select('id, titulo, tipo, fecha, archivo_url')
+    .eq('alumno_id', fichaAlumnoId)
+    .order('fecha', { ascending: false })
+    .limit(5);
+
+  if (error || !data || data.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:4px 0">Sin informes subidos todavía.</p>';
+    return;
+  }
+
+  el.innerHTML = data.map(inf => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid var(--border2)">
+      <div style="width:32px;height:32px;border-radius:7px;background:${inf.tipo === 'mensual' ? '#0f2240' : '#0d2d1e'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="ti ${inf.tipo === 'mensual' ? 'ti-report-analytics' : 'ti-report'}" style="color:${inf.tipo === 'mensual' ? 'var(--blue)' : 'var(--green)'};font-size:15px"></i>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="color:#fff;font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${inf.titulo}</div>
+        <div style="color:var(--muted);font-size:10px">${formatShortDate(inf.fecha)} · <span class="pill ${inf.tipo === 'mensual' ? 'pill-eso' : 'pill-grey'}" style="padding:1px 5px;font-size:9px">${inf.tipo === 'mensual' ? 'Mensual' : 'Semanal'}</span></div>
+      </div>
+      ${inf.archivo_url ? `<a href="${inf.archivo_url}" target="_blank" title="Descargar" style="color:var(--blue);font-size:17px;flex-shrink:0"><i class="ti ti-download"></i></a>` : '<span style="color:var(--muted);font-size:10px">Sin archivo</span>'}
+    </div>
+  `).join('');
+}
+
+function abrirInformeParaFicha() {
+  const a = allAlumnos.find(x => x.id === fichaAlumnoId);
+  if (!a) return;
+  const u = a.usuario || {};
+  cerrarModal('modal-ficha');
+  abrirModalInforme(fichaAlumnoId, `${u.nombre || ''} ${u.apellidos || ''}`);
+}
+
 // ============================================================
 // SESIONES ADMIN
 // ============================================================
@@ -1623,6 +1679,7 @@ async function guardarMaterial(e) {
       bloque_tema: document.getElementById('mat-bloque').value || null,
       tipo:        document.getElementById('mat-tipo').value,
       archivo_url: url || null,
+      visible:     true,
       subido_por:  ctx.usuario.id,
     }).select('id').single();
 

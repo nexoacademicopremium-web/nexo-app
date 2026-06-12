@@ -463,9 +463,16 @@ let editEventoId = null;
     checkPendingSessions()
   ]);
 
-  // Check URL params for email confirmation
+  // Check URL params for email confirmation, else restore last section
   const p = new URLSearchParams(window.location.search);
-  if (p.get('seccion') === 'sesiones') showSection('sesiones');
+  if (p.get('seccion') === 'sesiones') {
+    showSection('sesiones');
+  } else {
+    const saved = localStorage.getItem('nexo-seccion-alumno');
+    if (saved && saved !== 'inicio' && document.getElementById('section-' + saved)) {
+      showSection(saved);
+    }
+  }
 })();
 
 // ============================================================
@@ -478,6 +485,7 @@ function showSection(id) {
   const navEl = document.getElementById('nav-' + id);
   if (navEl) navEl.classList.add('active');
   window.scrollTo(0, 0);
+  localStorage.setItem('nexo-seccion-alumno', id);
 
   const loaders = {
     sesiones:   loadSesiones,

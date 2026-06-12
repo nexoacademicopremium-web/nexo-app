@@ -116,7 +116,7 @@ async function handleLogin(e) {
   const { data: { session } } = await db.auth.getSession();
   if (session) {
     const { data: u } = await db.from('usuarios').select('rol').eq('id', session.user.id).single();
-    if (u?.rol === 'admin') window.location.href = '/admin/index.html';
+    if (u?.rol === 'admin') window.location.href = BASE_PATH + '/admin/index.html';
   }
 })();
 </script>

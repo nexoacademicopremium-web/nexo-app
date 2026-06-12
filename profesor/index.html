@@ -617,13 +617,26 @@ let editClaseId = null;
   document.getElementById('avatar-initials').textContent = getInitials(usuario.nombre, usuario.apellidos);
   document.getElementById('greeting').textContent = 'Hola, ' + usuario.nombre;
 
-  // Load alumnos asignados
+  // Load alumnos: via FK profesor_id Y via junction table alumno_profesor
   if (profesorData) {
-    const { data } = await db
+    const { data: junctionData } = await db
+      .from('alumno_profesor')
+      .select('alumno_id')
+      .eq('profesor_id', profesorData.id);
+    const junctionIds = (junctionData || []).map(j => j.alumno_id);
+
+    let alumnosQuery = db
       .from('alumnos')
       .select('*, usuario:usuarios(nombre, apellidos, email)')
-      .eq('profesor_id', profesorData.id)
       .eq('activo', true);
+
+    if (junctionIds.length > 0) {
+      alumnosQuery = alumnosQuery.or(`profesor_id.eq.${profesorData.id},id.in.(${junctionIds.join(',')})`);
+    } else {
+      alumnosQuery = alumnosQuery.eq('profesor_id', profesorData.id);
+    }
+
+    const { data } = await alumnosQuery;
     misAlumnos = data || [];
   }
 
@@ -635,6 +648,12 @@ let editClaseId = null;
     loadDashboardProf(),
     checkAvisos()
   ]);
+
+  // Restaurar última sección visitada
+  const savedSeccion = localStorage.getItem('nexo-seccion-profesor');
+  if (savedSeccion && savedSeccion !== 'panel' && document.getElementById('section-' + savedSeccion)) {
+    showSection(savedSeccion);
+  }
 })();
 
 // ============================================================
@@ -648,6 +667,7 @@ function showSection(id) {
   if (navEl) navEl.classList.add('active');
   if (id !== 'alumnos') cerrarFicha();
   window.scrollTo(0, 0);
+  localStorage.setItem('nexo-seccion-profesor', id);
 
   const loaders = {
     alumnos:    loadTablaAlumnos,
