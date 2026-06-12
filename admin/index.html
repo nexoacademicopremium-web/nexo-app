@@ -486,6 +486,65 @@
   </div>
 </div>
 
+<!-- MODAL FICHA PROFESOR (unificada) -->
+<div class="modal-overlay" id="modal-ficha-profesor">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-title">
+      <div style="display:flex;align-items:center;gap:10px">
+        <i class="ti ti-chalkboard" style="color:var(--blue);font-size:18px"></i>
+        <span id="ficha-prof-titulo">Ficha del profesor</span>
+      </div>
+      <button class="modal-close" onclick="cerrarModal('modal-ficha-profesor')">×</button>
+    </div>
+
+    <!-- 1. DATOS BÁSICOS -->
+    <div class="ficha-section">
+      <div class="ficha-sec-title"><i class="ti ti-user-circle"></i> Datos básicos</div>
+      <div class="fi-grid2">
+        <div><label class="fl" style="margin-top:0">Nombre *</label><input class="fi" id="fich-prof-nombre" required></div>
+        <div><label class="fl" style="margin-top:0">Apellidos *</label><input class="fi" id="fich-prof-apellidos" required></div>
+      </div>
+      <label class="fl">Email *</label>
+      <input class="fi" id="fich-prof-email" type="email" required>
+      <label class="fl">Teléfono</label>
+      <input class="fi" id="fich-prof-telefono" type="tel" placeholder="600 000 000">
+    </div>
+
+    <!-- 2. ASIGNATURAS QUE IMPARTE -->
+    <div class="ficha-section">
+      <div class="ficha-sec-title"><i class="ti ti-books"></i> Asignaturas que imparte <span style="color:var(--muted);font-size:10px;font-weight:400">(al menos una obligatoria)</span></div>
+      <div id="ficha-prof-asignaturas-lista">
+        <div class="loading-section" style="padding:12px"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- 3. CAMBIAR CONTRASEÑA -->
+    <div class="ficha-section">
+      <div class="ficha-sec-title"><i class="ti ti-lock"></i> Cambiar contraseña</div>
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <div style="flex:1">
+          <label class="fl" style="margin-top:0">Nueva contraseña</label>
+          <input class="fi" id="fich-prof-password" type="text" placeholder="mínimo 6 caracteres" autocomplete="new-password">
+        </div>
+        <button class="btn-primary" id="btn-cambiar-pwd-prof" onclick="cambiarPasswordProfesor()" style="flex-shrink:0;margin-bottom:1px">
+          <i class="ti ti-lock-check"></i> Cambiar
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. OBSERVACIONES -->
+    <div class="ficha-section">
+      <div class="ficha-sec-title"><i class="ti ti-notes"></i> Observaciones</div>
+      <textarea class="fi" id="fich-prof-observaciones" rows="3" placeholder="Notas internas sobre el profesor..."></textarea>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModal('modal-ficha-profesor')">Cerrar</button>
+      <button class="btn-primary" id="btn-guardar-ficha-prof" onclick="guardarFichaProfesor()"><i class="ti ti-device-floppy"></i> Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL FICHA ALUMNO (unificada) -->
 <div class="modal-overlay" id="modal-ficha">
   <div class="modal-box" style="max-width:680px">
@@ -737,7 +796,7 @@ let alumnoProfesorMap = {};   // alumno_id -> [{id, profesor_id, asignatura_id}]
 let materialAlumnoMap = {};   // material_id -> [{alumno_id}]
 let allMaterial = [];
 let editAlumnoId = null, editProfesorId = null, editMaterialId = null, editTestId = null;
-let fichaAlumnoId = null;
+let fichaAlumnoId = null, fichaProfesorId = null;
 let preguntasCount = 0;
 
 // ============================================================
@@ -1276,7 +1335,7 @@ function renderTablaProfesores(lista) {
       <td><span class="pill pill-ok">${nAlumnos} alumno${nAlumnos !== 1 ? 's' : ''}</span></td>
       <td><span class="pill ${p.activo ? 'pill-ok' : 'pill-grey'}">${p.activo ? 'Activo' : 'Inactivo'}</span></td>
       <td style="white-space:nowrap">
-        <button class="btn-edit" onclick="editarProfesor('${p.id}')">Editar</button>
+        <button class="btn-ficha" onclick="abrirFichaProfesor('${p.id}')"><i class="ti ti-id-badge"></i> Ficha</button>
         <button class="btn-danger" style="margin-left:4px" onclick="toggleActivo('profesor','${p.id}',${!p.activo})">${p.activo ? 'Desactivar' : 'Activar'}</button>
       </td>
     </tr>`;
@@ -1375,6 +1434,146 @@ async function guardarProfesor(e) {
     showToast(err.message, 'error');
   } finally {
     btn.disabled = false;
+  }
+}
+
+// ============================================================
+// FICHA DE PROFESOR (unificada)
+// ============================================================
+async function abrirFichaProfesor(profId) {
+  fichaProfesorId = profId;
+  const p = allProfesores.find(x => x.id === profId);
+  if (!p) return;
+  const u = p.usuario || {};
+
+  document.getElementById('ficha-prof-titulo').textContent = `${u.nombre || '?'} ${u.apellidos || ''}`;
+  document.getElementById('fich-prof-nombre').value        = u.nombre || '';
+  document.getElementById('fich-prof-apellidos').value     = u.apellidos || '';
+  document.getElementById('fich-prof-email').value         = u.email || '';
+  document.getElementById('fich-prof-telefono').value      = p.telefono || '';
+  document.getElementById('fich-prof-password').value      = '';
+  document.getElementById('fich-prof-observaciones').value = p.observaciones || '';
+
+  document.getElementById('modal-ficha-profesor').classList.add('open');
+  await refreshFichaProfAsignaturas();
+}
+
+async function guardarFichaProfesor() {
+  const btn = document.getElementById('btn-guardar-ficha-prof');
+  btn.disabled = true;
+
+  const nombre      = document.getElementById('fich-prof-nombre').value.trim();
+  const apellidos   = document.getElementById('fich-prof-apellidos').value.trim();
+  const email       = document.getElementById('fich-prof-email').value.trim();
+  const telefono    = document.getElementById('fich-prof-telefono').value.trim();
+  const observaciones = document.getElementById('fich-prof-observaciones').value.trim();
+
+  if (!nombre || !apellidos || !email) {
+    showToast('Nombre, apellidos y email son obligatorios', 'error');
+    btn.disabled = false;
+    return;
+  }
+
+  const p = allProfesores.find(x => x.id === fichaProfesorId);
+
+  const [resUser, resProf] = await Promise.all([
+    p?.usuario_id
+      ? db.from('usuarios').update({ nombre, apellidos, email }).eq('id', p.usuario_id)
+      : Promise.resolve({ error: null }),
+    db.from('profesores').update({ telefono: telefono || null, observaciones: observaciones || null }).eq('id', fichaProfesorId),
+  ]);
+
+  if (resUser.error || resProf.error) {
+    showToast('Error al guardar: ' + (resUser.error?.message || resProf.error?.message), 'error');
+    btn.disabled = false;
+    return;
+  }
+
+  showToast('Ficha guardada correctamente');
+
+  const idx = allProfesores.findIndex(x => x.id === fichaProfesorId);
+  if (idx >= 0) {
+    if (allProfesores[idx].usuario) {
+      allProfesores[idx].usuario.nombre    = nombre;
+      allProfesores[idx].usuario.apellidos = apellidos;
+      allProfesores[idx].usuario.email     = email;
+    }
+    allProfesores[idx].telefono      = telefono;
+    allProfesores[idx].observaciones = observaciones;
+  }
+  document.getElementById('ficha-prof-titulo').textContent = `${nombre} ${apellidos}`;
+
+  if (document.getElementById('section-profesores').classList.contains('active')) {
+    renderTablaProfesores(allProfesores);
+  }
+  btn.disabled = false;
+}
+
+async function cambiarPasswordProfesor() {
+  const btn = document.getElementById('btn-cambiar-pwd-prof');
+  const pwd = document.getElementById('fich-prof-password').value.trim();
+  if (!pwd) { showToast('Escribe una contraseña', 'error'); return; }
+  if (pwd.length < 6) { showToast('Mínimo 6 caracteres', 'error'); return; }
+
+  const p = allProfesores.find(x => x.id === fichaProfesorId);
+  const userId = p?.usuario_id || p?.usuario?.id;
+  if (!userId) { showToast('No se encontró el usuario', 'error'); return; }
+
+  btn.disabled = true;
+  const { data, error } = await db.functions.invoke('update-user-password', {
+    body: { user_id: userId, password: pwd },
+  });
+
+  if (error || !data?.ok) {
+    showToast('Error: ' + (data?.error || error?.message || 'desconocido'), 'error');
+    btn.disabled = false;
+    return;
+  }
+
+  showToast('Contraseña cambiada correctamente');
+  document.getElementById('fich-prof-password').value = '';
+  btn.disabled = false;
+}
+
+async function refreshFichaProfAsignaturas() {
+  const el = document.getElementById('ficha-prof-asignaturas-lista');
+  el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
+
+  const { data, error } = await db.from('profesor_asignaturas')
+    .select('asignatura_id')
+    .eq('profesor_id', fichaProfesorId);
+
+  if (error) {
+    el.innerHTML = `<p style="color:var(--red);font-size:12px">${error.message}</p>`;
+    return;
+  }
+
+  const asignadas = new Set((data || []).map(r => r.asignatura_id));
+  if (allAsignaturas.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px">Sin asignaturas en el catálogo.</p>';
+    return;
+  }
+  el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">` +
+    allAsignaturas.map(a => {
+      const checked = asignadas.has(a.id);
+      return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:6px;border:.5px solid ${checked ? 'var(--blue)' : 'transparent'};background:${checked ? '#0a1a30' : 'transparent'}">
+        <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleFichaProfAsignatura(${a.id},this.checked)" style="accent-color:var(--blue);flex-shrink:0">
+        <span style="font-size:12px;color:${checked ? '#fff' : 'var(--muted)'}">${a.nombre}</span>
+      </label>`;
+    }).join('') +
+  `</div>`;
+}
+
+async function toggleFichaProfAsignatura(asignaturaId, checked) {
+  if (checked) {
+    const { error } = await db.from('profesor_asignaturas').insert({
+      profesor_id: fichaProfesorId, asignatura_id: asignaturaId,
+    });
+    if (error) { showToast('Error: ' + error.message, 'error'); await refreshFichaProfAsignaturas(); }
+  } else {
+    const { error } = await db.from('profesor_asignaturas')
+      .delete().eq('profesor_id', fichaProfesorId).eq('asignatura_id', asignaturaId);
+    if (error) { showToast('Error: ' + error.message, 'error'); await refreshFichaProfAsignaturas(); }
   }
 }
 
