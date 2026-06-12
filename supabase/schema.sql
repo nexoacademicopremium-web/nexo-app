@@ -6,9 +6,12 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================================
--- FUNCIÓN HELPER: is_admin() — SECURITY DEFINER para evitar
--- recursión infinita en policies que comprueban rol admin
+-- FUNCIONES HELPER — todas SECURITY DEFINER
+-- Bypasean RLS al consultar su propia tabla, cortando cualquier
+-- ciclo de recursión entre policies de distintas tablas.
 -- ============================================================
+
+-- Comprueba si el usuario actual es admin (consulta usuarios sin RLS)
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN
 LANGUAGE sql
@@ -19,6 +22,36 @@ AS $$
     SELECT 1 FROM public.usuarios
     WHERE id = auth.uid() AND rol = 'admin'
   );
+$$;
+
+-- Devuelve el UUID de la fila en profesores del usuario actual (sin RLS)
+CREATE OR REPLACE FUNCTION public.get_profesor_id()
+RETURNS UUID
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT id FROM public.profesores WHERE usuario_id = auth.uid() LIMIT 1;
+$$;
+
+-- Devuelve el UUID de la fila en alumnos del usuario actual (sin RLS)
+CREATE OR REPLACE FUNCTION public.get_alumno_id()
+RETURNS UUID
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT id FROM public.alumnos WHERE usuario_id = auth.uid() LIMIT 1;
+$$;
+
+-- Devuelve el nivel del alumno actual (sin RLS)
+CREATE OR REPLACE FUNCTION public.get_alumno_nivel()
+RETURNS TEXT
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT nivel FROM public.alumnos WHERE usuario_id = auth.uid() LIMIT 1;
 $$;
 
 -- ============================================================
@@ -103,16 +136,19 @@ CREATE POLICY "profesores_admin_all" ON public.profesores
 ALTER TABLE public.alumnos
   ADD COLUMN IF NOT EXISTS profesor_id UUID REFERENCES public.profesores(id);
 
--- Estas dos policies referencian profesor_id, por eso van DESPUÉS del ALTER TABLE
+-- Estas dos policies referencian profesor_id, por eso van DESPUÉS del ALTER TABLE.
+-- IMPORTANTE: NO se usan subqueries cruzadas entre alumnos ↔ profesores porque
+-- crearían recursión infinita. Se usan funciones SECURITY DEFINER en su lugar.
+
+-- Permite a un profesor ver los alumnos que tiene asignados (vía profesor_id)
 CREATE POLICY "alumnos_profesor_read" ON public.alumnos
   FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.profesores p
-      WHERE p.usuario_id = auth.uid()
-        AND p.id = public.alumnos.profesor_id
-    )
+    profesor_id = public.get_profesor_id()
   );
 
+-- Permite a un alumno ver la ficha de su profesor asignado
+-- (get_alumno_id no se usa aquí porque necesitamos el profesor_id del alumno;
+--  la subquery a alumnos es segura porque alumnos_profesor_read ya no consulta profesores)
 CREATE POLICY "profesores_alumno_read" ON public.profesores
   FOR SELECT USING (
     EXISTS (
@@ -247,32 +283,30 @@ CREATE TABLE IF NOT EXISTS public.material_alumno (
 
 ALTER TABLE public.material_alumno ENABLE ROW LEVEL SECURITY;
 
+-- get_alumno_id() bypasea RLS en alumnos → sin recursión
 CREATE POLICY "material_alumno_read_own" ON public.material_alumno
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.alumnos a
-      WHERE a.usuario_id = auth.uid() AND a.id = public.material_alumno.alumno_id
-    )
-  );
+  FOR SELECT USING (alumno_id = public.get_alumno_id());
 
 CREATE POLICY "material_alumno_admin_all" ON public.material_alumno
   FOR ALL USING (
     public.is_admin()
   );
 
--- Ahora material_alumno ya existe, se puede crear esta policy con JOIN
+-- Policy de lectura para alumnos: usa helpers SECURITY DEFINER para evitar
+-- recursión a través de material_alumno → alumnos → (ciclo anterior)
 CREATE POLICY "material_alumno_read" ON public.material
   FOR SELECT USING (
     visible = TRUE AND (
+      -- Material asignado explícitamente a este alumno
       EXISTS (
-        SELECT 1 FROM public.alumnos a
-        JOIN public.material_alumno ma ON ma.alumno_id = a.id
-        WHERE a.usuario_id = auth.uid() AND ma.material_id = public.material.id
+        SELECT 1 FROM public.material_alumno ma
+        WHERE ma.material_id = public.material.id
+          AND ma.alumno_id = public.get_alumno_id()
       )
-      OR EXISTS (
-        SELECT 1 FROM public.alumnos a
-        WHERE a.usuario_id = auth.uid()
-          AND (public.material.nivel = 'todos' OR public.material.nivel = a.nivel)
+      OR (
+        -- Material general del nivel del alumno
+        public.get_alumno_id() IS NOT NULL
+        AND (nivel = 'todos' OR nivel = public.get_alumno_nivel())
       )
     )
   );
@@ -615,21 +649,12 @@ ALTER TABLE public.alumno_profesor ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "alumno_profesor_admin_all" ON public.alumno_profesor
   FOR ALL USING (public.is_admin());
 
+-- Helpers SECURITY DEFINER → sin subqueries cruzadas → sin recursión
 CREATE POLICY "alumno_profesor_alumno_read" ON public.alumno_profesor
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.alumnos a
-      WHERE a.usuario_id = auth.uid() AND a.id = public.alumno_profesor.alumno_id
-    )
-  );
+  FOR SELECT USING (alumno_id = public.get_alumno_id());
 
 CREATE POLICY "alumno_profesor_profesor_read" ON public.alumno_profesor
-  FOR SELECT USING (
-    EXISTS (
-      SELECT 1 FROM public.profesores p
-      WHERE p.usuario_id = auth.uid() AND p.id = public.alumno_profesor.profesor_id
-    )
-  );
+  FOR SELECT USING (profesor_id = public.get_profesor_id());
 
 CREATE INDEX IF NOT EXISTS idx_alumno_profesor_alumno   ON public.alumno_profesor(alumno_id);
 CREATE INDEX IF NOT EXISTS idx_alumno_profesor_profesor ON public.alumno_profesor(profesor_id);
