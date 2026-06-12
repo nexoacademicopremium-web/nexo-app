@@ -893,13 +893,15 @@ async function loadEstudiar() {
   const alumno = ctx.alumnoData;
 
   // Cargar material asignado específicamente y asignaturas del alumno en paralelo
-  const [{ data: matAlumno }, { data: misAsignaturas }] = await Promise.all([
+  const [{ data: matAlumno }, { data: misAsignaturas }, { data: catalogoAsig }] = await Promise.all([
     db.from('material_alumno').select('material_id').eq('alumno_id', alumno.id),
-    db.from('alumno_asignaturas').select('asignatura').eq('alumno_id', alumno.id),
+    db.from('alumno_asignaturas').select('asignatura_id').eq('alumno_id', alumno.id),
+    db.from('asignaturas').select('id,nombre'),
   ]);
 
   const matIds      = (matAlumno || []).map(m => m.material_id);
-  const asigFiltros = (misAsignaturas || []).map(a => a.asignatura);
+  const asigFiltros = (misAsignaturas || []).map(a => a.asignatura_id);  // SMALLINT[]
+  const asigMap     = Object.fromEntries((catalogoAsig || []).map(a => [a.id, a.nombre]));
 
   let query = db.from('material').select('*').eq('visible', true);
   if (matIds.length > 0) {
@@ -908,20 +910,20 @@ async function loadEstudiar() {
     query = query.or(`nivel.eq.todos,nivel.eq.${alumno.nivel}`);
   }
 
-  const { data: rawMaterial } = await query.order('asignatura').order('bloque_tema');
+  const { data: rawMaterial } = await query.order('asignatura_id').order('bloque_tema');
 
-  // Si el alumno tiene asignaturas asignadas, filtrar: mostrar solo material
-  // cuya asignatura coincida, más el asignado personalmente y el sin asignatura.
+  // Si el alumno tiene asignaturas asignadas, filtrar por asignatura_id.
+  // Siempre se muestran: material asignado personalmente y material sin asignatura.
   const material = asigFiltros.length > 0
     ? (rawMaterial || []).filter(m =>
-        matIds.includes(m.id) || !m.asignatura || asigFiltros.includes(m.asignatura)
+        matIds.includes(m.id) || !m.asignatura_id || asigFiltros.includes(m.asignatura_id)
       )
     : (rawMaterial || []);
 
-  // Group by asignatura
+  // Group by asignatura (nombre desde catálogo, o texto legacy, o General)
   const byAsig = {};
   (material || []).forEach(m => {
-    const k = m.asignatura || 'General';
+    const k = (m.asignatura_id && asigMap[m.asignatura_id]) || m.asignatura || 'General';
     if (!byAsig[k]) byAsig[k] = [];
     byAsig[k].push(m);
   });
