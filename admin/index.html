@@ -118,6 +118,25 @@
   .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
   .empty-state i{font-size:36px;margin-bottom:12px;display:block;color:var(--border)}
 
+  /* ── Material jerárquico ── */
+  .mat-asig-section{margin-bottom:24px}
+  .mat-asig-header{display:flex;align-items:center;gap:8px;padding:0 2px 8px;color:var(--soft);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;border-bottom:.5px solid var(--border);margin-bottom:10px}
+  .mat-asig-header i{color:var(--blue);font-size:16px}
+  .mat-bloque{background:var(--surface);border:.5px solid var(--border);border-left:3px solid var(--navy);border-radius:8px;margin-bottom:8px;overflow:hidden}
+  .mat-bloque-head{display:flex;align-items:center;gap:10px;padding:10px 14px;background:#071228}
+  .mat-bloque-head>.ti{color:var(--blue);font-size:17px;flex-shrink:0}
+  .mat-bloque-name{color:#fff;font-size:13px;font-weight:600;flex:1}
+  .mat-bloque-nivel{font-size:10px;padding:2px 8px;border-radius:20px;background:#0f2240;color:var(--blue);font-weight:500;flex-shrink:0}
+  .mat-tema-head{display:flex;align-items:center;gap:7px;padding:6px 14px 6px 22px;border-top:.5px solid var(--border2);background:var(--dark);color:var(--muted);font-size:11px;font-weight:500}
+  .mat-tema-head i{font-size:13px;color:var(--soft)}
+  .mat-item{display:flex;align-items:center;gap:10px;padding:9px 14px 9px 34px;border-top:.5px solid var(--border2);transition:background .12s}
+  .mat-item:hover{background:var(--border2)}
+  .mat-item-ico{width:28px;height:28px;border-radius:6px;background:#0f2240;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .mat-item-ico i{color:var(--blue);font-size:13px}
+  .mat-item-title{color:#fff;font-size:13px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mat-item-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
+  .mat-sinclasif{background:var(--surface);border:.5px solid var(--border);border-left:3px solid var(--border);border-radius:8px;overflow:hidden}
+
   @keyframes spin{to{transform:rotate(360deg)}}
   .spinner{display:inline-block;width:20px;height:20px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
   .loading-section{display:flex;justify-content:center;padding:40px;gap:10px;align-items:center;color:var(--muted)}
@@ -277,12 +296,7 @@
     <div><h1 class="page-title" style="margin:0">Material</h1><p class="page-sub" style="margin:0">Recursos educativos</p></div>
     <button class="btn-primary" onclick="abrirModalMaterial()"><i class="ti ti-plus"></i> Añadir material</button>
   </div>
-  <div class="card">
-    <table class="tabla">
-      <thead><tr><th>Título</th><th>Nivel</th><th>Asignatura</th><th>Bloque</th><th>Tema</th><th>Asignado a</th><th>Tipo</th><th>Visible</th><th style="min-width:220px">Acciones</th></tr></thead>
-      <tbody id="tbody-material"></tbody>
-    </table>
-  </div>
+  <div id="material-list"></div>
 </div>
 
 <!-- ═══ TESTS ═══ -->
@@ -1699,44 +1713,98 @@ async function confirmarCancelacion() {
 // MATERIAL
 // ============================================================
 async function loadTablaMaterial() {
-  const { data: material, error } = await db.from('material').select('*').order('created_at', { ascending: false });
-  const tbody = document.getElementById('tbody-material');
+  const { data: material, error } = await db.from('material').select('*')
+    .order('asignatura_id').order('bloque_id').order('tema_id').order('titulo');
+  const container = document.getElementById('material-list');
   if (error) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--red)">Error: ${error.message}</td></tr>`;
+    container.innerHTML = `<div class="empty-state"><i class="ti ti-alert-circle"></i><p style="color:var(--red)">${error.message}</p></div>`;
     return;
   }
   if (!material || material.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">Sin material</td></tr>`;
+    container.innerHTML = `<div class="empty-state"><i class="ti ti-file-off"></i><p>Sin material todavía</p></div>`;
     return;
   }
   allMaterial = material;
-  tbody.innerHTML = material.map(m => {
-    const alIds = materialAlumnoMap[m.id] || [];
-    let asigCell = '—';
-    if (alIds.length > 0) {
-      asigCell = alIds.map(aid => {
-        const a = allAlumnos.find(x => x.id === aid);
-        const u = a?.usuario || {};
-        return `<span class="pill pill-eso" style="margin:1px">${u.nombre ? u.nombre.split(' ')[0] : '?'}</span>`;
-      }).join('');
+
+  // Agrupar por bloque_id → tema_id
+  const byBloque = {};
+  const sinBloque = [];
+  material.forEach(m => {
+    if (m.bloque_id) {
+      if (!byBloque[m.bloque_id]) byBloque[m.bloque_id] = {};
+      const tk = m.tema_id || '__sin__';
+      if (!byBloque[m.bloque_id][tk]) byBloque[m.bloque_id][tk] = [];
+      byBloque[m.bloque_id][tk].push(m);
+    } else {
+      sinBloque.push(m);
     }
-    return `<tr>
-      <td style="color:#fff">${m.titulo}</td>
-      <td>${nivelLabel(m.nivel)}</td>
-      <td>${m.asignatura_id ? asigNombre(m.asignatura_id) : '—'}</td>
-      <td>${m.bloque_id ? bloqueNombre(m.bloque_id) : (m.bloque_tema || '—')}</td>
-      <td>${m.tema_id   ? temaNombre(m.tema_id)    : (m.tema       || '—')}</td>
-      <td>${asigCell}</td>
-      <td><span class="pill pill-eso">${(m.tipo||'').toUpperCase()}</span></td>
-      <td><span class="pill ${m.visible ? 'pill-ok' : 'pill-grey'}">${m.visible ? 'Visible' : 'Oculto'}</span></td>
-      <td style="white-space:nowrap">
-        <button class="btn-edit" onclick="abrirEditarMaterial('${m.id}')"><i class="ti ti-pencil"></i> Editar</button>
-        ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" class="btn-edit" style="margin-left:4px">Ver</a>` : ''}
-        <button class="btn-danger" style="margin-left:4px" onclick="toggleVisible('material','${m.id}',${!m.visible})">${m.visible ? 'Ocultar' : 'Mostrar'}</button>
-        <button class="btn-danger" style="margin-left:4px" onclick="eliminarMaterial('${m.id}')"><i class="ti ti-trash"></i></button>
-      </td>
-    </tr>`;
+  });
+
+  // Agrupar bloques con material por asignatura
+  const byAsig = {};
+  const bloqueIdsConMat = new Set(Object.keys(byBloque).map(Number));
+  allBloques.filter(b => bloqueIdsConMat.has(b.id)).forEach(b => {
+    const k = asigNombre(b.asignatura_id);
+    if (!byAsig[k]) byAsig[k] = [];
+    byAsig[k].push(b);
+  });
+
+  const tipoIcon = t => ({ pdf: 'ti-file-text', recurso: 'ti-layout-grid' }[t] || 'ti-file');
+
+  const renderItem = m => {
+    const alIds = materialAlumnoMap[m.id] || [];
+    const asignadoHtml = alIds.map(aid => {
+      const a = allAlumnos.find(x => x.id === aid);
+      const nombre = a?.usuario?.nombre?.split(' ')[0] || '?';
+      return `<span class="pill pill-eso" style="margin:1px;font-size:10px">${nombre}</span>`;
+    }).join('');
+    return `
+      <div class="mat-item">
+        <div class="mat-item-ico"><i class="ti ${tipoIcon(m.tipo)}"></i></div>
+        <span class="mat-item-title">${m.titulo}</span>
+        ${asignadoHtml ? `<div style="display:flex;gap:2px;flex-wrap:wrap">${asignadoHtml}</div>` : ''}
+        <span class="pill ${m.visible ? 'pill-ok' : 'pill-grey'}" style="flex-shrink:0">${m.visible ? 'Visible' : 'Oculto'}</span>
+        <div class="mat-item-actions">
+          <button class="btn-edit" onclick="abrirEditarMaterial('${m.id}')"><i class="ti ti-pencil"></i></button>
+          ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" class="btn-edit">Ver</a>` : ''}
+          <button class="btn-danger" onclick="toggleVisible('material','${m.id}',${!m.visible})">${m.visible ? 'Ocultar' : 'Mostrar'}</button>
+          <button class="btn-danger" onclick="eliminarMaterial('${m.id}')"><i class="ti ti-trash"></i></button>
+        </div>
+      </div>`;
+  };
+
+  const renderTemas = temasPorId => Object.keys(temasPorId).map(tid => {
+    const items = temasPorId[tid];
+    const nom   = tid !== '__sin__' ? temaNombre(parseInt(tid)) : '';
+    return `<div class="mat-tema">
+      ${nom ? `<div class="mat-tema-head"><i class="ti ti-bookmark"></i>${nom}</div>` : ''}
+      ${items.map(renderItem).join('')}
+    </div>`;
   }).join('');
+
+  let html = Object.entries(byAsig).map(([asig, bloques]) => `
+    <div class="mat-asig-section">
+      <div class="mat-asig-header"><i class="ti ti-books"></i>${asig}</div>
+      ${bloques.map(b => `
+        <div class="mat-bloque">
+          <div class="mat-bloque-head">
+            <i class="ti ti-folder"></i>
+            <span class="mat-bloque-name">${b.nombre}</span>
+            <span class="mat-bloque-nivel">${nivelLabel(b.nivel)}</span>
+          </div>
+          ${renderTemas(byBloque[b.id])}
+        </div>`).join('')}
+    </div>`).join('');
+
+  if (sinBloque.length > 0) {
+    html += `
+      <div class="mat-asig-section">
+        <div class="mat-asig-header"><i class="ti ti-question-mark"></i>Sin clasificar</div>
+        <div class="mat-sinclasif">${sinBloque.map(renderItem).join('')}</div>
+      </div>`;
+  }
+
+  container.innerHTML = html;
 }
 
 function abrirModalMaterial() {
