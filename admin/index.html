@@ -485,7 +485,9 @@
         </div>
         <div class="fi-sm">
           <label class="fl" style="margin-top:0">Asignatura (opcional)</label>
-          <input class="fi" id="ficha-add-asig" placeholder="Matemáticas">
+          <select class="fi" id="ficha-add-asig">
+            <option value="">Todas las asignaturas</option>
+          </select>
         </div>
         <button class="btn-primary" onclick="asignarProfesorFicha()" style="flex-shrink:0;align-self:flex-end;margin-bottom:1px"><i class="ti ti-plus"></i> Asignar</button>
       </div>
@@ -515,10 +517,6 @@
       <div class="ficha-sec-title"><i class="ti ti-books"></i> Asignaturas asignadas</div>
       <div id="ficha-asignaturas-lista">
         <div class="loading-section" style="padding:12px"><div class="spinner"></div></div>
-      </div>
-      <div style="display:flex;gap:8px;margin-top:10px">
-        <input class="fi" id="ficha-add-asignatura" list="dl-asignaturas" placeholder="Nueva asignatura..." style="flex:1;margin:0" autocomplete="off">
-        <button class="btn-primary" style="padding:8px 14px" onclick="agregarFichaAsignatura()"><i class="ti ti-plus"></i></button>
       </div>
     </div>
 
@@ -1331,7 +1329,7 @@ async function abrirFicha(alumnoId) {
     const pu = p.usuario || {};
     sel.add(new Option(`${pu.nombre || '?'} ${pu.apellidos || ''}`, p.id));
   });
-  document.getElementById('ficha-add-asig').value = '';
+  populateAsigSelect('ficha-add-asig', true);
 
   document.getElementById('modal-ficha').classList.add('open');
 
@@ -1424,7 +1422,7 @@ function renderFichaProfs() {
         <i class="ti ti-chalkboard"></i>
         <div>
           <div class="prof-tag-name">${pu.nombre || '?'} ${pu.apellidos || ''}</div>
-          <div class="prof-tag-asig">${ap.asignatura || 'Todas las asignaturas'}</div>
+          <div class="prof-tag-asig">${ap.asignatura_id ? asigNombre(ap.asignatura_id) : (ap.asignatura || 'Todas las asignaturas')}</div>
         </div>
       </div>
       <button class="prof-tag-rm" onclick="quitarProfesorFicha('${ap.id}')" title="Quitar profesor">✕</button>
@@ -1435,12 +1433,12 @@ function renderFichaProfs() {
 async function asignarProfesorFicha() {
   const profId = document.getElementById('ficha-add-prof').value;
   if (!profId) { showToast('Selecciona un profesor', 'error'); return; }
-  const asig = document.getElementById('ficha-add-asig').value.trim() || null;
+  const asigId = parseInt(document.getElementById('ficha-add-asig').value) || null;
 
   const { error } = await db.from('alumno_profesor').insert({
-    alumno_id:   fichaAlumnoId,
-    profesor_id: profId,
-    asignatura:  asig,
+    alumno_id:    fichaAlumnoId,
+    profesor_id:  profId,
+    asignatura_id: asigId,
   });
 
   if (error) {
@@ -1454,6 +1452,7 @@ async function asignarProfesorFicha() {
   showToast('Profesor asignado correctamente');
   document.getElementById('ficha-add-prof').value = '';
   document.getElementById('ficha-add-asig').value = '';
+  populateAsigSelect('ficha-add-asig', true);
   await refreshFichaProfs();
 
   // Refrescar tabla si visible
@@ -1555,42 +1554,39 @@ async function refreshFichaAsignaturas() {
   const el = document.getElementById('ficha-asignaturas-lista');
   el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
   const { data, error } = await db.from('alumno_asignaturas')
-    .select('id, asignatura')
-    .eq('alumno_id', fichaAlumnoId)
-    .order('asignatura');
+    .select('asignatura_id')
+    .eq('alumno_id', fichaAlumnoId);
   if (error) {
     el.innerHTML = `<p style="color:var(--red);font-size:12px">${error.message}</p>`;
     return;
   }
-  if (!data || data.length === 0) {
-    el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:4px 0">Sin asignaturas asignadas todavía.</p>';
+  const asignadas = new Set((data || []).map(r => r.asignatura_id));
+  if (allAsignaturas.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px">Sin asignaturas en el catálogo.</p>';
     return;
   }
-  el.innerHTML = data.map(a => `
-    <span style="display:inline-flex;align-items:center;gap:5px;background:var(--dark);border:.5px solid var(--border);border-radius:20px;padding:4px 10px;margin:3px 3px 0 0">
-      <span style="font-size:12px;color:var(--txt)">${a.asignatura}</span>
-      <button onclick="quitarFichaAsignatura('${a.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:0;line-height:1;font-size:15px" title="Quitar">&times;</button>
-    </span>
-  `).join('');
+  el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">` +
+    allAsignaturas.map(a => {
+      const checked = asignadas.has(a.id);
+      return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:6px;border:.5px solid ${checked ? 'var(--blue)' : 'transparent'};background:${checked ? '#0a1a30' : 'transparent'}">
+        <input type="checkbox" ${checked ? 'checked' : ''} onchange="toggleFichaAsignatura(${a.id},this.checked)" style="accent-color:var(--blue);flex-shrink:0">
+        <span style="font-size:12px;color:${checked ? '#fff' : 'var(--muted)'}">${a.nombre}</span>
+      </label>`;
+    }).join('') +
+  `</div>`;
 }
 
-async function agregarFichaAsignatura() {
-  const input = document.getElementById('ficha-add-asignatura');
-  const asignatura = input.value.trim();
-  if (!asignatura) return;
-  const { error } = await db.from('alumno_asignaturas').insert({ alumno_id: fichaAlumnoId, asignatura });
-  if (error) {
-    showToast(error.code === '23505' ? 'Esa asignatura ya está asignada' : 'Error: ' + error.message, 'error');
-    return;
+async function toggleFichaAsignatura(asignaturaId, checked) {
+  if (checked) {
+    const { error } = await db.from('alumno_asignaturas').insert({
+      alumno_id: fichaAlumnoId, asignatura_id: asignaturaId,
+    });
+    if (error) { showToast('Error: ' + error.message, 'error'); await refreshFichaAsignaturas(); }
+  } else {
+    const { error } = await db.from('alumno_asignaturas')
+      .delete().eq('alumno_id', fichaAlumnoId).eq('asignatura_id', asignaturaId);
+    if (error) { showToast('Error: ' + error.message, 'error'); await refreshFichaAsignaturas(); }
   }
-  input.value = '';
-  await refreshFichaAsignaturas();
-}
-
-async function quitarFichaAsignatura(rowId) {
-  const { error } = await db.from('alumno_asignaturas').delete().eq('id', rowId);
-  if (error) { showToast('Error: ' + error.message, 'error'); return; }
-  await refreshFichaAsignaturas();
 }
 
 // ============================================================
