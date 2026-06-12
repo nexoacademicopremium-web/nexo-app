@@ -650,7 +650,7 @@ let editClaseId = null;
   ]);
 
   // Restaurar última sección visitada
-  const savedSeccion = localStorage.getItem('nexo_profesor_seccion');
+  const savedSeccion = sessionStorage.getItem('nexo_profesor_seccion');
   if (savedSeccion && savedSeccion !== 'panel' && document.getElementById('section-' + savedSeccion)) {
     showSection(savedSeccion);
   }
@@ -667,7 +667,7 @@ function showSection(id) {
   if (navEl) navEl.classList.add('active');
   if (id !== 'alumnos') cerrarFicha();
   window.scrollTo(0, 0);
-  localStorage.setItem('nexo_profesor_seccion', id);
+  sessionStorage.setItem('nexo_profesor_seccion', id);
 
   const loaders = {
     alumnos:    loadTablaAlumnos,
