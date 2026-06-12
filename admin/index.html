@@ -269,7 +269,7 @@
   <div class="card">
     <table class="tabla">
       <thead><tr>
-        <th>Alumno</th><th>Nivel</th><th>Asignaturas</th><th>Profesores</th><th>Bono</th><th>Estado</th><th>Acciones</th>
+        <th>Alumno</th><th>Nivel</th><th>Asignaturas</th><th>Profesores</th><th>Estado</th><th>Acciones</th>
       </tr></thead>
       <tbody id="tbody-alumnos"></tbody>
     </table>
@@ -1009,23 +1009,28 @@ async function loadTablaAlumnos() {
 function renderTablaAlumnos(lista, horasByAlumno = {}) {
   const tbody = document.getElementById('tbody-alumnos');
   if (lista.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Sin alumnos</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Sin alumnos</td></tr>`;
     return;
   }
   tbody.innerHTML = lista.map(a => {
     const u = a.usuario || {};
-    const bonoOk = a.horas_bono_restantes > 3;
-    const bonoLow = a.horas_bono_restantes <= 1;
 
-    // Profesores: primero los de alumno_profesor, luego fallback a profesor_id
+    // Profesores agrupados por persona: { profId -> { nombre, asigs[] } }
     const profsAsig = alumnoProfesorMap[a.id] || [];
     let profCell;
     if (profsAsig.length > 0) {
-      profCell = profsAsig.map(ap => {
-        const p = allProfesores.find(x => x.id === ap.profesor_id);
-        const pu = p?.usuario || {};
-        const label = pu.nombre ? pu.nombre.split(' ')[0] : '?';
-        return `<span class="pill pill-eso" style="margin:1px">${label}${ap.asignatura ? ' · ' + ap.asignatura : ''}</span>`;
+      const grouped = {};
+      profsAsig.forEach(ap => {
+        if (!grouped[ap.profesor_id]) {
+          const p  = allProfesores.find(x => x.id === ap.profesor_id);
+          const pu = p?.usuario || {};
+          grouped[ap.profesor_id] = { nombre: pu.nombre ? pu.nombre.split(' ')[0] : '?', asigs: [] };
+        }
+        if (ap.asignatura_id) grouped[ap.profesor_id].asigs.push(asigNombre(ap.asignatura_id));
+      });
+      profCell = Object.values(grouped).map(g => {
+        const asigText = g.asigs.length ? ' · ' + g.asigs.join(', ') : '';
+        return `<span class="pill pill-eso" style="margin:1px">${g.nombre}${asigText}</span>`;
       }).join('');
     } else if (a.profesor_id) {
       const profNom = allProfesores.find(p => p.id === a.profesor_id)?.usuario || {};
@@ -1039,7 +1044,6 @@ function renderTablaAlumnos(lista, horasByAlumno = {}) {
       <td><span class="pill ${(a.nivel||'').includes('BACH') ? 'pill-bach' : 'pill-eso'}">${nivelLabel(a.nivel)}</span></td>
       <td style="max-width:160px;white-space:normal">${(a.asignaturas || []).join(', ') || '—'}</td>
       <td style="max-width:180px">${profCell}</td>
-      <td><span class="pill ${bonoLow ? 'pill-red' : bonoOk ? 'pill-ok' : 'pill-warn'}">${a.horas_bono_restantes}h / ${a.horas_bono_total}h</span></td>
       <td><span class="pill ${a.activo ? 'pill-ok' : 'pill-grey'}">${a.activo ? 'Activo' : 'Inactivo'}</span></td>
       <td style="white-space:nowrap">
         <button class="btn-ficha" onclick="abrirFicha('${a.id}')"><i class="ti ti-id-badge"></i> Ficha</button>
@@ -1576,18 +1580,34 @@ function renderFichaProfs() {
     el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:4px 0">Sin profesores asignados todavía.</p>';
     return;
   }
-  el.innerHTML = profs.map(ap => {
-    const p  = allProfesores.find(x => x.id === ap.profesor_id);
+
+  // Agrupar filas por profesor_id
+  const grouped = {};
+  profs.forEach(ap => {
+    if (!grouped[ap.profesor_id]) grouped[ap.profesor_id] = [];
+    grouped[ap.profesor_id].push(ap);
+  });
+
+  el.innerHTML = Object.entries(grouped).map(([profId, rows]) => {
+    const p  = allProfesores.find(x => x.id === profId);
     const pu = p?.usuario || {};
+    const asigTexto = rows.every(r => !r.asignatura_id)
+      ? 'General (todas las asignaturas)'
+      : rows.filter(r => r.asignatura_id).map(r => asigNombre(r.asignatura_id)).join(', ');
+    // Botones de quitar: uno por fila (cada asignatura individual)
+    const quitarBtns = rows.map(r =>
+      `<button class="prof-tag-rm" onclick="quitarProfesorFicha('${r.id}')" title="Quitar ${r.asignatura_id ? asigNombre(r.asignatura_id) : 'asignación general'}">✕</button>`
+    ).join('');
+
     return `<div class="prof-tag">
       <div class="prof-tag-left">
         <i class="ti ti-chalkboard"></i>
         <div>
           <div class="prof-tag-name">${pu.nombre || '?'} ${pu.apellidos || ''}</div>
-          <div class="prof-tag-asig">${ap.asignatura_id ? asigNombre(ap.asignatura_id) : (ap.asignatura || 'Todas las asignaturas')}</div>
+          <div class="prof-tag-asig">${asigTexto}</div>
         </div>
       </div>
-      <button class="prof-tag-rm" onclick="quitarProfesorFicha('${ap.id}')" title="Quitar profesor">✕</button>
+      <div style="display:flex;gap:4px;align-items:center">${quitarBtns}</div>
     </div>`;
   }).join('');
 }
