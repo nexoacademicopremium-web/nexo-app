@@ -510,6 +510,18 @@
       </button>
     </div>
 
+    <!-- ASIGNATURAS DEL ALUMNO -->
+    <div class="ficha-section">
+      <div class="ficha-sec-title"><i class="ti ti-books"></i> Asignaturas asignadas</div>
+      <div id="ficha-asignaturas-lista">
+        <div class="loading-section" style="padding:12px"><div class="spinner"></div></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input class="fi" id="ficha-add-asignatura" list="dl-asignaturas" placeholder="Nueva asignatura..." style="flex:1;margin:0" autocomplete="off">
+        <button class="btn-primary" style="padding:8px 14px" onclick="agregarFichaAsignatura()"><i class="ti ti-plus"></i></button>
+      </div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn-cancel" onclick="cerrarModal('modal-ficha')">Cerrar</button>
       <button class="btn-primary" onclick="editarAlumnoDesdeficha()"><i class="ti ti-edit"></i> Editar datos</button>
@@ -1314,7 +1326,7 @@ async function abrirFicha(alumnoId) {
   document.getElementById('modal-ficha').classList.add('open');
 
   // Cargar en paralelo
-  await Promise.all([refreshFichaProfs(), refreshFichaSesiones(), refreshFichaInformes()]);
+  await Promise.all([refreshFichaProfs(), refreshFichaSesiones(), refreshFichaInformes(), refreshFichaAsignaturas()]);
 }
 
 function renderBonoVisual(total, rest) {
@@ -1527,6 +1539,48 @@ function abrirInformeParaFicha() {
   const u = a.usuario || {};
   cerrarModal('modal-ficha');
   abrirModalInforme(fichaAlumnoId, `${u.nombre || ''} ${u.apellidos || ''}`);
+}
+
+async function refreshFichaAsignaturas() {
+  const el = document.getElementById('ficha-asignaturas-lista');
+  el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
+  const { data, error } = await db.from('alumno_asignaturas')
+    .select('id, asignatura')
+    .eq('alumno_id', fichaAlumnoId)
+    .order('asignatura');
+  if (error) {
+    el.innerHTML = `<p style="color:var(--red);font-size:12px">${error.message}</p>`;
+    return;
+  }
+  if (!data || data.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:4px 0">Sin asignaturas asignadas todavía.</p>';
+    return;
+  }
+  el.innerHTML = data.map(a => `
+    <span style="display:inline-flex;align-items:center;gap:5px;background:var(--dark);border:.5px solid var(--border);border-radius:20px;padding:4px 10px;margin:3px 3px 0 0">
+      <span style="font-size:12px;color:var(--txt)">${a.asignatura}</span>
+      <button onclick="quitarFichaAsignatura('${a.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:0;line-height:1;font-size:15px" title="Quitar">&times;</button>
+    </span>
+  `).join('');
+}
+
+async function agregarFichaAsignatura() {
+  const input = document.getElementById('ficha-add-asignatura');
+  const asignatura = input.value.trim();
+  if (!asignatura) return;
+  const { error } = await db.from('alumno_asignaturas').insert({ alumno_id: fichaAlumnoId, asignatura });
+  if (error) {
+    showToast(error.code === '23505' ? 'Esa asignatura ya está asignada' : 'Error: ' + error.message, 'error');
+    return;
+  }
+  input.value = '';
+  await refreshFichaAsignaturas();
+}
+
+async function quitarFichaAsignatura(rowId) {
+  const { error } = await db.from('alumno_asignaturas').delete().eq('id', rowId);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  await refreshFichaAsignaturas();
 }
 
 // ============================================================

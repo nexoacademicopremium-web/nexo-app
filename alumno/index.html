@@ -892,13 +892,14 @@ async function loadEstudiar() {
   if (!ctx.alumnoData) return;
   const alumno = ctx.alumnoData;
 
-  // Get material assigned to this student
-  const { data: matAlumno } = await db
-    .from('material_alumno')
-    .select('material_id')
-    .eq('alumno_id', alumno.id);
+  // Cargar material asignado específicamente y asignaturas del alumno en paralelo
+  const [{ data: matAlumno }, { data: misAsignaturas }] = await Promise.all([
+    db.from('material_alumno').select('material_id').eq('alumno_id', alumno.id),
+    db.from('alumno_asignaturas').select('asignatura').eq('alumno_id', alumno.id),
+  ]);
 
-  const matIds = (matAlumno || []).map(m => m.material_id);
+  const matIds      = (matAlumno || []).map(m => m.material_id);
+  const asigFiltros = (misAsignaturas || []).map(a => a.asignatura);
 
   let query = db.from('material').select('*').eq('visible', true);
   if (matIds.length > 0) {
@@ -907,7 +908,15 @@ async function loadEstudiar() {
     query = query.or(`nivel.eq.todos,nivel.eq.${alumno.nivel}`);
   }
 
-  const { data: material } = await query.order('asignatura').order('bloque_tema');
+  const { data: rawMaterial } = await query.order('asignatura').order('bloque_tema');
+
+  // Si el alumno tiene asignaturas asignadas, filtrar: mostrar solo material
+  // cuya asignatura coincida, más el asignado personalmente y el sin asignatura.
+  const material = asigFiltros.length > 0
+    ? (rawMaterial || []).filter(m =>
+        matIds.includes(m.id) || !m.asignatura || asigFiltros.includes(m.asignatura)
+      )
+    : (rawMaterial || []);
 
   // Group by asignatura
   const byAsig = {};
