@@ -536,7 +536,7 @@
       <div class="fi-grid2">
         <div>
           <label class="fl">Curso (nivel) *</label>
-          <select class="fi" id="mat-nivel" required>
+          <select class="fi" id="mat-nivel" required onchange="actualizarSelectBloques()">
             <option value="">— Selecciona —</option>
             <option value="todos">Todos</option>
             <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
@@ -553,13 +553,31 @@
         </div>
       </div>
       <label class="fl">Asignatura *</label>
-      <select class="fi" id="mat-asignatura" required>
+      <select class="fi" id="mat-asignatura" required onchange="actualizarSelectBloques()">
         <option value="">— Selecciona asignatura —</option>
       </select>
-      <label class="fl">Nombre del bloque *</label><input class="fi" id="mat-bloque" placeholder="Álgebra" required list="dl-bloques" autocomplete="off">
-      <label class="fl">Tema *</label><input class="fi" id="mat-tema" placeholder="Ecuaciones de primer grado" required list="dl-temas" autocomplete="off">
-      <datalist id="dl-bloques"></datalist>
-      <datalist id="dl-temas"></datalist>
+      <label class="fl">Bloque *</label>
+      <select class="fi" id="mat-bloque-id" onchange="onBloqueSelChange(this.value)">
+        <option value="">— Elige asignatura y curso primero —</option>
+      </select>
+      <div id="mat-bloque-nuevo-wrap" style="display:none;margin-top:6px">
+        <div style="display:flex;gap:8px">
+          <input class="fi" id="mat-bloque-nuevo-txt" placeholder="Nombre del nuevo bloque" style="flex:1;margin:0">
+          <button type="button" class="btn-primary" style="padding:8px 12px" onclick="crearNuevoBloque()"><i class="ti ti-check"></i> Crear</button>
+          <button type="button" class="btn-cancel" style="padding:8px 10px" onclick="cancelarNuevoBloque()">✕</button>
+        </div>
+      </div>
+      <label class="fl">Tema *</label>
+      <select class="fi" id="mat-tema-id" onchange="onTemaSelChange(this.value)">
+        <option value="">— Elige bloque primero —</option>
+      </select>
+      <div id="mat-tema-nuevo-wrap" style="display:none;margin-top:6px">
+        <div style="display:flex;gap:8px">
+          <input class="fi" id="mat-tema-nuevo-txt" placeholder="Nombre del nuevo tema" style="flex:1;margin:0">
+          <button type="button" class="btn-primary" style="padding:8px 12px" onclick="crearNuevoTema()"><i class="ti ti-check"></i> Crear</button>
+          <button type="button" class="btn-cancel" style="padding:8px 10px" onclick="cancelarNuevoTema()">✕</button>
+        </div>
+      </div>
       <label class="fl">Archivo <span id="mat-archivo-label-hint" style="color:var(--muted);font-size:10px">*</span></label>
       <input class="fi" id="mat-archivo" type="file" accept=".pdf,.docx,.pptx,.jpg,.png">
       <div id="mat-archivo-actual" style="display:none;font-size:11px;color:var(--muted);margin-top:4px"></div>
@@ -663,7 +681,7 @@
 // State
 // ============================================================
 let ctx = null;
-let allAlumnos = [], allProfesores = [], allUsuarios = [], allAsignaturas = [];
+let allAlumnos = [], allProfesores = [], allUsuarios = [], allAsignaturas = [], allBloques = [], allTemas = [];
 let alumnoProfesorMap = {};   // alumno_id -> [{id, profesor_id, asignatura_id}]
 let materialAlumnoMap = {};   // material_id -> [{alumno_id}]
 let allMaterial = [];
@@ -698,6 +716,8 @@ async function loadAll() {
       { data: alumnoProfs,  error: e4 },
       { data: matAlumnos,   error: e5 },
       { data: asignaturas,  error: e6 },
+      { data: bloques,      error: e7 },
+      { data: temas,        error: e8 },
     ] = await Promise.all([
       db.from('alumnos').select('*').order('created_at', { ascending: false }),
       db.from('profesores').select('*').order('created_at', { ascending: false }),
@@ -705,6 +725,8 @@ async function loadAll() {
       db.from('alumno_profesor').select('*'),
       db.from('material_alumno').select('*'),
       db.from('asignaturas').select('*').order('nombre'),
+      db.from('bloques').select('*').order('nombre'),
+      db.from('temas').select('*').order('nombre'),
     ]);
 
     // Log errores pero no abortar — la tabla alumno_profesor puede no existir aún
@@ -758,7 +780,11 @@ async function loadAll() {
 
     // Populate: catálogo de asignaturas
     if (e6) console.warn('[Nexo] asignaturas:', e6.message);
+    if (e7) console.warn('[Nexo] bloques:', e7.message);
+    if (e8) console.warn('[Nexo] temas:', e8.message);
     allAsignaturas = asignaturas || [];
+    allBloques     = bloques     || [];
+    allTemas       = temas       || [];
     populateAsigSelect('mat-asignatura');
     populateAsigSelect('ficha-add-asig', true);
 
@@ -1684,7 +1710,6 @@ async function loadTablaMaterial() {
     return;
   }
   allMaterial = material;
-  populateDatalistsMaterial(material);
   tbody.innerHTML = material.map(m => {
     const alIds = materialAlumnoMap[m.id] || [];
     let asigCell = '—';
@@ -1699,8 +1724,8 @@ async function loadTablaMaterial() {
       <td style="color:#fff">${m.titulo}</td>
       <td>${nivelLabel(m.nivel)}</td>
       <td>${m.asignatura_id ? asigNombre(m.asignatura_id) : '—'}</td>
-      <td>${m.bloque_tema || '—'}</td>
-      <td>${m.tema || '—'}</td>
+      <td>${m.bloque_id ? bloqueNombre(m.bloque_id) : (m.bloque_tema || '—')}</td>
+      <td>${m.tema_id   ? temaNombre(m.tema_id)    : (m.tema       || '—')}</td>
       <td>${asigCell}</td>
       <td><span class="pill pill-eso">${(m.tipo||'').toUpperCase()}</span></td>
       <td><span class="pill ${m.visible ? 'pill-ok' : 'pill-grey'}">${m.visible ? 'Visible' : 'Oculto'}</span></td>
@@ -1721,6 +1746,10 @@ function abrirModalMaterial() {
   document.getElementById('mat-archivo-actual').style.display = 'none';
   document.getElementById('mat-archivo-label-hint').textContent = '*';
   document.getElementById('mat-alumno-container').style.display = '';
+  document.getElementById('mat-bloque-id').innerHTML = '<option value="">— Elige asignatura y curso primero —</option>';
+  document.getElementById('mat-tema-id').innerHTML   = '<option value="">— Elige bloque primero —</option>';
+  document.getElementById('mat-bloque-nuevo-wrap').style.display = 'none';
+  document.getElementById('mat-tema-nuevo-wrap').style.display   = 'none';
   document.getElementById('modal-material').classList.add('open');
 }
 
@@ -1734,8 +1763,14 @@ function abrirEditarMaterial(id) {
   document.getElementById('mat-nivel').value      = m.nivel || '';
   document.getElementById('mat-tipo').value       = m.tipo || 'pdf';
   document.getElementById('mat-asignatura').value = m.asignatura_id || '';
-  document.getElementById('mat-bloque').value     = m.bloque_tema || '';
-  document.getElementById('mat-tema').value       = m.tema || '';
+  document.getElementById('mat-bloque-nuevo-wrap').style.display = 'none';
+  document.getElementById('mat-tema-nuevo-wrap').style.display   = 'none';
+  actualizarSelectBloques();
+  if (m.bloque_id) {
+    document.getElementById('mat-bloque-id').value = m.bloque_id;
+    actualizarSelectTemas(m.bloque_id);
+    if (m.tema_id) document.getElementById('mat-tema-id').value = m.tema_id;
+  }
   const infoEl = document.getElementById('mat-archivo-actual');
   if (m.archivo_url) {
     infoEl.innerHTML = `Archivo actual: <a href="${m.archivo_url}" target="_blank" style="color:var(--blue)">Ver archivo</a> · Sube uno nuevo solo si quieres reemplazarlo`;
@@ -1768,13 +1803,18 @@ async function guardarMaterial(e) {
 
     if (!editMaterialId && !newUrl) throw new Error('Añade un archivo para continuar');
 
+    const bloqueId = parseInt(document.getElementById('mat-bloque-id').value) || null;
+    const temaId   = parseInt(document.getElementById('mat-tema-id').value)   || null;
+    if (!bloqueId) throw new Error('Selecciona o crea un bloque');
+    if (!temaId)   throw new Error('Selecciona o crea un tema');
+
     const payload = {
-      titulo:      document.getElementById('mat-titulo').value.trim(),
+      titulo:        document.getElementById('mat-titulo').value.trim(),
       nivel:         document.getElementById('mat-nivel').value,
       asignatura_id: parseInt(document.getElementById('mat-asignatura').value) || null,
-      bloque_tema:   document.getElementById('mat-bloque').value.trim() || null,
-      tema:        document.getElementById('mat-tema').value.trim() || null,
-      tipo:        document.getElementById('mat-tipo').value,
+      bloque_id:     bloqueId,
+      tema_id:       temaId,
+      tipo:          document.getElementById('mat-tipo').value,
     };
     if (newUrl) payload.archivo_url = newUrl;
 
@@ -1825,15 +1865,92 @@ function populateAsigSelect(elId, withAll = false) {
   ).join('');
 }
 
-function populateDatalistsMaterial(lista) {
-  const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
-  const fill = (id, values) => {
-    const dl = document.getElementById(id);
-    if (!dl) return;
-    dl.innerHTML = values.map(v => `<option value="${v.replace(/"/g, '&quot;')}"></option>`).join('');
-  };
-  fill('dl-bloques', uniq(lista.map(m => m.bloque_tema)));
-  fill('dl-temas',   uniq(lista.map(m => m.tema)));
+function bloqueNombre(id) { return allBloques.find(b => b.id === id)?.nombre || '—'; }
+function temaNombre(id)   { return allTemas.find(t => t.id === id)?.nombre   || '—'; }
+
+function actualizarSelectBloques() {
+  const asigId = parseInt(document.getElementById('mat-asignatura').value);
+  const nivel  = document.getElementById('mat-nivel').value;
+  const sel    = document.getElementById('mat-bloque-id');
+  document.getElementById('mat-tema-id').innerHTML = '<option value="">— Elige bloque primero —</option>';
+  document.getElementById('mat-bloque-nuevo-wrap').style.display = 'none';
+  document.getElementById('mat-tema-nuevo-wrap').style.display = 'none';
+  if (!asigId || !nivel) {
+    sel.innerHTML = '<option value="">— Elige asignatura y curso primero —</option>';
+    return;
+  }
+  const filtrados = allBloques.filter(b => b.asignatura_id === asigId && b.nivel === nivel);
+  sel.innerHTML = '<option value="">— Selecciona bloque —</option>' +
+    filtrados.map(b => `<option value="${b.id}">${b.nombre}</option>`).join('') +
+    '<option value="__nuevo__">+ Crear nuevo bloque...</option>';
+}
+
+function actualizarSelectTemas(bloqueId) {
+  const sel = document.getElementById('mat-tema-id');
+  if (!bloqueId) { sel.innerHTML = '<option value="">— Elige bloque primero —</option>'; return; }
+  const filtrados = allTemas.filter(t => t.bloque_id === bloqueId);
+  sel.innerHTML = '<option value="">— Selecciona tema —</option>' +
+    filtrados.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('') +
+    '<option value="__nuevo__">+ Crear nuevo tema...</option>';
+}
+
+function onBloqueSelChange(val) {
+  document.getElementById('mat-tema-nuevo-wrap').style.display = 'none';
+  if (val === '__nuevo__') {
+    document.getElementById('mat-bloque-nuevo-wrap').style.display = '';
+    document.getElementById('mat-tema-id').innerHTML = '<option value="">— Crea el bloque primero —</option>';
+  } else {
+    document.getElementById('mat-bloque-nuevo-wrap').style.display = 'none';
+    actualizarSelectTemas(parseInt(val));
+  }
+}
+
+function onTemaSelChange(val) {
+  document.getElementById('mat-tema-nuevo-wrap').style.display = val === '__nuevo__' ? '' : 'none';
+}
+
+function cancelarNuevoBloque() {
+  document.getElementById('mat-bloque-nuevo-wrap').style.display = 'none';
+  document.getElementById('mat-bloque-nuevo-txt').value = '';
+  document.getElementById('mat-bloque-id').value = '';
+}
+
+function cancelarNuevoTema() {
+  document.getElementById('mat-tema-nuevo-wrap').style.display = 'none';
+  document.getElementById('mat-tema-nuevo-txt').value = '';
+  document.getElementById('mat-tema-id').value = '';
+}
+
+async function crearNuevoBloque() {
+  const nombre = document.getElementById('mat-bloque-nuevo-txt').value.trim();
+  const asigId = parseInt(document.getElementById('mat-asignatura').value);
+  const nivel  = document.getElementById('mat-nivel').value;
+  if (!nombre || !asigId || !nivel) { showToast('Completa asignatura, curso y nombre', 'error'); return; }
+  const { data, error } = await db.from('bloques')
+    .insert({ asignatura_id: asigId, nivel, nombre })
+    .select('id, asignatura_id, nivel, nombre').single();
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  allBloques.push(data);
+  actualizarSelectBloques();
+  document.getElementById('mat-bloque-id').value = data.id;
+  document.getElementById('mat-bloque-nuevo-wrap').style.display = 'none';
+  document.getElementById('mat-bloque-nuevo-txt').value = '';
+  actualizarSelectTemas(data.id);
+}
+
+async function crearNuevoTema() {
+  const nombre   = document.getElementById('mat-tema-nuevo-txt').value.trim();
+  const bloqueId = parseInt(document.getElementById('mat-bloque-id').value);
+  if (!nombre || !bloqueId) { showToast('Elige un bloque y escribe el nombre del tema', 'error'); return; }
+  const { data, error } = await db.from('temas')
+    .insert({ bloque_id: bloqueId, nombre })
+    .select('id, bloque_id, nombre').single();
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  allTemas.push(data);
+  actualizarSelectTemas(bloqueId);
+  document.getElementById('mat-tema-id').value = data.id;
+  document.getElementById('mat-tema-nuevo-wrap').style.display = 'none';
+  document.getElementById('mat-tema-nuevo-txt').value = '';
 }
 
 async function eliminarMaterial(id) {
