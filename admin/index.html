@@ -359,18 +359,18 @@
 
 <!-- ═══════════════════════════════ MODALES ═══════════════════════════════ -->
 
-<!-- MODAL ALUMNO -->
+<!-- MODAL ALUMNO (solo creación) -->
 <div class="modal-overlay" id="modal-alumno">
   <div class="modal-box" style="max-width:640px">
-    <div class="modal-title"><span id="modal-alumno-titulo">Nuevo alumno</span><button class="modal-close" onclick="cerrarModal('modal-alumno')">×</button></div>
+    <div class="modal-title"><span>Nuevo alumno</span><button class="modal-close" onclick="cerrarModal('modal-alumno')">×</button></div>
     <form id="form-alumno" onsubmit="guardarAlumno(event)">
       <div class="fi-grid2">
         <div><label class="fl">Nombre *</label><input class="fi" id="a-nombre" required></div>
         <div><label class="fl">Apellidos *</label><input class="fi" id="a-apellidos" required></div>
       </div>
       <label class="fl">Email *</label><input class="fi" id="a-email" type="email" required>
-      <label class="fl">Contraseña <span style="color:var(--muted);font-size:10px">(solo al crear)</span></label>
-      <input class="fi" id="a-password" type="text" placeholder="nexo2025AB">
+      <label class="fl">Contraseña inicial * <span style="color:var(--muted);font-size:10px">— se puede cambiar después desde la ficha</span></label>
+      <input class="fi" id="a-password" type="text" placeholder="nexo2025AB" required>
       <div class="fi-grid2">
         <div>
           <label class="fl">Nivel *</label>
@@ -389,31 +389,21 @@
           </select>
         </div>
       </div>
-      <label class="fl">Asignaturas <span style="color:var(--muted);font-size:10px">(separadas por coma)</span></label>
-      <input class="fi" id="a-asignaturas" placeholder="Matemáticas, Física">
-      <label class="fl">Profesor principal asignado</label>
-      <select class="fi" id="a-profesor"></select>
       <div class="fi-grid2">
-        <div>
-          <label class="fl">Horas bono total</label>
-          <input class="fi" id="a-bono-total" type="number" min="0" step="0.5" value="8">
-        </div>
-        <div>
-          <label class="fl">Horas bono restantes</label>
-          <input class="fi" id="a-bono-rest" type="number" min="0" step="0.5" value="8">
-        </div>
+        <div><label class="fl">Teléfono familia</label><input class="fi" id="a-telefono" type="tel" placeholder="600 000 000"></div>
+        <div><label class="fl">Fecha inicio</label><input class="fi" id="a-fecha-inicio" type="date"></div>
       </div>
       <label class="fl">Horario habitual</label>
       <input class="fi" id="a-horario" placeholder="Lunes y Miércoles 17:00h">
       <label class="fl">Dirección</label>
       <input class="fi" id="a-direccion">
-      <label class="fl">Teléfono familia</label>
-      <input class="fi" id="a-telefono">
-      <label class="fl">Fecha inicio</label>
-      <input class="fi" id="a-fecha-inicio" type="date">
+      <label class="fl">Asignaturas de repaso</label>
+      <div id="modal-alumno-asig-list" style="margin-top:4px"></div>
+      <label class="fl">Observaciones</label>
+      <textarea class="fi" id="a-observaciones" rows="2" placeholder="Notas internas..."></textarea>
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModal('modal-alumno')">Cancelar</button>
-        <button type="submit" class="btn-primary" id="btn-guardar-alumno"><i class="ti ti-check"></i> Guardar</button>
+        <button type="submit" class="btn-primary" id="btn-guardar-alumno"><i class="ti ti-check"></i> Crear alumno</button>
       </div>
     </form>
   </div>
@@ -446,23 +436,21 @@
   </div>
 </div>
 
-<!-- MODAL PROFESOR -->
+<!-- MODAL PROFESOR (solo creación) -->
 <div class="modal-overlay" id="modal-profesor">
-  <div class="modal-box">
-    <div class="modal-title"><span id="modal-prof-titulo">Nuevo profesor</span><button class="modal-close" onclick="cerrarModal('modal-profesor')">×</button></div>
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-title"><span>Nuevo profesor</span><button class="modal-close" onclick="cerrarModal('modal-profesor')">×</button></div>
     <form id="form-profesor" onsubmit="guardarProfesor(event)">
       <div class="fi-grid2">
         <div><label class="fl">Nombre *</label><input class="fi" id="p-nombre" required></div>
         <div><label class="fl">Apellidos *</label><input class="fi" id="p-apellidos" required></div>
       </div>
       <label class="fl">Email *</label><input class="fi" id="p-email" type="email" required>
-      <label class="fl">Contraseña <span style="color:var(--muted);font-size:10px">(solo al crear)</span></label>
-      <input class="fi" id="p-password" type="text" placeholder="nexo2025CM">
-      <label class="fl">Especialidades <span style="color:var(--muted);font-size:10px">(separadas por coma)</span></label>
-      <input class="fi" id="p-especialidades" placeholder="Matemáticas, Física">
+      <label class="fl">Contraseña inicial * <span style="color:var(--muted);font-size:10px">— se puede cambiar después desde la ficha</span></label>
+      <input class="fi" id="p-password" type="text" placeholder="nexo2025CM" required>
       <div class="fi-grid2">
+        <div><label class="fl">Teléfono</label><input class="fi" id="p-telefono" type="tel" placeholder="600 000 000"></div>
         <div><label class="fl">Zona</label><input class="fi" id="p-zona" placeholder="Valencia Norte"></div>
-        <div><label class="fl">Teléfono</label><input class="fi" id="p-telefono" type="tel"></div>
       </div>
       <label class="fl">Estudios</label>
       <input class="fi" id="p-estudios" placeholder="Ingeniería Industrial · UPV">
@@ -478,9 +466,13 @@
         </div>
         <div><label class="fl">Fecha inicio</label><input class="fi" id="p-fecha-inicio" type="date"></div>
       </div>
+      <label class="fl">Asignaturas que imparte</label>
+      <div id="modal-prof-asig-list" style="margin-top:4px"></div>
+      <label class="fl">Observaciones</label>
+      <textarea class="fi" id="p-observaciones" rows="2" placeholder="Notas internas..."></textarea>
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModal('modal-profesor')">Cancelar</button>
-        <button type="submit" class="btn-primary" id="btn-guardar-profesor"><i class="ti ti-check"></i> Guardar</button>
+        <button type="submit" class="btn-primary" id="btn-guardar-profesor"><i class="ti ti-check"></i> Crear profesor</button>
       </div>
     </form>
   </div>
@@ -506,8 +498,24 @@
       </div>
       <label class="fl">Email *</label>
       <input class="fi" id="fich-prof-email" type="email" required>
-      <label class="fl">Teléfono</label>
-      <input class="fi" id="fich-prof-telefono" type="tel" placeholder="600 000 000">
+      <div class="fi-grid2">
+        <div><label class="fl">Teléfono</label><input class="fi" id="fich-prof-telefono" type="tel" placeholder="600 000 000"></div>
+        <div><label class="fl">Zona</label><input class="fi" id="fich-prof-zona" placeholder="Valencia Norte"></div>
+      </div>
+      <label class="fl">Estudios</label>
+      <input class="fi" id="fich-prof-estudios" placeholder="Ingeniería Industrial · UPV">
+      <div class="fi-grid2">
+        <div>
+          <label class="fl">Nivel máximo</label>
+          <select class="fi" id="fich-prof-nivel-max">
+            <option value="">—</option>
+            <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
+            <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
+            <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
+          </select>
+        </div>
+        <div><label class="fl">Fecha inicio</label><input class="fi" id="fich-prof-fecha-inicio" type="date"></div>
+      </div>
     </div>
 
     <!-- 2. ASIGNATURAS QUE IMPARTE -->
@@ -575,8 +583,22 @@
             <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
           </select>
         </div>
-        <div><label class="fl">Teléfono familia</label><input class="fi" id="fich-telefono" type="tel" placeholder="600 000 000"></div>
+        <div>
+          <label class="fl">Modalidad</label>
+          <select class="fi" id="fich-modalidad">
+            <option value="presencial">Presencial</option>
+            <option value="online">Online</option>
+          </select>
+        </div>
       </div>
+      <div class="fi-grid2">
+        <div><label class="fl">Teléfono familia</label><input class="fi" id="fich-telefono" type="tel" placeholder="600 000 000"></div>
+        <div><label class="fl">Fecha inicio</label><input class="fi" id="fich-fecha-inicio" type="date"></div>
+      </div>
+      <label class="fl">Horario habitual</label>
+      <input class="fi" id="fich-horario" placeholder="Lunes y Miércoles 17:00h">
+      <label class="fl">Dirección</label>
+      <input class="fi" id="fich-direccion">
     </div>
 
     <!-- 2. ASIGNATURAS DE REPASO -->
@@ -1130,118 +1152,75 @@ function filtrar(tipo) {
   }
 }
 
+function renderCreacionAsigCheckboxes(containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (allAsignaturas.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px">Sin asignaturas en el catálogo.</p>';
+    return;
+  }
+  el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">` +
+    allAsignaturas.map(a =>
+      `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:6px;border:.5px solid transparent;background:transparent" class="asig-chk-label">
+        <input type="checkbox" value="${a.id}" class="asig-chk" style="accent-color:var(--blue);flex-shrink:0" onchange="this.closest('label').style.border=this.checked?'.5px solid var(--blue)':'transparent';this.closest('label').style.background=this.checked?'#0a1a30':'transparent';this.nextElementSibling.style.color=this.checked?'#fff':'var(--muted)'">
+        <span style="font-size:12px;color:var(--muted)">${a.nombre}</span>
+      </label>`
+    ).join('') +
+  `</div>`;
+}
+
+function getCheckedAsigIds(containerId) {
+  return [...document.querySelectorAll(`#${containerId} input.asig-chk:checked`)]
+    .map(cb => parseInt(cb.value));
+}
+
 function abrirModalAlumno() {
-  editAlumnoId = null;
   document.getElementById('form-alumno').reset();
-  document.getElementById('modal-alumno-titulo').textContent = 'Nuevo alumno';
-  document.getElementById('a-password').required = true;
+  renderCreacionAsigCheckboxes('modal-alumno-asig-list');
   document.getElementById('modal-alumno').classList.add('open');
-}
-
-function editarAlumno(id) {
-  editAlumnoId = id;
-  const a = allAlumnos.find(x => x.id === id);
-  if (!a) return;
-  const u = a.usuario || {};
-  document.getElementById('modal-alumno-titulo').textContent = 'Editar alumno';
-  document.getElementById('a-nombre').value       = u.nombre || '';
-  document.getElementById('a-apellidos').value    = u.apellidos || '';
-  document.getElementById('a-email').value        = u.email || '';
-  document.getElementById('a-password').value     = '';
-  document.getElementById('a-password').required  = false;
-  document.getElementById('a-nivel').value        = a.nivel || '';
-  document.getElementById('a-modalidad').value    = a.modalidad || 'presencial';
-  document.getElementById('a-asignaturas').value  = (a.asignaturas||[]).join(', ');
-  document.getElementById('a-profesor').value     = a.profesor_id || '';
-  document.getElementById('a-bono-total').value   = a.horas_bono_total || 0;
-  document.getElementById('a-bono-rest').value    = a.horas_bono_restantes || 0;
-  document.getElementById('a-horario').value      = a.horario_habitual || '';
-  document.getElementById('a-direccion').value    = a.direccion || '';
-  document.getElementById('a-telefono').value     = a.telefono_familia || '';
-  document.getElementById('a-fecha-inicio').value = a.fecha_inicio || '';
-  document.getElementById('modal-alumno').classList.add('open');
-}
-
-function editarAlumnoDesdeficha() {
-  cerrarModal('modal-ficha');
-  editarAlumno(fichaAlumnoId);
 }
 
 async function guardarAlumno(e) {
   e.preventDefault();
   const btn = document.getElementById('btn-guardar-alumno');
   btn.disabled = true;
-  const asigs = document.getElementById('a-asignaturas').value.split(',').map(s => s.trim()).filter(Boolean);
 
   try {
-    if (!editAlumnoId) {
-      // ── CREAR NUEVO ──
-      const email     = document.getElementById('a-email').value.trim();
-      const password  = document.getElementById('a-password').value;
-      const nombre    = document.getElementById('a-nombre').value.trim();
-      const apellidos = document.getElementById('a-apellidos').value.trim();
+    const email       = document.getElementById('a-email').value.trim();
+    const password    = document.getElementById('a-password').value;
+    const nombre      = document.getElementById('a-nombre').value.trim();
+    const apellidos   = document.getElementById('a-apellidos').value.trim();
+    const nivel       = document.getElementById('a-nivel').value;
+    const asigIds     = getCheckedAsigIds('modal-alumno-asig-list');
 
-      if (!password) throw new Error('La contraseña es obligatoria para crear un alumno');
+    if (!password) throw new Error('La contraseña inicial es obligatoria');
 
-      const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
-        body: { email, password, nombre, apellidos, rol: 'alumno' }
-      });
-      if (fnErr) throw new Error('Error en el servidor: ' + fnErr.message);
-      if (!newUser?.user_id) throw new Error(newUser?.error || 'No se recibió el ID del nuevo usuario');
+    const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
+      body: { email, password, nombre, apellidos, rol: 'alumno' }
+    });
+    if (fnErr) throw new Error('Error en el servidor: ' + fnErr.message);
+    if (!newUser?.user_id) throw new Error(newUser?.error || 'No se recibió el ID del nuevo usuario');
 
-      const profId = document.getElementById('a-profesor').value || null;
+    const { data: newAlumno, error: insErr } = await db.from('alumnos').insert({
+      usuario_id:       newUser.user_id,
+      nivel,
+      modalidad:        document.getElementById('a-modalidad').value,
+      telefono_familia: document.getElementById('a-telefono').value || null,
+      fecha_inicio:     document.getElementById('a-fecha-inicio').value || null,
+      horario_habitual: document.getElementById('a-horario').value || null,
+      direccion:        document.getElementById('a-direccion').value || null,
+      observaciones:    document.getElementById('a-observaciones').value || null,
+    }).select('id').single();
 
-      const { data: newAlumno, error: insErr } = await db.from('alumnos').insert({
-        usuario_id:           newUser.user_id,
-        nivel:                document.getElementById('a-nivel').value,
-        asignaturas:          asigs,
-        profesor_id:          profId,
-        horario_habitual:     document.getElementById('a-horario').value || null,
-        modalidad:            document.getElementById('a-modalidad').value,
-        direccion:            document.getElementById('a-direccion').value || null,
-        telefono_familia:     document.getElementById('a-telefono').value || null,
-        horas_bono_total:     parseFloat(document.getElementById('a-bono-total').value) || 0,
-        horas_bono_restantes: parseFloat(document.getElementById('a-bono-rest').value) || 0,
-        fecha_inicio:         document.getElementById('a-fecha-inicio').value || null,
-      }).select('id').single();
+    if (insErr) throw new Error('Usuario creado pero error al guardar datos: ' + insErr.message);
 
-      if (insErr) throw new Error('Usuario creado pero error al guardar ficha: ' + insErr.message);
-
-      // Si hay profesor, insertar también en alumno_profesor
-      if (profId && newAlumno?.id) {
-        const { error: apErr } = await db.from('alumno_profesor').insert({
-          alumno_id: newAlumno.id, profesor_id: profId
-        });
-        if (apErr) console.warn('[Nexo] alumno_profesor insert:', apErr.message);
-      }
-
-    } else {
-      // ── EDITAR EXISTENTE ──
-      const alumno = allAlumnos.find(x => x.id === editAlumnoId);
-      if (!alumno) throw new Error('Alumno no encontrado');
-
-      const { error: uErr } = await db.from('usuarios').update({
-        nombre:    document.getElementById('a-nombre').value.trim(),
-        apellidos: document.getElementById('a-apellidos').value.trim(),
-      }).eq('id', alumno.usuario_id);
-      if (uErr) throw new Error('Error al actualizar nombre: ' + uErr.message);
-
-      const { error: aErr } = await db.from('alumnos').update({
-        nivel:                document.getElementById('a-nivel').value,
-        asignaturas:          asigs,
-        profesor_id:          document.getElementById('a-profesor').value || null,
-        horario_habitual:     document.getElementById('a-horario').value || null,
-        modalidad:            document.getElementById('a-modalidad').value,
-        direccion:            document.getElementById('a-direccion').value || null,
-        telefono_familia:     document.getElementById('a-telefono').value || null,
-        horas_bono_total:     parseFloat(document.getElementById('a-bono-total').value) || 0,
-        horas_bono_restantes: parseFloat(document.getElementById('a-bono-rest').value) || 0,
-        fecha_inicio:         document.getElementById('a-fecha-inicio').value || null,
-      }).eq('id', editAlumnoId);
-      if (aErr) throw new Error('Error al actualizar alumno: ' + aErr.message);
+    if (asigIds.length && newAlumno?.id) {
+      await db.from('alumno_asignaturas').insert(
+        asigIds.map(asignatura_id => ({ alumno_id: newAlumno.id, asignatura_id }))
+      );
     }
 
-    showToast(editAlumnoId ? 'Alumno actualizado' : 'Alumno creado correctamente');
+    showToast('Alumno creado correctamente');
     cerrarModal('modal-alumno');
     await loadAll();
     await loadTablaAlumnos();
@@ -1343,10 +1322,8 @@ function renderTablaProfesores(lista) {
 }
 
 function abrirModalProfesor() {
-  editProfesorId = null;
   document.getElementById('form-profesor').reset();
-  document.getElementById('modal-prof-titulo').textContent = 'Nuevo profesor';
-  document.getElementById('p-password').required = true;
+  renderCreacionAsigCheckboxes('modal-prof-asig-list');
   document.getElementById('modal-profesor').classList.add('open');
 }
 
@@ -1360,13 +1337,6 @@ function editarProfesor(id) {
   document.getElementById('p-apellidos').value      = u.apellidos || '';
   document.getElementById('p-email').value          = u.email || '';
   document.getElementById('p-password').value       = '';
-  document.getElementById('p-password').required    = false;
-  document.getElementById('p-especialidades').value = (p.especialidades||[]).join(', ');
-  document.getElementById('p-zona').value           = p.zona || '';
-  document.getElementById('p-telefono').value       = p.telefono || '';
-  document.getElementById('p-estudios').value       = p.estudios || '';
-  document.getElementById('p-nivel-max').value      = p.nivel_max || '';
-  document.getElementById('p-fecha-inicio').value   = p.fecha_inicio || '';
   document.getElementById('modal-profesor').classList.add('open');
 }
 
@@ -1374,58 +1344,43 @@ async function guardarProfesor(e) {
   e.preventDefault();
   const btn = document.getElementById('btn-guardar-profesor');
   btn.disabled = true;
-  const esps = document.getElementById('p-especialidades').value.split(',').map(s => s.trim()).filter(Boolean);
 
   try {
-    if (!editProfesorId) {
-      // ── CREAR NUEVO ──
-      const email     = document.getElementById('p-email').value.trim();
-      const password  = document.getElementById('p-password').value;
-      const nombre    = document.getElementById('p-nombre').value.trim();
-      const apellidos = document.getElementById('p-apellidos').value.trim();
+    const email     = document.getElementById('p-email').value.trim();
+    const password  = document.getElementById('p-password').value;
+    const nombre    = document.getElementById('p-nombre').value.trim();
+    const apellidos = document.getElementById('p-apellidos').value.trim();
+    const asigIds   = getCheckedAsigIds('modal-prof-asig-list');
 
-      if (!password) throw new Error('La contraseña es obligatoria para crear un profesor');
+    if (!password) throw new Error('La contraseña inicial es obligatoria');
 
-      const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
-        body: { email, password, nombre, apellidos, rol: 'profesor' }
-      });
-      if (fnErr) throw new Error('Error en el servidor: ' + fnErr.message);
-      if (!newUser?.user_id) throw new Error(newUser?.error || 'No se recibió el ID del nuevo usuario');
+    const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
+      body: { email, password, nombre, apellidos, rol: 'profesor' }
+    });
+    if (fnErr) throw new Error('Error en el servidor: ' + fnErr.message);
+    if (!newUser?.user_id) throw new Error(newUser?.error || 'No se recibió el ID del nuevo usuario');
 
-      const { error: insErr } = await db.from('profesores').insert({
-        usuario_id:     newUser.user_id,
-        especialidades: esps,
-        zona:           document.getElementById('p-zona').value || null,
-        telefono:       document.getElementById('p-telefono').value || null,
-        estudios:       document.getElementById('p-estudios').value || null,
-        nivel_max:      document.getElementById('p-nivel-max').value || null,
-        fecha_inicio:   document.getElementById('p-fecha-inicio').value || null,
-      });
-      if (insErr) throw new Error('Usuario creado pero error al guardar ficha: ' + insErr.message);
+    const asigNombres = asigIds.map(id => allAsignaturas.find(a => a.id === id)?.nombre).filter(Boolean);
 
-    } else {
-      // ── EDITAR EXISTENTE ──
-      const prof = allProfesores.find(x => x.id === editProfesorId);
-      if (!prof) throw new Error('Profesor no encontrado');
+    const { data: newProf, error: insErr } = await db.from('profesores').insert({
+      usuario_id:     newUser.user_id,
+      especialidades: asigNombres,
+      zona:           document.getElementById('p-zona').value || null,
+      telefono:       document.getElementById('p-telefono').value || null,
+      estudios:       document.getElementById('p-estudios').value || null,
+      nivel_max:      document.getElementById('p-nivel-max').value || null,
+      fecha_inicio:   document.getElementById('p-fecha-inicio').value || null,
+      observaciones:  document.getElementById('p-observaciones').value || null,
+    }).select('id').single();
+    if (insErr) throw new Error('Usuario creado pero error al guardar datos: ' + insErr.message);
 
-      const { error: uErr } = await db.from('usuarios').update({
-        nombre:    document.getElementById('p-nombre').value.trim(),
-        apellidos: document.getElementById('p-apellidos').value.trim(),
-      }).eq('id', prof.usuario_id);
-      if (uErr) throw new Error('Error al actualizar nombre: ' + uErr.message);
-
-      const { error: pErr } = await db.from('profesores').update({
-        especialidades: esps,
-        zona:           document.getElementById('p-zona').value || null,
-        telefono:       document.getElementById('p-telefono').value || null,
-        estudios:       document.getElementById('p-estudios').value || null,
-        nivel_max:      document.getElementById('p-nivel-max').value || null,
-        fecha_inicio:   document.getElementById('p-fecha-inicio').value || null,
-      }).eq('id', editProfesorId);
-      if (pErr) throw new Error('Error al actualizar profesor: ' + pErr.message);
+    if (asigIds.length && newProf?.id) {
+      await db.from('profesor_asignaturas').insert(
+        asigIds.map(asignatura_id => ({ profesor_id: newProf.id, asignatura_id }))
+      );
     }
 
-    showToast(editProfesorId ? 'Profesor actualizado' : 'Profesor creado correctamente');
+    showToast('Profesor creado correctamente');
     cerrarModal('modal-profesor');
     await loadAll();
     await loadTablaProfesores();
@@ -1446,13 +1401,17 @@ async function abrirFichaProfesor(profId) {
   if (!p) return;
   const u = p.usuario || {};
 
-  document.getElementById('ficha-prof-titulo').textContent = `${u.nombre || '?'} ${u.apellidos || ''}`;
-  document.getElementById('fich-prof-nombre').value        = u.nombre || '';
-  document.getElementById('fich-prof-apellidos').value     = u.apellidos || '';
-  document.getElementById('fich-prof-email').value         = u.email || '';
-  document.getElementById('fich-prof-telefono').value      = p.telefono || '';
-  document.getElementById('fich-prof-password').value      = '';
-  document.getElementById('fich-prof-observaciones').value = p.observaciones || '';
+  document.getElementById('ficha-prof-titulo').textContent    = `${u.nombre || '?'} ${u.apellidos || ''}`;
+  document.getElementById('fich-prof-nombre').value           = u.nombre || '';
+  document.getElementById('fich-prof-apellidos').value        = u.apellidos || '';
+  document.getElementById('fich-prof-email').value            = u.email || '';
+  document.getElementById('fich-prof-telefono').value         = p.telefono || '';
+  document.getElementById('fich-prof-zona').value             = p.zona || '';
+  document.getElementById('fich-prof-estudios').value         = p.estudios || '';
+  document.getElementById('fich-prof-nivel-max').value        = p.nivel_max || '';
+  document.getElementById('fich-prof-fecha-inicio').value     = p.fecha_inicio || '';
+  document.getElementById('fich-prof-password').value         = '';
+  document.getElementById('fich-prof-observaciones').value    = p.observaciones || '';
 
   document.getElementById('modal-ficha-profesor').classList.add('open');
   await refreshFichaProfAsignaturas();
@@ -1474,13 +1433,25 @@ async function guardarFichaProfesor() {
     return;
   }
 
+  const zona         = document.getElementById('fich-prof-zona').value.trim();
+  const estudios     = document.getElementById('fich-prof-estudios').value.trim();
+  const nivel_max    = document.getElementById('fich-prof-nivel-max').value;
+  const fecha_inicio = document.getElementById('fich-prof-fecha-inicio').value;
+
   const p = allProfesores.find(x => x.id === fichaProfesorId);
 
   const [resUser, resProf] = await Promise.all([
     p?.usuario_id
       ? db.from('usuarios').update({ nombre, apellidos, email }).eq('id', p.usuario_id)
       : Promise.resolve({ error: null }),
-    db.from('profesores').update({ telefono: telefono || null, observaciones: observaciones || null }).eq('id', fichaProfesorId),
+    db.from('profesores').update({
+      telefono:      telefono || null,
+      zona:          zona || null,
+      estudios:      estudios || null,
+      nivel_max:     nivel_max || null,
+      fecha_inicio:  fecha_inicio || null,
+      observaciones: observaciones || null,
+    }).eq('id', fichaProfesorId),
   ]);
 
   if (resUser.error || resProf.error) {
@@ -1499,6 +1470,10 @@ async function guardarFichaProfesor() {
       allProfesores[idx].usuario.email     = email;
     }
     allProfesores[idx].telefono      = telefono;
+    allProfesores[idx].zona          = zona;
+    allProfesores[idx].estudios      = estudios;
+    allProfesores[idx].nivel_max     = nivel_max;
+    allProfesores[idx].fecha_inicio  = fecha_inicio;
     allProfesores[idx].observaciones = observaciones;
   }
   document.getElementById('ficha-prof-titulo').textContent = `${nombre} ${apellidos}`;
@@ -1599,12 +1574,16 @@ async function abrirFicha(alumnoId) {
   document.getElementById('ficha-titulo').textContent = `${u.nombre || '?'} ${u.apellidos || ''}`;
 
   // Datos básicos
-  document.getElementById('fich-nombre').value      = u.nombre || '';
-  document.getElementById('fich-apellidos').value   = u.apellidos || '';
-  document.getElementById('fich-email').value       = u.email || '';
-  document.getElementById('fich-nivel').value       = a.nivel || '';
-  document.getElementById('fich-telefono').value    = a.telefono_familia || '';
-  document.getElementById('fich-password').value    = '';
+  document.getElementById('fich-nombre').value        = u.nombre || '';
+  document.getElementById('fich-apellidos').value     = u.apellidos || '';
+  document.getElementById('fich-email').value         = u.email || '';
+  document.getElementById('fich-nivel').value         = a.nivel || '';
+  document.getElementById('fich-modalidad').value     = a.modalidad || 'presencial';
+  document.getElementById('fich-telefono').value      = a.telefono_familia || '';
+  document.getElementById('fich-fecha-inicio').value  = a.fecha_inicio || '';
+  document.getElementById('fich-horario').value       = a.horario_habitual || '';
+  document.getElementById('fich-direccion').value     = a.direccion || '';
+  document.getElementById('fich-password').value      = '';
   document.getElementById('fich-observaciones').value = a.observaciones || '';
 
   // Selector de profesores para añadir
@@ -1625,11 +1604,15 @@ async function guardarFicha() {
   const btn = document.getElementById('btn-guardar-ficha');
   btn.disabled = true;
 
-  const nombre      = document.getElementById('fich-nombre').value.trim();
-  const apellidos   = document.getElementById('fich-apellidos').value.trim();
-  const email       = document.getElementById('fich-email').value.trim();
-  const nivel       = document.getElementById('fich-nivel').value;
-  const telefono    = document.getElementById('fich-telefono').value.trim();
+  const nombre        = document.getElementById('fich-nombre').value.trim();
+  const apellidos     = document.getElementById('fich-apellidos').value.trim();
+  const email         = document.getElementById('fich-email').value.trim();
+  const nivel         = document.getElementById('fich-nivel').value;
+  const modalidad     = document.getElementById('fich-modalidad').value;
+  const telefono      = document.getElementById('fich-telefono').value.trim();
+  const fecha_inicio  = document.getElementById('fich-fecha-inicio').value;
+  const horario       = document.getElementById('fich-horario').value.trim();
+  const direccion     = document.getElementById('fich-direccion').value.trim();
   const observaciones = document.getElementById('fich-observaciones').value.trim();
 
   if (!nombre || !apellidos || !email || !nivel) {
@@ -1645,7 +1628,14 @@ async function guardarFicha() {
     userId
       ? db.from('usuarios').update({ nombre, apellidos, email }).eq('id', userId)
       : Promise.resolve({ error: null }),
-    db.from('alumnos').update({ nivel, telefono_familia: telefono, observaciones }).eq('id', fichaAlumnoId),
+    db.from('alumnos').update({
+      nivel, modalidad,
+      telefono_familia: telefono || null,
+      fecha_inicio:     fecha_inicio || null,
+      horario_habitual: horario || null,
+      direccion:        direccion || null,
+      observaciones:    observaciones || null,
+    }).eq('id', fichaAlumnoId),
   ]);
 
   if (resUser.error || resAlumno.error) {
@@ -1665,7 +1655,11 @@ async function guardarFicha() {
       allAlumnos[idx].usuario.email     = email;
     }
     allAlumnos[idx].nivel             = nivel;
+    allAlumnos[idx].modalidad         = modalidad;
     allAlumnos[idx].telefono_familia  = telefono;
+    allAlumnos[idx].fecha_inicio      = fecha_inicio;
+    allAlumnos[idx].horario_habitual  = horario;
+    allAlumnos[idx].direccion         = direccion;
     allAlumnos[idx].observaciones     = observaciones;
   }
   document.getElementById('ficha-titulo').textContent = `${nombre} ${apellidos}`;
