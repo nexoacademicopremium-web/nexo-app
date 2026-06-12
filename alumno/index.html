@@ -893,15 +893,19 @@ async function loadEstudiar() {
   const alumno = ctx.alumnoData;
 
   // Cargar material asignado específicamente y asignaturas del alumno en paralelo
-  const [{ data: matAlumno }, { data: misAsignaturas }, { data: catalogoAsig }] = await Promise.all([
+  const [{ data: matAlumno }, { data: misAsignaturas }, { data: catalogoAsig }, { data: catalogoBloques }, { data: catalogoTemas }] = await Promise.all([
     db.from('material_alumno').select('material_id').eq('alumno_id', alumno.id),
     db.from('alumno_asignaturas').select('asignatura_id').eq('alumno_id', alumno.id),
     db.from('asignaturas').select('id,nombre'),
+    db.from('bloques').select('id,nombre').order('nombre'),
+    db.from('temas').select('id,nombre,bloque_id').order('nombre'),
   ]);
 
   const matIds      = (matAlumno || []).map(m => m.material_id);
   const asigFiltros = (misAsignaturas || []).map(a => a.asignatura_id);  // SMALLINT[]
-  const asigMap     = Object.fromEntries((catalogoAsig || []).map(a => [a.id, a.nombre]));
+  const asigMap     = Object.fromEntries((catalogoAsig    || []).map(a => [a.id, a.nombre]));
+  const bloqueMap   = Object.fromEntries((catalogoBloques || []).map(b => [b.id, b.nombre]));
+  const temaMap     = Object.fromEntries((catalogoTemas   || []).map(t => [t.id, t.nombre]));
 
   let query = db.from('material').select('*').eq('visible', true);
   if (matIds.length > 0) {
@@ -910,7 +914,7 @@ async function loadEstudiar() {
     query = query.or(`nivel.eq.todos,nivel.eq.${alumno.nivel}`);
   }
 
-  const { data: rawMaterial } = await query.order('asignatura_id').order('bloque_tema');
+  const { data: rawMaterial } = await query.order('asignatura_id').order('bloque_id').order('tema_id');
 
   // Si el alumno tiene asignaturas asignadas, filtrar por asignatura_id.
   // Siempre se muestran: material asignado personalmente y material sin asignatura.
@@ -972,12 +976,12 @@ async function loadEstudiar() {
     </div>
   `;
 
-  window._estudiarData = { byAsig, byAsigTests };
+  window._estudiarData = { byAsig, byAsigTests, bloqueMap, temaMap };
 }
 
 function mostrarDetalle(asigEnc) {
   const asig = decodeURIComponent(asigEnc);
-  const { byAsig, byAsigTests } = window._estudiarData || {};
+  const { byAsig, byAsigTests, bloqueMap, temaMap } = window._estudiarData || {};
   const material = byAsig?.[asig] || [];
   const tests    = byAsigTests?.[asig] || [];
 
@@ -985,51 +989,83 @@ function mostrarDetalle(asigEnc) {
   document.getElementById('estudiar-asignaturas').style.display = 'none';
   document.getElementById('estudiar-detalle').style.display = 'block';
 
-  const tipoIcon = t => ({pdf:'ti-file-text',test:'ti-player-play',recurso:'ti-layout-grid'}[t] || 'ti-file');
-  const tipoBadge = t => ({pdf:'badge-pdf PDF',test:'badge-test Test',recurso:'badge-pdf Recurso'}[t] || 'badge-pdf Recurso');
+  const tipoIcon  = t => ({pdf:'ti-file-text',recurso:'ti-layout-grid'}[t] || 'ti-file');
+  const tipoBadge = t => ({pdf:'badge-pdf PDF',recurso:'badge-pdf Recurso'}[t] || 'badge-pdf Recurso');
 
-  document.getElementById('detalle-material').innerHTML = `
-    ${material.length > 0 ? `
-      <div class="card">
-        <div class="card-head"><div class="card-title"><i class="ti ti-files"></i> Material disponible</div></div>
-        ${material.map(m => {
-          const [badgeCls, badgeTxt] = tipoBadge(m.tipo).split(' ');
-          return `
-            <div class="recurso-row" onclick="${m.archivo_url ? `window.open('${m.archivo_url}','_blank')` : ''}">
-              <div class="recurso-ico" style="background:#0f2240">
-                <i class="ti ${tipoIcon(m.tipo)}" style="color:var(--blue);font-size:17px"></i>
-              </div>
-              <div style="flex:1">
-                <div class="recurso-name">${m.titulo}</div>
-                <div class="recurso-sub">${m.bloque_tema || m.descripcion || ''}</div>
-              </div>
-              <span class="recurso-badge ${badgeCls}">${badgeTxt}</span>
+  // Agrupar material: bloque_id → tema_id → items
+  const bloques = {};
+  const sinEstructura = [];
+  material.forEach(m => {
+    if (m.bloque_id) {
+      if (!bloques[m.bloque_id]) bloques[m.bloque_id] = {};
+      const tk = m.tema_id || '__sin__';
+      if (!bloques[m.bloque_id][tk]) bloques[m.bloque_id][tk] = [];
+      bloques[m.bloque_id][tk].push(m);
+    } else {
+      sinEstructura.push(m);
+    }
+  });
+
+  const renderItem = m => {
+    const [badgeCls, badgeTxt] = tipoBadge(m.tipo).split(' ');
+    return `
+      <div class="recurso-row" onclick="${m.archivo_url ? `window.open('${m.archivo_url}','_blank')` : ''}">
+        <div class="recurso-ico" style="background:#0f2240">
+          <i class="ti ${tipoIcon(m.tipo)}" style="color:var(--blue);font-size:17px"></i>
+        </div>
+        <div style="flex:1">
+          <div class="recurso-name">${m.titulo}</div>
+        </div>
+        <span class="recurso-badge ${badgeCls}">${badgeTxt}</span>
+      </div>`;
+  };
+
+  const bloqueIds = Object.keys(bloques);
+  const materialHTML = material.length > 0 ? `
+    <div class="card">
+      <div class="card-head"><div class="card-title"><i class="ti ti-files"></i> Material disponible</div></div>
+      ${bloqueIds.map(bid => {
+        const temas = bloques[bid];
+        return `
+          <div style="margin:8px 0 0">
+            <div style="padding:10px 16px 6px;font-size:11px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--soft);border-top:0.5px solid var(--border);display:flex;align-items:center;gap:6px">
+              <i class="ti ti-folder" style="font-size:14px;color:var(--blue)"></i>
+              ${bloqueMap[parseInt(bid)] || 'Bloque'}
             </div>
-          `;
-        }).join('')}
-      </div>
-    ` : ''}
-    ${tests.length > 0 ? `
-      <div class="card" style="margin-top:12px">
-        <div class="card-head"><div class="card-title"><i class="ti ti-list-check"></i> Tests</div></div>
-        ${tests.map(t => {
-          const nota = t.resultado?.[0]?.nota;
-          return `
-            <div class="recurso-row" onclick="iniciarTest('${t.id}','${encodeURIComponent(t.titulo)}')">
-              <div class="recurso-ico" style="background:#0d2d1e">
-                <i class="ti ti-player-play" style="color:var(--green);font-size:17px"></i>
-              </div>
-              <div style="flex:1">
-                <div class="recurso-name">${t.titulo}</div>
-                <div class="recurso-sub">${t.bloque_tema || ''}</div>
-              </div>
-              ${nota != null ? `<span class="recurso-badge badge-ok">Nota: ${nota}</span>` : '<span class="recurso-badge badge-test">Nuevo</span>'}
+            ${Object.keys(temas).map(tid => {
+              const items = temas[tid];
+              const temaNombre = tid !== '__sin__' ? (temaMap[parseInt(tid)] || '') : '';
+              return `
+                ${temaNombre ? `
+                  <div style="padding:5px 16px 4px 36px;font-size:11px;font-weight:500;color:var(--muted);display:flex;align-items:center;gap:5px">
+                    <i class="ti ti-bookmark" style="font-size:12px"></i>${temaNombre}
+                  </div>` : ''}
+                ${items.map(renderItem).join('')}`;
+            }).join('')}
+          </div>`;
+      }).join('')}
+      ${sinEstructura.map(renderItem).join('')}
+    </div>` : '';
+
+  const testsHTML = tests.length > 0 ? `
+    <div class="card" style="margin-top:12px">
+      <div class="card-head"><div class="card-title"><i class="ti ti-list-check"></i> Tests</div></div>
+      ${tests.map(t => {
+        const nota = t.resultado?.[0]?.nota;
+        return `
+          <div class="recurso-row" onclick="iniciarTest('${t.id}','${encodeURIComponent(t.titulo)}')">
+            <div class="recurso-ico" style="background:#0d2d1e">
+              <i class="ti ti-player-play" style="color:var(--green);font-size:17px"></i>
             </div>
-          `;
-        }).join('')}
-      </div>
-    ` : ''}
-  `;
+            <div style="flex:1">
+              <div class="recurso-name">${t.titulo}</div>
+            </div>
+            ${nota != null ? `<span class="recurso-badge badge-ok">Nota: ${nota}</span>` : '<span class="recurso-badge badge-test">Nuevo</span>'}
+          </div>`;
+      }).join('')}
+    </div>` : '';
+
+  document.getElementById('detalle-material').innerHTML = materialHTML + testsHTML;
 }
 
 function volverAsignaturas() {
