@@ -548,10 +548,12 @@
       <label class="fl">Archivo <span id="mat-archivo-label-hint" style="color:var(--muted);font-size:10px">*</span></label>
       <input class="fi" id="mat-archivo" type="file" accept=".pdf,.docx,.pptx,.jpg,.png">
       <div id="mat-archivo-actual" style="display:none;font-size:11px;color:var(--muted);margin-top:4px"></div>
-      <label class="fl" id="mat-alumno-row">Asignar a alumno específico <span style="color:var(--muted);font-size:10px">(opcional)</span></label>
-      <select class="fi" id="mat-alumno-especifico">
-        <option value="">Para su nivel en general</option>
-      </select>
+      <div id="mat-alumno-container">
+        <label class="fl">Asignar a alumno específico <span style="color:var(--muted);font-size:10px">(opcional)</span></label>
+        <select class="fi" id="mat-alumno-especifico">
+          <option value="">Para su nivel en general</option>
+        </select>
+      </div>
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModal('modal-material')">Cancelar</button>
         <button type="submit" class="btn-primary" id="btn-guardar-material">Guardar</button>
@@ -1653,8 +1655,7 @@ function abrirModalMaterial() {
   document.getElementById('modal-mat-titulo').textContent = 'Añadir material';
   document.getElementById('mat-archivo-actual').style.display = 'none';
   document.getElementById('mat-archivo-label-hint').textContent = '*';
-  document.getElementById('mat-alumno-row').style.display = '';
-  document.getElementById('mat-alumno-especifico').parentElement.style.display = '';
+  document.getElementById('mat-alumno-container').style.display = '';
   document.getElementById('modal-material').classList.add('open');
 }
 
@@ -1678,8 +1679,7 @@ function abrirEditarMaterial(id) {
     infoEl.style.display = 'none';
   }
   document.getElementById('mat-archivo-label-hint').textContent = '(opcional)';
-  document.getElementById('mat-alumno-row').style.display = 'none';
-  document.getElementById('mat-alumno-especifico').parentElement.style.display = 'none';
+  document.getElementById('mat-alumno-container').style.display = 'none';
   document.getElementById('modal-material').classList.add('open');
 }
 
