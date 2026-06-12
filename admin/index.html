@@ -1260,7 +1260,11 @@ async function guardarFichaProfesor() {
       const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
         body: { email, password, nombre, apellidos, rol: 'profesor' }
       });
-      if (fnErr) throw new Error('Error en el servidor: ' + fnErr.message);
+      if (fnErr) {
+        let detail = fnErr.message;
+        try { const body = await fnErr.context?.json(); detail = body?.error || detail; } catch(_) {}
+        throw new Error('Error al crear usuario: ' + detail);
+      }
       if (!newUser?.user_id) throw new Error(newUser?.error || 'No se recibió el ID del nuevo usuario');
 
       const asigIds = [...document.querySelectorAll('#ficha-prof-asignaturas-lista input[type=checkbox]:checked')]
@@ -1488,7 +1492,11 @@ async function guardarFicha() {
       const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
         body: { email, password, nombre, apellidos, rol: 'alumno' }
       });
-      if (fnErr) throw new Error('Error en el servidor: ' + fnErr.message);
+      if (fnErr) {
+        let detail = fnErr.message;
+        try { const body = await fnErr.context?.json(); detail = body?.error || detail; } catch(_) {}
+        throw new Error('Error al crear usuario: ' + detail);
+      }
       if (!newUser?.user_id) throw new Error(newUser?.error || 'No se recibió el ID del nuevo usuario');
 
       const { data: newAlumno, error: insErr } = await db.from('alumnos').insert({
