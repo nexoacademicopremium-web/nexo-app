@@ -894,14 +894,6 @@ async function loadAll() {
       materialAlumnoMap[ma.material_id].push(ma.alumno_id);
     });
 
-    // Populate: selector de profesor en modal alumno
-    const profSel = document.getElementById('a-profesor');
-    profSel.innerHTML = '<option value="">Sin profesor principal</option>';
-    allProfesores.forEach(p => {
-      const u = p.usuario || {};
-      profSel.add(new Option(`${u.nombre || '?'} ${u.apellidos || ''}`, p.id));
-    });
-
     // Populate: selector de alumno en modal material
     const matAlumSel = document.getElementById('mat-alumno-especifico');
     matAlumSel.innerHTML = '<option value="">Para su nivel en general</option>';
