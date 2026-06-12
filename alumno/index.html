@@ -128,15 +128,22 @@
   .badge-test{background:#0d2d1e;color:var(--green)}
   .badge-ok{background:var(--green-lt);color:var(--green)}
 
-  /* ── Material jerárquico alumno ── */
-  .mat-bloque-alm{display:flex;align-items:center;gap:9px;padding:10px 16px 8px;border-top:.5px solid var(--border);background:#071228}
-  .mat-bloque-alm:first-child{border-top:none}
-  .mat-bloque-alm i{color:var(--blue);font-size:16px;flex-shrink:0}
-  .mat-bloque-alm-name{color:#fff;font-size:12px;font-weight:600;flex:1;letter-spacing:.2px}
-  .mat-bloque-alm-nivel{font-size:10px;padding:2px 7px;border-radius:20px;background:#0f2240;color:var(--blue);font-weight:500}
-  .mat-tema-alm{display:flex;align-items:center;gap:6px;padding:5px 16px 4px 34px;background:var(--dark);color:var(--muted);font-size:10px;font-weight:500;border-top:.5px solid var(--border2)}
-  .mat-tema-alm i{font-size:11px;color:var(--soft)}
-  .mat-recurso-indent{padding-left:34px}
+  /* ── Material alumno — acordeón Bloque → Tema → Archivo ── */
+  .mal-bloque{border-top:.5px solid var(--border2)}
+  .mal-bloque:first-child{border-top:none}
+  .mal-bloque-hd{display:flex;align-items:center;gap:9px;padding:11px 16px;cursor:pointer;user-select:none;background:#071228;transition:background .1s}
+  .mal-bloque-hd:hover{background:#091828}
+  .mal-bloque-name{color:#fff;font-size:12px;font-weight:600;flex:1}
+  .mal-chevron{font-size:12px;color:var(--muted);transition:transform .18s;flex-shrink:0}
+  .mal-bloque.b-open>.mal-bloque-hd>.mal-chevron{transform:rotate(90deg)}
+  .mal-tema.t-open>.mal-tema-hd>.mal-chevron{transform:rotate(90deg)}
+  .mal-bloque-body,.mal-tema-body{display:none}
+  .mal-bloque.b-open>.mal-bloque-body,.mal-tema.t-open>.mal-tema-body{display:block}
+  .mal-tema{border-top:.5px solid var(--border2)}
+  .mal-tema-hd{display:flex;align-items:center;gap:7px;padding:8px 16px 8px 28px;cursor:pointer;background:var(--dark);color:var(--muted);font-size:11px;font-weight:500;transition:background .1s}
+  .mal-tema-hd:hover{background:var(--border2)}
+  .mal-count{font-size:10px;color:var(--muted);margin-left:auto}
+  .mal-recurso-indent{padding-left:28px}
 
   /* TESTS */
   .test-pregunta{background:var(--dark);border:.5px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
@@ -1030,32 +1037,45 @@ function mostrarDetalle(asigEnc) {
       </div>`;
   };
 
+  const renderTemasAlm = (temasPorId, bid) => Object.keys(temasPorId).map(tid => {
+    const items  = temasPorId[tid];
+    const nomTem = tid !== '__sin__' ? (temaMap[parseInt(tid)] || '') : '';
+    if (!nomTem) return `<div class="mal-recurso-indent">${items.map(renderItem).join('')}</div>`;
+    return `
+      <div class="mal-tema" id="alm-tema-${bid}-${tid}">
+        <div class="mal-tema-hd" onclick="toggleAlmTema('${bid}','${tid}')">
+          <i class="ti ti-chevron-right mal-chevron"></i>
+          <i class="ti ti-bookmark" style="font-size:12px;color:var(--soft)"></i>
+          <span style="flex:1">${nomTem}</span>
+          <span class="mal-count">${items.length} archivo${items.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="mal-tema-body mal-recurso-indent">${items.map(renderItem).join('')}</div>
+      </div>`;
+  }).join('');
+
   const bloqueIds = Object.keys(bloques);
   const materialHTML = material.length > 0 ? `
     <div class="card">
-      <div class="card-head"><div class="card-title"><i class="ti ti-files"></i> Material disponible</div></div>
+      <div class="card-head">
+        <div class="card-title"><i class="ti ti-files"></i> Material disponible</div>
+      </div>
       ${bloqueIds.map(bid => {
-        const temas  = bloques[bid];
-        const bloque = bloqueMap[parseInt(bid)] || {};
-        const nomBlq = bloque.nombre || 'Bloque';
-        const nivBlq = bloque.nivel  || '';
+        const temas   = bloques[bid];
+        const bloque  = bloqueMap[parseInt(bid)] || {};
+        const nomBlq  = bloque.nombre || 'Bloque';
+        const nItems  = Object.values(temas).reduce((s, a) => s + a.length, 0);
         return `
-          <div class="mat-bloque-alm">
-            <i class="ti ti-folder"></i>
-            <span class="mat-bloque-alm-name">${nomBlq}</span>
-            ${nivBlq ? `<span class="mat-bloque-alm-nivel">${nivBlq}</span>` : ''}
-          </div>
-          ${Object.keys(temas).map(tid => {
-            const items    = temas[tid];
-            const temaNom  = tid !== '__sin__' ? (temaMap[parseInt(tid)] || '') : '';
-            return `
-              ${temaNom ? `<div class="mat-tema-alm"><i class="ti ti-bookmark"></i>${temaNom}</div>` : ''}
-              <div class="mat-recurso-indent">
-                ${items.map(renderItem).join('')}
-              </div>`;
-          }).join('')}`;
+          <div class="mal-bloque" id="alm-bloque-${bid}">
+            <div class="mal-bloque-hd" onclick="toggleAlmBloque('${bid}')">
+              <i class="ti ti-chevron-right mal-chevron"></i>
+              <i class="ti ti-folder" style="color:var(--blue);font-size:15px"></i>
+              <span class="mal-bloque-name">${nomBlq}</span>
+              <span class="mal-count">${nItems} archivo${nItems !== 1 ? 's' : ''}</span>
+            </div>
+            <div class="mal-bloque-body">${renderTemasAlm(temas, bid)}</div>
+          </div>`;
       }).join('')}
-      ${sinEstructura.length > 0 ? `<div>${sinEstructura.map(renderItem).join('')}</div>` : ''}
+      ${sinEstructura.length > 0 ? `<div class="mal-recurso-indent">${sinEstructura.map(renderItem).join('')}</div>` : ''}
     </div>` : '';
 
   const testsHTML = tests.length > 0 ? `
@@ -1068,15 +1088,20 @@ function mostrarDetalle(asigEnc) {
             <div class="recurso-ico" style="background:#0d2d1e">
               <i class="ti ti-player-play" style="color:var(--green);font-size:17px"></i>
             </div>
-            <div style="flex:1">
-              <div class="recurso-name">${t.titulo}</div>
-            </div>
+            <div style="flex:1"><div class="recurso-name">${t.titulo}</div></div>
             ${nota != null ? `<span class="recurso-badge badge-ok">Nota: ${nota}</span>` : '<span class="recurso-badge badge-test">Nuevo</span>'}
           </div>`;
       }).join('')}
     </div>` : '';
 
   document.getElementById('detalle-material').innerHTML = materialHTML + testsHTML;
+}
+
+function toggleAlmBloque(bid) {
+  document.getElementById('alm-bloque-' + bid)?.classList.toggle('b-open');
+}
+function toggleAlmTema(bid, tid) {
+  document.getElementById(`alm-tema-${bid}-${tid}`)?.classList.toggle('t-open');
 }
 
 function volverAsignaturas() {
