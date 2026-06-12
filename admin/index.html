@@ -279,7 +279,7 @@
   </div>
   <div class="card">
     <table class="tabla">
-      <thead><tr><th>Título</th><th>Nivel</th><th>Asignatura</th><th>Bloque</th><th>Tema</th><th>Asignado a</th><th>Tipo</th><th>Visible</th><th>Acciones</th></tr></thead>
+      <thead><tr><th>Título</th><th>Nivel</th><th>Asignatura</th><th>Bloque</th><th>Tema</th><th>Asignado a</th><th>Tipo</th><th>Visible</th><th style="min-width:220px">Acciones</th></tr></thead>
       <tbody id="tbody-material"></tbody>
     </table>
   </div>
@@ -542,9 +542,12 @@
           </select>
         </div>
       </div>
-      <label class="fl">Asignatura *</label><input class="fi" id="mat-asignatura" placeholder="Matemáticas" required>
-      <label class="fl">Nombre del bloque *</label><input class="fi" id="mat-bloque" placeholder="Álgebra" required>
-      <label class="fl">Tema *</label><input class="fi" id="mat-tema" placeholder="Ecuaciones de primer grado" required>
+      <label class="fl">Asignatura *</label><input class="fi" id="mat-asignatura" placeholder="Matemáticas" required list="dl-asignaturas" autocomplete="off">
+      <label class="fl">Nombre del bloque *</label><input class="fi" id="mat-bloque" placeholder="Álgebra" required list="dl-bloques" autocomplete="off">
+      <label class="fl">Tema *</label><input class="fi" id="mat-tema" placeholder="Ecuaciones de primer grado" required list="dl-temas" autocomplete="off">
+      <datalist id="dl-asignaturas"></datalist>
+      <datalist id="dl-bloques"></datalist>
+      <datalist id="dl-temas"></datalist>
       <label class="fl">Archivo <span id="mat-archivo-label-hint" style="color:var(--muted);font-size:10px">*</span></label>
       <input class="fi" id="mat-archivo" type="file" accept=".pdf,.docx,.pptx,.jpg,.png">
       <div id="mat-archivo-actual" style="display:none;font-size:11px;color:var(--muted);margin-top:4px"></div>
@@ -1613,14 +1616,15 @@ async function loadTablaMaterial() {
   const { data: material, error } = await db.from('material').select('*').order('created_at', { ascending: false });
   const tbody = document.getElementById('tbody-material');
   if (error) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--red)">Error: ${error.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--red)">Error: ${error.message}</td></tr>`;
     return;
   }
   if (!material || material.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">Sin material</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" style="text-align:center;padding:32px;color:var(--muted)">Sin material</td></tr>`;
     return;
   }
   allMaterial = material;
+  populateDatalistsMaterial(material);
   tbody.innerHTML = material.map(m => {
     const alIds = materialAlumnoMap[m.id] || [];
     let asigCell = '—';
@@ -1644,6 +1648,7 @@ async function loadTablaMaterial() {
         <button class="btn-edit" onclick="abrirEditarMaterial('${m.id}')"><i class="ti ti-pencil"></i> Editar</button>
         ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" class="btn-edit" style="margin-left:4px">Ver</a>` : ''}
         <button class="btn-danger" style="margin-left:4px" onclick="toggleVisible('material','${m.id}',${!m.visible})">${m.visible ? 'Ocultar' : 'Mostrar'}</button>
+        <button class="btn-danger" style="margin-left:4px" onclick="eliminarMaterial('${m.id}')"><i class="ti ti-trash"></i></button>
       </td>
     </tr>`;
   }).join('');
@@ -1741,6 +1746,41 @@ async function guardarMaterial(e) {
     showToast(err.message, 'error');
   } finally {
     btn.disabled = false;
+  }
+}
+
+function populateDatalistsMaterial(lista) {
+  const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
+  const fill = (id, values) => {
+    const dl = document.getElementById(id);
+    if (!dl) return;
+    dl.innerHTML = values.map(v => `<option value="${v.replace(/"/g, '&quot;')}"></option>`).join('');
+  };
+  fill('dl-asignaturas', uniq(lista.map(m => m.asignatura)));
+  fill('dl-bloques',     uniq(lista.map(m => m.bloque_tema)));
+  fill('dl-temas',       uniq(lista.map(m => m.tema)));
+}
+
+async function eliminarMaterial(id) {
+  if (!confirm('¿Seguro que quieres eliminar este material? Esta acción no se puede deshacer.')) return;
+  const m = allMaterial.find(x => x.id === id);
+  try {
+    await db.from('material_alumno').delete().eq('material_id', id);
+    const { error } = await db.from('material').delete().eq('id', id);
+    if (error) throw new Error('Error al eliminar: ' + error.message);
+    if (m?.archivo_url) {
+      const marker = '/nexo-files/';
+      const idx = m.archivo_url.indexOf(marker);
+      if (idx !== -1) {
+        const path = decodeURIComponent(m.archivo_url.slice(idx + marker.length));
+        await db.storage.from('nexo-files').remove([path]);
+      }
+    }
+    showToast('Material eliminado');
+    await loadAll();
+    await loadTablaMaterial();
+  } catch (err) {
+    showToast(err.message, 'error');
   }
 }
 
