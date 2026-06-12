@@ -554,10 +554,12 @@
           </select>
         </div>
       </div>
-      <label class="fl">Asignatura *</label><input class="fi" id="mat-asignatura" placeholder="Matemáticas" required list="dl-asignaturas" autocomplete="off">
+      <label class="fl">Asignatura *</label>
+      <select class="fi" id="mat-asignatura" required>
+        <option value="">— Selecciona asignatura —</option>
+      </select>
       <label class="fl">Nombre del bloque *</label><input class="fi" id="mat-bloque" placeholder="Álgebra" required list="dl-bloques" autocomplete="off">
       <label class="fl">Tema *</label><input class="fi" id="mat-tema" placeholder="Ecuaciones de primer grado" required list="dl-temas" autocomplete="off">
-      <datalist id="dl-asignaturas"></datalist>
       <datalist id="dl-bloques"></datalist>
       <datalist id="dl-temas"></datalist>
       <label class="fl">Archivo <span id="mat-archivo-label-hint" style="color:var(--muted);font-size:10px">*</span></label>
@@ -663,8 +665,8 @@
 // State
 // ============================================================
 let ctx = null;
-let allAlumnos = [], allProfesores = [], allUsuarios = [];
-let alumnoProfesorMap = {};   // alumno_id -> [{id, profesor_id, asignatura}]
+let allAlumnos = [], allProfesores = [], allUsuarios = [], allAsignaturas = [];
+let alumnoProfesorMap = {};   // alumno_id -> [{id, profesor_id, asignatura_id}]
 let materialAlumnoMap = {};   // material_id -> [{alumno_id}]
 let allMaterial = [];
 let editAlumnoId = null, editProfesorId = null, editMaterialId = null, editTestId = null;
@@ -692,17 +694,19 @@ let preguntasCount = 0;
 async function loadAll() {
   try {
     const [
-      { data: alumnos,     error: e1 },
-      { data: profesores,  error: e2 },
-      { data: usuarios,    error: e3 },
-      { data: alumnoProfs, error: e4 },
-      { data: matAlumnos,  error: e5 },
+      { data: alumnos,      error: e1 },
+      { data: profesores,   error: e2 },
+      { data: usuarios,     error: e3 },
+      { data: alumnoProfs,  error: e4 },
+      { data: matAlumnos,   error: e5 },
+      { data: asignaturas,  error: e6 },
     ] = await Promise.all([
       db.from('alumnos').select('*').order('created_at', { ascending: false }),
       db.from('profesores').select('*').order('created_at', { ascending: false }),
       db.from('usuarios').select('*').neq('rol', 'admin'),
       db.from('alumno_profesor').select('*'),
       db.from('material_alumno').select('*'),
+      db.from('asignaturas').select('*').order('nombre'),
     ]);
 
     // Log errores pero no abortar — la tabla alumno_profesor puede no existir aún
@@ -753,6 +757,12 @@ async function loadAll() {
       const u = a.usuario || {};
       matAlumSel.add(new Option(`${u.nombre || '?'} ${u.apellidos || ''}`, a.id));
     });
+
+    // Populate: catálogo de asignaturas
+    if (e6) console.warn('[Nexo] asignaturas:', e6.message);
+    allAsignaturas = asignaturas || [];
+    populateAsigSelect('mat-asignatura');
+    populateAsigSelect('ficha-add-asig', true);
 
     // Populate: selector de usuario en modal avisos
     const avUserSel = document.getElementById('av-usuario-especifico');
@@ -1692,7 +1702,7 @@ async function loadTablaMaterial() {
     return `<tr>
       <td style="color:#fff">${m.titulo}</td>
       <td>${nivelLabel(m.nivel)}</td>
-      <td>${m.asignatura || '—'}</td>
+      <td>${m.asignatura_id ? asigNombre(m.asignatura_id) : '—'}</td>
       <td>${m.bloque_tema || '—'}</td>
       <td>${m.tema || '—'}</td>
       <td>${asigCell}</td>
@@ -1727,7 +1737,7 @@ function abrirEditarMaterial(id) {
   document.getElementById('mat-titulo').value     = m.titulo || '';
   document.getElementById('mat-nivel').value      = m.nivel || '';
   document.getElementById('mat-tipo').value       = m.tipo || 'pdf';
-  document.getElementById('mat-asignatura').value = m.asignatura || '';
+  document.getElementById('mat-asignatura').value = m.asignatura_id || '';
   document.getElementById('mat-bloque').value     = m.bloque_tema || '';
   document.getElementById('mat-tema').value       = m.tema || '';
   const infoEl = document.getElementById('mat-archivo-actual');
@@ -1764,9 +1774,9 @@ async function guardarMaterial(e) {
 
     const payload = {
       titulo:      document.getElementById('mat-titulo').value.trim(),
-      nivel:       document.getElementById('mat-nivel').value,
-      asignatura:  document.getElementById('mat-asignatura').value.trim() || null,
-      bloque_tema: document.getElementById('mat-bloque').value.trim() || null,
+      nivel:         document.getElementById('mat-nivel').value,
+      asignatura_id: parseInt(document.getElementById('mat-asignatura').value) || null,
+      bloque_tema:   document.getElementById('mat-bloque').value.trim() || null,
       tema:        document.getElementById('mat-tema').value.trim() || null,
       tipo:        document.getElementById('mat-tipo').value,
     };
@@ -1803,6 +1813,22 @@ async function guardarMaterial(e) {
   }
 }
 
+function asigNombre(id) {
+  const a = allAsignaturas.find(x => x.id === id);
+  return a ? a.nombre : '—';
+}
+
+function populateAsigSelect(elId, withAll = false) {
+  const sel = document.getElementById(elId);
+  if (!sel) return;
+  const first = withAll
+    ? '<option value="">Todas las asignaturas</option>'
+    : '<option value="">— Selecciona asignatura —</option>';
+  sel.innerHTML = first + allAsignaturas.map(a =>
+    `<option value="${a.id}">${a.nombre}</option>`
+  ).join('');
+}
+
 function populateDatalistsMaterial(lista) {
   const uniq = (arr) => [...new Set(arr.filter(Boolean))].sort();
   const fill = (id, values) => {
@@ -1810,9 +1836,8 @@ function populateDatalistsMaterial(lista) {
     if (!dl) return;
     dl.innerHTML = values.map(v => `<option value="${v.replace(/"/g, '&quot;')}"></option>`).join('');
   };
-  fill('dl-asignaturas', uniq(lista.map(m => m.asignatura)));
-  fill('dl-bloques',     uniq(lista.map(m => m.bloque_tema)));
-  fill('dl-temas',       uniq(lista.map(m => m.tema)));
+  fill('dl-bloques', uniq(lista.map(m => m.bloque_tema)));
+  fill('dl-temas',   uniq(lista.map(m => m.tema)));
 }
 
 async function eliminarMaterial(id) {
