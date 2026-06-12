@@ -724,7 +724,8 @@
 // ============================================================
 let ctx = null;
 let allAlumnos = [], allProfesores = [], allUsuarios = [], allAsignaturas = [], allBloques = [], allTemas = [];
-let alumnoProfesorMap = {};   // alumno_id -> [{id, profesor_id, asignatura_id}]
+let alumnoProfesorMap = {};     // alumno_id -> [{id, profesor_id, asignatura_id}]
+let alumnoAsignaturasMap = {};  // alumno_id -> Set<asignatura_id>
 let materialAlumnoMap = {};   // material_id -> [{alumno_id}]
 let allMaterial = [];
 let editAlumnoId = null, editProfesorId = null, editMaterialId = null, editTestId = null;
@@ -760,6 +761,7 @@ async function loadAll() {
       { data: asignaturas,  error: e6 },
       { data: bloques,      error: e7 },
       { data: temas,        error: e8 },
+      { data: alumnoAsigs,  error: e9 },
     ] = await Promise.all([
       db.from('alumnos').select('*').order('created_at', { ascending: false }),
       db.from('profesores').select('*').order('created_at', { ascending: false }),
@@ -769,6 +771,7 @@ async function loadAll() {
       db.from('asignaturas').select('*').order('nombre'),
       db.from('bloques').select('*').order('nombre'),
       db.from('temas').select('*').order('nombre'),
+      db.from('alumno_asignaturas').select('*'),
     ]);
 
     // Log errores pero no abortar — la tabla alumno_profesor puede no existir aún
@@ -816,11 +819,24 @@ async function loadAll() {
     if (e6) console.warn('[Nexo] asignaturas:', e6.message);
     if (e7) console.warn('[Nexo] bloques:', e7.message);
     if (e8) console.warn('[Nexo] temas:', e8.message);
+    if (e9) console.warn('[Nexo] alumno_asignaturas:', e9.message);
     allAsignaturas = asignaturas || [];
     allBloques     = bloques     || [];
     allTemas       = temas       || [];
+
+    // Build alumno→asignaturas map and enrich allAlumnos for the list column
+    alumnoAsignaturasMap = {};
+    (alumnoAsigs || []).forEach(aa => {
+      if (!alumnoAsignaturasMap[aa.alumno_id]) alumnoAsignaturasMap[aa.alumno_id] = new Set();
+      alumnoAsignaturasMap[aa.alumno_id].add(aa.asignatura_id);
+    });
+    allAlumnos = allAlumnos.map(a => {
+      const ids   = [...(alumnoAsignaturasMap[a.id] || new Set())];
+      const names = ids.map(id => allAsignaturas.find(x => x.id === id)?.nombre).filter(Boolean).sort();
+      return { ...a, _asigNombres: names };
+    });
+
     populateAsigSelect('mat-asignatura');
-    populateAsigSelect('ficha-add-asig', true);
 
     // Populate: selector de usuario en modal avisos
     const avUserSel = document.getElementById('av-usuario-especifico');
@@ -1025,7 +1041,7 @@ function renderTablaAlumnos(lista, horasByAlumno = {}) {
     return `<tr>
       <td><b style="color:#fff">${u.nombre || '?'} ${u.apellidos || ''}</b><br><span style="color:var(--muted);font-size:11px">${u.email || ''}</span></td>
       <td><span class="pill ${(a.nivel||'').includes('BACH') ? 'pill-bach' : 'pill-eso'}">${nivelLabel(a.nivel)}</span></td>
-      <td style="max-width:160px;white-space:normal">${(a.asignaturas || []).join(', ') || '—'}</td>
+      <td style="max-width:160px;white-space:normal">${(a._asigNombres || []).join(', ') || '—'}</td>
       <td style="max-width:180px">${profCell}</td>
       <td><span class="pill ${a.activo ? 'pill-ok' : 'pill-grey'}">${a.activo ? 'Activo' : 'Inactivo'}</span></td>
       <td style="white-space:nowrap">
@@ -1042,7 +1058,7 @@ function filtrar(tipo) {
   if (tipo === 'alumnos') {
     const res = allAlumnos.filter(a => {
       const u = a.usuario || {};
-      return `${u.nombre} ${u.apellidos} ${(a.asignaturas||[]).join(' ')} ${a.nivel}`.toLowerCase().includes(q);
+      return `${u.nombre} ${u.apellidos} ${(a._asigNombres||[]).join(' ')} ${a.nivel}`.toLowerCase().includes(q);
     });
     renderTablaAlumnos(res);
   } else {
@@ -1455,7 +1471,7 @@ async function abrirFicha(alumnoId) {
     const pu = p.usuario || {};
     sel.add(new Option(`${pu.nombre || '?'} ${pu.apellidos || ''}`, p.id));
   });
-  populateAsigSelect('ficha-add-asig', true);
+  populateFichaAddAsig();
 
   document.getElementById('modal-ficha').classList.add('open');
 
@@ -1735,7 +1751,7 @@ async function asignarProfesorFicha() {
   showToast('Profesor asignado correctamente');
   document.getElementById('ficha-add-prof').value = '';
   document.getElementById('ficha-add-asig').value = '';
-  populateAsigSelect('ficha-add-asig', true);
+  populateFichaAddAsig();
   await refreshFichaProfs();
 
   // Refrescar tabla si visible
@@ -1862,7 +1878,10 @@ async function refreshFichaAsignaturas() {
   const { data, error } = await db.from('alumno_asignaturas')
     .select('asignatura_id').eq('alumno_id', fichaAlumnoId);
   if (error) { el.innerHTML = `<p style="color:var(--red);font-size:12px">${error.message}</p>`; return; }
-  renderFichaAsigCheckboxes(el, new Set((data || []).map(r => r.asignatura_id)));
+  const asigSet = new Set((data || []).map(r => r.asignatura_id));
+  alumnoAsignaturasMap[fichaAlumnoId] = asigSet;
+  renderFichaAsigCheckboxes(el, asigSet);
+  populateFichaAddAsig();
 }
 
 async function toggleFichaAsignatura(asignaturaId, checked) {
@@ -1871,12 +1890,16 @@ async function toggleFichaAsignatura(asignaturaId, checked) {
     const { error } = await db.from('alumno_asignaturas').insert({
       alumno_id: fichaAlumnoId, asignatura_id: asignaturaId,
     });
-    if (error) { showToast('Error: ' + error.message, 'error'); await refreshFichaAsignaturas(); }
+    if (error) { showToast('Error: ' + error.message, 'error'); await refreshFichaAsignaturas(); return; }
+    if (!alumnoAsignaturasMap[fichaAlumnoId]) alumnoAsignaturasMap[fichaAlumnoId] = new Set();
+    alumnoAsignaturasMap[fichaAlumnoId].add(asignaturaId);
   } else {
     const { error } = await db.from('alumno_asignaturas')
       .delete().eq('alumno_id', fichaAlumnoId).eq('asignatura_id', asignaturaId);
-    if (error) { showToast('Error: ' + error.message, 'error'); await refreshFichaAsignaturas(); }
+    if (error) { showToast('Error: ' + error.message, 'error'); await refreshFichaAsignaturas(); return; }
+    alumnoAsignaturasMap[fichaAlumnoId]?.delete(asignaturaId);
   }
+  populateFichaAddAsig();
 }
 
 // ============================================================
@@ -2262,6 +2285,20 @@ function populateAsigSelect(elId, withAll = false) {
   sel.innerHTML = first + allAsignaturas.map(a =>
     `<option value="${a.id}">${a.nombre}</option>`
   ).join('');
+}
+
+function populateFichaAddAsig() {
+  const sel = document.getElementById('ficha-add-asig');
+  if (!sel) return;
+  const ids   = fichaAlumnoId ? [...(alumnoAsignaturasMap[fichaAlumnoId] || new Set())] : [];
+  const asigs = ids.map(id => allAsignaturas.find(a => a.id === id)).filter(Boolean)
+                   .sort((a, b) => a.nombre.localeCompare(b.nombre));
+  if (asigs.length === 0) {
+    sel.innerHTML = '<option value="">Sin asignaturas de repaso</option>';
+  } else {
+    sel.innerHTML = '<option value="">— Selecciona asignatura —</option>' +
+      asigs.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+  }
 }
 
 function bloqueNombre(id) { return allBloques.find(b => b.id === id)?.nombre || '—'; }
