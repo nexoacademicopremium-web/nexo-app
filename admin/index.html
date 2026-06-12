@@ -662,7 +662,7 @@ let preguntasCount = 0;
   document.getElementById('topbar-name').textContent = ctx.usuario.nombre;
   await Promise.all([loadAll(), loadDashboard()]);
   // Restaurar última sección visitada
-  const savedSeccion = localStorage.getItem('nexo-seccion-admin');
+  const savedSeccion = localStorage.getItem('nexo_admin_seccion');
   if (savedSeccion && savedSeccion !== 'dashboard' && document.getElementById('section-' + savedSeccion)) {
     showSection(savedSeccion);
   }
@@ -777,7 +777,7 @@ function showSection(id) {
   document.getElementById('section-' + id).classList.add('active');
   document.getElementById('nav-' + id).classList.add('active');
   window.scrollTo(0, 0);
-  localStorage.setItem('nexo-seccion-admin', id);
+  localStorage.setItem('nexo_admin_seccion', id);
   const loaders = {
     dashboard:  loadDashboard,
     alumnos:    loadTablaAlumnos,
