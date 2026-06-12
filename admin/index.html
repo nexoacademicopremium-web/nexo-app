@@ -279,7 +279,7 @@
   </div>
   <div class="card">
     <table class="tabla">
-      <thead><tr><th>Título</th><th>Nivel</th><th>Asignatura</th><th>Bloque</th><th>Asignado a</th><th>Tipo</th><th>Visible</th><th>Acciones</th></tr></thead>
+      <thead><tr><th>Título</th><th>Nivel</th><th>Asignatura</th><th>Bloque</th><th>Tema</th><th>Asignado a</th><th>Tipo</th><th>Visible</th><th>Acciones</th></tr></thead>
       <tbody id="tbody-material"></tbody>
     </table>
   </div>
@@ -523,11 +523,11 @@
     <div class="modal-title"><span id="modal-mat-titulo">Añadir material</span><button class="modal-close" onclick="cerrarModal('modal-material')">×</button></div>
     <form id="form-material" onsubmit="guardarMaterial(event)">
       <label class="fl">Título *</label><input class="fi" id="mat-titulo" required>
-      <label class="fl">Descripción</label><input class="fi" id="mat-descripcion">
       <div class="fi-grid2">
         <div>
-          <label class="fl">Nivel</label>
-          <select class="fi" id="mat-nivel">
+          <label class="fl">Curso (nivel) *</label>
+          <select class="fi" id="mat-nivel" required>
+            <option value="">— Selecciona —</option>
             <option value="todos">Todos</option>
             <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
             <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
@@ -542,13 +542,13 @@
           </select>
         </div>
       </div>
-      <label class="fl">Asignatura</label><input class="fi" id="mat-asignatura" placeholder="Matemáticas">
-      <label class="fl">Bloque / Tema</label><input class="fi" id="mat-bloque" placeholder="Álgebra">
-      <label class="fl">Archivo</label>
+      <label class="fl">Asignatura *</label><input class="fi" id="mat-asignatura" placeholder="Matemáticas" required>
+      <label class="fl">Nombre del bloque *</label><input class="fi" id="mat-bloque" placeholder="Álgebra" required>
+      <label class="fl">Tema *</label><input class="fi" id="mat-tema" placeholder="Ecuaciones de primer grado" required>
+      <label class="fl">Archivo <span id="mat-archivo-label-hint" style="color:var(--muted);font-size:10px">*</span></label>
       <input class="fi" id="mat-archivo" type="file" accept=".pdf,.docx,.pptx,.jpg,.png">
-      <label class="fl">O pega URL del archivo</label>
-      <input class="fi" id="mat-url" placeholder="https://...">
-      <label class="fl">Asignar a alumno específico <span style="color:var(--muted);font-size:10px">(opcional — si no, es material general del nivel)</span></label>
+      <div id="mat-archivo-actual" style="display:none;font-size:11px;color:var(--muted);margin-top:4px"></div>
+      <label class="fl" id="mat-alumno-row">Asignar a alumno específico <span style="color:var(--muted);font-size:10px">(opcional)</span></label>
       <select class="fi" id="mat-alumno-especifico">
         <option value="">Para su nivel en general</option>
       </select>
@@ -649,6 +649,7 @@ let ctx = null;
 let allAlumnos = [], allProfesores = [], allUsuarios = [];
 let alumnoProfesorMap = {};   // alumno_id -> [{id, profesor_id, asignatura}]
 let materialAlumnoMap = {};   // material_id -> [{alumno_id}]
+let allMaterial = [];
 let editAlumnoId = null, editProfesorId = null, editMaterialId = null, editTestId = null;
 let fichaAlumnoId = null;
 let preguntasCount = 0;
@@ -1610,15 +1611,15 @@ async function loadTablaMaterial() {
   const { data: material, error } = await db.from('material').select('*').order('created_at', { ascending: false });
   const tbody = document.getElementById('tbody-material');
   if (error) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--red)">Error: ${error.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--red)">Error: ${error.message}</td></tr>`;
     return;
   }
   if (!material || material.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted)">Sin material</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">Sin material</td></tr>`;
     return;
   }
+  allMaterial = material;
   tbody.innerHTML = material.map(m => {
-    // Alumnos asignados desde materialAlumnoMap
     const alIds = materialAlumnoMap[m.id] || [];
     let asigCell = '—';
     if (alIds.length > 0) {
@@ -1633,11 +1634,13 @@ async function loadTablaMaterial() {
       <td>${nivelLabel(m.nivel)}</td>
       <td>${m.asignatura || '—'}</td>
       <td>${m.bloque_tema || '—'}</td>
+      <td>${m.tema || '—'}</td>
       <td>${asigCell}</td>
       <td><span class="pill pill-eso">${(m.tipo||'').toUpperCase()}</span></td>
       <td><span class="pill ${m.visible ? 'pill-ok' : 'pill-grey'}">${m.visible ? 'Visible' : 'Oculto'}</span></td>
       <td style="white-space:nowrap">
-        ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" class="btn-edit">Ver</a>` : ''}
+        <button class="btn-edit" onclick="abrirEditarMaterial('${m.id}')"><i class="ti ti-pencil"></i> Editar</button>
+        ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" class="btn-edit" style="margin-left:4px">Ver</a>` : ''}
         <button class="btn-danger" style="margin-left:4px" onclick="toggleVisible('material','${m.id}',${!m.visible})">${m.visible ? 'Ocultar' : 'Mostrar'}</button>
       </td>
     </tr>`;
@@ -1648,6 +1651,35 @@ function abrirModalMaterial() {
   editMaterialId = null;
   document.getElementById('form-material').reset();
   document.getElementById('modal-mat-titulo').textContent = 'Añadir material';
+  document.getElementById('mat-archivo-actual').style.display = 'none';
+  document.getElementById('mat-archivo-label-hint').textContent = '*';
+  document.getElementById('mat-alumno-row').style.display = '';
+  document.getElementById('mat-alumno-especifico').parentElement.style.display = '';
+  document.getElementById('modal-material').classList.add('open');
+}
+
+function abrirEditarMaterial(id) {
+  const m = allMaterial.find(x => x.id === id);
+  if (!m) return;
+  editMaterialId = id;
+  document.getElementById('form-material').reset();
+  document.getElementById('modal-mat-titulo').textContent = 'Editar material';
+  document.getElementById('mat-titulo').value     = m.titulo || '';
+  document.getElementById('mat-nivel').value      = m.nivel || '';
+  document.getElementById('mat-tipo').value       = m.tipo || 'pdf';
+  document.getElementById('mat-asignatura').value = m.asignatura || '';
+  document.getElementById('mat-bloque').value     = m.bloque_tema || '';
+  document.getElementById('mat-tema').value       = m.tema || '';
+  const infoEl = document.getElementById('mat-archivo-actual');
+  if (m.archivo_url) {
+    infoEl.innerHTML = `Archivo actual: <a href="${m.archivo_url}" target="_blank" style="color:var(--blue)">Ver archivo</a> · Sube uno nuevo solo si quieres reemplazarlo`;
+    infoEl.style.display = 'block';
+  } else {
+    infoEl.style.display = 'none';
+  }
+  document.getElementById('mat-archivo-label-hint').textContent = '(opcional)';
+  document.getElementById('mat-alumno-row').style.display = 'none';
+  document.getElementById('mat-alumno-especifico').parentElement.style.display = 'none';
   document.getElementById('modal-material').classList.add('open');
 }
 
@@ -1658,7 +1690,7 @@ async function guardarMaterial(e) {
 
   try {
     const file = document.getElementById('mat-archivo').files[0];
-    let url    = document.getElementById('mat-url').value.trim();
+    let newUrl = null;
 
     if (file) {
       const ext  = file.name.split('.').pop();
@@ -1666,36 +1698,42 @@ async function guardarMaterial(e) {
       const { error: upErr } = await db.storage.from('nexo-files').upload(path, file);
       if (upErr) throw new Error('Error al subir archivo: ' + upErr.message);
       const { data: urlData } = db.storage.from('nexo-files').getPublicUrl(path);
-      url = urlData.publicUrl;
+      newUrl = urlData.publicUrl;
     }
 
-    if (!file && !url) throw new Error('Añade un archivo o una URL');
+    if (!editMaterialId && !newUrl) throw new Error('Añade un archivo para continuar');
 
-    const { data: mat, error: matErr } = await db.from('material').insert({
-      titulo:      document.getElementById('mat-titulo').value,
-      descripcion: document.getElementById('mat-descripcion').value || null,
+    const payload = {
+      titulo:      document.getElementById('mat-titulo').value.trim(),
       nivel:       document.getElementById('mat-nivel').value,
-      asignatura:  document.getElementById('mat-asignatura').value || null,
-      bloque_tema: document.getElementById('mat-bloque').value || null,
+      asignatura:  document.getElementById('mat-asignatura').value.trim() || null,
+      bloque_tema: document.getElementById('mat-bloque').value.trim() || null,
+      tema:        document.getElementById('mat-tema').value.trim() || null,
       tipo:        document.getElementById('mat-tipo').value,
-      archivo_url: url || null,
-      visible:     true,
-      subido_por:  ctx.usuario.id,
-    }).select('id').single();
+    };
+    if (newUrl) payload.archivo_url = newUrl;
 
-    if (matErr) throw new Error('Error al guardar material: ' + matErr.message);
-
-    const alumnoEsp = document.getElementById('mat-alumno-especifico').value;
-    if (alumnoEsp && mat?.id) {
-      const { error: maErr } = await db.from('material_alumno').insert({
-        material_id: mat.id,
-        alumno_id:   alumnoEsp,
-        asignado_por: ctx.usuario.id,
-      });
-      if (maErr) console.warn('[Nexo] material_alumno insert:', maErr.message);
+    if (editMaterialId) {
+      const { error: updErr } = await db.from('material').update(payload).eq('id', editMaterialId);
+      if (updErr) throw new Error('Error al guardar material: ' + updErr.message);
+      showToast('Material actualizado correctamente');
+    } else {
+      payload.visible    = true;
+      payload.subido_por = ctx.usuario.id;
+      const { data: mat, error: matErr } = await db.from('material').insert(payload).select('id').single();
+      if (matErr) throw new Error('Error al guardar material: ' + matErr.message);
+      const alumnoEsp = document.getElementById('mat-alumno-especifico').value;
+      if (alumnoEsp && mat?.id) {
+        const { error: maErr } = await db.from('material_alumno').insert({
+          material_id:  mat.id,
+          alumno_id:    alumnoEsp,
+          asignado_por: ctx.usuario.id,
+        });
+        if (maErr) console.warn('[Nexo] material_alumno insert:', maErr.message);
+      }
+      showToast('Material añadido correctamente');
     }
 
-    showToast('Material añadido correctamente');
     cerrarModal('modal-material');
     await loadAll();
     await loadTablaMaterial();
