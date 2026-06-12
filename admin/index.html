@@ -486,43 +486,55 @@
   </div>
 </div>
 
-<!-- MODAL FICHA ALUMNO -->
+<!-- MODAL FICHA ALUMNO (unificada) -->
 <div class="modal-overlay" id="modal-ficha">
-  <div class="modal-box" style="max-width:700px">
+  <div class="modal-box" style="max-width:680px">
     <div class="modal-title">
       <div style="display:flex;align-items:center;gap:10px">
-        <i class="ti ti-user" style="color:var(--blue);font-size:18px"></i>
+        <i class="ti ti-id-badge" style="color:var(--blue);font-size:18px"></i>
         <span id="ficha-titulo">Ficha del alumno</span>
       </div>
       <button class="modal-close" onclick="cerrarModal('modal-ficha')">×</button>
     </div>
 
-    <!-- BONO -->
+    <!-- 1. DATOS BÁSICOS -->
     <div class="ficha-section">
-      <div class="ficha-sec-title"><i class="ti ti-clock-hour-4"></i> Bono de horas</div>
-      <div id="ficha-bono-visual"></div>
-      <div class="fi-grid2" style="margin-top:12px">
-        <div>
-          <label class="fl" style="margin-top:0">Horas totales del bono</label>
-          <input class="fi" id="ficha-bono-total" type="number" min="0" step="0.5" placeholder="10">
-        </div>
-        <div>
-          <label class="fl" style="margin-top:0">Horas restantes</label>
-          <input class="fi" id="ficha-bono-rest" type="number" min="0" step="0.5" placeholder="8">
-        </div>
+      <div class="ficha-sec-title"><i class="ti ti-user-circle"></i> Datos básicos</div>
+      <div class="fi-grid2">
+        <div><label class="fl" style="margin-top:0">Nombre *</label><input class="fi" id="fich-nombre" required></div>
+        <div><label class="fl" style="margin-top:0">Apellidos *</label><input class="fi" id="fich-apellidos" required></div>
       </div>
-      <div style="text-align:right;margin-top:10px">
-        <button class="btn-primary" onclick="guardarBono()" id="btn-guardar-bono"><i class="ti ti-device-floppy"></i> Guardar bono</button>
+      <label class="fl">Email *</label>
+      <input class="fi" id="fich-email" type="email" required>
+      <div class="fi-grid2">
+        <div>
+          <label class="fl">Nivel / Curso *</label>
+          <select class="fi" id="fich-nivel" required>
+            <option value="">—</option>
+            <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
+            <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
+            <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
+          </select>
+        </div>
+        <div><label class="fl">Teléfono familia</label><input class="fi" id="fich-telefono" type="tel" placeholder="600 000 000"></div>
       </div>
     </div>
 
-    <!-- PROFESORES ASIGNADOS -->
+    <!-- 2. ASIGNATURAS DE REPASO -->
+    <div class="ficha-section">
+      <div class="ficha-sec-title"><i class="ti ti-books"></i> Asignaturas de repaso <span style="color:var(--muted);font-size:10px;font-weight:400">(determina qué material ve el alumno)</span></div>
+      <div id="ficha-asignaturas-lista">
+        <div class="loading-section" style="padding:12px"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- 3. PROFESORES ASIGNADOS -->
     <div class="ficha-section">
       <div class="ficha-sec-title"><i class="ti ti-chalkboard"></i> Profesores asignados</div>
       <div id="ficha-profs-lista">
         <div class="loading-section" style="padding:16px"><div class="spinner"></div></div>
       </div>
-      <div class="add-prof-row">
+      <div class="add-prof-row" style="margin-top:10px">
         <div class="fi-sm">
           <label class="fl" style="margin-top:0">Profesor</label>
           <select class="fi" id="ficha-add-prof">
@@ -530,45 +542,38 @@
           </select>
         </div>
         <div class="fi-sm">
-          <label class="fl" style="margin-top:0">Asignatura (opcional)</label>
+          <label class="fl" style="margin-top:0">Asignatura</label>
           <select class="fi" id="ficha-add-asig">
-            <option value="">Todas las asignaturas</option>
+            <option value="">General (todas)</option>
           </select>
         </div>
         <button class="btn-primary" onclick="asignarProfesorFicha()" style="flex-shrink:0;align-self:flex-end;margin-bottom:1px"><i class="ti ti-plus"></i> Asignar</button>
       </div>
     </div>
 
-    <!-- ÚLTIMAS SESIONES -->
+    <!-- 4. CAMBIAR CONTRASEÑA -->
     <div class="ficha-section">
-      <div class="ficha-sec-title"><i class="ti ti-calendar-check"></i> Últimas sesiones</div>
-      <div id="ficha-sesiones">
-        <div class="loading-section" style="padding:16px"><div class="spinner"></div></div>
+      <div class="ficha-sec-title"><i class="ti ti-lock"></i> Cambiar contraseña</div>
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <div style="flex:1">
+          <label class="fl" style="margin-top:0">Nueva contraseña</label>
+          <input class="fi" id="fich-password" type="text" placeholder="mínimo 6 caracteres" autocomplete="new-password">
+        </div>
+        <button class="btn-primary" id="btn-cambiar-pwd" onclick="cambiarPasswordAlumno()" style="flex-shrink:0;margin-bottom:1px">
+          <i class="ti ti-lock-check"></i> Cambiar
+        </button>
       </div>
     </div>
 
-    <!-- INFORMES DEL ALUMNO -->
+    <!-- 5. OBSERVACIONES -->
     <div class="ficha-section">
-      <div class="ficha-sec-title"><i class="ti ti-file-analytics"></i> Informes del alumno</div>
-      <div id="ficha-informes-lista">
-        <div class="loading-section" style="padding:12px"><div class="spinner"></div></div>
-      </div>
-      <button class="btn-primary" style="width:100%;margin-top:10px;justify-content:center" onclick="abrirInformeParaFicha()">
-        <i class="ti ti-plus"></i> Subir informe
-      </button>
-    </div>
-
-    <!-- ASIGNATURAS DEL ALUMNO -->
-    <div class="ficha-section">
-      <div class="ficha-sec-title"><i class="ti ti-books"></i> Asignaturas asignadas</div>
-      <div id="ficha-asignaturas-lista">
-        <div class="loading-section" style="padding:12px"><div class="spinner"></div></div>
-      </div>
+      <div class="ficha-sec-title"><i class="ti ti-notes"></i> Observaciones</div>
+      <textarea class="fi" id="fich-observaciones" rows="3" placeholder="Notas internas sobre el alumno..."></textarea>
     </div>
 
     <div class="modal-footer">
       <button class="btn-cancel" onclick="cerrarModal('modal-ficha')">Cerrar</button>
-      <button class="btn-primary" onclick="editarAlumnoDesdeficha()"><i class="ti ti-edit"></i> Editar datos</button>
+      <button class="btn-primary" id="btn-guardar-ficha" onclick="guardarFicha()"><i class="ti ti-device-floppy"></i> Guardar cambios</button>
     </div>
   </div>
 </div>
@@ -1038,7 +1043,6 @@ function renderTablaAlumnos(lista, horasByAlumno = {}) {
       <td><span class="pill ${a.activo ? 'pill-ok' : 'pill-grey'}">${a.activo ? 'Activo' : 'Inactivo'}</span></td>
       <td style="white-space:nowrap">
         <button class="btn-ficha" onclick="abrirFicha('${a.id}')"><i class="ti ti-id-badge"></i> Ficha</button>
-        <button class="btn-edit" style="margin-left:4px" onclick="editarAlumno('${a.id}')">Editar</button>
         <button class="btn-edit" style="margin-left:4px" onclick="abrirModalInforme('${a.id}','${(u.nombre||'') + ' ' + (u.apellidos||'')}')">Informe</button>
         <button class="btn-danger" style="margin-left:4px" onclick="toggleActivo('alumno','${a.id}',${!a.activo})">${a.activo ? 'Desactivar' : 'Activar'}</button>
       </td>
@@ -1381,7 +1385,7 @@ async function toggleActivo(tipo, id, nuevoEstado) {
 }
 
 // ============================================================
-// FICHA DE ALUMNO — bono + profesores + sesiones
+// FICHA DE ALUMNO (unificada)
 // ============================================================
 async function abrirFicha(alumnoId) {
   fichaAlumnoId = alumnoId;
@@ -1390,9 +1394,15 @@ async function abrirFicha(alumnoId) {
   const u = a.usuario || {};
 
   document.getElementById('ficha-titulo').textContent = `${u.nombre || '?'} ${u.apellidos || ''}`;
-  document.getElementById('ficha-bono-total').value = a.horas_bono_total || 0;
-  document.getElementById('ficha-bono-rest').value  = a.horas_bono_restantes || 0;
-  renderBonoVisual(a.horas_bono_total || 0, a.horas_bono_restantes || 0);
+
+  // Datos básicos
+  document.getElementById('fich-nombre').value      = u.nombre || '';
+  document.getElementById('fich-apellidos').value   = u.apellidos || '';
+  document.getElementById('fich-email').value       = u.email || '';
+  document.getElementById('fich-nivel').value       = a.nivel || '';
+  document.getElementById('fich-telefono').value    = a.telefono_familia || '';
+  document.getElementById('fich-password').value    = '';
+  document.getElementById('fich-observaciones').value = a.observaciones || '';
 
   // Selector de profesores para añadir
   const sel = document.getElementById('ficha-add-prof');
@@ -1405,8 +1415,88 @@ async function abrirFicha(alumnoId) {
 
   document.getElementById('modal-ficha').classList.add('open');
 
-  // Cargar en paralelo
-  await Promise.all([refreshFichaProfs(), refreshFichaSesiones(), refreshFichaInformes(), refreshFichaAsignaturas()]);
+  await Promise.all([refreshFichaProfs(), refreshFichaAsignaturas()]);
+}
+
+async function guardarFicha() {
+  const btn = document.getElementById('btn-guardar-ficha');
+  btn.disabled = true;
+
+  const nombre      = document.getElementById('fich-nombre').value.trim();
+  const apellidos   = document.getElementById('fich-apellidos').value.trim();
+  const email       = document.getElementById('fich-email').value.trim();
+  const nivel       = document.getElementById('fich-nivel').value;
+  const telefono    = document.getElementById('fich-telefono').value.trim();
+  const observaciones = document.getElementById('fich-observaciones').value.trim();
+
+  if (!nombre || !apellidos || !email || !nivel) {
+    showToast('Nombre, apellidos, email y nivel son obligatorios', 'error');
+    btn.disabled = false;
+    return;
+  }
+
+  const a = allAlumnos.find(x => x.id === fichaAlumnoId);
+  const userId = a?.usuario_id || a?.usuario?.id;
+
+  const [resUser, resAlumno] = await Promise.all([
+    userId
+      ? db.from('usuarios').update({ nombre, apellidos, email }).eq('id', userId)
+      : Promise.resolve({ error: null }),
+    db.from('alumnos').update({ nivel, telefono_familia: telefono, observaciones }).eq('id', fichaAlumnoId),
+  ]);
+
+  if (resUser.error || resAlumno.error) {
+    showToast('Error al guardar: ' + (resUser.error?.message || resAlumno.error?.message), 'error');
+    btn.disabled = false;
+    return;
+  }
+
+  showToast('Ficha guardada correctamente');
+
+  // Actualizar estado local
+  const idx = allAlumnos.findIndex(x => x.id === fichaAlumnoId);
+  if (idx >= 0) {
+    if (allAlumnos[idx].usuario) {
+      allAlumnos[idx].usuario.nombre    = nombre;
+      allAlumnos[idx].usuario.apellidos = apellidos;
+      allAlumnos[idx].usuario.email     = email;
+    }
+    allAlumnos[idx].nivel             = nivel;
+    allAlumnos[idx].telefono_familia  = telefono;
+    allAlumnos[idx].observaciones     = observaciones;
+  }
+  document.getElementById('ficha-titulo').textContent = `${nombre} ${apellidos}`;
+
+  if (document.getElementById('section-alumnos').classList.contains('active')) {
+    renderTablaAlumnos(allAlumnos);
+  }
+  btn.disabled = false;
+}
+
+async function cambiarPasswordAlumno() {
+  const btn = document.getElementById('btn-cambiar-pwd');
+  const pwd = document.getElementById('fich-password').value.trim();
+  if (!pwd) { showToast('Escribe una contraseña', 'error'); return; }
+  if (pwd.length < 6) { showToast('Mínimo 6 caracteres', 'error'); return; }
+
+  const a = allAlumnos.find(x => x.id === fichaAlumnoId);
+  const userId = a?.usuario_id || a?.usuario?.id;
+  if (!userId) { showToast('No se encontró el usuario', 'error'); return; }
+
+  btn.disabled = true;
+  const { data, error } = await db.functions.invoke('update-user-password', {
+    body: { user_id: userId, password: pwd },
+  });
+
+  if (error || !data?.ok) {
+    showToast('Error: ' + (data?.error || error?.message || 'desconocido'), 'error');
+    btn.disabled = false;
+    return;
+  }
+
+  showToast('Contraseña cambiada correctamente');
+  document.getElementById('fich-password').value = '';
+  btn.disabled = false;
 }
 
 function renderBonoVisual(total, rest) {
@@ -1515,7 +1605,7 @@ async function asignarProfesorFicha() {
 
   if (error) {
     const msg = error.code === '23505'
-      ? 'Este profesor ya está asignado a este alumno'
+      ? 'Esta combinación profesor-asignatura ya está asignada'
       : 'Error al asignar: ' + error.message;
     showToast(msg, 'error');
     return;
