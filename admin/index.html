@@ -725,7 +725,8 @@
 let ctx = null;
 let allAlumnos = [], allProfesores = [], allUsuarios = [], allAsignaturas = [], allBloques = [], allTemas = [];
 let alumnoProfesorMap = {};     // alumno_id -> [{id, profesor_id, asignatura_id}]
-let alumnoAsignaturasMap = {};  // alumno_id -> Set<asignatura_id>
+let alumnoAsignaturasMap = {};   // alumno_id -> Set<asignatura_id>
+let profesorAsignaturasMap = {}; // profesor_id -> Set<asignatura_id>
 let materialAlumnoMap = {};   // material_id -> [{alumno_id}]
 let allMaterial = [];
 let editAlumnoId = null, editProfesorId = null, editMaterialId = null, editTestId = null;
@@ -762,6 +763,7 @@ async function loadAll() {
       { data: bloques,      error: e7 },
       { data: temas,        error: e8 },
       { data: alumnoAsigs,  error: e9 },
+      { data: profAsigs,    error: e10 },
     ] = await Promise.all([
       db.from('alumnos').select('*').order('created_at', { ascending: false }),
       db.from('profesores').select('*').order('created_at', { ascending: false }),
@@ -772,6 +774,7 @@ async function loadAll() {
       db.from('bloques').select('*').order('nombre'),
       db.from('temas').select('*').order('nombre'),
       db.from('alumno_asignaturas').select('*'),
+      db.from('profesor_asignaturas').select('*'),
     ]);
 
     // Log errores pero no abortar — la tabla alumno_profesor puede no existir aún
@@ -819,7 +822,8 @@ async function loadAll() {
     if (e6) console.warn('[Nexo] asignaturas:', e6.message);
     if (e7) console.warn('[Nexo] bloques:', e7.message);
     if (e8) console.warn('[Nexo] temas:', e8.message);
-    if (e9) console.warn('[Nexo] alumno_asignaturas:', e9.message);
+    if (e9)  console.warn('[Nexo] alumno_asignaturas:', e9.message);
+    if (e10) console.warn('[Nexo] profesor_asignaturas:', e10.message);
     allAsignaturas = asignaturas || [];
     allBloques     = bloques     || [];
     allTemas       = temas       || [];
@@ -834,6 +838,18 @@ async function loadAll() {
       const ids   = [...(alumnoAsignaturasMap[a.id] || new Set())];
       const names = ids.map(id => allAsignaturas.find(x => x.id === id)?.nombre).filter(Boolean).sort();
       return { ...a, _asigNombres: names };
+    });
+
+    // Build profesor→asignaturas map and enrich allProfesores for the list column
+    profesorAsignaturasMap = {};
+    (profAsigs || []).forEach(pa => {
+      if (!profesorAsignaturasMap[pa.profesor_id]) profesorAsignaturasMap[pa.profesor_id] = new Set();
+      profesorAsignaturasMap[pa.profesor_id].add(pa.asignatura_id);
+    });
+    allProfesores = allProfesores.map(p => {
+      const ids   = [...(profesorAsignaturasMap[p.id] || new Set())];
+      const names = ids.map(id => allAsignaturas.find(x => x.id === id)?.nombre).filter(Boolean).sort();
+      return { ...p, _asigNombres: names };
     });
 
     populateAsigSelect('mat-asignatura');
@@ -1064,7 +1080,7 @@ function filtrar(tipo) {
   } else {
     const res = allProfesores.filter(p => {
       const u = p.usuario || {};
-      return `${u.nombre} ${u.apellidos} ${(p.especialidades||[]).join(' ')} ${p.zona||''}`.toLowerCase().includes(q);
+      return `${u.nombre} ${u.apellidos} ${(p._asigNombres||[]).join(' ')} ${p.zona||''}`.toLowerCase().includes(q);
     });
     renderTablaProfesores(res);
   }
@@ -1180,7 +1196,7 @@ function renderTablaProfesores(lista) {
     const nAlumnos     = nViaJunction || nViaFk;
     return `<tr>
       <td><b style="color:#fff">${u.nombre || '?'} ${u.apellidos || ''}</b><br><span style="color:var(--muted);font-size:11px">${u.email || ''}</span></td>
-      <td>${(p.especialidades||[]).join(', ') || '—'}</td>
+      <td>${(p._asigNombres||[]).join(', ') || '—'}</td>
       <td>${p.zona || '—'}</td>
       <td><span class="pill pill-ok">${nAlumnos} alumno${nAlumnos !== 1 ? 's' : ''}</span></td>
       <td><span class="pill ${p.activo ? 'pill-ok' : 'pill-grey'}">${p.activo ? 'Activo' : 'Inactivo'}</span></td>
@@ -1415,7 +1431,11 @@ async function refreshFichaProfAsignaturas() {
   const { data, error } = await db.from('profesor_asignaturas')
     .select('asignatura_id').eq('profesor_id', fichaProfesorId);
   if (error) { el.innerHTML = `<p style="color:var(--red);font-size:12px">${error.message}</p>`; return; }
-  renderFichaProfAsigCheckboxes(el, new Set((data || []).map(r => r.asignatura_id)));
+  const asigSet = new Set((data || []).map(r => r.asignatura_id));
+  profesorAsignaturasMap[fichaProfesorId] = asigSet;
+  const names = [...asigSet].map(id => allAsignaturas.find(x => x.id === id)?.nombre).filter(Boolean).sort();
+  allProfesores = allProfesores.map(p => p.id === fichaProfesorId ? { ...p, _asigNombres: names } : p);
+  renderFichaProfAsigCheckboxes(el, asigSet);
 }
 
 async function toggleFichaProfAsignatura(asignaturaId, checked) {
@@ -1424,12 +1444,18 @@ async function toggleFichaProfAsignatura(asignaturaId, checked) {
     const { error } = await db.from('profesor_asignaturas').insert({
       profesor_id: fichaProfesorId, asignatura_id: asignaturaId,
     });
-    if (error) { showToast('Error: ' + error.message, 'error'); await refreshFichaProfAsignaturas(); }
+    if (error) { showToast('Error: ' + error.message, 'error'); await refreshFichaProfAsignaturas(); return; }
+    if (!profesorAsignaturasMap[fichaProfesorId]) profesorAsignaturasMap[fichaProfesorId] = new Set();
+    profesorAsignaturasMap[fichaProfesorId].add(asignaturaId);
   } else {
     const { error } = await db.from('profesor_asignaturas')
       .delete().eq('profesor_id', fichaProfesorId).eq('asignatura_id', asignaturaId);
-    if (error) { showToast('Error: ' + error.message, 'error'); await refreshFichaProfAsignaturas(); }
+    if (error) { showToast('Error: ' + error.message, 'error'); await refreshFichaProfAsignaturas(); return; }
+    profesorAsignaturasMap[fichaProfesorId]?.delete(asignaturaId);
   }
+  const ids   = [...(profesorAsignaturasMap[fichaProfesorId] || new Set())];
+  const names = ids.map(id => allAsignaturas.find(x => x.id === id)?.nombre).filter(Boolean).sort();
+  allProfesores = allProfesores.map(p => p.id === fichaProfesorId ? { ...p, _asigNombres: names } : p);
 }
 
 async function toggleActivo(tipo, id, nuevoEstado) {
