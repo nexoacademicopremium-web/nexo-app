@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "powershell",
+            "command": "$d = $input | ConvertFrom-Json; if (($d.tool_input.file_path + '') -match 'schema\\.sql') { '{\"hookSpecificOutput\":{\"hookEventName\":\"PostToolUse\",\"additionalContext\":\"REMINDER: supabase/schema.sql was modified — update .claude/skills/supabase-schema/SKILL.md to reflect any new or changed tables, columns, or RLS policies before finishing.\"}}' }",
+            "statusMessage": "Checking schema changes..."
+          }
+        ]
+      }
+    ]
+  }
+}
