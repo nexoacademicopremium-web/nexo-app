@@ -77,6 +77,18 @@ CREATE POLICY "usuarios_admin_all" ON public.usuarios
     public.is_admin()
   );
 
+-- Permite a un alumno leer la fila de usuarios de su profesor asignado
+-- (necesario para que el panel del alumno muestre nombre/email del profesor)
+CREATE POLICY "usuarios_prof_for_alumno" ON public.usuarios
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.profesores p
+      JOIN public.alumnos a ON a.profesor_id = p.id
+      WHERE p.usuario_id = public.usuarios.id
+        AND a.usuario_id = auth.uid()
+    )
+  );
+
 -- ============================================================
 -- ALUMNOS (sin profesor_id todavía — se añade más abajo)
 -- ============================================================

@@ -873,6 +873,11 @@ async function loadProfesor() {
 
   if (!prof) return;
   const u = prof.usuario;
+  if (!u) {
+    document.getElementById('profesor-content').innerHTML =
+      `<div class="empty-state"><i class="ti ti-alert-circle"></i><p>No se pudo cargar la información del profesor.<br>Contacta con Nexo si el problema persiste.</p></div>`;
+    return;
+  }
   const initials = getInitials(u.nombre, u.apellidos);
 
   // Count sessions together
