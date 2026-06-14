@@ -471,8 +471,15 @@ let editEventoId = null;
   document.getElementById('greeting').textContent = 'Hola, ' + usuario.nombre;
 
   if (alumnoData) {
+    const [{ data: _aAsigs }, { data: _aCatalog }] = await Promise.all([
+      db.from('alumno_asignaturas').select('asignatura_id').eq('alumno_id', alumnoData.id),
+      db.from('asignaturas').select('id,nombre'),
+    ]);
+    const _asigMap = Object.fromEntries((_aCatalog || []).map(a => [a.id, a.nombre]));
+    alumnoData._asigNombres = (_aAsigs || []).map(a => _asigMap[a.asignatura_id]).filter(Boolean).sort();
+
     document.getElementById('greeting-sub').textContent =
-      `${nivelLabel(alumnoData.nivel)} · ${(alumnoData.asignaturas||[]).join(', ')} · ${new Date().toLocaleDateString('es-ES',{month:'long',year:'numeric'})}`;
+      `${nivelLabel(alumnoData.nivel)} · ${alumnoData._asigNombres.join(', ') || '—'} · ${new Date().toLocaleDateString('es-ES',{month:'long',year:'numeric'})}`;
   }
 
   await Promise.all([
@@ -888,7 +895,7 @@ async function loadProfesor() {
     <div class="card">
       <div class="card-head"><div class="card-title"><i class="ti ti-info-circle"></i> Información</div></div>
       <div class="card-body" style="padding:8px 16px">
-        <div class="ev-row"><div class="ev-label">Asignatura</div><b style="color:#fff;font-size:12px">${(ctx.alumnoData.asignaturas||[]).join(', ') || '—'}</b></div>
+        <div class="ev-row"><div class="ev-label">Asignatura</div><b style="color:#fff;font-size:12px">${(ctx.alumnoData._asigNombres||[]).join(', ') || '—'}</b></div>
         <div class="ev-row"><div class="ev-label">Horario habitual</div><b style="color:#fff;font-size:12px">${ctx.alumnoData.horario_habitual || '—'}</b></div>
         <div class="ev-row"><div class="ev-label">Modalidad</div><b style="color:#fff;font-size:12px">${ctx.alumnoData.modalidad === 'presencial' ? 'Presencial a domicilio' : 'Online'}</b></div>
         <div class="ev-row"><div class="ev-label">Sesiones juntos</div><b style="color:#fff;font-size:12px">${sesCnt || 0} sesiones confirmadas</b></div>
