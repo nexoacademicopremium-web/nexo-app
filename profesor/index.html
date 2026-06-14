@@ -227,6 +227,20 @@
   @keyframes spin{to{transform:rotate(360deg)}}
   .spinner{display:inline-block;width:20px;height:20px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
   .loading-section{display:flex;justify-content:center;padding:40px;color:var(--muted);gap:10px;align-items:center}
+
+  /* SECCIONES FORMULARIO SESIÓN */
+  .ses-seccion{border-bottom:.5px solid var(--border)}
+  .ses-seccion:last-of-type{border-bottom:none}
+  .ses-seccion-titulo{padding:12px 24px;color:var(--soft);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;background:var(--dark);border-bottom:.5px solid var(--border);display:flex;align-items:center;gap:8px}
+  .ses-seccion-titulo i{color:var(--blue);font-size:15px}
+  .ses-body{padding:18px 24px}
+  .field-hint{color:var(--muted);font-size:10px;margin-top:3px;font-style:italic}
+  textarea.field-input{resize:vertical;min-height:80px;line-height:1.6}
+  .val-slider-box{background:var(--dark);border:.5px solid var(--border);border-radius:10px;padding:18px;margin-top:16px}
+  .val-slider-box-title{color:var(--soft);font-size:12px;font-weight:500;margin-bottom:16px}
+  .slider-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .slider-row label{color:var(--muted);font-size:12px}
+  .slider-val{color:var(--blue);font-size:16px;font-weight:600}
 </style>
 </head>
 <body>
@@ -375,82 +389,180 @@
 <!-- ═══ REGISTRAR SESIÓN ═══ -->
 <div class="section" id="section-sesion">
   <h1 class="page-title">Registrar sesión</h1>
-  <p class="page-sub">Rellena los datos de la clase que acabas de dar.</p>
+  <p class="page-sub">Rellena todos los datos de la clase que acabas de dar.</p>
 
-  <div style="max-width:640px">
-    <div class="card">
-      <form id="form-sesion" onsubmit="enviarSesion(event)" style="padding:24px">
-        <label class="field-label">Alumno *</label>
-        <select class="field-input" id="ses-alumno" required onchange="autoAsignatura()">
-          <option value="">Seleccionar alumno</option>
-        </select>
+  <div style="max-width:720px">
+    <div class="card" style="overflow:visible">
+      <form id="form-sesion" onsubmit="enviarSesion(event)">
 
-        <label class="field-label">Asignatura *</label>
-        <select class="field-input" id="ses-asignatura" required>
-          <option value="">Seleccionar asignatura</option>
-        </select>
+        <!-- ── Sección 1: Identificación ── -->
+        <div class="ses-seccion">
+          <div class="ses-seccion-titulo"><i class="ti ti-info-circle"></i> Identificación</div>
+          <div class="ses-body">
 
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-          <div>
-            <label class="field-label">Fecha de la clase *</label>
-            <input class="field-input" type="date" id="ses-fecha" required>
-          </div>
-          <div>
-            <label class="field-label">Hora de inicio</label>
-            <input class="field-input" type="time" id="ses-hora">
+            <label class="field-label">Alumno *</label>
+            <select class="field-input" id="ses-alumno" required onchange="autoAsignatura()">
+              <option value="">Seleccionar alumno</option>
+            </select>
+
+            <label class="field-label">Asignatura *</label>
+            <select class="field-input" id="ses-asignatura" required>
+              <option value="">— Selecciona primero el alumno —</option>
+            </select>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div>
+                <label class="field-label">Fecha de la clase *</label>
+                <input class="field-input" type="date" id="ses-fecha" required>
+              </div>
+              <div>
+                <label class="field-label">Hora de inicio</label>
+                <input class="field-input" type="time" id="ses-hora">
+              </div>
+            </div>
+
+            <label class="field-label">Duración *</label>
+            <select class="field-input" id="ses-duracion" required>
+              <option value="45">45 minutos</option>
+              <option value="60" selected>60 minutos (1h)</option>
+              <option value="90">90 minutos (1h 30min)</option>
+              <option value="120">120 minutos (2h)</option>
+            </select>
+
           </div>
         </div>
 
-        <label class="field-label">Duración *</label>
-        <select class="field-input" id="ses-duracion" required>
-          <option value="60">60 minutos (1h)</option>
-          <option value="90">90 minutos (1h 30min)</option>
-          <option value="120">120 minutos (2h)</option>
-        </select>
+        <!-- ── Sección 2: Narrativa ── -->
+        <div class="ses-seccion">
+          <div class="ses-seccion-titulo"><i class="ti ti-notes"></i> Narrativa de la sesión</div>
+          <div class="ses-body">
 
-        <label class="field-label">Contenido trabajado</label>
-        <textarea class="field-input" id="ses-contenido" placeholder="¿Qué temas o ejercicios trabajasteis?"></textarea>
+            <label class="field-label">Contenido trabajado *</label>
+            <textarea class="field-input" id="ses-contenido" required placeholder="¿Qué temas o ejercicios trabajasteis? Describe el contenido de la sesión."></textarea>
 
-        <label class="field-label">Observaciones para Nexo <span style="color:var(--muted);font-size:10px">(privado, no visible para el alumno)</span></label>
-        <textarea class="field-input" id="ses-obs-nexo" placeholder="Comentarios internos, alertas, contexto..."></textarea>
+            <label class="field-label">Estado del alumno al inicio *</label>
+            <select class="field-input" id="ses-estado" required>
+              <option value="">Seleccionar estado</option>
+              <option value="Activo y receptivo">Activo y receptivo</option>
+              <option value="Normal, sin más">Normal, sin más</option>
+              <option value="Cansado o apagado">Cansado o apagado</option>
+              <option value="Nervioso o bloqueado">Nervioso o bloqueado</option>
+              <option value="Disperso, con la cabeza en otro lado">Disperso, con la cabeza en otro lado</option>
+            </select>
 
-        <div style="margin-top:24px;background:var(--dark);border:.5px solid var(--border);border-radius:10px;padding:18px">
-          <div style="color:var(--soft);font-size:12px;font-weight:500;margin-bottom:16px">Valoración de la sesión</div>
+            <label class="field-label">Momento de bloqueo</label>
+            <textarea class="field-input" id="ses-bloqueo" style="min-height:70px" placeholder="¿En qué momento se bloqueó? ¿Con qué concepto o ejercicio?"></textarea>
 
-          <div class="slider-wrap">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-              <label style="color:var(--muted);font-size:12px">Comprensión</label>
-              <span class="slider-val" id="val-comp">5</span>
+            <label class="field-label">¿Lo resolvió solo?</label>
+            <textarea class="field-input" id="ses-resolvio" style="min-height:70px" placeholder="¿Consiguió salir del bloqueo por sus propios medios? ¿Cómo?"></textarea>
+
+            <label class="field-label">Ayuda que necesitó</label>
+            <textarea class="field-input" id="ses-ayuda" style="min-height:70px" placeholder="¿Qué tipo de ayuda requirió para avanzar?"></textarea>
+
+            <label class="field-label">Falta de base</label>
+            <textarea class="field-input" id="ses-base" style="min-height:70px" placeholder="¿Detectas lagunas de cursos anteriores? ¿Cuáles?"></textarea>
+
+            <label class="field-label">Comparación con sesiones anteriores</label>
+            <textarea class="field-input" id="ses-comparacion" style="min-height:70px" placeholder="¿Cómo ha ido respecto a la última sesión? ¿Mejora, retroceso, estable?"></textarea>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+              <div>
+                <label class="field-label">Arranque próxima sesión</label>
+                <textarea class="field-input" id="ses-arranque" style="min-height:70px" placeholder="¿Por dónde empezar la próxima vez?"></textarea>
+              </div>
+              <div>
+                <label class="field-label">Tarea para casa</label>
+                <textarea class="field-input" id="ses-tarea" style="min-height:70px" placeholder="¿Qué debe practicar en casa?"></textarea>
+              </div>
             </div>
-            <input type="range" min="1" max="10" value="5" id="slider-comp" oninput="document.getElementById('val-comp').textContent=this.value">
-            <div class="slider-labels"><span>1 — No comprende</span><span>10 — Comprende perfectamente</span></div>
-          </div>
 
-          <div class="slider-wrap" style="margin-top:12px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-              <label style="color:var(--muted);font-size:12px">Aplicación / Esfuerzo</label>
-              <span class="slider-val" id="val-aplic">5</span>
-            </div>
-            <input type="range" min="1" max="10" value="5" id="slider-aplic" oninput="document.getElementById('val-aplic').textContent=this.value">
-            <div class="slider-labels"><span>1 — No aplica</span><span>10 — Aplica muy bien</span></div>
-          </div>
-
-          <div class="slider-wrap" style="margin-top:12px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-              <label style="color:var(--muted);font-size:12px">Motivación</label>
-              <span class="slider-val" id="val-motiv">5</span>
-            </div>
-            <input type="range" min="1" max="10" value="5" id="slider-motiv" oninput="document.getElementById('val-motiv').textContent=this.value">
-            <div class="slider-labels"><span>1 — Desmotivado</span><span>10 — Muy motivado</span></div>
           </div>
         </div>
 
-        <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">
-          <button type="button" class="btn-cancel" onclick="document.getElementById('form-sesion').reset();resetSliders()">Limpiar</button>
+        <!-- ── Sección 3: Progreso y valoraciones ── -->
+        <div class="ses-seccion">
+          <div class="ses-seccion-titulo"><i class="ti ti-chart-bar"></i> Progreso y valoraciones</div>
+          <div class="ses-body">
+
+            <!-- Nota estimada -->
+            <div class="val-slider-box">
+              <div class="slider-row">
+                <label style="color:var(--soft);font-size:12px;font-weight:500">Nota estimada al finalizar</label>
+                <span class="slider-val" id="val-nota">5.0</span>
+              </div>
+              <input type="range" min="0" max="10" step="0.5" value="5" id="slider-nota"
+                style="width:100%;accent-color:var(--blue);height:6px;margin:8px 0"
+                oninput="document.getElementById('val-nota').textContent=parseFloat(this.value).toFixed(1)">
+              <div class="slider-labels"><span>0 — Insuficiente</span><span>10 — Sobresaliente</span></div>
+            </div>
+
+            <!-- 5 sliders de valoración -->
+            <div class="val-slider-box">
+              <div class="val-slider-box-title">Valoración del alumno (1 – 10)</div>
+
+              <div class="slider-wrap">
+                <div class="slider-row">
+                  <label>Comprensión</label>
+                  <span class="slider-val" id="val-comp">5</span>
+                </div>
+                <input type="range" min="1" max="10" value="5" id="slider-comp" oninput="document.getElementById('val-comp').textContent=this.value">
+                <div class="slider-labels"><span>1 — No comprende</span><span>10 — Comprende perfectamente</span></div>
+              </div>
+
+              <div class="slider-wrap" style="margin-top:14px">
+                <div class="slider-row">
+                  <label>Aplicación / Esfuerzo</label>
+                  <span class="slider-val" id="val-aplic">5</span>
+                </div>
+                <input type="range" min="1" max="10" value="5" id="slider-aplic" oninput="document.getElementById('val-aplic').textContent=this.value">
+                <div class="slider-labels"><span>1 — No aplica</span><span>10 — Aplica muy bien</span></div>
+              </div>
+
+              <div class="slider-wrap" style="margin-top:14px">
+                <div class="slider-row">
+                  <label>Concentración</label>
+                  <span class="slider-val" id="val-conc">5</span>
+                </div>
+                <input type="range" min="1" max="10" value="5" id="slider-conc" oninput="document.getElementById('val-conc').textContent=this.value">
+                <div class="slider-labels"><span>1 — Muy disperso</span><span>10 — Muy concentrado</span></div>
+              </div>
+
+              <div class="slider-wrap" style="margin-top:14px">
+                <div class="slider-row">
+                  <label>Actitud / Motivación</label>
+                  <span class="slider-val" id="val-motiv">5</span>
+                </div>
+                <input type="range" min="1" max="10" value="5" id="slider-motiv" oninput="document.getElementById('val-motiv').textContent=this.value">
+                <div class="slider-labels"><span>1 — Desmotivado</span><span>10 — Muy motivado</span></div>
+              </div>
+
+              <div class="slider-wrap" style="margin-top:14px">
+                <div class="slider-row">
+                  <label>Autonomía</label>
+                  <span class="slider-val" id="val-auto">5</span>
+                </div>
+                <input type="range" min="1" max="10" value="5" id="slider-auto" oninput="document.getElementById('val-auto').textContent=this.value">
+                <div class="slider-labels"><span>1 — Muy dependiente</span><span>10 — Muy autónomo</span></div>
+              </div>
+            </div>
+
+            <label class="field-label">Observaciones para la familia</label>
+            <textarea class="field-input" id="ses-observaciones" placeholder="Resumen visible para el alumno y su familia sobre cómo ha ido la sesión..."></textarea>
+
+            <label class="field-label">Observaciones para Nexo <span style="color:var(--muted);font-size:10px">(privado, no visible para la familia)</span></label>
+            <textarea class="field-input" id="ses-obs-nexo" placeholder="Comentarios internos, alertas, contexto que Nexo debe conocer..."></textarea>
+
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="padding:18px 24px;display:flex;justify-content:flex-end;gap:10px">
+          <button type="button" class="btn-cancel" onclick="limpiarFormSesion()">Limpiar</button>
           <button type="submit" class="btn-primary" id="btn-enviar-sesion">
             <i class="ti ti-send"></i> Enviar sesión
           </button>
         </div>
+
       </form>
     </div>
   </div>
@@ -864,21 +976,41 @@ function prepararFormSesion() {
     const u = a.usuario || {};
     const opt = document.createElement('option');
     opt.value = a.id;
-    opt.dataset.asignaturas = JSON.stringify(a.asignaturas || []);
+    opt.dataset.nivel = a.nivel || '';
     opt.textContent = `${u.nombre} ${u.apellidos}`;
     sel.appendChild(opt);
   });
-
-  // Set today's date
   document.getElementById('ses-fecha').value = new Date().toISOString().split('T')[0];
   resetSliders();
 }
 
-function autoAsignatura() {
-  const sel = document.getElementById('ses-alumno');
-  const opt = sel.options[sel.selectedIndex];
-  const asigs = JSON.parse(opt.dataset?.asignaturas || '[]');
+async function autoAsignatura() {
+  const alumnoId = document.getElementById('ses-alumno').value;
   const aSelect = document.getElementById('ses-asignatura');
+  if (!alumnoId) {
+    aSelect.innerHTML = '<option value="">— Selecciona primero el alumno —</option>';
+    return;
+  }
+  aSelect.innerHTML = '<option value="">Cargando...</option>';
+
+  // 1. Query junction table alumno_profesor para este par alumno+profesor
+  const { data: junction } = await db
+    .from('alumno_profesor')
+    .select('asignatura')
+    .eq('alumno_id', alumnoId)
+    .eq('profesor_id', ctx.profesorData.id);
+
+  let asigs = (junction || []).map(r => r.asignatura).filter(Boolean);
+
+  // 2. Fallback: alumno_asignaturas + catálogo
+  if (asigs.length === 0) {
+    const { data: aa } = await db
+      .from('alumno_asignaturas')
+      .select('asignaturas(nombre)')
+      .eq('alumno_id', alumnoId);
+    asigs = (aa || []).map(r => r.asignaturas?.nombre).filter(Boolean);
+  }
+
   aSelect.innerHTML = '<option value="">Seleccionar asignatura</option>';
   asigs.forEach(a => {
     const o = document.createElement('option');
@@ -886,13 +1018,30 @@ function autoAsignatura() {
     aSelect.appendChild(o);
   });
   if (asigs.length === 1) aSelect.value = asigs[0];
+  if (asigs.length === 0) aSelect.innerHTML = '<option value="">Sin asignaturas asignadas</option>';
 }
 
 function resetSliders() {
-  ['comp','aplic','motiv'].forEach(k => {
-    document.getElementById('slider-' + k).value = 5;
-    document.getElementById('val-' + k).textContent = '5';
+  [['comp','5'],['aplic','5'],['conc','5'],['motiv','5'],['auto','5']].forEach(([k, v]) => {
+    const s = document.getElementById('slider-' + k);
+    const vEl = document.getElementById('val-' + k);
+    if (s) s.value = v;
+    if (vEl) vEl.textContent = v;
   });
+  const sn = document.getElementById('slider-nota');
+  const vn = document.getElementById('val-nota');
+  if (sn) sn.value = 5;
+  if (vn) vn.textContent = '5.0';
+}
+
+function limpiarFormSesion() {
+  ['ses-contenido','ses-estado','ses-bloqueo','ses-resolvio','ses-ayuda',
+   'ses-base','ses-comparacion','ses-arranque','ses-tarea',
+   'ses-observaciones','ses-obs-nexo'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  resetSliders();
 }
 
 async function enviarSesion(e) {
@@ -903,18 +1052,30 @@ async function enviarSesion(e) {
 
   const alumnoId = document.getElementById('ses-alumno').value;
   const sesion = {
-    profesor_id:            ctx.profesorData.id,
-    alumno_id:              alumnoId,
-    asignatura:             document.getElementById('ses-asignatura').value,
-    fecha:                  document.getElementById('ses-fecha').value,
-    hora_inicio:            document.getElementById('ses-hora').value || null,
-    duracion_minutos:       parseInt(document.getElementById('ses-duracion').value),
-    contenido_trabajado:    document.getElementById('ses-contenido').value || null,
-    observaciones_nexo:     document.getElementById('ses-obs-nexo').value || null,
-    valoracion_comprension: parseInt(document.getElementById('slider-comp').value),
-    valoracion_aplicacion:  parseInt(document.getElementById('slider-aplic').value),
-    valoracion_motivacion:  parseInt(document.getElementById('slider-motiv').value),
-    estado:                 'pendiente_confirmacion'
+    profesor_id:              ctx.profesorData.id,
+    alumno_id:                alumnoId,
+    asignatura:               document.getElementById('ses-asignatura').value,
+    fecha:                    document.getElementById('ses-fecha').value,
+    hora_inicio:              document.getElementById('ses-hora').value || null,
+    duracion_minutos:         parseInt(document.getElementById('ses-duracion').value),
+    contenido_trabajado:      document.getElementById('ses-contenido').value || null,
+    estado_alumno_inicio:     document.getElementById('ses-estado').value || null,
+    momento_bloqueo:          document.getElementById('ses-bloqueo').value || null,
+    resolvio_solo:            document.getElementById('ses-resolvio').value || null,
+    necesito_ayuda:           document.getElementById('ses-ayuda').value || null,
+    falta_base:               document.getElementById('ses-base').value || null,
+    comparacion_anterior:     document.getElementById('ses-comparacion').value || null,
+    nota_estimada:            parseFloat(document.getElementById('slider-nota').value),
+    arranque_proxima:         document.getElementById('ses-arranque').value || null,
+    tarea_casa:               document.getElementById('ses-tarea').value || null,
+    valoracion_comprension:   parseInt(document.getElementById('slider-comp').value),
+    valoracion_aplicacion:    parseInt(document.getElementById('slider-aplic').value),
+    valoracion_concentracion: parseInt(document.getElementById('slider-conc').value),
+    valoracion_motivacion:    parseInt(document.getElementById('slider-motiv').value),
+    valoracion_autonomia:     parseInt(document.getElementById('slider-auto').value),
+    observaciones:            document.getElementById('ses-observaciones').value || null,
+    observaciones_nexo:       document.getElementById('ses-obs-nexo').value || null,
+    estado:                   'pendiente_confirmacion'
   };
 
   const { data: newSes, error } = await db.from('sesiones').insert(sesion).select().single();
@@ -923,11 +1084,9 @@ async function enviarSesion(e) {
 
   if (error) { showToast('Error al registrar la sesión: ' + error.message, 'error'); return; }
 
-  // Call edge function to send email
   try {
     await db.functions.invoke('notify-session', { body: { session_id: newSes.id } });
   } catch (err) {
-    // Email is non-critical — session already saved
     console.warn('Email notification failed:', err);
   }
 

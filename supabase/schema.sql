@@ -174,25 +174,44 @@ CREATE POLICY "profesores_alumno_read" ON public.profesores
 -- SESIONES
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.sesiones (
-  id                     UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  profesor_id            UUID NOT NULL REFERENCES public.profesores(id),
-  alumno_id              UUID NOT NULL REFERENCES public.alumnos(id),
-  asignatura             TEXT NOT NULL,
-  fecha                  DATE NOT NULL,
-  hora_inicio            TIME,
-  duracion_minutos       INTEGER NOT NULL DEFAULT 60,
-  contenido_trabajado    TEXT,
-  observaciones          TEXT,
-  observaciones_nexo     TEXT,
-  valoracion_comprension SMALLINT CHECK (valoracion_comprension BETWEEN 1 AND 10),
-  valoracion_aplicacion  SMALLINT CHECK (valoracion_aplicacion BETWEEN 1 AND 10),
-  valoracion_motivacion  SMALLINT CHECK (valoracion_motivacion BETWEEN 1 AND 10),
-  estado                 TEXT NOT NULL DEFAULT 'pendiente_confirmacion'
-                           CHECK (estado IN ('pendiente_confirmacion','confirmada','rechazada','cancelada')),
-  registrada_at          TIMESTAMPTZ DEFAULT NOW(),
-  confirmada_at          TIMESTAMPTZ,
-  cancelada_por          TEXT CHECK (cancelada_por IN ('admin','sistema')),
-  confirmation_token     UUID DEFAULT uuid_generate_v4()
+  id                        UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  profesor_id               UUID NOT NULL REFERENCES public.profesores(id),
+  alumno_id                 UUID NOT NULL REFERENCES public.alumnos(id),
+  asignatura                TEXT NOT NULL,
+  fecha                     DATE NOT NULL,
+  hora_inicio               TIME,
+  duracion_minutos          INTEGER NOT NULL DEFAULT 60,
+  -- Narrativa
+  contenido_trabajado       TEXT,
+  estado_alumno_inicio      TEXT CHECK (estado_alumno_inicio IS NULL OR estado_alumno_inicio IN (
+                              'Activo y receptivo','Normal, sin más','Cansado o apagado',
+                              'Nervioso o bloqueado','Disperso, con la cabeza en otro lado')),
+  momento_bloqueo           TEXT,
+  resolvio_solo             TEXT,
+  necesito_ayuda            TEXT,
+  falta_base                TEXT,
+  -- Progreso
+  comparacion_anterior      TEXT,
+  nota_estimada             NUMERIC(3,1)
+                              CHECK (nota_estimada IS NULL OR (nota_estimada >= 0 AND nota_estimada <= 10)),
+  arranque_proxima          TEXT,
+  tarea_casa                TEXT,
+  -- Valoraciones 1–10
+  valoracion_comprension    SMALLINT CHECK (valoracion_comprension BETWEEN 1 AND 10),
+  valoracion_aplicacion     SMALLINT CHECK (valoracion_aplicacion BETWEEN 1 AND 10),
+  valoracion_concentracion  SMALLINT CHECK (valoracion_concentracion BETWEEN 1 AND 10),
+  valoracion_motivacion     SMALLINT CHECK (valoracion_motivacion BETWEEN 1 AND 10),  -- campo 20: actitud/motivación
+  valoracion_autonomia      SMALLINT CHECK (valoracion_autonomia BETWEEN 1 AND 10),
+  -- Notas internas
+  observaciones             TEXT,
+  observaciones_nexo        TEXT,
+  -- Estado
+  estado                    TEXT NOT NULL DEFAULT 'pendiente_confirmacion'
+                              CHECK (estado IN ('pendiente_confirmacion','confirmada','rechazada','cancelada')),
+  registrada_at             TIMESTAMPTZ DEFAULT NOW(),
+  confirmada_at             TIMESTAMPTZ,
+  cancelada_por             TEXT CHECK (cancelada_por IN ('admin','sistema')),
+  confirmation_token        UUID DEFAULT uuid_generate_v4()
 );
 
 ALTER TABLE public.sesiones ENABLE ROW LEVEL SECURITY;

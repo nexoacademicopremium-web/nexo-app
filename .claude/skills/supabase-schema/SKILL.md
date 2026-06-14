@@ -231,7 +231,9 @@ Asignación explícita de material a un alumno concreto.
 
 ### `sesiones`
 
-Registro de clases impartidas por un profesor.
+Registro de clases impartidas por un profesor. Formulario de 22 campos en 3 secciones.
+
+**Sección 1 — Identificación (6 campos)**
 
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -241,18 +243,44 @@ Registro de clases impartidas por un profesor.
 | `asignatura` | `TEXT NOT NULL` | Nombre libre (no FK a asignaturas) |
 | `fecha` | `DATE NOT NULL` | |
 | `hora_inicio` | `TIME` | |
-| `duracion_minutos` | `INTEGER` | default `60` |
-| `contenido_trabajado` | `TEXT` | |
-| `observaciones` | `TEXT` | |
-| `observaciones_nexo` | `TEXT` | Notas internas de Nexo |
-| `valoracion_comprension` | `SMALLINT` | 1–10 |
-| `valoracion_aplicacion` | `SMALLINT` | 1–10 |
-| `valoracion_motivacion` | `SMALLINT` | 1–10 |
-| `estado` | `TEXT NOT NULL` | `'pendiente_confirmacion'\|'confirmada'\|'rechazada'\|'cancelada'` |
-| `registrada_at` | `TIMESTAMPTZ` | |
+| `duracion_minutos` | `INTEGER NOT NULL` | default `60`; valores típicos: 60, 90, 120 |
+
+**Sección 2 — Narrativa de sesión (10 campos)**
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `contenido_trabajado` | `TEXT` | Qué se hizo en la sesión |
+| `estado_alumno_inicio` | `TEXT` | CHECK: `'Activo y receptivo'\|'Normal, sin más'\|'Cansado o apagado'\|'Nervioso o bloqueado'\|'Disperso, con la cabeza en otro lado'` |
+| `momento_bloqueo` | `TEXT` | En qué momento se bloqueó / con qué |
+| `resolvio_solo` | `TEXT` | Si resolvió o cómo lo resolvió solo |
+| `necesito_ayuda` | `TEXT` | Qué tipo de ayuda necesitó |
+| `falta_base` | `TEXT` | Si falta base previa y cuál |
+| `comparacion_anterior` | `TEXT` | Comparación con sesiones anteriores |
+| `nota_estimada` | `NUMERIC(3,1)` | CHECK 0–10; nota estimada al finalizar |
+| `arranque_proxima` | `TEXT` | Por dónde arrancar la próxima sesión |
+| `tarea_casa` | `TEXT` | Tarea asignada para casa |
+
+**Sección 3 — Progreso y valoraciones (5 campos + observaciones)**
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `valoracion_comprension` | `SMALLINT` | CHECK 1–10 |
+| `valoracion_aplicacion` | `SMALLINT` | CHECK 1–10 |
+| `valoracion_concentracion` | `SMALLINT` | CHECK 1–10 (nuevo; columna añadida vía ALTER) |
+| `valoracion_motivacion` | `SMALLINT` | CHECK 1–10 (campo reusado, antes "motivación") — ahora = "Actitud/motivación" |
+| `valoracion_autonomia` | `SMALLINT` | CHECK 1–10 (nuevo; columna añadida vía ALTER) |
+| `observaciones` | `TEXT` | Observaciones visibles para la familia |
+| `observaciones_nexo` | `TEXT` | Notas internas de Nexo (no visibles al alumno) |
+
+**Metadatos y estado**
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `estado` | `TEXT NOT NULL` | `'pendiente_confirmacion'\|'confirmada'\|'rechazada'\|'cancelada'`; default `'pendiente_confirmacion'` |
+| `registrada_at` | `TIMESTAMPTZ` | default `NOW()` |
 | `confirmada_at` | `TIMESTAMPTZ` | |
-| `cancelada_por` | `TEXT` | `'admin'\|'sistema'` |
-| `confirmation_token` | `UUID` | Token único para enlace de email sin auth |
+| `cancelada_por` | `TEXT` | CHECK: `'admin'\|'sistema'` |
+| `confirmation_token` | `UUID` | Token único para enlace de email sin auth; default `uuid_generate_v4()` |
 
 **RLS:**
 - `sesiones_profesor_own` — ALL: EXISTS profesor del usuario con `id = sesiones.profesor_id`
