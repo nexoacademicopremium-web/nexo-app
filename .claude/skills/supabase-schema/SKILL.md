@@ -144,9 +144,12 @@ Many-to-many: un alumno puede tener varios profesores, cada uno para una asignat
 | `id` | `UUID PK` | |
 | `alumno_id` | `UUID NOT NULL` | FK → `alumnos(id)` ON DELETE CASCADE |
 | `profesor_id` | `UUID NOT NULL` | FK → `profesores(id)` ON DELETE CASCADE |
-| `asignatura` | `TEXT` | Nombre de la asignatura (legacy TEXT — se migrará a `asignatura_id` cuando sea necesario) |
+| `asignatura` | `TEXT` | **Legacy vacío** — no se usa; la fuente real es `asignatura_id` |
+| `asignatura_id` | `SMALLINT` | FK → `asignaturas(id)` — añadido vía SQL editor; es el campo real |
 | `created_at` | `TIMESTAMPTZ` | |
-| UNIQUE | `(alumno_id, profesor_id)` | |
+| UNIQUE | `(alumno_id, profesor_id, asignatura_id)` | permite un profesor por asignatura (≠ UNIQUE antiguo que era solo alumno+profesor) |
+
+**Nota crítica**: el admin inserta con `asignatura_id`, nunca con `asignatura TEXT`. Para leer el nombre de la asignatura hay que hacer join: `.select('asignatura_id, asignaturas(nombre)')` y usar `r.asignaturas?.nombre`.
 
 **RLS:**
 - `alumno_profesor_admin_all` — ALL donde `is_admin()`

@@ -736,12 +736,13 @@ GRANT EXECUTE ON FUNCTION public.auto_confirm_old_sessions() TO authenticated;
 -- varios profesores por asignatura, un profesor varios alumnos)
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.alumno_profesor (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  alumno_id   UUID NOT NULL REFERENCES public.alumnos(id)   ON DELETE CASCADE,
-  profesor_id UUID NOT NULL REFERENCES public.profesores(id) ON DELETE CASCADE,
-  asignatura  TEXT,
-  created_at  TIMESTAMPTZ DEFAULT NOW(),
-  UNIQUE(alumno_id, profesor_id)
+  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  alumno_id      UUID    NOT NULL REFERENCES public.alumnos(id)   ON DELETE CASCADE,
+  profesor_id    UUID    NOT NULL REFERENCES public.profesores(id) ON DELETE CASCADE,
+  asignatura     TEXT,            -- legacy vacío; la fuente real es asignatura_id
+  asignatura_id  SMALLINT REFERENCES public.asignaturas(id),  -- añadido vía SQL editor
+  created_at     TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE(alumno_id, profesor_id, asignatura_id)  -- permite un profesor por asignatura
 );
 
 ALTER TABLE public.alumno_profesor ENABLE ROW LEVEL SECURITY;

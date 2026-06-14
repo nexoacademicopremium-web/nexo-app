@@ -732,18 +732,22 @@ let editClaseId = null;
   // Load alumnos: via FK profesor_id Y via junction table alumno_profesor
   if (profesorData) {
     // Fetch junction con asignaturas para este profesor
+    // asignatura_id es FK→asignaturas(id) añadido vía SQL editor;
+    // asignatura TEXT es campo legacy vacío → usamos el nombre del catálogo
     const { data: junctionData } = await db
       .from('alumno_profesor')
-      .select('alumno_id, asignatura')
+      .select('alumno_id, asignatura, asignatura_id, asignaturas(nombre)')
       .eq('profesor_id', profesorData.id);
 
     const junctionIds = (junctionData || []).map(j => j.alumno_id);
 
-    // Mapa alumnoId → [asignatura, ...]
+    // Mapa alumnoId → [nombre asignatura, ...]
     const asigPorAlumno = {};
     (junctionData || []).forEach(j => {
+      const nombre = j.asignaturas?.nombre || j.asignatura;
+      if (!nombre) return;
       if (!asigPorAlumno[j.alumno_id]) asigPorAlumno[j.alumno_id] = [];
-      if (j.asignatura) asigPorAlumno[j.alumno_id].push(j.asignatura);
+      asigPorAlumno[j.alumno_id].push(nombre);
     });
 
     let alumnosQuery = db
@@ -1006,13 +1010,14 @@ async function autoAsignatura() {
   aSelect.innerHTML = '<option value="">Cargando...</option>';
 
   // 1. Query junction table alumno_profesor para este par alumno+profesor
+  // asignatura_id es FK→asignaturas(id); asignatura TEXT es legacy vacío
   const { data: junction } = await db
     .from('alumno_profesor')
-    .select('asignatura')
+    .select('asignatura, asignatura_id, asignaturas(nombre)')
     .eq('alumno_id', alumnoId)
     .eq('profesor_id', ctx.profesorData.id);
 
-  let asigs = (junction || []).map(r => r.asignatura).filter(Boolean);
+  let asigs = (junction || []).map(r => r.asignaturas?.nombre || r.asignatura).filter(Boolean);
 
   // 2. Fallback: alumno_asignaturas + catálogo
   if (asigs.length === 0) {
