@@ -223,6 +223,7 @@
   <div class="nav-item" id="nav-material" onclick="showSection('material')"><i class="ti ti-files"></i> Material</div>
   <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i> Tests</div>
   <div class="nav-item" id="nav-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i> Avisos</div>
+  <div class="nav-item" id="nav-informes" onclick="showSection('informes')"><i class="ti ti-report-analytics"></i> Informes</div>
   <div class="nav-divider"></div>
   <div class="nav-bottom">
     <div class="nav-item" onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</div>
@@ -355,6 +356,29 @@
   </div>
 </div>
 
+<!-- ═══ INFORMES ═══ -->
+<div class="section" id="section-informes">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div><h1 class="page-title" style="margin:0">Informes</h1><p class="page-sub" style="margin:0">Informes de seguimiento por alumno</p></div>
+    <button class="btn-primary" onclick="abrirModalInformeAdmin()"><i class="ti ti-plus"></i> Nuevo informe</button>
+  </div>
+  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+    <select class="fi" id="fil-inf-alumno" onchange="loadInformesAdmin()" style="width:auto;padding:8px 12px">
+      <option value="">Todos los alumnos</option>
+    </select>
+    <select class="fi" id="fil-inf-tipo" onchange="loadInformesAdmin()" style="width:auto;padding:8px 12px">
+      <option value="">Todos los tipos</option>
+      <option value="mensual">Mensual</option>
+      <option value="semanal">Semanal</option>
+    </select>
+  </div>
+  <div class="card">
+    <div id="informes-admin-tabla">
+      <div class="loading-section"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
 </div><!-- end .main -->
 
 <!-- ═══════════════════════════════ MODALES ═══════════════════════════════ -->
@@ -363,11 +387,12 @@
 <!-- MODAL INFORME -->
 <div class="modal-overlay" id="modal-informe">
   <div class="modal-box" style="max-width:480px">
-    <div class="modal-title"><span>Subir informe</span><button class="modal-close" onclick="cerrarModal('modal-informe')">×</button></div>
+    <div class="modal-title"><span id="modal-informe-titulo">Subir informe</span><button class="modal-close" onclick="cerrarModal('modal-informe')">×</button></div>
     <form id="form-informe" onsubmit="subirInforme(event)">
-      <label class="fl">Alumno</label>
-      <input class="fi" id="inf-alumno-nombre" readonly>
-      <input type="hidden" id="inf-alumno-id">
+      <input type="hidden" id="inf-edit-id">
+      <input type="hidden" id="inf-archivo-url-actual">
+      <label class="fl">Alumno *</label>
+      <select class="fi" id="inf-alumno-sel" required></select>
       <label class="fl">Título *</label>
       <input class="fi" id="inf-titulo" required placeholder="Informe mensual — Junio 2025">
       <label class="fl">Tipo</label>
@@ -377,7 +402,13 @@
       </select>
       <label class="fl">Fecha *</label>
       <input class="fi" id="inf-fecha" type="date" required>
+      <label class="fl">Visible para el alumno</label>
+      <select class="fi" id="inf-visible">
+        <option value="true">Sí</option>
+        <option value="false">No (oculto)</option>
+      </select>
       <label class="fl">Archivo PDF</label>
+      <div id="inf-archivo-actual" style="display:none;padding:6px 0;font-size:12px;color:var(--muted)"></div>
       <input class="fi" id="inf-archivo" type="file" accept=".pdf,.doc,.docx">
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModal('modal-informe')">Cancelar</button>
@@ -904,6 +935,7 @@ function showSection(id) {
     material:   loadTablaMaterial,
     tests:      loadListaTests,
     avisos:     loadTablaAvisos,
+    informes:   loadInformesAdmin,
   };
   if (loaders[id]) loaders[id]();
 }
@@ -1122,14 +1154,64 @@ function abrirModalAlumno() {
 // ============================================================
 // INFORMES
 // ============================================================
+function _poblarAlumnoSelInforme(seleccionadoId, disabled) {
+  const sel = document.getElementById('inf-alumno-sel');
+  sel.disabled = disabled;
+  sel.innerHTML = '<option value="">— Selecciona alumno —</option>' +
+    allAlumnos.map(a => {
+      const u = a.usuario || {};
+      const nombre = `${u.nombre || ''} ${u.apellidos || ''}`.trim();
+      return `<option value="${a.id}" ${a.id === seleccionadoId ? 'selected' : ''}>${nombre}</option>`;
+    }).join('');
+}
+
+function _resetModalInforme() {
+  document.getElementById('inf-edit-id').value         = '';
+  document.getElementById('inf-archivo-url-actual').value = '';
+  document.getElementById('inf-archivo-actual').style.display = 'none';
+  document.getElementById('inf-archivo-actual').innerHTML = '';
+  document.getElementById('inf-titulo').value          = '';
+  document.getElementById('inf-tipo').value            = 'mensual';
+  document.getElementById('inf-visible').value         = 'true';
+  document.getElementById('inf-fecha').value           = new Date().toISOString().split('T')[0];
+  document.getElementById('inf-archivo').value         = '';
+}
+
+// Llamada desde la ficha del alumno — alumno fijo
 function abrirModalInforme(alumnoId, alumnoNombre) {
-  document.getElementById('inf-alumno-id').value    = alumnoId;
-  document.getElementById('inf-alumno-nombre').value = alumnoNombre;
-  document.getElementById('inf-fecha').value         = new Date().toISOString().split('T')[0];
-  document.getElementById('form-informe').reset();
-  document.getElementById('inf-alumno-id').value    = alumnoId;
-  document.getElementById('inf-alumno-nombre').value = alumnoNombre;
-  document.getElementById('inf-fecha').value         = new Date().toISOString().split('T')[0];
+  _resetModalInforme();
+  _poblarAlumnoSelInforme(alumnoId, true);
+  document.getElementById('modal-informe-titulo').textContent = 'Subir informe';
+  document.getElementById('btn-subir-informe').textContent    = 'Subir';
+  document.getElementById('modal-informe').classList.add('open');
+}
+
+// Llamada desde sección Informes — alumno libre
+function abrirModalInformeAdmin() {
+  _resetModalInforme();
+  _poblarAlumnoSelInforme('', false);
+  document.getElementById('modal-informe-titulo').textContent = 'Nuevo informe';
+  document.getElementById('btn-subir-informe').textContent    = 'Subir';
+  document.getElementById('modal-informe').classList.add('open');
+}
+
+// Llamada desde el botón Editar en la tabla de informes
+function editarInformeAdmin(infId, alumnoId, titulo, tipo, fecha, archivoUrl, visible) {
+  _resetModalInforme();
+  _poblarAlumnoSelInforme(alumnoId, false);
+  document.getElementById('inf-edit-id').value          = infId;
+  document.getElementById('inf-titulo').value           = titulo;
+  document.getElementById('inf-tipo').value             = tipo;
+  document.getElementById('inf-fecha').value            = fecha;
+  document.getElementById('inf-visible').value          = String(visible);
+  if (archivoUrl) {
+    document.getElementById('inf-archivo-url-actual').value = archivoUrl;
+    const d = document.getElementById('inf-archivo-actual');
+    d.style.display = 'block';
+    d.innerHTML = `<i class="ti ti-paperclip"></i> Archivo actual: <a href="${archivoUrl}" target="_blank" style="color:var(--blue)">Ver / descargar</a><br><span style="font-size:11px">Sube un nuevo archivo solo si quieres reemplazarlo.</span>`;
+  }
+  document.getElementById('modal-informe-titulo').textContent = 'Editar informe';
+  document.getElementById('btn-subir-informe').textContent    = 'Guardar cambios';
   document.getElementById('modal-informe').classList.add('open');
 }
 
@@ -1140,8 +1222,11 @@ async function subirInforme(e) {
 
   try {
     const file     = document.getElementById('inf-archivo').files[0];
-    const alumnoId = document.getElementById('inf-alumno-id').value;
-    let archivo_url = null;
+    const alumnoId = document.getElementById('inf-alumno-sel').value;
+    const editId   = document.getElementById('inf-edit-id').value;
+    if (!alumnoId) throw new Error('Selecciona un alumno.');
+
+    let archivo_url = document.getElementById('inf-archivo-url-actual').value || null;
 
     if (file) {
       const ext  = file.name.split('.').pop();
@@ -1152,26 +1237,114 @@ async function subirInforme(e) {
       archivo_url = url.publicUrl;
     }
 
-    const { error } = await db.from('informes').insert({
+    const payload = {
       alumno_id:  alumnoId,
       tipo:       document.getElementById('inf-tipo').value,
       titulo:     document.getElementById('inf-titulo').value,
       fecha:      document.getElementById('inf-fecha').value,
+      visible:    document.getElementById('inf-visible').value === 'true',
       archivo_url,
-      subido_por: ctx.usuario.id,
-    });
-    if (error) throw new Error('Error al guardar informe: ' + error.message);
+    };
 
-    showToast('Informe subido correctamente');
+    if (editId) {
+      const { error } = await db.from('informes').update(payload).eq('id', editId);
+      if (error) throw new Error('Error al guardar: ' + error.message);
+      showToast('Informe actualizado');
+    } else {
+      payload.subido_por = ctx.usuario.id;
+      const { error } = await db.from('informes').insert(payload);
+      if (error) throw new Error('Error al guardar informe: ' + error.message);
+      showToast('Informe subido correctamente');
+    }
+
     cerrarModal('modal-informe');
-    document.getElementById('form-informe').reset();
-    // Si venimos de la ficha, reabrirla para ver el informe recién subido
-    if (fichaAlumnoId === alumnoId) abrirFicha(fichaAlumnoId);
+    if (fichaAlumnoId === alumnoId) refreshFichaInformes();
+    if (document.getElementById('section-informes').classList.contains('active')) loadInformesAdmin();
   } catch (err) {
     showToast(err.message, 'error');
   } finally {
     btn.disabled = false;
   }
+}
+
+async function eliminarInformeAdmin(infId, titulo) {
+  if (!confirm(`¿Eliminar el informe "${titulo}"? Esta acción no se puede deshacer.`)) return;
+  const { error } = await db.from('informes').delete().eq('id', infId);
+  if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
+  showToast('Informe eliminado');
+  loadInformesAdmin();
+}
+
+async function loadInformesAdmin() {
+  const el = document.getElementById('informes-admin-tabla');
+  el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+
+  const alumnoFil = document.getElementById('fil-inf-alumno').value;
+  const tipoFil   = document.getElementById('fil-inf-tipo').value;
+
+  // Populate alumno filter if empty
+  const filSel = document.getElementById('fil-inf-alumno');
+  if (filSel.options.length <= 1) {
+    allAlumnos.forEach(a => {
+      const u = a.usuario || {};
+      const opt = document.createElement('option');
+      opt.value = a.id;
+      opt.textContent = `${u.nombre || ''} ${u.apellidos || ''}`.trim();
+      filSel.appendChild(opt);
+    });
+    filSel.value = alumnoFil;
+  }
+
+  let query = db.from('informes').select('*').order('fecha', { ascending: false });
+  if (alumnoFil) query = query.eq('alumno_id', alumnoFil);
+  if (tipoFil)   query = query.eq('tipo', tipoFil);
+
+  const { data: informes, error } = await query.limit(200);
+
+  if (error) {
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error: ${error.message}</p></div>`;
+    return;
+  }
+  if (!informes || informes.length === 0) {
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-report-off"></i><p>Sin informes subidos todavía</p></div>`;
+    return;
+  }
+
+  const alumnoMap = {};
+  allAlumnos.forEach(a => { alumnoMap[a.id] = a; });
+
+  el.innerHTML = `<table class="tabla">
+    <thead><tr><th>Alumno</th><th>Título</th><th>Tipo</th><th>Fecha</th><th>Visible</th><th>Archivo</th><th>Acciones</th></tr></thead>
+    <tbody>
+      ${informes.map(inf => {
+        const a  = alumnoMap[inf.alumno_id];
+        const u  = a?.usuario || {};
+        const nb = `${u.nombre || ''} ${u.apellidos || ''}`.trim() || '—';
+        const tipoPill = inf.tipo === 'mensual'
+          ? `<span class="pill pill-eso">Mensual</span>`
+          : `<span class="pill pill-grey">Semanal</span>`;
+        const visPill = inf.visible
+          ? `<span class="pill pill-ok">Sí</span>`
+          : `<span class="pill pill-grey">No</span>`;
+        const archLink = inf.archivo_url
+          ? `<a href="${inf.archivo_url}" target="_blank" style="color:var(--blue);font-size:12px"><i class="ti ti-download"></i> Ver</a>`
+          : `<span style="color:var(--muted);font-size:11px">Sin archivo</span>`;
+        const fechaEsc = inf.fecha ? inf.fecha.split('T')[0] : '';
+        return `<tr>
+          <td><b style="color:#fff;font-size:12px">${nb}</b></td>
+          <td style="max-width:200px;white-space:normal;font-size:12px">${inf.titulo}</td>
+          <td>${tipoPill}</td>
+          <td style="font-size:12px">${formatDate(inf.fecha)}</td>
+          <td>${visPill}</td>
+          <td>${archLink}</td>
+          <td style="white-space:nowrap">
+            <button class="btn-edit" onclick="editarInformeAdmin('${inf.id}','${inf.alumno_id}',${JSON.stringify(inf.titulo)},'${inf.tipo}','${fechaEsc}',${JSON.stringify(inf.archivo_url||'')},'${inf.visible}')"><i class="ti ti-pencil"></i> Editar</button>
+            <button class="btn-danger" style="margin-left:4px" onclick="eliminarInformeAdmin('${inf.id}',${JSON.stringify(inf.titulo)})"><i class="ti ti-trash"></i></button>
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
 }
 
 // ============================================================
