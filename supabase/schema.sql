@@ -663,6 +663,56 @@ END;
 $$;
 
 -- ============================================================
+-- RPC: Auto-confirmar sesiones pendientes > 72h (Bloque 4)
+-- Callable por authenticated users como fallback cliente.
+-- pg_cron la ejecuta cada hora de forma fiable.
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.auto_confirm_old_sessions()
+RETURNS INTEGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_row   RECORD;
+  v_count INTEGER := 0;
+BEGIN
+  FOR v_row IN
+    SELECT id, alumno_id, duracion_minutos
+    FROM public.sesiones
+    WHERE estado = 'pendiente_confirmacion'
+      AND registrada_at < NOW() - INTERVAL '72 hours'
+  LOOP
+    UPDATE public.sesiones
+    SET estado = 'confirmada', confirmada_at = NOW()
+    WHERE id = v_row.id;
+
+    UPDATE public.alumnos
+    SET horas_bono_restantes = GREATEST(0, horas_bono_restantes - (v_row.duracion_minutos / 60.0))
+    WHERE id = v_row.alumno_id;
+
+    v_count := v_count + 1;
+  END LOOP;
+
+  RETURN v_count;
+END;
+$$;
+
+-- Permitir que cualquier usuario autenticado lo llame (es seguro: solo procesa sesiones > 72h)
+GRANT EXECUTE ON FUNCTION public.auto_confirm_old_sessions() TO authenticated;
+
+-- ── pg_cron (ejecutar en Supabase SQL Editor una sola vez) ──────────────
+-- Requiere que la extensión pg_cron esté habilitada en Supabase Dashboard.
+-- SELECT cron.schedule(
+--   'auto-confirm-sessions',
+--   '0 * * * *',   -- cada hora
+--   'SELECT public.auto_confirm_old_sessions()'
+-- );
+-- Para ver el job: SELECT * FROM cron.job WHERE jobname = 'auto-confirm-sessions';
+-- Para eliminarlo: SELECT cron.unschedule('auto-confirm-sessions');
+-- ────────────────────────────────────────────────────────────────────────
+
+-- ============================================================
 -- ALUMNO_PROFESOR — Relación many-to-many (un alumno puede tener
 -- varios profesores por asignatura, un profesor varios alumnos)
 -- ============================================================

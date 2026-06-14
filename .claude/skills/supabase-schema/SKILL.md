@@ -361,6 +361,7 @@ Tests de autoevaluación.
 | `process_session_confirmation(p_session_id, p_token, p_action)` | No (enlace email) | Confirma/rechaza sesión por token; descuenta horas del bono si confirma |
 | `confirmar_sesion_alumno(p_session_id, p_action)` | Sí (alumno) | Igual pero verifica que `auth.uid()` sea el alumno de la sesión |
 | `cancelar_sesion_admin(p_session_id, p_revertir_horas)` | Sí (admin) | Cancela sesión y opcionalmente devuelve horas al bono |
+| `auto_confirm_old_sessions()` | Sí (authenticated) | Confirma todas las sesiones `pendiente_confirmacion` con `registrada_at < NOW() - 72h`; devuelve nº de sesiones procesadas. GRANT EXECUTE a `authenticated`. Llamada desde pg_cron cada hora y como fallback cliente en `loadSesiones()`. |
 
 ---
 

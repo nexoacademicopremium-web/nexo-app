@@ -192,13 +192,25 @@
   .btn-ghost{background:transparent;color:var(--muted);border:.5px solid var(--border);border-radius:7px;padding:9px 14px;font-size:13px;cursor:pointer;font-family:inherit}
 
   /* Sesiones pendientes */
-  .ses-pend-row{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:.5px solid var(--border2);background:var(--amber-lt)}
-  .ses-pend-row:last-child{border-bottom:none}
-  .ses-info{flex:1}
-  .ses-title{color:#fff;font-size:13px;font-weight:500;margin-bottom:2px}
-  .ses-sub{color:var(--muted);font-size:11px}
-  .btn-confirm{background:var(--green);color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;margin-left:4px}
-  .btn-reject{background:var(--red-lt);color:var(--red);border:.5px solid var(--red);border-radius:6px;padding:6px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;margin-left:4px}
+  .pend-card{padding:16px 18px;border-bottom:.5px solid var(--border2)}
+  .pend-card:last-child{border-bottom:none}
+  .pend-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .pend-asig{color:#fff;font-size:14px;font-weight:600}
+  .pend-prof{color:var(--soft);font-size:12px;margin-left:auto;display:flex;align-items:center;gap:5px}
+  .pend-prof i{font-size:13px;color:var(--blue)}
+  .pend-meta{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:8px}
+  .pend-meta-item{display:flex;align-items:center;gap:5px;color:var(--soft);font-size:12px}
+  .pend-meta-item i{color:var(--blue);font-size:14px}
+  .pend-horas{color:var(--amber);font-size:11px;font-weight:500}
+  .pend-tiempo{font-size:11px;margin-bottom:8px;padding:4px 10px;border-radius:20px;display:inline-block}
+  .pend-tiempo.ok{background:var(--border2);color:var(--muted)}
+  .pend-tiempo.warn{background:var(--amber-lt);color:var(--amber)}
+  .pend-tiempo.urgent{background:var(--red-lt);color:var(--red)}
+  .pend-contenido{color:var(--muted);font-size:11px;font-style:italic;margin-bottom:10px;line-height:1.5;border-left:2px solid var(--border);padding-left:10px}
+  .pend-actions{display:flex;gap:8px;justify-content:flex-end}
+  .btn-confirm{background:var(--green);color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
+  .btn-reject{background:var(--red-lt);color:var(--red);border:.5px solid var(--red);border-radius:6px;padding:8px 14px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
+  .btn-confirm:hover{background:#1f9e75} .btn-reject:hover{background:#3d1010}
 
   .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
   .empty-state i{font-size:36px;margin-bottom:12px;display:block;color:var(--border)}
@@ -713,9 +725,35 @@ async function checkPendingSessions() {
 // ============================================================
 // SESIONES
 // ============================================================
+function diaSemana(dateStr) {
+  if (!dateStr) return '';
+  const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  return dias[new Date(dateStr + 'T00:00:00').getDay()];
+}
+
+function tiempoDesdeRegistro(registradaAt) {
+  if (!registradaAt) return { texto: '', clase: 'ok' };
+  const horas = (Date.now() - new Date(registradaAt).getTime()) / 3600000;
+  let texto, clase;
+  if (horas < 24) {
+    texto = `Registrada hace ${Math.round(horas)}h · Se confirma auto en ${Math.round(72 - horas)}h si no respondes`;
+    clase = 'ok';
+  } else if (horas < 48) {
+    texto = `Registrada hace ${Math.floor(horas)}h · Quedan ~${Math.round(72 - horas)}h para auto-confirmación`;
+    clase = 'warn';
+  } else {
+    texto = `Registrada hace ${Math.floor(horas)}h · ¡Se auto-confirma en menos de ${Math.ceil(72 - horas)}h!`;
+    clase = 'urgent';
+  }
+  return { texto, clase };
+}
+
 async function loadSesiones() {
   if (!ctx.alumnoData) return;
   const alumnoId = ctx.alumnoData.id;
+
+  // Fallback cliente: auto-confirmar sesiones > 72h (por si pg_cron no está activo)
+  try { await db.rpc('auto_confirm_old_sessions'); } catch (_) {}
 
   const { data: pendientes } = await db
     .from('sesiones')
@@ -729,20 +767,36 @@ async function loadSesiones() {
     pendEl.innerHTML = '';
   } else {
     pendEl.innerHTML = `
-      <div class="card" style="margin-bottom:16px;border-color:var(--amber)">
+      <div class="card" style="margin-bottom:16px;border-color:var(--amber);overflow:visible">
         <div class="card-head" style="border-bottom-color:var(--amber)">
-          <div class="card-title" style="color:var(--amber)"><i class="ti ti-bell" style="color:var(--amber)"></i> Sesiones pendientes de confirmar</div>
+          <div class="card-title" style="color:var(--amber)">
+            <i class="ti ti-bell" style="color:var(--amber)"></i>
+            ${pendientes.length} sesión${pendientes.length > 1 ? 'es' : ''} pendiente${pendientes.length > 1 ? 's' : ''} de confirmar
+          </div>
         </div>
         ${pendientes.map(s => {
           const prof = s.profesor?.usuario;
+          const profNom = prof ? prof.nombre + ' ' + prof.apellidos : 'Tu profesor';
+          const horas = (s.duracion_minutos / 60).toFixed(1);
+          const { texto: tTexto, clase: tClase } = tiempoDesdeRegistro(s.registrada_at);
           return `
-            <div class="ses-pend-row">
-              <div class="ses-info">
-                <div class="ses-title">${s.asignatura} · ${prof ? prof.nombre + ' ' + prof.apellidos : 'Tu profesor'}</div>
-                <div class="ses-sub">${formatDate(s.fecha)}${s.hora_inicio ? ' · ' + formatTime(s.hora_inicio) + 'h' : ''} · ${s.duracion_minutos} min${s.contenido_trabajado ? ' · ' + s.contenido_trabajado : ''}</div>
+            <div class="pend-card">
+              <div class="pend-header">
+                <div class="pend-asig">${s.asignatura}</div>
+                <div class="pend-prof"><i class="ti ti-user"></i> ${profNom}</div>
               </div>
-              <button class="btn-reject" onclick="procesarSesion('${s.id}','rechazar')"><i class="ti ti-x"></i> No asistí</button>
-              <button class="btn-confirm" onclick="procesarSesion('${s.id}','confirmar')"><i class="ti ti-check"></i> Confirmar</button>
+              <div class="pend-meta">
+                <span class="pend-meta-item"><i class="ti ti-calendar"></i> ${diaSemana(s.fecha)}, ${formatDate(s.fecha)}</span>
+                ${s.hora_inicio ? `<span class="pend-meta-item"><i class="ti ti-clock"></i> ${formatTime(s.hora_inicio)}h</span>` : ''}
+                <span class="pend-meta-item"><i class="ti ti-hourglass"></i> ${s.duracion_minutos} min</span>
+                <span class="pend-horas">· ${horas}h del bono</span>
+              </div>
+              ${tTexto ? `<div class="pend-tiempo ${tClase}"><i class="ti ti-info-circle" style="font-size:11px"></i> ${tTexto}</div>` : ''}
+              ${s.contenido_trabajado ? `<div class="pend-contenido">${s.contenido_trabajado.substring(0,150)}${s.contenido_trabajado.length > 150 ? '…' : ''}</div>` : ''}
+              <div class="pend-actions">
+                <button class="btn-reject" onclick="procesarSesion('${s.id}','rechazar')"><i class="ti ti-x"></i> No asistí</button>
+                <button class="btn-confirm" onclick="procesarSesion('${s.id}','confirmar')"><i class="ti ti-check"></i> Confirmar asistencia</button>
+              </div>
             </div>
           `;
         }).join('')}
