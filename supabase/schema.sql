@@ -89,6 +89,25 @@ CREATE POLICY "usuarios_prof_for_alumno" ON public.usuarios
     )
   );
 
+-- Permite a un profesor leer las filas de usuarios de sus alumnos
+-- (necesario para que el panel del profesor muestre nombre/apellidos de cada alumno
+-- vía nested join alumnos → usuarios; cubre tanto FK profesor_id como alumno_profesor)
+CREATE POLICY "usuarios_alumnos_for_prof" ON public.usuarios
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.alumnos al
+      WHERE al.usuario_id = public.usuarios.id
+        AND (
+          al.profesor_id = public.get_profesor_id()
+          OR EXISTS (
+            SELECT 1 FROM public.alumno_profesor ap
+            WHERE ap.alumno_id = al.id
+              AND ap.profesor_id = public.get_profesor_id()
+          )
+        )
+    )
+  );
+
 -- ============================================================
 -- ALUMNOS (sin profesor_id todavía — se añade más abajo)
 -- ============================================================

@@ -36,6 +36,7 @@ Espeja `auth.users` (mismo UUID como PK).
 - `usuarios_self_read` — SELECT donde `id = auth.uid()`
 - `usuarios_admin_all` — ALL donde `is_admin()`
 - `usuarios_prof_for_alumno` — SELECT: permite a un alumno leer la fila del usuario de su profesor asignado (necesario para que el panel alumno muestre nombre/email del profesor via nested join)
+- `usuarios_alumnos_for_prof` — SELECT: permite a un profesor leer las filas de usuarios de sus alumnos (via FK `alumnos.profesor_id` o via `alumno_profesor`); necesario para que el panel profesor muestre nombre/apellidos en "Mis alumnos"
 
 ---
 

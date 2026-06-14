@@ -731,11 +731,20 @@ let editClaseId = null;
 
   // Load alumnos: via FK profesor_id Y via junction table alumno_profesor
   if (profesorData) {
+    // Fetch junction con asignaturas para este profesor
     const { data: junctionData } = await db
       .from('alumno_profesor')
-      .select('alumno_id')
+      .select('alumno_id, asignatura')
       .eq('profesor_id', profesorData.id);
+
     const junctionIds = (junctionData || []).map(j => j.alumno_id);
+
+    // Mapa alumnoId → [asignatura, ...]
+    const asigPorAlumno = {};
+    (junctionData || []).forEach(j => {
+      if (!asigPorAlumno[j.alumno_id]) asigPorAlumno[j.alumno_id] = [];
+      if (j.asignatura) asigPorAlumno[j.alumno_id].push(j.asignatura);
+    });
 
     let alumnosQuery = db
       .from('alumnos')
@@ -749,7 +758,10 @@ let editClaseId = null;
     }
 
     const { data } = await alumnosQuery;
-    misAlumnos = data || [];
+    misAlumnos = (data || []).map(a => ({
+      ...a,
+      _asignaturas: asigPorAlumno[a.id] || []
+    }));
   }
 
   const now = new Date();
@@ -917,7 +929,7 @@ async function loadDashboardProf() {
           <div class="av">${ini}</div>
           <div>
             <div class="alumno-name">${u.nombre} ${u.apellidos} <span class="pill ${pillCls}">${nivelLabel(a.nivel)}</span></div>
-            <div class="alumno-det">${(a.asignaturas||[]).join(', ')} · ${a.horario_habitual||'—'}</div>
+            <div class="alumno-det">${(a._asignaturas||[]).join(', ')} · ${a.horario_habitual||'—'}</div>
           </div>
           <div class="h-txt">${h}h<span>este mes</span></div>
         </div>`;
@@ -1156,9 +1168,9 @@ async function renderTablaAlumnos() {
     const h = (horasByAlumno[a.id] || 0).toFixed(1);
     const bonoOk = a.horas_bono_restantes > 3;
     return `<tr onclick="abrirFicha('${a.id}')">
-      <td><div style="display:flex;align-items:center;gap:10px"><div class="av">${ini}</div><div><div class="alumno-name">${u.nombre} ${u.apellidos}</div><div class="alumno-det">${(a.asignaturas||[]).join(', ')}</div></div></div></td>
+      <td><div style="display:flex;align-items:center;gap:10px"><div class="av">${ini}</div><div><div class="alumno-name">${u.nombre} ${u.apellidos}</div><div class="alumno-det">${(a._asignaturas||[]).join(', ')}</div></div></div></td>
       <td><span class="pill ${pillCls}">${nivelLabel(a.nivel)}</span></td>
-      <td>${(a.asignaturas||[]).join(', ')}</td>
+      <td>${(a._asignaturas||[]).join(', ')}</td>
       <td>${a.horario_habitual||'—'}</td>
       <td><b style="color:#fff">${h}h</b></td>
       <td><span class="pill ${bonoOk ? 'pill-ok' : 'pill-warn'}">${a.horas_bono_restantes}h restantes</span></td>
@@ -1170,7 +1182,7 @@ function filtrarAlumnos() {
   const q = document.getElementById('buscador-alumnos').value.toLowerCase();
   filteredAlumnos = misAlumnos.filter(a => {
     const u = a.usuario || {};
-    const s = `${u.nombre} ${u.apellidos} ${(a.asignaturas||[]).join(' ')} ${a.nivel}`.toLowerCase();
+    const s = `${u.nombre} ${u.apellidos} ${(a._asignaturas||[]).join(' ')} ${a.nivel}`.toLowerCase();
     return s.includes(q);
   });
   renderTablaAlumnos();
@@ -1216,7 +1228,7 @@ async function abrirFicha(alumnoId) {
       <div class="ficha-kpi"><div class="ficha-kpi-val">${alumno.horas_bono_total}</div><div class="ficha-kpi-label">Bono total</div></div>
     </div>
     <div class="ficha-section">Información</div>
-    <div class="ficha-row"><span>Asignatura</span><b>${(alumno.asignaturas||[]).join(', ')}</b></div>
+    <div class="ficha-row"><span>Asignatura</span><b>${(alumno._asignaturas||[]).join(', ')}</b></div>
     <div class="ficha-row"><span>Horario</span><b>${alumno.horario_habitual||'—'}</b></div>
     <div class="ficha-row"><span>Modalidad</span><b>${alumno.modalidad==='presencial'?'Presencial':'Online'}</b></div>
     <div class="ficha-row"><span>Desde</span><b>${formatDate(alumno.fecha_inicio)}</b></div>
