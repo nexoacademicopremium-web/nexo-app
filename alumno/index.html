@@ -339,17 +339,8 @@
 <div class="section" id="section-informes">
   <h1 class="page-title">Mis informes</h1>
   <p class="page-sub">Informes de seguimiento elaborados por Nexo Académico</p>
-  <div class="card">
-    <div class="card-head"><div class="card-title"><i class="ti ti-report-analytics"></i> Informes mensuales</div></div>
-    <div class="card-body" style="padding:8px 14px" id="informes-mensuales">
-      <div class="loading-section"><div class="spinner"></div></div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-head"><div class="card-title"><i class="ti ti-report"></i> Informes semanales</div></div>
-    <div class="card-body" style="padding:8px 14px" id="informes-semanales">
-      <div class="loading-section"><div class="spinner"></div></div>
-    </div>
+  <div id="informes-container">
+    <div class="loading-section"><div class="spinner"></div></div>
   </div>
 </div>
 
@@ -827,8 +818,8 @@ async function loadInformes() {
   const mensuales = (informes || []).filter(i => i.tipo === 'mensual');
   const semanales = (informes || []).filter(i => i.tipo === 'semanal');
 
-  const renderList = items => items.length === 0
-    ? `<div class="empty-state"><i class="ti ti-file-off"></i><p>Sin informes disponibles</p></div>`
+  const renderItems = items => items.length === 0
+    ? `<div style="padding:16px;color:var(--muted);font-size:12px;text-align:center"><i class="ti ti-file-off" style="font-size:20px;display:block;margin-bottom:6px"></i>Sin informes disponibles</div>`
     : items.map(inf => `
         <div class="inf-row" onclick="${inf.archivo_url ? `window.open('${inf.archivo_url}','_blank')` : ''}">
           <div class="inf-ico ${inf.tipo === 'mensual' ? 'm' : 's'}">
@@ -838,14 +829,30 @@ async function loadInformes() {
             <div class="inf-name">${inf.titulo}</div>
             <div class="inf-sub">${formatDate(inf.fecha)}</div>
           </div>
-          ${inf.archivo_url ? `
-            <div class="dl"><i class="ti ti-download"></i></div>
-          ` : '<span style="color:var(--muted);font-size:11px">Sin archivo</span>'}
+          ${inf.archivo_url ? `<div class="dl"><i class="ti ti-download"></i></div>` : '<span style="color:var(--muted);font-size:11px">Sin archivo</span>'}
         </div>
       `).join('');
 
-  document.getElementById('informes-mensuales').innerHTML = renderList(mensuales);
-  document.getElementById('informes-semanales').innerHTML = renderList(semanales);
+  const renderCat = (id, icon, label, items) => `
+    <div class="mal-bloque" id="inf-cat-${id}">
+      <div class="mal-bloque-hd" onclick="toggleInfCat('${id}')">
+        <i class="ti ti-chevron-right mal-chevron"></i>
+        <i class="ti ${icon}" style="color:var(--blue);font-size:15px"></i>
+        <span class="mal-bloque-name">${label}</span>
+        <span class="mal-count">${items.length} informe${items.length !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="mal-bloque-body">${renderItems(items)}</div>
+    </div>`;
+
+  document.getElementById('informes-container').innerHTML = `
+    <div class="card" style="overflow:hidden">
+      ${renderCat('mensual', 'ti-report-analytics', 'Informes mensuales', mensuales)}
+      ${renderCat('semanal', 'ti-report', 'Informes semanales', semanales)}
+    </div>`;
+}
+
+function toggleInfCat(id) {
+  document.getElementById('inf-cat-' + id)?.classList.toggle('b-open');
 }
 
 // ============================================================
@@ -972,28 +979,35 @@ async function loadEstudiar() {
 
   const colors = ['#154ca9','#1a7f5e','#7c3aed','#b45309','#0891b2','#9d174d'];
   const icons  = ['ti-math-function','ti-atom','ti-shape','ti-chart-bar','ti-trending-up','ti-microscope','ti-language','ti-globe'];
-  const allAsigs = [...new Set([...Object.keys(byAsig), ...Object.keys(byAsigTests)])];
+
+  // Siempre mostrar todas las asignaturas del alumno, aunque no tengan material aún
+  const asigOrdenadas = asigFiltros.map(id => asigMap[id]).filter(Boolean).sort();
+  const extraAsigs    = [...new Set([...Object.keys(byAsig), ...Object.keys(byAsigTests)])]
+    .filter(k => !asigOrdenadas.includes(k));
+  const allAsigs = [...asigOrdenadas, ...extraAsigs];
+
   document.getElementById('estudiar-sub').textContent =
-    `Material y tests · ${allAsigs.length} asignaturas disponibles`;
+    `Material y tests · ${allAsigs.length} asignatura${allAsigs.length !== 1 ? 's' : ''}`;
 
   if (allAsigs.length === 0) {
     document.getElementById('estudiar-asignaturas').innerHTML =
-      `<div class="empty-state"><i class="ti ti-book-off"></i><p>Sin material disponible por el momento</p></div>`;
+      `<div class="empty-state"><i class="ti ti-book-off"></i><p>Sin asignaturas asignadas todavía</p></div>`;
     return;
   }
 
   document.getElementById('estudiar-asignaturas').innerHTML = `
     <div class="asig-grid">
       ${allAsigs.map((asig, i) => {
-        const nMat = (byAsig[asig] || []).length;
-        const nTest = (byAsigTests[asig] || []).length;
+        const nMat   = (byAsig[asig]      || []).length;
+        const nTest  = (byAsigTests[asig] || []).length;
+        const empty  = nMat === 0 && nTest === 0;
         return `
-          <div class="asig-card" onclick="mostrarDetalle('${encodeURIComponent(asig)}')">
-            <div class="asig-icon" style="background:${colors[i % colors.length]}">
-              <i class="ti ${icons[i % icons.length]}"></i>
+          <div class="asig-card${empty ? ' asig-card-empty' : ''}" onclick="mostrarDetalle('${encodeURIComponent(asig)}')">
+            <div class="asig-icon" style="background:${empty ? 'var(--border2)' : colors[i % colors.length]}">
+              <i class="ti ${empty ? 'ti-clock' : icons[i % icons.length]}" style="${empty ? 'color:var(--muted)' : ''}"></i>
             </div>
-            <div class="asig-name">${asig}</div>
-            <div class="asig-det">${nMat} recurso${nMat !== 1 ? 's' : ''} · ${nTest} test${nTest !== 1 ? 's' : ''}</div>
+            <div class="asig-name" style="${empty ? 'color:var(--muted)' : ''}">${asig}</div>
+            <div class="asig-det">${empty ? 'Próximamente' : `${nMat} recurso${nMat !== 1 ? 's' : ''} · ${nTest} test${nTest !== 1 ? 's' : ''}`}</div>
           </div>
         `;
       }).join('')}
@@ -1061,7 +1075,9 @@ function mostrarDetalle(asigEnc) {
   }).join('');
 
   const bloqueIds = Object.keys(bloques);
-  const materialHTML = material.length > 0 ? `
+  const materialHTML = material.length === 0
+    ? `<div class="card"><div class="card-body" style="padding:20px 16px;color:var(--muted);font-size:13px;text-align:center"><i class="ti ti-clock" style="font-size:22px;display:block;margin-bottom:6px"></i>Sin material disponible todavía</div></div>`
+    : `
     <div class="card">
       <div class="card-head">
         <div class="card-title"><i class="ti ti-files"></i> Material disponible</div>
@@ -1083,7 +1099,7 @@ function mostrarDetalle(asigEnc) {
           </div>`;
       }).join('')}
       ${sinEstructura.length > 0 ? `<div class="mal-recurso-indent">${sinEstructura.map(renderItem).join('')}</div>` : ''}
-    </div>` : '';
+    </div>`;
 
   const testsHTML = tests.length > 0 ? `
     <div class="card" style="margin-top:12px">
