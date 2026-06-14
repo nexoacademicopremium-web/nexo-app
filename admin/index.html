@@ -1267,12 +1267,43 @@ async function subirInforme(e) {
   }
 }
 
-async function eliminarInformeAdmin(infId, titulo) {
+function editarInformeFromBtn(btn) {
+  const d = btn.dataset;
+  editarInformeAdmin(
+    d.infId, d.alumnoId,
+    decodeURIComponent(d.titulo),
+    d.tipo, d.fecha,
+    decodeURIComponent(d.archivoUrl),
+    d.visible === 'true'
+  );
+}
+
+function eliminarInformeFromBtn(btn) {
+  eliminarInformeAdmin(
+    btn.dataset.infId,
+    decodeURIComponent(btn.dataset.titulo),
+    decodeURIComponent(btn.dataset.archivoUrl)
+  );
+}
+
+async function eliminarInformeAdmin(infId, titulo, archivoUrl) {
   if (!confirm(`¿Eliminar el informe "${titulo}"? Esta acción no se puede deshacer.`)) return;
-  const { error } = await db.from('informes').delete().eq('id', infId);
-  if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
-  showToast('Informe eliminado');
-  loadInformesAdmin();
+  try {
+    const { error } = await db.from('informes').delete().eq('id', infId);
+    if (error) throw new Error('Error al eliminar: ' + error.message);
+    if (archivoUrl) {
+      const marker = '/nexo-files/';
+      const idx = archivoUrl.indexOf(marker);
+      if (idx !== -1) {
+        const path = decodeURIComponent(archivoUrl.slice(idx + marker.length));
+        await db.storage.from('nexo-files').remove([path]);
+      }
+    }
+    showToast('Informe eliminado');
+    loadInformesAdmin();
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
 
 async function loadInformesAdmin() {
@@ -1282,7 +1313,6 @@ async function loadInformesAdmin() {
   const alumnoFil = document.getElementById('fil-inf-alumno').value;
   const tipoFil   = document.getElementById('fil-inf-tipo').value;
 
-  // Populate alumno filter if empty
   const filSel = document.getElementById('fil-inf-alumno');
   if (filSel.options.length <= 1) {
     allAlumnos.forEach(a => {
@@ -1322,7 +1352,7 @@ async function loadInformesAdmin() {
         const nb = `${u.nombre || ''} ${u.apellidos || ''}`.trim() || '—';
         const tipoPill = inf.tipo === 'mensual'
           ? `<span class="pill pill-eso">Mensual</span>`
-          : `<span class="pill pill-grey">Semanal</span>`;
+          : `<span class="pill pill-ok">Semanal</span>`;
         const visPill = inf.visible
           ? `<span class="pill pill-ok">Sí</span>`
           : `<span class="pill pill-grey">No</span>`;
@@ -1338,8 +1368,20 @@ async function loadInformesAdmin() {
           <td>${visPill}</td>
           <td>${archLink}</td>
           <td style="white-space:nowrap">
-            <button class="btn-edit" onclick="editarInformeAdmin('${inf.id}','${inf.alumno_id}',${JSON.stringify(inf.titulo)},'${inf.tipo}','${fechaEsc}',${JSON.stringify(inf.archivo_url||'')},'${inf.visible}')"><i class="ti ti-pencil"></i> Editar</button>
-            <button class="btn-danger" style="margin-left:4px" onclick="eliminarInformeAdmin('${inf.id}',${JSON.stringify(inf.titulo)})"><i class="ti ti-trash"></i></button>
+            <button class="btn-edit"
+              data-inf-id="${inf.id}"
+              data-alumno-id="${inf.alumno_id}"
+              data-titulo="${encodeURIComponent(inf.titulo)}"
+              data-tipo="${inf.tipo}"
+              data-fecha="${fechaEsc}"
+              data-archivo-url="${encodeURIComponent(inf.archivo_url||'')}"
+              data-visible="${inf.visible}"
+              onclick="editarInformeFromBtn(this)"><i class="ti ti-pencil"></i> Editar</button>
+            <button class="btn-danger" style="margin-left:4px"
+              data-inf-id="${inf.id}"
+              data-titulo="${encodeURIComponent(inf.titulo)}"
+              data-archivo-url="${encodeURIComponent(inf.archivo_url||'')}"
+              onclick="eliminarInformeFromBtn(this)"><i class="ti ti-trash"></i></button>
           </td>
         </tr>`;
       }).join('')}
