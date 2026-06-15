@@ -239,6 +239,7 @@ CREATE TABLE IF NOT EXISTS public.sesiones (
   -- Estado
   estado                    TEXT NOT NULL DEFAULT 'pendiente_confirmacion'
                               CHECK (estado IN ('pendiente_confirmacion','confirmada','rechazada','cancelada')),
+  excede_bono               BOOLEAN DEFAULT FALSE,
   registrada_at             TIMESTAMPTZ DEFAULT NOW(),
   confirmada_at             TIMESTAMPTZ,
   cancelada_por             TEXT CHECK (cancelada_por IN ('admin','sistema')),
@@ -564,12 +565,12 @@ DECLARE
   v_next public.bonos%ROWTYPE;
 BEGIN
   UPDATE public.bonos
-  SET estado = 'vencido'
+  SET estado = 'agotado'
   WHERE alumno_id = p_alumno_id AND estado = 'activo';
 
   SELECT * INTO v_next
   FROM public.bonos
-  WHERE alumno_id = p_alumno_id AND estado = 'en_espera'
+  WHERE alumno_id = p_alumno_id AND estado = 'pagado_en_espera'
   ORDER BY fecha_pago ASC NULLS LAST, created_at ASC
   LIMIT 1;
 
@@ -919,8 +920,8 @@ CREATE TABLE IF NOT EXISTS public.bonos (
   fecha_compra      DATE DEFAULT CURRENT_DATE,
   pagado            BOOLEAN DEFAULT FALSE,
   fecha_pago        DATE,
-  estado            TEXT NOT NULL DEFAULT 'activo'
-                      CHECK (estado IN ('solicitado','activo','en_espera','vencido','cancelado')),
+  estado            TEXT NOT NULL DEFAULT 'reservado'
+                      CHECK (estado IN ('reservado','pagado_en_espera','activo','agotado','cancelado')),
   notas             TEXT,
   created_at        TIMESTAMPTZ DEFAULT NOW()
 );
@@ -939,14 +940,28 @@ CREATE POLICY "bonos_alumno_read" ON public.bonos
     )
   );
 
--- El alumno puede crear solicitudes (solo con estado='solicitado')
+-- El alumno puede crear reservas (solo con estado='reservado')
 CREATE POLICY "bonos_alumno_insert" ON public.bonos
   FOR INSERT WITH CHECK (
     EXISTS (
       SELECT 1 FROM public.alumnos a
       WHERE a.id = public.bonos.alumno_id AND a.usuario_id = auth.uid()
     )
-    AND estado = 'solicitado'
+    AND estado = 'reservado'
+  );
+
+-- El profesor puede leer bonos de sus alumnos (para bloqueo/aviso en registro de sesiones)
+CREATE POLICY "bonos_profesor_read" ON public.bonos
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.alumnos a
+      WHERE a.id = public.bonos.alumno_id
+        AND (
+          a.profesor_id = public.get_profesor_id()
+          OR EXISTS (SELECT 1 FROM public.alumno_profesor ap WHERE ap.alumno_id = a.id AND ap.profesor_id = public.get_profesor_id())
+          OR EXISTS (SELECT 1 FROM public.sesiones s WHERE s.alumno_id = a.id AND s.profesor_id = public.get_profesor_id())
+        )
+    )
   );
 
 CREATE INDEX IF NOT EXISTS idx_bonos_alumno ON public.bonos(alumno_id);

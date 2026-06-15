@@ -11,7 +11,7 @@ const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const BASE_PATH = '/nexo-app';
 
 // WhatsApp de Manu (admin)
-const WHATSAPP_MANU = '34611492592';
+const WHATSAPP_MANU = '34699529399';
 
 // Base URL del app (para links en emails)
 const APP_BASE_URL  = 'https://nexoacademicopremium-web.github.io/nexo-app';

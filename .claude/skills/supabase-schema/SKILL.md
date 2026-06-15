@@ -281,6 +281,7 @@ Registro de clases impartidas por un profesor. Formulario de 22 campos en 3 secc
 | Columna | Tipo | Notas |
 |---|---|---|
 | `estado` | `TEXT NOT NULL` | `'pendiente_confirmacion'\|'confirmada'\|'rechazada'\|'cancelada'`; default `'pendiente_confirmacion'` |
+| `excede_bono` | `BOOLEAN` | default `FALSE`; `TRUE` cuando la duración supera las horas restantes del bono — el profesor puede continuar pero queda marcado para revisión admin |
 | `registrada_at` | `TIMESTAMPTZ` | default `NOW()` |
 | `confirmada_at` | `TIMESTAMPTZ` | |
 | `cancelada_por` | `TEXT` | CHECK: `'admin'\|'sistema'` |
@@ -358,14 +359,14 @@ Historial de bonos contratados o solicitados por alumno. `alumnos.horas_bono_res
 | `fecha_compra` | `DATE` | default `CURRENT_DATE` |
 | `pagado` | `BOOLEAN` | default `FALSE`; admin lo marca cuando recibe el pago |
 | `fecha_pago` | `DATE` | Fecha en que el admin marca pagado; determina orden de cola |
-| `estado` | `TEXT NOT NULL` | `'solicitado'\|'activo'\|'en_espera'\|'vencido'\|'cancelado'` |
+| `estado` | `TEXT NOT NULL` | `'reservado'\|'pagado_en_espera'\|'activo'\|'agotado'\|'cancelado'`; default `'reservado'` |
 | `notas` | `TEXT` | |
 | `created_at` | `TIMESTAMPTZ` | |
 
 **Flujo de estados:**
-1. Alumno solicita → `estado='solicitado'`, `pagado=false`
-2. Admin marca pagado → si alumno sin bono activo: `estado='activo'`; si ya tiene activo con horas: `estado='en_espera'`
-3. Bono activo se agota (horas=0 tras confirmación sesión) → RPC llama `_activar_siguiente_bono()` → activo pasa a `vencido`, el primer `en_espera` (por `fecha_pago`) pasa a `activo`
+1. Alumno reserva → `estado='reservado'`, `pagado=false` + botón WhatsApp para confirmar pago
+2. Admin marca pagado → si alumno sin bono activo: `estado='activo'`; si ya tiene activo con horas: `estado='pagado_en_espera'`
+3. Bono activo se agota (horas=0 tras confirmación sesión) → RPC llama `_activar_siguiente_bono()` → activo pasa a `agotado`, el primer `pagado_en_espera` (por `fecha_pago`) pasa a `activo`
 
 **Lógica de horas:**
 - `horas_consumidas` (en UI) = `bono.horas_contratadas - alumno.horas_bono_restantes` para bono activo
@@ -375,7 +376,8 @@ Historial de bonos contratados o solicitados por alumno. `alumnos.horas_bono_res
 **RLS:**
 - `bonos_admin_all` — ALL donde `is_admin()`
 - `bonos_alumno_read` — SELECT: EXISTS alumno del usuario con `id = bonos.alumno_id`
-- `bonos_alumno_insert` — INSERT: mismo check + `estado = 'solicitado'` (solicitudes desde panel alumno)
+- `bonos_alumno_insert` — INSERT: mismo check + `estado = 'reservado'` (reservas desde panel alumno)
+- `bonos_profesor_read` — SELECT: EXISTS alumno del profesor (via `profesor_id`, `alumno_profesor`, o `sesiones`); necesario para que el profesor verifique estado de bono antes de registrar sesión
 
 ---
 
