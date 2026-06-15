@@ -246,6 +246,7 @@
   <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i> Tests</div>
   <div class="nav-item" id="nav-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i> Avisos</div>
   <div class="nav-item" id="nav-informes" onclick="showSection('informes')"><i class="ti ti-report-analytics"></i> Informes</div>
+  <div class="nav-item" id="nav-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i> Bonos</div>
   <div class="nav-divider"></div>
   <div class="nav-bottom">
     <div class="nav-item" onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</div>
@@ -397,6 +398,40 @@
   <div class="card">
     <div id="informes-admin-tabla">
       <div class="loading-section"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BONOS ═══ -->
+<div class="section" id="section-bonos">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+    <div><h1 class="page-title" style="margin:0">Bonos</h1><p class="page-sub" style="margin:0" id="bonos-sub">—</p></div>
+    <button class="btn-primary" onclick="abrirModalBono()"><i class="ti ti-plus"></i> Nuevo bono</button>
+  </div>
+  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+    <select class="fi" id="fil-bono-alumno" onchange="loadBonos()" style="width:auto;padding:8px 12px">
+      <option value="">Todos los alumnos</option>
+    </select>
+    <select class="fi" id="fil-bono-estado" onchange="loadBonos()" style="width:auto;padding:8px 12px">
+      <option value="">Todos los estados</option>
+      <option value="solicitado">Solicitados</option>
+      <option value="activo">Activos</option>
+      <option value="vencido">Vencidos</option>
+      <option value="cancelado">Cancelados</option>
+    </select>
+    <input type="month" class="fi" id="fil-bono-mes" onchange="loadBonos()" style="width:auto;padding:8px 12px">
+    <button class="btn-ghost" onclick="limpiarFiltrosBonos()"><i class="ti ti-x"></i> Limpiar</button>
+  </div>
+  <div class="card">
+    <div id="bonos-tabla"><div class="loading-section"><div class="spinner"></div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-head" onclick="toggleCatalogoTarifas()" style="cursor:pointer">
+      <div class="card-title"><i class="ti ti-tag"></i> Catálogo de tarifas</div>
+      <i class="ti ti-chevron-down" id="tarifas-chevron"></i>
+    </div>
+    <div id="tarifas-body" style="display:none;padding:16px">
+      <div id="tarifas-contenido"></div>
     </div>
   </div>
 </div>
@@ -877,6 +912,107 @@
   </div>
 </div>
 
+<!-- MODAL BONO (crear / editar) -->
+<div class="modal-overlay" id="modal-bono">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-title">
+      <span id="modal-bono-titulo">Nuevo bono</span>
+      <button class="modal-close" onclick="cerrarModal('modal-bono')">×</button>
+    </div>
+    <input type="hidden" id="bono-id">
+    <input type="hidden" id="bono-alumno-id-hidden">
+    <input type="hidden" id="bono-old-horas">
+    <input type="hidden" id="bono-old-estado">
+
+    <label class="fl">Alumno *</label>
+    <select class="fi" id="bono-alumno-sel" required onchange="autoFillPrecioBono()"></select>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label class="fl">Horas *</label>
+        <select class="fi" id="bono-horas" onchange="toggleBonoHorasCustom()">
+          <option value="2">2 horas</option>
+          <option value="4">4 horas</option>
+          <option value="8" selected>8 horas</option>
+          <option value="12">12 horas</option>
+          <option value="custom">Personalizado…</option>
+        </select>
+        <input class="fi" id="bono-horas-custom" type="number" min="0.5" step="0.5" placeholder="Nº horas" style="display:none;margin-top:6px">
+      </div>
+      <div>
+        <label class="fl">Modalidad *</label>
+        <select class="fi" id="bono-modalidad" onchange="autoFillPrecioBono()">
+          <option value="Presencial">Presencial</option>
+          <option value="Online">Online</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      <div>
+        <label class="fl">Precio base (€)</label>
+        <input class="fi" id="bono-precio-base" type="number" min="0" step="0.01" placeholder="0.00" oninput="calcPrecioFinal()">
+      </div>
+      <div>
+        <label class="fl">Descuento (%)</label>
+        <input class="fi" id="bono-descuento" type="number" min="0" max="100" step="0.5" value="0" oninput="calcPrecioFinal()">
+      </div>
+      <div>
+        <label class="fl">Precio final (€)</label>
+        <input class="fi" id="bono-precio-final" type="number" min="0" step="0.01" placeholder="0.00" readonly style="color:var(--soft)">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div>
+        <label class="fl">Fecha de compra *</label>
+        <input class="fi" id="bono-fecha" type="date" required>
+      </div>
+      <div>
+        <label class="fl">Estado</label>
+        <select class="fi" id="bono-estado">
+          <option value="activo">Activo</option>
+          <option value="solicitado">Solicitado</option>
+          <option value="vencido">Vencido</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="bono-consumidas-wrap" style="display:none">
+      <label class="fl">Horas consumidas (recalcula restantes)</label>
+      <input class="fi" id="bono-consumidas" type="number" min="0" step="0.5" placeholder="0" oninput="actualizarRestantesPreview()">
+      <p style="color:var(--soft);font-size:11px;margin-top:4px" id="bono-restantes-preview"></p>
+    </div>
+
+    <label class="fl">Notas</label>
+    <textarea class="fi" id="bono-notas" rows="2" placeholder="Notas internas…"></textarea>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModal('modal-bono')">Cancelar</button>
+      <button class="btn-primary" id="btn-guardar-bono" onclick="guardarBono()"><i class="ti ti-device-floppy"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR TARIFA -->
+<div class="modal-overlay" id="modal-tarifa">
+  <div class="modal-box" style="max-width:340px">
+    <div class="modal-title">
+      <span id="modal-tarifa-titulo">Editar precio</span>
+      <button class="modal-close" onclick="cerrarModal('modal-tarifa')">×</button>
+    </div>
+    <input type="hidden" id="tarifa-id">
+    <p style="color:var(--soft);font-size:13px;margin-bottom:16px" id="tarifa-desc"></p>
+    <label class="fl">Precio (€) *</label>
+    <input class="fi" id="tarifa-precio" type="number" min="0" step="0.01">
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModal('modal-tarifa')">Cancelar</button>
+      <button class="btn-primary" onclick="guardarTarifa()"><i class="ti ti-device-floppy"></i> Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL CANCELAR SESIÓN -->
 <div class="modal-overlay" id="modal-cancelar-sesion">
   <div class="modal-box" style="max-width:420px">
@@ -902,7 +1038,7 @@
 // State
 // ============================================================
 let ctx = null;
-let allAlumnos = [], allProfesores = [], allUsuarios = [], allAsignaturas = [], allBloques = [], allTemas = [];
+let allAlumnos = [], allProfesores = [], allUsuarios = [], allAsignaturas = [], allBloques = [], allTemas = [], allTarifas = [];
 let alumnoProfesorMap = {};     // alumno_id -> [{id, profesor_id, asignatura_id}]
 let alumnoAsignaturasMap = {};   // alumno_id -> Set<asignatura_id>
 let profesorAsignaturasMap = {}; // profesor_id -> Set<asignatura_id>
@@ -1059,6 +1195,18 @@ async function loadAll() {
         filMes.add(new Option(d.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }), val));
       }
     }
+
+    // Cargar catálogo de tarifas (no bloquea si la tabla no existe aún)
+    const { data: tarifas } = await db.from('tarifas_bonos').select('*').order('grupo').order('modalidad').order('horas');
+    allTarifas = tarifas || [];
+
+    // Populate: filtro alumno en bonos
+    const filBonoAlumno = document.getElementById('fil-bono-alumno');
+    while (filBonoAlumno.options.length > 1) filBonoAlumno.remove(1);
+    allAlumnos.forEach(a => {
+      const u = a.usuario || {};
+      filBonoAlumno.add(new Option(`${u.nombre || '?'} ${u.apellidos || ''}`, a.id));
+    });
   } catch (err) {
     console.error('[Nexo] Error inesperado en loadAll:', err);
     showToast('Error inesperado al cargar datos', 'error');
@@ -1085,6 +1233,7 @@ function showSection(id) {
     tests:      loadListaTests,
     avisos:     loadTablaAvisos,
     informes:   loadInformesAdmin,
+    bonos:      loadBonos,
   };
   if (loaders[id]) loaders[id]();
 }
@@ -2768,6 +2917,401 @@ async function guardarMaterial(e) {
 function asigNombre(id) {
   const a = allAsignaturas.find(x => x.id === id);
   return a ? a.nombre : '—';
+}
+
+// ============================================================
+// BONOS ADMIN (Bloques 2 + 3)
+// ============================================================
+let editBonoId = null;
+
+async function loadBonos() {
+  const el = document.getElementById('bonos-tabla');
+  el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+
+  let query = db.from('bonos')
+    .select('*, alumno:alumnos(horas_bono_restantes, usuario:usuarios(nombre, apellidos))')
+    .order('created_at', { ascending: false });
+
+  const alumnoVal = document.getElementById('fil-bono-alumno').value;
+  if (alumnoVal) query = query.eq('alumno_id', alumnoVal);
+  const estadoVal = document.getElementById('fil-bono-estado').value;
+  if (estadoVal) query = query.eq('estado', estadoVal);
+  const mesVal = document.getElementById('fil-bono-mes').value;
+  if (mesVal) {
+    const [y, m] = mesVal.split('-');
+    const lastDay = new Date(+y, +m, 0).getDate();
+    query = query.gte('fecha_compra', `${mesVal}-01`).lte('fecha_compra', `${mesVal}-${String(lastDay).padStart(2,'0')}`);
+  }
+
+  const { data, error } = await query.limit(200);
+
+  if (error) {
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p style="color:var(--red)">Error: ${error.message}</p></div>`;
+    return;
+  }
+
+  document.getElementById('bonos-sub').textContent = `${(data||[]).length} bono${(data||[]).length !== 1 ? 's' : ''}`;
+
+  if (!data || data.length === 0) {
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-receipt-off"></i><p>Sin bonos registrados</p></div>`;
+    return;
+  }
+
+  const pillMap = {
+    activo:     ['st-ok',   'Activo'],
+    solicitado: ['st-pend', 'Solicitado'],
+    vencido:    ['st-grey', 'Vencido'],
+    cancelado:  ['st-red',  'Cancelado'],
+  };
+
+  el.innerHTML = `<table class="tabla">
+    <thead><tr>
+      <th>Alumno</th><th>Horas</th><th>Consumidas</th><th>Restantes</th>
+      <th>Modalidad</th><th>Fecha</th><th>Desc.</th><th>Precio</th><th>Estado</th><th style="text-align:center">Acciones</th>
+    </tr></thead>
+    <tbody>
+      ${data.map(b => {
+        const u = b.alumno?.usuario || {};
+        const alumnoNom = u.nombre ? `${u.nombre} ${u.apellidos}` : '—';
+        const bRestantes = parseFloat(b.alumno?.horas_bono_restantes) || 0;
+        const restantes  = b.estado === 'activo' ? bRestantes : 0;
+        const consumidas = b.estado === 'activo' ? Math.max(0, b.horas_contratadas - bRestantes) : b.horas_contratadas;
+        const [pc, pt]   = pillMap[b.estado] || ['st-grey', b.estado];
+        const precioFmt  = b.precio_final != null ? b.precio_final.toFixed(2) + '€' : '—';
+        const descFmt    = b.descuento > 0 ? b.descuento + '%' : '—';
+        const lowBono    = b.estado === 'activo' && restantes <= 2;
+        return `<tr>
+          <td style="color:#fff">${alumnoNom}</td>
+          <td>${b.horas_contratadas}h</td>
+          <td>${consumidas.toFixed(1)}h</td>
+          <td style="color:${lowBono ? 'var(--amber)' : 'inherit'}">${b.estado === 'activo' ? restantes.toFixed(1) + 'h' : '—'}</td>
+          <td>${b.modalidad}</td>
+          <td>${formatShortDate(b.fecha_compra)}</td>
+          <td>${descFmt}</td>
+          <td>${precioFmt}</td>
+          <td><span class="status-pill ${pc}">${pt}</span></td>
+          <td style="white-space:nowrap;text-align:center">
+            <button class="btn-edit" onclick="abrirEditBono('${b.id}')"><i class="ti ti-pencil"></i></button>
+            <button class="btn-danger" style="margin-left:4px" onclick="eliminarBono('${b.id}','${b.alumno_id}','${b.estado}')">
+              <i class="ti ti-trash"></i>
+            </button>
+          </td>
+        </tr>`;
+      }).join('')}
+    </tbody>
+  </table>`;
+}
+
+function limpiarFiltrosBonos() {
+  document.getElementById('fil-bono-alumno').value = '';
+  document.getElementById('fil-bono-estado').value = '';
+  document.getElementById('fil-bono-mes').value = '';
+  loadBonos();
+}
+
+function abrirModalBono() {
+  editBonoId = null;
+  document.getElementById('modal-bono-titulo').textContent = 'Nuevo bono';
+  document.getElementById('bono-id').value = '';
+  document.getElementById('bono-alumno-id-hidden').value = '';
+  document.getElementById('bono-old-horas').value = '';
+  document.getElementById('bono-old-estado').value = '';
+
+  // Populate alumno select
+  const sel = document.getElementById('bono-alumno-sel');
+  sel.disabled = false;
+  sel.innerHTML = '<option value="">— Selecciona alumno —</option>';
+  allAlumnos.filter(a => a.activo).forEach(a => {
+    const u = a.usuario || {};
+    sel.add(new Option(`${u.nombre || '?'} ${u.apellidos || ''}`, a.id));
+  });
+
+  document.getElementById('bono-horas').value = '8';
+  document.getElementById('bono-horas-custom').style.display = 'none';
+  document.getElementById('bono-modalidad').value = 'Presencial';
+  document.getElementById('bono-precio-base').value = '';
+  document.getElementById('bono-descuento').value = '0';
+  document.getElementById('bono-precio-final').value = '';
+  document.getElementById('bono-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('bono-estado').value = 'activo';
+  document.getElementById('bono-notas').value = '';
+  document.getElementById('bono-consumidas-wrap').style.display = 'none';
+  document.getElementById('modal-bono').classList.add('open');
+}
+
+async function abrirEditBono(bonoId) {
+  const { data: b, error } = await db.from('bonos')
+    .select('*, alumno:alumnos(horas_bono_restantes)')
+    .eq('id', bonoId).single();
+  if (error || !b) { showToast('Error al cargar bono', 'error'); return; }
+
+  editBonoId = bonoId;
+  document.getElementById('modal-bono-titulo').textContent = 'Editar bono';
+  document.getElementById('bono-id').value = b.id;
+  document.getElementById('bono-alumno-id-hidden').value = b.alumno_id;
+  document.getElementById('bono-old-horas').value = b.horas_contratadas;
+  document.getElementById('bono-old-estado').value = b.estado;
+
+  const sel = document.getElementById('bono-alumno-sel');
+  const a = allAlumnos.find(x => x.id === b.alumno_id);
+  const u = a?.usuario || {};
+  sel.innerHTML = `<option value="${b.alumno_id}">${u.nombre || '?'} ${u.apellidos || ''}</option>`;
+  sel.disabled = true;
+
+  const horasStd = [2, 4, 8, 12];
+  if (horasStd.includes(+b.horas_contratadas)) {
+    document.getElementById('bono-horas').value = String(+b.horas_contratadas);
+    document.getElementById('bono-horas-custom').style.display = 'none';
+  } else {
+    document.getElementById('bono-horas').value = 'custom';
+    document.getElementById('bono-horas-custom').style.display = 'block';
+    document.getElementById('bono-horas-custom').value = b.horas_contratadas;
+  }
+
+  document.getElementById('bono-modalidad').value = b.modalidad;
+  document.getElementById('bono-precio-base').value = b.precio_base ?? '';
+  document.getElementById('bono-descuento').value = b.descuento ?? 0;
+  document.getElementById('bono-precio-final').value = b.precio_final ?? '';
+  document.getElementById('bono-fecha').value = b.fecha_compra || '';
+  document.getElementById('bono-estado').value = b.estado;
+  document.getElementById('bono-notas').value = b.notas || '';
+
+  if (b.estado === 'activo') {
+    const bRestantes = parseFloat(b.alumno?.horas_bono_restantes) || 0;
+    const consumidas  = Math.max(0, b.horas_contratadas - bRestantes);
+    document.getElementById('bono-consumidas').value = consumidas.toFixed(1);
+    document.getElementById('bono-consumidas-wrap').style.display = 'block';
+    actualizarRestantesPreview();
+  } else {
+    document.getElementById('bono-consumidas-wrap').style.display = 'none';
+  }
+
+  document.getElementById('modal-bono').classList.add('open');
+}
+
+function getBonoHoras() {
+  const sel = document.getElementById('bono-horas').value;
+  return sel === 'custom' ? document.getElementById('bono-horas-custom').value : sel;
+}
+
+function toggleBonoHorasCustom() {
+  const sel = document.getElementById('bono-horas').value;
+  document.getElementById('bono-horas-custom').style.display = sel === 'custom' ? 'block' : 'none';
+  autoFillPrecioBono();
+}
+
+function calcPrecioFinal() {
+  const base = parseFloat(document.getElementById('bono-precio-base').value) || 0;
+  const desc = parseFloat(document.getElementById('bono-descuento').value) || 0;
+  document.getElementById('bono-precio-final').value = (base * (1 - desc / 100)).toFixed(2);
+}
+
+function actualizarRestantesPreview() {
+  const horas     = parseFloat(getBonoHoras()) || 0;
+  const consumidas = parseFloat(document.getElementById('bono-consumidas').value) || 0;
+  const restantes  = Math.max(0, horas - consumidas).toFixed(1);
+  document.getElementById('bono-restantes-preview').textContent = `Horas restantes: ${restantes}h`;
+}
+
+function nivelToGrupoBono(nivel) {
+  if (!nivel) return null;
+  if (['1ESO','2ESO','3ESO','4ESO'].includes(nivel)) return 'ESO';
+  if (['1BACH','2BACH'].includes(nivel)) return 'Bachillerato';
+  if (nivel.toLowerCase().includes('prim')) return 'Primaria';
+  if (nivel.toLowerCase().includes('univ')) return 'Universidad';
+  return null;
+}
+
+async function autoFillPrecioBono() {
+  if (document.getElementById('bono-horas').value === 'custom') {
+    document.getElementById('bono-horas-custom').style.display = 'block';
+    return;
+  }
+  document.getElementById('bono-horas-custom').style.display = 'none';
+  if (allTarifas.length === 0) return;
+
+  const alumnoId = editBonoId
+    ? document.getElementById('bono-alumno-id-hidden').value
+    : document.getElementById('bono-alumno-sel').value;
+  if (!alumnoId) return;
+
+  const alumno   = allAlumnos.find(a => a.id === alumnoId);
+  const grupo    = nivelToGrupoBono(alumno?.nivel);
+  const modalidad = document.getElementById('bono-modalidad').value;
+  const horas    = parseInt(getBonoHoras());
+  if (!grupo || !horas) return;
+
+  const tarifa = allTarifas.find(t => t.grupo === grupo && t.modalidad === modalidad && t.horas === horas);
+  if (tarifa) {
+    document.getElementById('bono-precio-base').value = tarifa.precio;
+    calcPrecioFinal();
+  }
+}
+
+async function guardarBono() {
+  const btn = document.getElementById('btn-guardar-bono');
+  btn.disabled = true;
+  try {
+    const alumnoId  = editBonoId
+      ? document.getElementById('bono-alumno-id-hidden').value
+      : document.getElementById('bono-alumno-sel').value;
+    if (!alumnoId) { showToast('Selecciona un alumno', 'error'); btn.disabled = false; return; }
+
+    const horas = parseFloat(getBonoHoras());
+    if (!horas || horas <= 0) { showToast('Indica las horas contratadas', 'error'); btn.disabled = false; return; }
+
+    const modalidad   = document.getElementById('bono-modalidad').value;
+    const precioBase  = parseFloat(document.getElementById('bono-precio-base').value) || null;
+    const descuento   = parseFloat(document.getElementById('bono-descuento').value)   || 0;
+    const precioFinal = parseFloat(document.getElementById('bono-precio-final').value)|| null;
+    const fechaCompra = document.getElementById('bono-fecha').value;
+    const estado      = document.getElementById('bono-estado').value;
+    const notas       = document.getElementById('bono-notas').value.trim() || null;
+
+    if (!fechaCompra) { showToast('La fecha es obligatoria', 'error'); btn.disabled = false; return; }
+
+    const payload = { horas_contratadas: horas, modalidad, precio_base: precioBase, descuento, precio_final: precioFinal, fecha_compra: fechaCompra, estado, notas };
+
+    if (editBonoId) {
+      const oldHoras  = parseFloat(document.getElementById('bono-old-horas').value)  || 0;
+      const oldEstado = document.getElementById('bono-old-estado').value;
+
+      const { error } = await db.from('bonos').update(payload).eq('id', editBonoId);
+      if (error) throw error;
+
+      // Sync alumnos.horas_bono_restantes
+      if (estado === 'activo') {
+        const consumidasWrap = document.getElementById('bono-consumidas-wrap');
+        if (consumidasWrap.style.display !== 'none') {
+          // Admin ajustó horas_consumidas → recalcular restantes
+          const consumidas   = parseFloat(document.getElementById('bono-consumidas').value) || 0;
+          const newRestantes = Math.max(0, horas - consumidas);
+          await db.from('alumnos').update({ horas_bono_restantes: +newRestantes.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
+        } else if (horas !== oldHoras) {
+          // Solo cambió horas_contratadas → ajuste delta
+          const { data: al } = await db.from('alumnos').select('horas_bono_restantes').eq('id', alumnoId).single();
+          const delta        = horas - oldHoras;
+          const newRestantes = Math.max(0, (al?.horas_bono_restantes || 0) + delta);
+          await db.from('alumnos').update({ horas_bono_restantes: +newRestantes.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
+        }
+        if (oldEstado !== 'activo') {
+          // Activar: vecer otros activos y resetear bono
+          await vencerBonosActivos(alumnoId, editBonoId);
+          await db.from('alumnos').update({ horas_bono_restantes: +horas.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
+        }
+      } else if (oldEstado === 'activo' && estado !== 'activo') {
+        await db.from('alumnos').update({ horas_bono_restantes: 0, horas_bono_total: 0 }).eq('id', alumnoId);
+      }
+    } else {
+      // CREAR
+      const { error } = await db.from('bonos').insert({ ...payload, alumno_id: alumnoId });
+      if (error) throw error;
+
+      if (estado === 'activo') {
+        await vencerBonosActivos(alumnoId, null);
+        await db.from('alumnos').update({ horas_bono_restantes: +horas.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
+        const a = allAlumnos.find(x => x.id === alumnoId);
+        if (a) { a.horas_bono_restantes = +horas.toFixed(2); a.horas_bono_total = +horas.toFixed(2); }
+      }
+    }
+
+    cerrarModal('modal-bono');
+    showToast(editBonoId ? 'Bono actualizado' : 'Bono creado');
+    await loadBonos();
+  } catch (err) {
+    showToast('Error: ' + err.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function vencerBonosActivos(alumnoId, exceptId) {
+  let q = db.from('bonos').update({ estado: 'vencido' }).eq('alumno_id', alumnoId).eq('estado', 'activo');
+  if (exceptId) q = q.neq('id', exceptId);
+  await q;
+}
+
+async function eliminarBono(bonoId, alumnoId, estado) {
+  if (!confirm('¿Eliminar este bono? Esta acción no se puede deshacer.')) return;
+  const { error } = await db.from('bonos').delete().eq('id', bonoId);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  if (estado === 'activo') {
+    await db.from('alumnos').update({ horas_bono_restantes: 0, horas_bono_total: 0 }).eq('id', alumnoId);
+  }
+  showToast('Bono eliminado');
+  await loadBonos();
+}
+
+// ── CATÁLOGO TARIFAS ─────────────────────────────────────────
+function toggleCatalogoTarifas() {
+  const body = document.getElementById('tarifas-body');
+  const chev = document.getElementById('tarifas-chevron');
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  chev.className = open ? 'ti ti-chevron-down' : 'ti ti-chevron-up';
+  if (!open) renderCatalogoTarifas();
+}
+
+function renderCatalogoTarifas() {
+  const el = document.getElementById('tarifas-contenido');
+  if (allTarifas.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px">Aplica el SQL del Bloque 1 en Supabase para ver las tarifas.</p>';
+    return;
+  }
+  const grupos = ['Primaria','ESO','Bachillerato','Universidad'];
+  const horas  = [2, 4, 8, 12];
+  let html = '';
+  grupos.forEach(g => {
+    const mods = [...new Set(allTarifas.filter(t => t.grupo === g).map(t => t.modalidad))].sort();
+    if (!mods.length) return;
+    html += `<div style="margin-bottom:20px">
+      <div style="color:var(--blue);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">${g}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr>
+          <th style="padding:7px 10px;text-align:left;color:var(--muted);border-bottom:.5px solid var(--border);font-weight:500">Modalidad</th>
+          ${horas.map(h => `<th style="padding:7px 10px;text-align:center;color:var(--muted);border-bottom:.5px solid var(--border);font-weight:500">${h}h</th>`).join('')}
+        </tr></thead>
+        <tbody>
+          ${mods.map(m => `<tr>
+            <td style="padding:7px 10px;color:var(--soft);border-bottom:.5px solid var(--border2)">${m}</td>
+            ${horas.map(h => {
+              const t = allTarifas.find(x => x.grupo === g && x.modalidad === m && x.horas === h);
+              return t
+                ? `<td style="padding:7px 10px;text-align:center;border-bottom:.5px solid var(--border2)">
+                    <span style="color:#fff">${t.precio}€</span>
+                    <button onclick="abrirEditTarifa(${t.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:0 2px" title="Editar precio"><i class="ti ti-pencil" style="font-size:11px"></i></button>
+                  </td>`
+                : `<td style="padding:7px 10px;text-align:center;color:var(--border2);border-bottom:.5px solid var(--border2)">—</td>`;
+            }).join('')}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+function abrirEditTarifa(tarifaId) {
+  const t = allTarifas.find(x => x.id === tarifaId);
+  if (!t) return;
+  document.getElementById('tarifa-id').value = t.id;
+  document.getElementById('modal-tarifa-titulo').textContent = 'Editar precio';
+  document.getElementById('tarifa-desc').textContent = `${t.grupo} · ${t.modalidad} · ${t.horas}h`;
+  document.getElementById('tarifa-precio').value = t.precio;
+  document.getElementById('modal-tarifa').classList.add('open');
+}
+
+async function guardarTarifa() {
+  const id     = parseInt(document.getElementById('tarifa-id').value);
+  const precio = parseFloat(document.getElementById('tarifa-precio').value);
+  if (!precio || precio <= 0) { showToast('Precio inválido', 'error'); return; }
+  const { error } = await db.from('tarifas_bonos').update({ precio }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  const t = allTarifas.find(x => x.id === id);
+  if (t) t.precio = precio;
+  cerrarModal('modal-tarifa');
+  showToast('Precio actualizado');
+  renderCatalogoTarifas();
 }
 
 // ============================================================
