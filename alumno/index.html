@@ -954,9 +954,8 @@ async function loadBonosAlumno() {
     .eq('alumno_id', alumnoId)
     .order('created_at', { ascending: false });
 
-  const bonosData = bonos || [];
+  const bonosData  = bonos || [];
   const bonoActivo = bonosData.find(b => b.estado === 'activo');
-  const historial  = bonosData.filter(b => b.estado !== 'activo');
 
   // ── Bono activo ───────────────────────────────────────────
   const alumno  = ctx.alumnoData;
@@ -1008,18 +1007,37 @@ async function loadBonosAlumno() {
       </div>`;
   }
 
+  // ── Bono(s) en espera ─────────────────────────────────────
+  const enEspera = bonosData.filter(b => b.estado === 'en_espera')
+    .sort((a, b) => (a.fecha_pago || a.created_at).localeCompare(b.fecha_pago || b.created_at));
+
+  if (enEspera.length > 0) {
+    enEspera.forEach(be => {
+      wrap.innerHTML += `
+        <div style="margin-top:10px;padding:12px 14px;background:var(--surface);border:.5px solid var(--border);border-radius:8px;display:flex;align-items:center;gap:10px">
+          <i class="ti ti-clock-play" style="color:var(--blue);font-size:18px;flex-shrink:0"></i>
+          <div style="font-size:12px">
+            <span style="color:var(--soft)">Bono en espera:</span>
+            <span style="color:#fff;font-weight:500;margin-left:6px">${be.horas_contratadas}h ${be.modalidad}</span>
+            <span style="color:var(--muted);margin-left:6px">— se activará cuando termines el bono actual.</span>
+          </div>
+        </div>`;
+    });
+  }
+
   // ── Historial ─────────────────────────────────────────────
   const pillMap = {
     vencido:   ['st-grey', 'Vencido'],
     cancelado: ['st-red',  'Cancelado'],
     solicitado:['st-pend', 'Solicitado'],
   };
-  const histCard = document.getElementById('bonos-historial-card');
-  const histEl   = document.getElementById('bonos-historial-lista');
+  const historial2 = bonosData.filter(b => b.estado === 'vencido' || b.estado === 'cancelado');
+  const histCard   = document.getElementById('bonos-historial-card');
+  const histEl     = document.getElementById('bonos-historial-lista');
 
-  if (historial.length > 0) {
+  if (historial2.length > 0) {
     histCard.style.display = 'block';
-    histEl.innerHTML = historial.map(b => {
+    histEl.innerHTML = historial2.map(b => {
       const [pc, pt] = pillMap[b.estado] || ['st-grey', b.estado];
       const precioStr = b.precio_final != null ? `${b.precio_final.toFixed(2)}€` : '—';
       return `<div class="bono-hist-row">
