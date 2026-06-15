@@ -187,6 +187,28 @@
   .prof-tag-rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:0 4px}
   .prof-tag-rm:hover{color:var(--red)}
   .add-prof-row{display:flex;gap:8px;align-items:flex-end;margin-top:10px}
+
+  /* MINI-FICHA LATERAL — vista rápida desde lista alumnos */
+  #admin-quick-ficha{display:none;position:fixed;top:54px;right:0;bottom:0;width:360px;background:var(--dark);border-left:.5px solid var(--border);overflow-y:auto;z-index:60;padding:22px}
+  .aqf-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  .aqf-title{color:var(--soft);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;display:flex;align-items:center;gap:5px}
+  .aqf-title i{color:var(--blue)}
+  .aqf-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:22px;line-height:1}
+  .aqf-close:hover{color:var(--txt)}
+  .aqf-av{width:52px;height:52px;border-radius:50%;background:#0f2240;display:flex;align-items:center;justify-content:center;color:var(--blue);font-size:17px;font-weight:600;margin:0 auto 10px;border:2px solid var(--navy)}
+  .aqf-name{color:#fff;font-size:15px;font-weight:600;text-align:center;margin-bottom:4px}
+  .aqf-sub{color:var(--muted);font-size:12px;text-align:center;margin-bottom:16px}
+  .aqf-kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:16px}
+  .aqf-kpi{background:var(--surface);border:.5px solid var(--border);border-radius:8px;padding:10px;text-align:center}
+  .aqf-kpi-val{color:#fff;font-size:16px;font-weight:600;margin-bottom:2px}
+  .aqf-kpi-label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px}
+  .aqf-section{color:var(--blue);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin:13px 0 6px;display:flex;align-items:center;gap:5px}
+  .aqf-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:.5px solid var(--border2);font-size:12px}
+  .aqf-row:last-child{border-bottom:none}
+  .aqf-row span{color:var(--muted)}
+  .aqf-row b{color:var(--txt);text-align:right;max-width:60%}
+  .aqf-ficha-btn{margin-top:18px;width:100%;background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 0;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px}
+  .aqf-ficha-btn:hover{background:#1a5cc9}
   .add-prof-row .fi{margin-bottom:0}
   .fi-sm{flex:1;min-width:0}
 </style>
@@ -844,6 +866,17 @@
   </div>
 </div>
 
+<!-- MINI-FICHA LATERAL (consulta rápida desde lista alumnos) -->
+<div id="admin-quick-ficha">
+  <div class="aqf-header">
+    <div class="aqf-title"><i class="ti ti-eye"></i> Vista rápida</div>
+    <button class="aqf-close" onclick="cerrarQuickFicha()">×</button>
+  </div>
+  <div id="aqf-contenido">
+    <div class="loading-section"><div class="spinner"></div></div>
+  </div>
+</div>
+
 <!-- MODAL CANCELAR SESIÓN -->
 <div class="modal-overlay" id="modal-cancelar-sesion">
   <div class="modal-box" style="max-width:420px">
@@ -1040,6 +1073,7 @@ function showSection(id) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('section-' + id).classList.add('active');
   document.getElementById('nav-' + id).classList.add('active');
+  if (id !== 'alumnos') cerrarQuickFicha();
   window.scrollTo(0, 0);
   sessionStorage.setItem('nexo_admin_seccion', id);
   const loaders = {
@@ -1201,13 +1235,13 @@ function renderTablaAlumnos(lista, horasByAlumno = {}) {
       profCell = '<span style="color:var(--muted)">Sin asignar</span>';
     }
 
-    return `<tr>
+    return `<tr onclick="abrirQuickFicha('${a.id}')" style="cursor:pointer">
       <td><b style="color:#fff">${u.nombre || '?'} ${u.apellidos || ''}</b><br><span style="color:var(--muted);font-size:11px">${u.email || ''}</span></td>
       <td><span class="pill ${(a.nivel||'').includes('BACH') ? 'pill-bach' : 'pill-eso'}">${nivelLabel(a.nivel)}</span></td>
       <td style="max-width:160px;white-space:normal">${(a._asigNombres || []).join(', ') || '—'}</td>
       <td style="max-width:180px">${profCell}</td>
       <td><span class="pill ${a.activo ? 'pill-ok' : 'pill-grey'}">${a.activo ? 'Activo' : 'Inactivo'}</span></td>
-      <td style="white-space:nowrap">
+      <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <button class="btn-ficha" onclick="abrirFicha('${a.id}')"><i class="ti ti-id-badge"></i> Ficha</button>
         <button class="btn-edit" style="margin-left:4px" onclick="abrirModalInforme('${a.id}','${(u.nombre||'') + ' ' + (u.apellidos||'')}')">Informe</button>
         <button class="btn-danger" style="margin-left:4px" onclick="toggleActivo('alumno','${a.id}',${!a.activo})">${a.activo ? 'Desactivar' : 'Activar'}</button>
@@ -2734,6 +2768,116 @@ async function guardarMaterial(e) {
 function asigNombre(id) {
   const a = allAsignaturas.find(x => x.id === id);
   return a ? a.nombre : '—';
+}
+
+// ============================================================
+// MINI-FICHA LATERAL (vista rápida desde lista alumnos)
+// ============================================================
+let quickFichaAlumnoId = null;
+
+async function abrirQuickFicha(alumnoId) {
+  quickFichaAlumnoId = alumnoId;
+  const panel = document.getElementById('admin-quick-ficha');
+  panel.style.display = 'block';
+  document.getElementById('aqf-contenido').innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+
+  const alumno = allAlumnos.find(a => a.id === alumnoId);
+  if (!alumno) return;
+
+  const u = alumno.usuario || {};
+  const ini = getInitials(u.nombre, u.apellidos);
+  const pillCls = (alumno.nivel||'').includes('BACH') ? 'pill-bach' : 'pill-eso';
+
+  const { data: sesiones } = await db
+    .from('sesiones')
+    .select('id, asignatura, fecha, duracion_minutos, estado')
+    .eq('alumno_id', alumnoId)
+    .order('fecha', { ascending: false })
+    .limit(10);
+
+  const confirmadas = (sesiones || []).filter(s => s.estado === 'confirmada');
+  const totalH = confirmadas.reduce((s, ses) => s + ses.duracion_minutos / 60, 0).toFixed(1);
+
+  const total = parseFloat(alumno.horas_bono_total) || 0;
+  const restantes = parseFloat(alumno.horas_bono_restantes) || 0;
+  const consumidas = Math.max(0, total - restantes);
+  const pct = total > 0 ? Math.min(100, (restantes / total) * 100) : 0;
+  const bonoColor = pct > 50 ? 'var(--green)' : pct > 20 ? 'var(--amber)' : 'var(--red)';
+
+  // Profesores desde junction (con fallback al campo directo)
+  const profsAsig = alumnoProfesorMap[alumnoId] || [];
+  const grouped = {};
+  profsAsig.forEach(ap => {
+    if (!grouped[ap.profesor_id]) {
+      const p = allProfesores.find(x => x.id === ap.profesor_id);
+      const pu = p?.usuario || {};
+      grouped[ap.profesor_id] = { nombre: `${pu.nombre||'?'} ${pu.apellidos||''}`.trim(), asigs: [] };
+    }
+    if (ap.asignatura_id) grouped[ap.profesor_id].asigs.push(asigNombre(ap.asignatura_id));
+  });
+  if (Object.keys(grouped).length === 0 && alumno.profesor_id) {
+    const p = allProfesores.find(x => x.id === alumno.profesor_id);
+    const pu = p?.usuario || {};
+    grouped[alumno.profesor_id] = { nombre: `${pu.nombre||'?'} ${pu.apellidos||''}`.trim(), asigs: [] };
+  }
+  const profsHtml = Object.values(grouped).length > 0
+    ? Object.values(grouped).map(g => {
+        const asigText = g.asigs.length ? `<span style="color:var(--muted);font-size:11px"> · ${g.asigs.join(', ')}</span>` : '';
+        return `<div class="aqf-row"><span>${g.nombre}${asigText}</span><b>&nbsp;</b></div>`;
+      }).join('')
+    : '<div style="color:var(--muted);font-size:12px;padding:6px 0">Sin profesor asignado</div>';
+
+  const pillMap = { confirmada:['st-ok','Conf.'], pendiente_confirmacion:['st-pend','Pend.'], rechazada:['st-red','Rech.'], cancelada:['st-grey','Canc.'] };
+  const sesHtml = (sesiones||[]).length > 0
+    ? (sesiones||[]).slice(0,5).map(s => {
+        const [pc, pt] = pillMap[s.estado] || ['st-grey', '—'];
+        return `<div class="aqf-row"><span>${formatShortDate(s.fecha)} · ${s.asignatura}</span><b><span class="status-pill ${pc}" style="font-size:9px">${pt}</span></b></div>`;
+      }).join('')
+    : '<div style="color:var(--muted);font-size:12px;padding:6px 0">Sin sesiones registradas</div>';
+
+  document.getElementById('aqf-contenido').innerHTML = `
+    <div class="aqf-av">${ini}</div>
+    <div class="aqf-name">${u.nombre||'?'} ${u.apellidos||''}</div>
+    <div class="aqf-sub"><span class="pill ${pillCls}">${nivelLabel(alumno.nivel)}</span> &nbsp;·&nbsp; ${alumno.modalidad==='online'?'Online':'Presencial'}</div>
+
+    <div class="aqf-kpi-grid">
+      <div class="aqf-kpi"><div class="aqf-kpi-val">${confirmadas.length}</div><div class="aqf-kpi-label">Sesiones</div></div>
+      <div class="aqf-kpi"><div class="aqf-kpi-val">${totalH}h</div><div class="aqf-kpi-label">Horas clase</div></div>
+      <div class="aqf-kpi"><div class="aqf-kpi-val">${restantes.toFixed(1)}</div><div class="aqf-kpi-label">Bono restante</div></div>
+      <div class="aqf-kpi"><div class="aqf-kpi-val">${total.toFixed(1)}</div><div class="aqf-kpi-label">Bono total</div></div>
+    </div>
+
+    <div class="aqf-section"><i class="ti ti-info-circle"></i> Datos</div>
+    <div class="aqf-row"><span>Asignaturas</span><b>${(alumno._asigNombres||[]).join(', ')||'—'}</b></div>
+    <div class="aqf-row"><span>Horario</span><b>${alumno.horario_habitual||'—'}</b></div>
+    <div class="aqf-row"><span>Desde</span><b>${formatDate(alumno.fecha_inicio)}</b></div>
+    <div class="aqf-row"><span>Teléfono</span><b>${alumno.telefono_familia||'—'}</b></div>
+
+    <div class="aqf-section"><i class="ti ti-credit-card"></i> Bono</div>
+    <div style="margin-bottom:4px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <span style="color:var(--muted);font-size:11px">${restantes.toFixed(1)}h restantes</span>
+        <span style="color:var(--muted);font-size:11px">${consumidas.toFixed(1)}h consumidas</span>
+      </div>
+      <div class="bono-bar-wrap"><div class="bono-bar-fill" style="width:${pct.toFixed(0)}%;background:${bonoColor}"></div></div>
+      <p style="color:var(--muted);font-size:11px;margin-top:4px">${pct.toFixed(0)}% disponible de ${total.toFixed(1)}h contratadas</p>
+    </div>
+
+    <div class="aqf-section"><i class="ti ti-chalkboard"></i> Profesores asignados</div>
+    ${profsHtml}
+
+    <div class="aqf-section"><i class="ti ti-history"></i> Últimas sesiones</div>
+    ${sesHtml}
+
+    <button class="aqf-ficha-btn" onclick="cerrarQuickFicha();abrirFicha('${alumnoId}')">
+      <i class="ti ti-id-badge"></i> Abrir ficha completa
+    </button>
+  `;
+}
+
+function cerrarQuickFicha() {
+  document.getElementById('admin-quick-ficha').style.display = 'none';
+  quickFichaAlumnoId = null;
 }
 
 function populateAsigSelect(elId, withAll = false) {
