@@ -176,6 +176,23 @@
   .cal-ev.ev-green{background:var(--green-lt);color:var(--green)}
   .cal-ev.ev-amber{background:var(--amber-lt);color:var(--amber)}
 
+  /* BONOS ALUMNO */
+  .bono-bar-wrap{background:var(--dark);border-radius:20px;height:10px;overflow:hidden;margin:10px 0 5px}
+  .bono-bar-fill{height:100%;border-radius:20px;transition:width .4s}
+  .tarifa-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+  .tarifa-card{background:var(--dark);border:.5px solid var(--border);border-radius:12px;padding:20px 16px;text-align:center;cursor:pointer;transition:all .18s;position:relative}
+  .tarifa-card:hover{border-color:var(--blue);background:#0a1a30}
+  .tarifa-card.selected{border-color:var(--navy);background:#0a1a30;box-shadow:0 0 0 1px var(--navy)}
+  .tarifa-h{color:#fff;font-size:36px;font-weight:700;line-height:1;margin-bottom:4px}
+  .tarifa-h-lbl{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px}
+  .tarifa-precio{color:var(--blue);font-size:22px;font-weight:600;margin-bottom:4px}
+  .tarifa-mod{color:var(--muted);font-size:11px}
+  .mod-toggle{display:inline-flex;background:var(--dark);border:.5px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px}
+  .mod-btn{padding:7px 18px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--muted);font-family:inherit;transition:all .15s}
+  .mod-btn.active{background:var(--navy);color:#fff}
+  .bono-hist-row{padding:10px 0;border-bottom:.5px solid var(--border2);display:flex;align-items:center;justify-content:space-between}
+  .bono-hist-row:last-child{border-bottom:none}
+
   /* MODAL */
   .modal-overlay{display:none;position:fixed;inset:0;background:rgba(4,7,27,.85);z-index:200;align-items:center;justify-content:center}
   .modal-overlay.open{display:flex}
@@ -245,6 +262,7 @@
   <div class="nav-item active" id="nav-inicio" onclick="showSection('inicio')"><i class="ti ti-layout-dashboard"></i> Inicio</div>
   <div class="nav-item" id="nav-sesiones" onclick="showSection('sesiones')"><i class="ti ti-calendar-check"></i> Mis sesiones<span class="badge-nav" id="badge-sesiones" style="display:none">!</span></div>
   <div class="nav-item" id="nav-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i> Mis informes</div>
+  <div class="nav-item" id="nav-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i> Mi bono</div>
   <div class="nav-item" id="nav-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i> Mi profesor</div>
   <div class="nav-item" id="nav-estudiar" onclick="showSection('estudiar')"><i class="ti ti-book"></i> Estudiar</div>
   <div class="nav-item" id="nav-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i> Mi calendario</div>
@@ -414,6 +432,59 @@
     </div>
   </div>
 </div>
+<!-- ═══ BONOS ═══ -->
+<div class="section" id="section-bonos">
+  <h1 class="page-title">Mi bono</h1>
+  <p class="page-sub">Horas contratadas y disponibles</p>
+
+  <!-- Bono activo -->
+  <div id="bono-activo-wrap">
+    <div class="loading-section"><div class="spinner"></div></div>
+  </div>
+
+  <!-- Historial -->
+  <div class="card" id="bonos-historial-card" style="display:none;margin-top:12px">
+    <div class="card-head"><div class="card-title"><i class="ti ti-history"></i> Historial de bonos</div></div>
+    <div id="bonos-historial-lista" style="padding:0 16px"></div>
+  </div>
+
+  <!-- Solicitar nuevo bono -->
+  <div style="margin-top:14px" id="solicitar-wrap">
+    <button class="btn-primary" style="width:100%" onclick="mostrarTarifasAlumno()">
+      <i class="ti ti-shopping-cart"></i> Solicitar nuevo bono
+    </button>
+  </div>
+
+  <!-- Tarifa selector (oculto por defecto) -->
+  <div id="tarifas-alumno-wrap" style="display:none;margin-top:12px">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><i class="ti ti-tag"></i> Elige tu bono</div>
+        <button class="btn-ghost" style="font-size:11px;padding:5px 10px" onclick="ocultarTarifasAlumno()">Cancelar</button>
+      </div>
+      <div style="padding:16px">
+        <div id="mod-toggle-wrap" style="text-align:center;margin-bottom:4px;display:none">
+          <div class="mod-toggle">
+            <button class="mod-btn active" id="mod-btn-pre" onclick="setModTarifa('Presencial')">Presencial</button>
+            <button class="mod-btn" id="mod-btn-onl" onclick="setModTarifa('Online')">Online</button>
+          </div>
+        </div>
+        <div class="tarifa-grid" id="tarifas-cards"></div>
+        <div id="solicitud-confirm-wrap" style="display:none;margin-top:16px">
+          <label style="color:var(--soft);font-size:11px;font-weight:500;margin-bottom:5px;display:block">Nota para Nexo (opcional)</label>
+          <textarea class="field-input" id="solicitud-notas" rows="2" style="resize:none" placeholder="Horario preferido, dudas…"></textarea>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn-ghost" style="flex:1" onclick="deseleccionarTarifa()">Cambiar</button>
+            <button class="btn-primary" style="flex:2" id="btn-confirmar-solicitud" onclick="confirmarSolicitudBono()">
+              <i class="ti ti-check"></i> Confirmar solicitud
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- end .main -->
 
 <!-- MODAL EVENTO CALENDARIO -->
@@ -517,6 +588,7 @@ function showSection(id) {
   const loaders = {
     sesiones:   loadSesiones,
     informes:   loadInformes,
+    bonos:      loadBonosAlumno,
     profesor:   loadProfesor,
     estudiar:   loadEstudiar,
     calendario: loadCalendario,
@@ -856,6 +928,224 @@ async function procesarSesion(sesionId, accion) {
   await checkPendingSessions();
   await loadSesiones();
   await loadDashboard();
+}
+
+// ============================================================
+// BONOS ALUMNO (Bloque 4)
+// ============================================================
+let tarifasAlumno = [];
+let tarifaModActual = 'Presencial';
+let tarifaSelId = null;
+
+async function loadBonosAlumno() {
+  if (!ctx.alumnoData) return;
+  const alumnoId = ctx.alumnoData.id;
+
+  // Cargar tarifas si no están en memoria
+  if (tarifasAlumno.length === 0) {
+    const { data } = await db.from('tarifas_bonos').select('*').order('horas');
+    tarifasAlumno = data || [];
+  }
+
+  // Cargar bonos del alumno
+  const { data: bonos } = await db
+    .from('bonos')
+    .select('id, horas_contratadas, modalidad, precio_base, descuento, precio_final, fecha_compra, estado, notas')
+    .eq('alumno_id', alumnoId)
+    .order('created_at', { ascending: false });
+
+  const bonosData = bonos || [];
+  const bonoActivo = bonosData.find(b => b.estado === 'activo');
+  const historial  = bonosData.filter(b => b.estado !== 'activo');
+
+  // ── Bono activo ───────────────────────────────────────────
+  const alumno  = ctx.alumnoData;
+  const hRest   = parseFloat(alumno.horas_bono_restantes) || 0;
+  const hTotal  = bonoActivo ? parseFloat(bonoActivo.horas_contratadas) : (parseFloat(alumno.horas_bono_total) || 0);
+  const hUsed   = Math.max(0, hTotal - hRest);
+  const pct     = hTotal > 0 ? Math.min(100, (hRest / hTotal) * 100) : 0;
+  const barColor = pct > 50 ? 'var(--green)' : pct > 20 ? 'var(--amber)' : 'var(--red)';
+
+  const wrap = document.getElementById('bono-activo-wrap');
+  if (!bonoActivo && hTotal === 0) {
+    wrap.innerHTML = `
+      <div class="card" style="padding:24px;text-align:center">
+        <i class="ti ti-credit-card-off" style="font-size:32px;color:var(--muted);display:block;margin-bottom:10px"></i>
+        <div style="color:var(--soft);font-size:13px;margin-bottom:4px">Sin bono activo</div>
+        <div style="color:var(--muted);font-size:11px">Solicita un bono para empezar tus clases</div>
+      </div>`;
+  } else {
+    const precioTxt = bonoActivo?.precio_final != null
+      ? `${bonoActivo.precio_final.toFixed(2)}€${bonoActivo.descuento > 0 ? ` <span style="color:var(--green);font-size:11px">(−${bonoActivo.descuento}%)</span>` : ''}`
+      : '—';
+    wrap.innerHTML = `
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title"><i class="ti ti-credit-card"></i> Bono actual</div>
+          <span class="status-pill st-ok">Activo</span>
+        </div>
+        <div style="padding:16px">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px">
+            <div style="color:#fff;font-size:22px;font-weight:700">${hRest.toFixed(1)}<span style="font-size:13px;font-weight:400;color:var(--muted)">h restantes</span></div>
+            <div style="color:var(--muted);font-size:12px">${hUsed.toFixed(1)}h usadas de ${hTotal.toFixed(1)}h</div>
+          </div>
+          <div class="bono-bar-wrap"><div class="bono-bar-fill" style="width:${pct.toFixed(0)}%;background:${barColor}"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px">
+            <span style="color:var(--muted);font-size:11px">${pct.toFixed(0)}% disponible</span>
+            <span style="color:var(--muted);font-size:11px">${bonoActivo?.modalidad || '—'} · Precio: ${precioTxt}</span>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // Solicitudes pendientes
+  const solicitados = bonosData.filter(b => b.estado === 'solicitado');
+  if (solicitados.length > 0) {
+    wrap.innerHTML += `
+      <div style="margin-top:10px;padding:10px 14px;background:var(--amber-lt);border:.5px solid var(--amber);border-radius:8px;display:flex;align-items:center;gap:10px">
+        <i class="ti ti-clock" style="color:var(--amber);font-size:16px"></i>
+        <div style="font-size:12px;color:var(--amber)">Tienes ${solicitados.length} solicitud${solicitados.length > 1 ? 'es' : ''} de bono pendiente${solicitados.length > 1 ? 's' : ''} de aprobación.</div>
+      </div>`;
+  }
+
+  // ── Historial ─────────────────────────────────────────────
+  const pillMap = {
+    vencido:   ['st-grey', 'Vencido'],
+    cancelado: ['st-red',  'Cancelado'],
+    solicitado:['st-pend', 'Solicitado'],
+  };
+  const histCard = document.getElementById('bonos-historial-card');
+  const histEl   = document.getElementById('bonos-historial-lista');
+
+  if (historial.length > 0) {
+    histCard.style.display = 'block';
+    histEl.innerHTML = historial.map(b => {
+      const [pc, pt] = pillMap[b.estado] || ['st-grey', b.estado];
+      const precioStr = b.precio_final != null ? `${b.precio_final.toFixed(2)}€` : '—';
+      return `<div class="bono-hist-row">
+        <div>
+          <div style="color:#fff;font-size:13px;font-weight:500">${b.horas_contratadas}h · ${b.modalidad}</div>
+          <div style="color:var(--muted);font-size:11px;margin-top:2px">${formatDate(b.fecha_compra)} · ${precioStr}</div>
+        </div>
+        <span class="status-pill ${pc}">${pt}</span>
+      </div>`;
+    }).join('');
+  } else {
+    histCard.style.display = 'none';
+  }
+}
+
+function mostrarTarifasAlumno() {
+  const alumno = ctx.alumnoData;
+  const grupo  = nivelToGrupoAlumno(alumno?.nivel);
+  if (!grupo) {
+    showToast('No se puede determinar tu grupo de tarifa', 'error'); return;
+  }
+  tarifaSelId    = null;
+  tarifaModActual = alumno?.modalidad || 'Presencial';
+
+  // Mostrar toggle modalidad solo si grupo tiene ambas
+  const tieneOnline = tarifasAlumno.some(t => t.grupo === grupo && t.modalidad === 'Online');
+  const modWrap = document.getElementById('mod-toggle-wrap');
+  modWrap.style.display = tieneOnline ? 'block' : 'none';
+  document.getElementById('mod-btn-pre').classList.toggle('active', tarifaModActual === 'Presencial');
+  document.getElementById('mod-btn-onl').classList.toggle('active', tarifaModActual === 'Online');
+
+  document.getElementById('solicitud-confirm-wrap').style.display = 'none';
+  document.getElementById('solicitar-wrap').style.display = 'none';
+  document.getElementById('tarifas-alumno-wrap').style.display = 'block';
+  renderTarifasCards(grupo);
+}
+
+function ocultarTarifasAlumno() {
+  document.getElementById('tarifas-alumno-wrap').style.display = 'none';
+  document.getElementById('solicitar-wrap').style.display = 'block';
+  tarifaSelId = null;
+}
+
+function setModTarifa(mod) {
+  tarifaModActual = mod;
+  document.getElementById('mod-btn-pre').classList.toggle('active', mod === 'Presencial');
+  document.getElementById('mod-btn-onl').classList.toggle('active', mod === 'Online');
+  tarifaSelId = null;
+  document.getElementById('solicitud-confirm-wrap').style.display = 'none';
+  const grupo = nivelToGrupoAlumno(ctx.alumnoData?.nivel);
+  if (grupo) renderTarifasCards(grupo);
+}
+
+function renderTarifasCards(grupo) {
+  const horas = [2, 4, 8, 12];
+  const el = document.getElementById('tarifas-cards');
+  el.innerHTML = horas.map(h => {
+    const t = tarifasAlumno.find(x => x.grupo === grupo && x.modalidad === tarifaModActual && x.horas === h);
+    if (!t) return '';
+    const sel = tarifaSelId === t.id;
+    return `<div class="tarifa-card${sel ? ' selected' : ''}" onclick="seleccionarTarifa(${t.id})">
+      <div class="tarifa-h">${h}</div>
+      <div class="tarifa-h-lbl">horas</div>
+      <div class="tarifa-precio">${t.precio.toFixed(2)}€</div>
+      <div class="tarifa-mod">${tarifaModActual}</div>
+    </div>`;
+  }).join('');
+}
+
+function seleccionarTarifa(tarifaId) {
+  tarifaSelId = tarifaId;
+  const grupo = nivelToGrupoAlumno(ctx.alumnoData?.nivel);
+  if (grupo) renderTarifasCards(grupo);
+  document.getElementById('solicitud-confirm-wrap').style.display = 'block';
+  document.getElementById('solicitud-notas').value = '';
+  document.getElementById('solicitud-confirm-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function deseleccionarTarifa() {
+  tarifaSelId = null;
+  const grupo = nivelToGrupoAlumno(ctx.alumnoData?.nivel);
+  if (grupo) renderTarifasCards(grupo);
+  document.getElementById('solicitud-confirm-wrap').style.display = 'none';
+}
+
+async function confirmarSolicitudBono() {
+  if (!tarifaSelId) return;
+  const btn = document.getElementById('btn-confirmar-solicitud');
+  btn.disabled = true;
+
+  const tarifa = tarifasAlumno.find(t => t.id === tarifaSelId);
+  if (!tarifa) { btn.disabled = false; return; }
+
+  const notas = document.getElementById('solicitud-notas').value.trim() || null;
+  const alumnoId = ctx.alumnoData.id;
+
+  const { error } = await db.from('bonos').insert({
+    alumno_id:         alumnoId,
+    horas_contratadas: tarifa.horas,
+    modalidad:         tarifa.modalidad,
+    precio_base:       tarifa.precio,
+    precio_final:      tarifa.precio,
+    descuento:         0,
+    estado:            'solicitado',
+    notas,
+  });
+
+  btn.disabled = false;
+
+  if (error) {
+    showToast('Error al enviar solicitud: ' + error.message, 'error');
+    return;
+  }
+
+  ocultarTarifasAlumno();
+  showToast('✓ Solicitud enviada. El equipo Nexo la gestionará pronto.');
+  await loadBonosAlumno();
+}
+
+function nivelToGrupoAlumno(nivel) {
+  if (!nivel) return null;
+  if (['1ESO','2ESO','3ESO','4ESO'].includes(nivel)) return 'ESO';
+  if (['1BACH','2BACH'].includes(nivel)) return 'Bachillerato';
+  if (nivel.toLowerCase().includes('prim')) return 'Primaria';
+  if (nivel.toLowerCase().includes('univ')) return 'Universidad';
+  return 'ESO';
 }
 
 // ============================================================
