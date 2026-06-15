@@ -316,7 +316,7 @@ Registro de clases impartidas por un profesor. Formulario de 22 campos en 3 secc
 
 ### `tarifas_bonos`
 
-Catálogo de precios cerrado, editable por admin. Primaria solo tiene Presencial.
+Catálogo de precios cerrado, editable por admin. Primaria solo tiene Presencial. **Presencial es siempre más caro que Online.**
 
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -324,9 +324,15 @@ Catálogo de precios cerrado, editable por admin. Primaria solo tiene Presencial
 | `grupo` | `TEXT NOT NULL` | `'Primaria'\|'ESO'\|'Bachillerato'\|'Universidad'` |
 | `modalidad` | `TEXT NOT NULL` | `'Presencial'\|'Online'` |
 | `horas` | `SMALLINT NOT NULL` | `2\|4\|8\|12` |
-| `precio` | `NUMERIC(8,2) NOT NULL` | |
+| `precio` | `NUMERIC(8,2) NOT NULL` | Presencial > Online para el mismo grupo/horas |
 | `activo` | `BOOLEAN` | default `TRUE` |
 | UNIQUE | `(grupo, modalidad, horas)` | |
+
+**Precios vigentes (€):**
+- Primaria Presencial: 32 / 70 / 135 / 200
+- ESO Online: 40 / 90 / 175 / 260 · ESO Presencial: 44 / 94 / 185 / 270
+- Bach Online: 42 / 92 / 180 / 265 · Bach Presencial: 46 / 98 / 195 / 285
+- Univ Online: 44 / 96 / 190 / 280 · Univ Presencial: 48 / 105 / 205 / 300
 
 **Nivel → grupo mapping (para panel alumno):** `1ESO-4ESO → ESO`, `1BACH-2BACH → Bachillerato`. Primaria/Universidad no existen aún en `alumnos.nivel`.
 
@@ -350,15 +356,21 @@ Historial de bonos contratados o solicitados por alumno. `alumnos.horas_bono_res
 | `descuento` | `NUMERIC(5,2)` | Porcentaje 0–100; default 0 |
 | `precio_final` | `NUMERIC(8,2)` | Calculado: `precio_base * (1 - descuento/100)` |
 | `fecha_compra` | `DATE` | default `CURRENT_DATE` |
-| `estado` | `TEXT NOT NULL` | `'solicitado'\|'activo'\|'vencido'\|'cancelado'` |
+| `pagado` | `BOOLEAN` | default `FALSE`; admin lo marca cuando recibe el pago |
+| `fecha_pago` | `DATE` | Fecha en que el admin marca pagado; determina orden de cola |
+| `estado` | `TEXT NOT NULL` | `'solicitado'\|'activo'\|'en_espera'\|'vencido'\|'cancelado'` |
 | `notas` | `TEXT` | |
 | `created_at` | `TIMESTAMPTZ` | |
 
+**Flujo de estados:**
+1. Alumno solicita → `estado='solicitado'`, `pagado=false`
+2. Admin marca pagado → si alumno sin bono activo: `estado='activo'`; si ya tiene activo con horas: `estado='en_espera'`
+3. Bono activo se agota (horas=0 tras confirmación sesión) → RPC llama `_activar_siguiente_bono()` → activo pasa a `vencido`, el primer `en_espera` (por `fecha_pago`) pasa a `activo`
+
 **Lógica de horas:**
 - `horas_consumidas` (en UI) = `bono.horas_contratadas - alumno.horas_bono_restantes` para bono activo
-- Cuando admin activa un bono: actualizar `alumnos.horas_bono_total = horas_contratadas`, `horas_bono_restantes = horas_contratadas`
-- Cuando admin edita `horas_contratadas` de bono activo: delta se suma a `alumnos.horas_bono_restantes`
-- Las RPCs de confirmación de sesión siguen tocando solo `alumnos.horas_bono_restantes` (sin cambios)
+- Cuando se activa un bono: `alumnos.horas_bono_total = horas_contratadas`, `horas_bono_restantes = horas_contratadas`
+- Las RPCs de confirmación de sesión tocan solo `alumnos.horas_bono_restantes` y llaman al helper si llega a 0
 
 **RLS:**
 - `bonos_admin_all` — ALL donde `is_admin()`
@@ -415,10 +427,11 @@ Tests de autoevaluación.
 
 | Función | Auth requerida | Descripción |
 |---|---|---|
-| `process_session_confirmation(p_session_id, p_token, p_action)` | No (enlace email) | Confirma/rechaza sesión por token; descuenta horas del bono si confirma |
-| `confirmar_sesion_alumno(p_session_id, p_action)` | Sí (alumno) | Igual pero verifica que `auth.uid()` sea el alumno de la sesión |
+| `_activar_siguiente_bono(p_alumno_id)` | Interno (SECURITY DEFINER) | Helper: vence bono activo del alumno y activa el siguiente `en_espera` (por `fecha_pago ASC`); si no hay cola, pone alumnos a 0/0 |
+| `process_session_confirmation(p_session_id, p_token, p_action)` | No (enlace email) | Confirma/rechaza sesión por token; descuenta horas y llama `_activar_siguiente_bono` si llegan a 0 |
+| `confirmar_sesion_alumno(p_session_id, p_action)` | Sí (alumno) | Igual pero verifica `auth.uid()` = alumno; también llama al helper si horas=0 |
 | `cancelar_sesion_admin(p_session_id, p_revertir_horas)` | Sí (admin) | Cancela sesión y opcionalmente devuelve horas al bono |
-| `auto_confirm_old_sessions()` | Sí (authenticated) | Confirma todas las sesiones `pendiente_confirmacion` con `registrada_at < NOW() - 72h`; devuelve nº de sesiones procesadas. GRANT EXECUTE a `authenticated`. Llamada desde pg_cron cada hora y como fallback cliente en `loadSesiones()`. |
+| `auto_confirm_old_sessions()` | Sí (authenticated) | Confirma sesiones `pendiente_confirmacion` con `registrada_at < NOW() - 72h`; llama helper si horas=0; GRANT EXECUTE a `authenticated`; pg_cron cada hora |
 
 ---
 

@@ -551,6 +551,43 @@ CREATE POLICY "avisos_admin_all" ON public.avisos
   );
 
 -- ============================================================
+-- Helper interno: activa el siguiente bono en_espera cuando
+-- el bono activo se agota (horas_bono_restantes llega a 0).
+-- Solo llamado por los RPCs de confirmación de sesión.
+-- ============================================================
+CREATE OR REPLACE FUNCTION public._activar_siguiente_bono(p_alumno_id UUID)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_next public.bonos%ROWTYPE;
+BEGIN
+  UPDATE public.bonos
+  SET estado = 'vencido'
+  WHERE alumno_id = p_alumno_id AND estado = 'activo';
+
+  SELECT * INTO v_next
+  FROM public.bonos
+  WHERE alumno_id = p_alumno_id AND estado = 'en_espera'
+  ORDER BY fecha_pago ASC NULLS LAST, created_at ASC
+  LIMIT 1;
+
+  IF FOUND THEN
+    UPDATE public.bonos SET estado = 'activo' WHERE id = v_next.id;
+    UPDATE public.alumnos
+    SET horas_bono_total     = v_next.horas_contratadas,
+        horas_bono_restantes = v_next.horas_contratadas
+    WHERE id = p_alumno_id;
+  ELSE
+    UPDATE public.alumnos
+    SET horas_bono_total = 0, horas_bono_restantes = 0
+    WHERE id = p_alumno_id;
+  END IF;
+END;
+$$;
+
+-- ============================================================
 -- RPC: Confirmar sesión desde enlace de email (sin auth)
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.process_session_confirmation(
@@ -563,7 +600,8 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_session public.sesiones%ROWTYPE;
+  v_session       public.sesiones%ROWTYPE;
+  v_new_restantes NUMERIC;
 BEGIN
   SELECT * INTO v_session
   FROM public.sesiones
@@ -584,7 +622,12 @@ BEGIN
 
     UPDATE public.alumnos
     SET horas_bono_restantes = GREATEST(0, horas_bono_restantes - (v_session.duracion_minutos / 60.0))
-    WHERE id = v_session.alumno_id;
+    WHERE id = v_session.alumno_id
+    RETURNING horas_bono_restantes INTO v_new_restantes;
+
+    IF v_new_restantes = 0 THEN
+      PERFORM public._activar_siguiente_bono(v_session.alumno_id);
+    END IF;
 
     RETURN jsonb_build_object('success', true, 'action', 'confirmada');
 
@@ -613,8 +656,9 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_session public.sesiones%ROWTYPE;
-  v_alumno  public.alumnos%ROWTYPE;
+  v_session       public.sesiones%ROWTYPE;
+  v_alumno        public.alumnos%ROWTYPE;
+  v_new_restantes NUMERIC;
 BEGIN
   SELECT * INTO v_session FROM public.sesiones WHERE id = p_session_id;
 
@@ -640,7 +684,12 @@ BEGIN
 
     UPDATE public.alumnos
     SET horas_bono_restantes = GREATEST(0, horas_bono_restantes - (v_session.duracion_minutos / 60.0))
-    WHERE id = v_session.alumno_id;
+    WHERE id = v_session.alumno_id
+    RETURNING horas_bono_restantes INTO v_new_restantes;
+
+    IF v_new_restantes = 0 THEN
+      PERFORM public._activar_siguiente_bono(v_session.alumno_id);
+    END IF;
 
     RETURN jsonb_build_object('success', true, 'action', 'confirmada');
 
@@ -705,8 +754,9 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 DECLARE
-  v_row   RECORD;
-  v_count INTEGER := 0;
+  v_row           RECORD;
+  v_new_restantes NUMERIC;
+  v_count         INTEGER := 0;
 BEGIN
   FOR v_row IN
     SELECT id, alumno_id, duracion_minutos
@@ -720,7 +770,12 @@ BEGIN
 
     UPDATE public.alumnos
     SET horas_bono_restantes = GREATEST(0, horas_bono_restantes - (v_row.duracion_minutos / 60.0))
-    WHERE id = v_row.alumno_id;
+    WHERE id = v_row.alumno_id
+    RETURNING horas_bono_restantes INTO v_new_restantes;
+
+    IF v_new_restantes = 0 THEN
+      PERFORM public._activar_siguiente_bono(v_row.alumno_id);
+    END IF;
 
     v_count := v_count + 1;
   END LOOP;
@@ -810,44 +865,44 @@ CREATE POLICY "tarifas_bonos_read_all" ON public.tarifas_bonos
 CREATE POLICY "tarifas_bonos_admin_all" ON public.tarifas_bonos
   FOR ALL USING (public.is_admin());
 
--- Carga inicial de tarifas
+-- Carga inicial de tarifas (Presencial > Online en precio)
 INSERT INTO public.tarifas_bonos (grupo, modalidad, horas, precio) VALUES
   -- Primaria (solo Presencial)
   ('Primaria','Presencial', 2,  32),
   ('Primaria','Presencial', 4,  70),
   ('Primaria','Presencial', 8, 135),
   ('Primaria','Presencial',12, 200),
-  -- ESO Presencial
-  ('ESO','Presencial', 2,  40),
-  ('ESO','Presencial', 4,  90),
-  ('ESO','Presencial', 8, 175),
-  ('ESO','Presencial',12, 260),
-  -- ESO Online
-  ('ESO','Online', 2,  44),
-  ('ESO','Online', 4,  94),
-  ('ESO','Online', 8, 185),
-  ('ESO','Online',12, 270),
-  -- Bachillerato Presencial
-  ('Bachillerato','Presencial', 2,  42),
-  ('Bachillerato','Presencial', 4,  92),
-  ('Bachillerato','Presencial', 8, 180),
-  ('Bachillerato','Presencial',12, 265),
+  -- ESO Online (más barato)
+  ('ESO','Online', 2,  40),
+  ('ESO','Online', 4,  90),
+  ('ESO','Online', 8, 175),
+  ('ESO','Online',12, 260),
+  -- ESO Presencial (más caro)
+  ('ESO','Presencial', 2,  44),
+  ('ESO','Presencial', 4,  94),
+  ('ESO','Presencial', 8, 185),
+  ('ESO','Presencial',12, 270),
   -- Bachillerato Online
-  ('Bachillerato','Online', 2,  46),
-  ('Bachillerato','Online', 4,  98),
-  ('Bachillerato','Online', 8, 195),
-  ('Bachillerato','Online',12, 285),
-  -- Universidad Presencial
-  ('Universidad','Presencial', 2,  44),
-  ('Universidad','Presencial', 4,  96),
-  ('Universidad','Presencial', 8, 190),
-  ('Universidad','Presencial',12, 280),
+  ('Bachillerato','Online', 2,  42),
+  ('Bachillerato','Online', 4,  92),
+  ('Bachillerato','Online', 8, 180),
+  ('Bachillerato','Online',12, 265),
+  -- Bachillerato Presencial
+  ('Bachillerato','Presencial', 2,  46),
+  ('Bachillerato','Presencial', 4,  98),
+  ('Bachillerato','Presencial', 8, 195),
+  ('Bachillerato','Presencial',12, 285),
   -- Universidad Online
-  ('Universidad','Online', 2,  48),
-  ('Universidad','Online', 4, 105),
-  ('Universidad','Online', 8, 205),
-  ('Universidad','Online',12, 300)
-ON CONFLICT (grupo, modalidad, horas) DO NOTHING;
+  ('Universidad','Online', 2,  44),
+  ('Universidad','Online', 4,  96),
+  ('Universidad','Online', 8, 190),
+  ('Universidad','Online',12, 280),
+  -- Universidad Presencial
+  ('Universidad','Presencial', 2,  48),
+  ('Universidad','Presencial', 4, 105),
+  ('Universidad','Presencial', 8, 205),
+  ('Universidad','Presencial',12, 300)
+ON CONFLICT (grupo, modalidad, horas) DO UPDATE SET precio = EXCLUDED.precio;
 
 -- ============================================================
 -- BONOS — Historial de bonos contratados / solicitados por alumno
@@ -859,11 +914,13 @@ CREATE TABLE IF NOT EXISTS public.bonos (
   modalidad         TEXT NOT NULL CHECK (modalidad IN ('Presencial','Online')),
   precio_base       NUMERIC(8,2),
   descuento         NUMERIC(5,2) DEFAULT 0
-                      CHECK (descuento >= 0 AND descuento <= 100),  -- porcentaje 0-100
+                      CHECK (descuento >= 0 AND descuento <= 100),
   precio_final      NUMERIC(8,2),
   fecha_compra      DATE DEFAULT CURRENT_DATE,
+  pagado            BOOLEAN DEFAULT FALSE,
+  fecha_pago        DATE,
   estado            TEXT NOT NULL DEFAULT 'activo'
-                      CHECK (estado IN ('solicitado','activo','vencido','cancelado')),
+                      CHECK (estado IN ('solicitado','activo','en_espera','vencido','cancelado')),
   notas             TEXT,
   created_at        TIMESTAMPTZ DEFAULT NOW()
 );
