@@ -414,10 +414,10 @@
     </select>
     <select class="fi" id="fil-bono-estado" onchange="loadBonos()" style="width:auto;padding:8px 12px">
       <option value="">Todos los estados</option>
-      <option value="solicitado">Solicitados</option>
-      <option value="en_espera">En espera</option>
+      <option value="reservado">Reservados</option>
+      <option value="pagado_en_espera">Pagado · en espera</option>
       <option value="activo">Activos</option>
-      <option value="vencido">Vencidos</option>
+      <option value="agotado">Agotados</option>
       <option value="cancelado">Cancelados</option>
     </select>
     <input type="month" class="fi" id="fil-bono-mes" onchange="loadBonos()" style="width:auto;padding:8px 12px">
@@ -973,9 +973,9 @@
         <label class="fl">Estado</label>
         <select class="fi" id="bono-estado">
           <option value="activo">Activo</option>
-          <option value="solicitado">Solicitado</option>
-          <option value="en_espera">En espera</option>
-          <option value="vencido">Vencido</option>
+          <option value="reservado">Reservado</option>
+          <option value="pagado_en_espera">Pagado · en espera</option>
+          <option value="agotado">Agotado</option>
           <option value="cancelado">Cancelado</option>
         </select>
       </div>
@@ -2555,7 +2555,7 @@ async function loadSesionesAdmin() {
   sesEl.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
 
   let query = db.from('sesiones')
-    .select('id, asignatura, fecha, duracion_minutos, estado, alumno_id, profesor_id')
+    .select('id, asignatura, fecha, duracion_minutos, estado, excede_bono, alumno_id, profesor_id')
     .order('fecha', { ascending: false });
 
   const estVal = document.getElementById('fil-ses-estado').value;
@@ -2593,13 +2593,15 @@ async function loadSesionesAdmin() {
             const [pc, pt] = pillMap[s.estado] || ['st-grey', s.estado];
             const a  = alumnoMap[s.alumno_id]?.usuario || {};
             const p  = profMap[s.profesor_id]?.usuario || {};
+            const excedeBadge = s.excede_bono
+              ? `<span class="status-pill st-red" title="Esta sesión excede las horas de bono disponibles" style="margin-left:5px;font-size:9px">⚠ excede bono</span>` : '';
             return `<tr>
               <td>${formatShortDate(s.fecha)}</td>
               <td style="color:#fff">${a.nombre ? a.nombre + ' ' + a.apellidos : '—'}</td>
               <td>${p.nombre ? p.nombre + ' ' + p.apellidos : '—'}</td>
               <td>${s.asignatura}</td>
               <td>${s.duracion_minutos} min</td>
-              <td><span class="status-pill ${pc}">${pt}</span></td>
+              <td><span class="status-pill ${pc}">${pt}</span>${excedeBadge}</td>
               <td>${s.estado !== 'cancelada' ? `<button class="btn-danger" onclick="abrirCancelar('${s.id}')">Cancelar</button>` : '<span style="color:var(--muted);font-size:11px">—</span>'}</td>
             </tr>`;
           }).join('')}
@@ -2960,11 +2962,11 @@ async function loadBonos() {
   }
 
   const pillMap = {
-    activo:     ['st-ok',   'Activo'],
-    solicitado: ['st-pend', 'Solicitado'],
-    en_espera:  ['st-pend', 'En espera'],
-    vencido:    ['st-grey', 'Vencido'],
-    cancelado:  ['st-red',  'Cancelado'],
+    activo:           ['st-ok',   'Activo'],
+    reservado:        ['st-pend', 'Reservado'],
+    pagado_en_espera: ['st-pend', 'Pagado · en espera'],
+    agotado:          ['st-grey', 'Agotado'],
+    cancelado:        ['st-red',  'Cancelado'],
   };
 
   el.innerHTML = `<table class="tabla">
@@ -2986,7 +2988,7 @@ async function loadBonos() {
         const lowBono    = b.estado === 'activo' && restantes <= 2;
         const pagoCell   = b.pagado
           ? `<span class="status-pill st-ok" title="${b.fecha_pago ? 'Pagado ' + formatShortDate(b.fecha_pago) : 'Pagado'}">✓ Pagado</span>`
-          : (b.estado === 'solicitado'
+          : (b.estado === 'reservado'
               ? `<button class="btn-edit" style="font-size:11px;padding:5px 9px;white-space:nowrap" onclick="marcarPagadoBono('${b.id}','${b.alumno_id}',${b.horas_contratadas})">
                    <i class="ti ti-coin"></i> Marcar pagado
                  </button>`
@@ -3032,7 +3034,7 @@ async function marcarPagadoBono(bonoId, alumnoId, horas) {
     .limit(1);
 
   const hayActivo    = activos && activos.length > 0;
-  const nuevoEstado  = hayActivo ? 'en_espera' : 'activo';
+  const nuevoEstado  = hayActivo ? 'pagado_en_espera' : 'activo';
 
   const { error } = await db.from('bonos')
     .update({ pagado: true, fecha_pago: hoy, estado: nuevoEstado })
@@ -3047,7 +3049,7 @@ async function marcarPagadoBono(bonoId, alumnoId, horas) {
       .eq('id', alumnoId);
     showToast('Pago registrado — bono activado');
   } else {
-    showToast('Pago registrado — bono en espera (hay otro bono activo)');
+    showToast('Pago registrado — bono en espera (se activará cuando se agote el actual)');
   }
 
   await loadBonos();
@@ -3215,7 +3217,7 @@ async function guardarBono() {
     if (!fechaCompra) { showToast('La fecha es obligatoria', 'error'); btn.disabled = false; return; }
 
     const hoy = new Date().toISOString().split('T')[0];
-    const esPagado = (estado === 'activo' || estado === 'en_espera');
+    const esPagado = (estado === 'activo' || estado === 'pagado_en_espera');
     const payload = {
       horas_contratadas: horas, modalidad, precio_base: precioBase, descuento,
       precio_final: precioFinal, fecha_compra: fechaCompra, estado, notas,
@@ -3273,7 +3275,7 @@ async function guardarBono() {
 }
 
 async function vencerBonosActivos(alumnoId, exceptId) {
-  let q = db.from('bonos').update({ estado: 'vencido' }).eq('alumno_id', alumnoId).eq('estado', 'activo');
+  let q = db.from('bonos').update({ estado: 'agotado' }).eq('alumno_id', alumnoId).eq('estado', 'activo');
   if (exceptId) q = q.neq('id', exceptId);
   await q;
 }
