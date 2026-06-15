@@ -451,7 +451,7 @@
   <!-- Solicitar nuevo bono -->
   <div style="margin-top:14px" id="solicitar-wrap">
     <button class="btn-primary" style="width:100%" onclick="mostrarTarifasAlumno()">
-      <i class="ti ti-shopping-cart"></i> Solicitar nuevo bono
+      <i class="ti ti-shopping-cart"></i> Reservar nuevo bono
     </button>
   </div>
 
@@ -476,8 +476,17 @@
           <div style="display:flex;gap:8px;margin-top:10px">
             <button class="btn-ghost" style="flex:1" onclick="deseleccionarTarifa()">Cambiar</button>
             <button class="btn-primary" style="flex:2" id="btn-confirmar-solicitud" onclick="confirmarSolicitudBono()">
-              <i class="ti ti-check"></i> Confirmar solicitud
+              <i class="ti ti-check"></i> Guardar reserva
             </button>
+          </div>
+          <div id="wa-cta-wrap" style="display:none;margin-top:14px;padding:14px;background:#0a1e0a;border:.5px solid #1a5e1a;border-radius:10px">
+            <div style="color:#4ade80;font-size:13px;font-weight:600;margin-bottom:4px"><i class="ti ti-check"></i> ¡Reserva guardada!</div>
+            <div style="color:var(--soft);font-size:12px;margin-bottom:12px">Ahora contacta con Nexo por WhatsApp para confirmar el pago:</div>
+            <a id="wa-bono-link" href="#" target="_blank"
+               style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff;border-radius:8px;padding:11px 16px;font-size:13px;font-weight:600;text-decoration:none;margin-bottom:8px">
+              <i class="ti ti-brand-whatsapp" style="font-size:18px"></i> Confirmar pago por WhatsApp
+            </a>
+            <button class="btn-ghost" style="width:100%;font-size:11px" onclick="ocultarTarifasAlumno();loadBonosAlumno()">Cerrar — lo haré más tarde</button>
           </div>
         </div>
       </div>
@@ -997,18 +1006,18 @@ async function loadBonosAlumno() {
       </div>`;
   }
 
-  // Solicitudes pendientes
-  const solicitados = bonosData.filter(b => b.estado === 'solicitado');
-  if (solicitados.length > 0) {
+  // Reservas pendientes de pago
+  const reservados = bonosData.filter(b => b.estado === 'reservado');
+  if (reservados.length > 0) {
     wrap.innerHTML += `
       <div style="margin-top:10px;padding:10px 14px;background:var(--amber-lt);border:.5px solid var(--amber);border-radius:8px;display:flex;align-items:center;gap:10px">
         <i class="ti ti-clock" style="color:var(--amber);font-size:16px"></i>
-        <div style="font-size:12px;color:var(--amber)">Tienes ${solicitados.length} solicitud${solicitados.length > 1 ? 'es' : ''} de bono pendiente${solicitados.length > 1 ? 's' : ''} de aprobación.</div>
+        <div style="font-size:12px;color:var(--amber)">Tienes ${reservados.length} reserva${reservados.length > 1 ? 's' : ''} de bono pendiente${reservados.length > 1 ? 's' : ''} de pago. Contacta con Nexo si no lo has hecho.</div>
       </div>`;
   }
 
-  // ── Bono(s) en espera ─────────────────────────────────────
-  const enEspera = bonosData.filter(b => b.estado === 'en_espera')
+  // ── Bonos pagado_en_espera ─────────────────────────────────
+  const enEspera = bonosData.filter(b => b.estado === 'pagado_en_espera')
     .sort((a, b) => (a.fecha_pago || a.created_at).localeCompare(b.fecha_pago || b.created_at));
 
   if (enEspera.length > 0) {
@@ -1017,7 +1026,7 @@ async function loadBonosAlumno() {
         <div style="margin-top:10px;padding:12px 14px;background:var(--surface);border:.5px solid var(--border);border-radius:8px;display:flex;align-items:center;gap:10px">
           <i class="ti ti-clock-play" style="color:var(--blue);font-size:18px;flex-shrink:0"></i>
           <div style="font-size:12px">
-            <span style="color:var(--soft)">Bono en espera:</span>
+            <span style="color:var(--soft)">Bono pagado en espera:</span>
             <span style="color:#fff;font-weight:500;margin-left:6px">${be.horas_contratadas}h ${be.modalidad}</span>
             <span style="color:var(--muted);margin-left:6px">— se activará cuando termines el bono actual.</span>
           </div>
@@ -1025,13 +1034,31 @@ async function loadBonosAlumno() {
     });
   }
 
+  // ── Alerta 75% consumo ────────────────────────────────────
+  const yaHayBonoSiguiente = reservados.length > 0 || enEspera.length > 0;
+  if (bonoActivo && hTotal > 0 && hUsed >= 0.75 * hTotal && !yaHayBonoSiguiente) {
+    wrap.innerHTML += `
+      <div style="margin-top:12px;padding:14px 16px;background:#1a1000;border:.5px solid var(--amber);border-radius:10px">
+        <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px">
+          <i class="ti ti-alert-triangle" style="color:var(--amber);font-size:18px;flex-shrink:0;margin-top:1px"></i>
+          <div>
+            <div style="color:var(--amber);font-size:13px;font-weight:600;margin-bottom:4px">Has consumido el 75% de tu bono</div>
+            <div style="color:#c8a060;font-size:12px">Si quieres continuar sin interrupciones, elige tu próximo bono ahora.</div>
+          </div>
+        </div>
+        <button class="btn-primary" style="width:100%;background:#b45309" onclick="mostrarTarifasAlumno()">
+          <i class="ti ti-shopping-cart"></i> Reservar siguiente bono
+        </button>
+      </div>`;
+  }
+
   // ── Historial ─────────────────────────────────────────────
   const pillMap = {
-    vencido:   ['st-grey', 'Vencido'],
+    agotado:   ['st-grey', 'Agotado'],
     cancelado: ['st-red',  'Cancelado'],
-    solicitado:['st-pend', 'Solicitado'],
+    reservado: ['st-pend', 'Reservado'],
   };
-  const historial2 = bonosData.filter(b => b.estado === 'vencido' || b.estado === 'cancelado');
+  const historial2 = bonosData.filter(b => b.estado === 'agotado' || b.estado === 'cancelado');
   const histCard   = document.getElementById('bonos-historial-card');
   const histEl     = document.getElementById('bonos-historial-lista');
 
@@ -1121,6 +1148,12 @@ function deseleccionarTarifa() {
   const grupo = nivelToGrupoAlumno(ctx.alumnoData?.nivel);
   if (grupo) renderTarifasCards(grupo);
   document.getElementById('solicitud-confirm-wrap').style.display = 'none';
+  // Restaurar botones por si se mostró el CTA de WA
+  const btnConf = document.getElementById('btn-confirmar-solicitud');
+  if (btnConf) { btnConf.style.display = ''; }
+  const btnCambiar = document.querySelector('#solicitud-confirm-wrap .btn-ghost');
+  if (btnCambiar) { btnCambiar.style.display = ''; }
+  document.getElementById('wa-cta-wrap').style.display = 'none';
 }
 
 async function confirmarSolicitudBono() {
@@ -1131,8 +1164,10 @@ async function confirmarSolicitudBono() {
   const tarifa = tarifasAlumno.find(t => t.id === tarifaSelId);
   if (!tarifa) { btn.disabled = false; return; }
 
-  const notas = document.getElementById('solicitud-notas').value.trim() || null;
+  const notas    = document.getElementById('solicitud-notas').value.trim() || null;
   const alumnoId = ctx.alumnoData.id;
+  const nombre   = `${ctx.usuario.nombre} ${ctx.usuario.apellidos}`.trim();
+  const precio   = tarifa.precio.toFixed(2);
 
   const { error } = await db.from('bonos').insert({
     alumno_id:         alumnoId,
@@ -1141,20 +1176,25 @@ async function confirmarSolicitudBono() {
     precio_base:       tarifa.precio,
     precio_final:      tarifa.precio,
     descuento:         0,
-    estado:            'solicitado',
+    estado:            'reservado',
     notas,
   });
 
   btn.disabled = false;
 
   if (error) {
-    showToast('Error al enviar solicitud: ' + error.message, 'error');
+    showToast('Error al guardar la reserva: ' + error.message, 'error');
     return;
   }
 
-  ocultarTarifasAlumno();
-  showToast('✓ Solicitud enviada. El equipo Nexo la gestionará pronto.');
-  await loadBonosAlumno();
+  // Construir enlace WhatsApp con mensaje predefinido
+  const msg = `Hola, soy ${nombre}. Quiero confirmar mi reserva de bono de ${tarifa.horas}h ${tarifa.modalidad} por ${precio}€. ¿Podéis confirmar el pago?`;
+  document.getElementById('wa-bono-link').href = `https://wa.me/${WHATSAPP_MANU}?text=${encodeURIComponent(msg)}`;
+
+  // Mostrar CTA de WhatsApp, ocultar botón "Guardar reserva"
+  btn.style.display = 'none';
+  document.querySelector('#solicitud-confirm-wrap .btn-ghost').style.display = 'none';
+  document.getElementById('wa-cta-wrap').style.display = 'block';
 }
 
 function nivelToGrupoAlumno(nivel) {
