@@ -556,6 +556,15 @@
         </div>
 
         <!-- Footer -->
+        <div id="aviso-bono-bloqueo" style="display:none;margin:0 24px 12px;padding:14px 16px;background:#1a0000;border:.5px solid var(--red);border-radius:8px">
+          <div style="display:flex;align-items:flex-start;gap:10px">
+            <i class="ti ti-ban" style="color:var(--red);font-size:20px;flex-shrink:0;margin-top:1px"></i>
+            <div>
+              <div style="color:var(--red);font-size:13px;font-weight:600;margin-bottom:4px">Sin horas de bono disponibles</div>
+              <div style="color:#e08080;font-size:12px">Este alumno no tiene horas de bono disponibles ni un bono pagado pendiente. Contacta con administración antes de impartir esta clase.</div>
+            </div>
+          </div>
+        </div>
         <div style="padding:18px 24px;display:flex;justify-content:flex-end;gap:10px">
           <button type="button" class="btn-cancel" onclick="limpiarFormSesion()">Limpiar</button>
           <button type="submit" class="btn-primary" id="btn-enviar-sesion">
@@ -691,6 +700,22 @@
 </div>
 
 <!-- MODAL CONFIRMACIÓN ENVÍO SESIÓN -->
+<div class="modal-overlay" id="modal-aviso-bono">
+  <div style="background:var(--surface);border:.5px solid var(--amber);border-radius:14px;padding:28px;max-width:420px;width:90%">
+    <div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:18px">
+      <i class="ti ti-alert-triangle" style="color:var(--amber);font-size:26px;flex-shrink:0;margin-top:2px"></i>
+      <div>
+        <div style="color:var(--amber);font-size:15px;font-weight:600;margin-bottom:6px">Sesión excede el bono</div>
+        <div id="aviso-bono-txt" style="color:var(--soft);font-size:13px;line-height:1.5"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button onclick="document.getElementById('modal-aviso-bono').classList.remove('open')" class="btn-ghost" style="flex:1">Cancelar</button>
+      <button id="btn-aviso-bono-continuar" class="btn-primary" style="flex:2;background:var(--amber)">Continuar de todos modos</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-ok">
   <div style="background:var(--surface);border:.5px solid var(--border);border-radius:14px;padding:36px;max-width:400px;width:90%;text-align:center">
     <div style="width:56px;height:56px;border-radius:50%;background:var(--green-lt);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;margin:0 auto 18px">
@@ -1036,6 +1061,7 @@ async function autoAsignatura() {
   });
   if (asigs.length === 1) aSelect.value = asigs[0];
   if (asigs.length === 0) aSelect.innerHTML = '<option value="">Sin asignaturas asignadas</option>';
+  checkBonoAlumno();
 }
 
 function resetSliders() {
@@ -1061,8 +1087,7 @@ function limpiarFormSesion() {
   resetSliders();
 }
 
-async function enviarSesion(e) {
-  e.preventDefault();
+async function _submitSesion(excedeBono = false) {
   const btn = document.getElementById('btn-enviar-sesion');
   btn.disabled = true;
   btn.innerHTML = '<div style="display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite"></div> Enviando...';
@@ -1092,7 +1117,8 @@ async function enviarSesion(e) {
     valoracion_autonomia:     parseInt(document.getElementById('slider-auto').value),
     observaciones:            document.getElementById('ses-observaciones').value || null,
     observaciones_nexo:       document.getElementById('ses-obs-nexo').value || null,
-    estado:                   'pendiente_confirmacion'
+    estado:                   'pendiente_confirmacion',
+    excede_bono:              excedeBono,
   };
 
   const { data: newSes, error } = await db.from('sesiones').insert(sesion).select().single();
@@ -1110,6 +1136,68 @@ async function enviarSesion(e) {
   document.getElementById('form-sesion').reset();
   resetSliders();
   document.getElementById('modal-ok').classList.add('open');
+}
+
+async function checkBonoAlumno() {
+  const alumnoId = document.getElementById('ses-alumno').value;
+  const bloqueo = document.getElementById('aviso-bono-bloqueo');
+  const btnEnviar = document.getElementById('btn-enviar-sesion');
+  if (!alumnoId) {
+    bloqueo.style.display = 'none';
+    btnEnviar.disabled = false;
+    return;
+  }
+  const alumno = misAlumnos.find(a => a.id === alumnoId);
+  const hRestantes = parseFloat(alumno?.horas_bono_restantes ?? 0);
+  if (hRestantes > 0) {
+    bloqueo.style.display = 'none';
+    btnEnviar.disabled = false;
+    return;
+  }
+  const { data: pendientes } = await db
+    .from('bonos').select('id')
+    .eq('alumno_id', alumnoId).eq('estado', 'pagado_en_espera').limit(1);
+  if (pendientes && pendientes.length > 0) {
+    bloqueo.style.display = 'none';
+    btnEnviar.disabled = false;
+  } else {
+    bloqueo.style.display = 'block';
+    btnEnviar.disabled = true;
+  }
+}
+
+async function enviarSesion(e) {
+  e.preventDefault();
+  const alumnoId = document.getElementById('ses-alumno').value;
+  const alumno = misAlumnos.find(a => a.id === alumnoId);
+  const hRestantes = parseFloat(alumno?.horas_bono_restantes ?? 0);
+
+  if (hRestantes <= 0) {
+    const { data: pendientes } = await db
+      .from('bonos').select('id')
+      .eq('alumno_id', alumnoId).eq('estado', 'pagado_en_espera').limit(1);
+    if (!pendientes || pendientes.length === 0) {
+      document.getElementById('aviso-bono-bloqueo').style.display = 'block';
+      document.getElementById('btn-enviar-sesion').disabled = true;
+      return;
+    }
+  }
+
+  const durHoras = parseInt(document.getElementById('ses-duracion').value) / 60;
+  if (hRestantes > 0 && durHoras > hRestantes) {
+    const fmt = h => Number.isInteger(h) ? `${h}h` : `${h.toFixed(1)}h`;
+    document.getElementById('aviso-bono-txt').textContent =
+      `Esta sesión dura ${fmt(durHoras)} pero al alumno solo le quedan ${fmt(hRestantes)} en el bono activo. ` +
+      `Si continúas, la sesión quedará marcada para revisión de administración.`;
+    document.getElementById('modal-aviso-bono').classList.add('open');
+    document.getElementById('btn-aviso-bono-continuar').onclick = () => {
+      document.getElementById('modal-aviso-bono').classList.remove('open');
+      _submitSesion(true);
+    };
+    return;
+  }
+
+  _submitSesion(false);
 }
 
 function cerrarModalOk() {
