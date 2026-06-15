@@ -423,10 +423,12 @@
 
             <label class="field-label">Duración *</label>
             <select class="field-input" id="ses-duracion" required>
-              <option value="45">45 minutos</option>
-              <option value="60" selected>60 minutos (1h)</option>
-              <option value="90">90 minutos (1h 30min)</option>
-              <option value="120">120 minutos (2h)</option>
+              <option value="30">0.5h (30 min)</option>
+              <option value="60" selected>1h (60 min)</option>
+              <option value="90">1.5h (90 min)</option>
+              <option value="120">2h (120 min)</option>
+              <option value="150">2.5h (150 min)</option>
+              <option value="180">3h (180 min)</option>
             </select>
 
           </div>
@@ -1290,23 +1292,44 @@ async function abrirFicha(alumnoId) {
 
   const ficha = document.getElementById('ficha-alumno');
   ficha.style.display = 'block';
+  document.getElementById('ficha-contenido').innerHTML =
+    '<div style="padding:20px;text-align:center"><div class="spinner"></div></div>';
 
   const u = alumno.usuario || {};
   const ini = getInitials(u.nombre, u.apellidos);
 
-  const { data: sesiones } = await db
-    .from('sesiones')
-    .select('*')
-    .eq('alumno_id', alumnoId)
-    .eq('profesor_id', ctx.profesorData.id)
-    .order('fecha', { ascending: false })
-    .limit(10);
+  const [{ data: sesList }, { data: todasSes }, { data: bonosData }] = await Promise.all([
+    db.from('sesiones')
+      .select('*')
+      .eq('alumno_id', alumnoId)
+      .eq('profesor_id', ctx.profesorData.id)
+      .order('fecha', { ascending: false })
+      .limit(10),
+    db.from('sesiones')
+      .select('duracion_minutos')
+      .eq('alumno_id', alumnoId)
+      .eq('estado', 'confirmada'),
+    db.from('bonos')
+      .select('horas_contratadas, modalidad, fecha_compra, estado')
+      .eq('alumno_id', alumnoId)
+      .order('created_at', { ascending: false })
+      .limit(1),
+  ]);
 
-  const confirmadas = (sesiones || []).filter(s => s.estado === 'confirmada');
-  const totalH = confirmadas.reduce((a, s) => a + s.duracion_minutos / 60, 0).toFixed(1);
+  const confirmadas  = (sesList || []).filter(s => s.estado === 'confirmada');
+  const misTotalH    = confirmadas.reduce((a, s) => a + s.duracion_minutos / 60, 0).toFixed(1);
+  const todosTotalH  = (todasSes || []).reduce((a, s) => a + s.duracion_minutos / 60, 0).toFixed(1);
   const avgComp  = avg(confirmadas.map(s => s.valoracion_comprension));
   const avgAplic = avg(confirmadas.map(s => s.valoracion_aplicacion));
   const avgMotiv = avg(confirmadas.map(s => s.valoracion_motivacion));
+
+  const hTotal     = parseFloat(alumno.horas_bono_total)     || 0;
+  const hRestantes = parseFloat(alumno.horas_bono_restantes) || 0;
+  const pct        = hTotal > 0 ? (hRestantes / hTotal) * 100 : 0;
+  const bonoColor  = hRestantes <= 0 ? 'var(--red)' : pct <= 25 ? 'var(--amber)' : 'var(--green)';
+
+  const ub        = bonosData?.[0];
+  const bonoLabel = ub ? `${ub.horas_contratadas}h ${ub.modalidad} · ${formatDate(ub.fecha_compra)}` : '—';
 
   const pillCls = alumno.nivel?.includes('BACH') ? 'pill-bach' : 'pill-eso';
 
@@ -1315,19 +1338,35 @@ async function abrirFicha(alumnoId) {
     <div class="ficha-name">${u.nombre} ${u.apellidos}</div>
     <div class="ficha-sub"><span class="pill ${pillCls}">${nivelLabel(alumno.nivel)}</span></div>
     <div class="ficha-kpi-grid">
-      <div class="ficha-kpi"><div class="ficha-kpi-val">${confirmadas.length}</div><div class="ficha-kpi-label">Sesiones</div></div>
-      <div class="ficha-kpi"><div class="ficha-kpi-val">${totalH}h</div><div class="ficha-kpi-label">Horas totales</div></div>
-      <div class="ficha-kpi"><div class="ficha-kpi-val">${alumno.horas_bono_restantes}</div><div class="ficha-kpi-label">Horas bono</div></div>
-      <div class="ficha-kpi"><div class="ficha-kpi-val">${alumno.horas_bono_total}</div><div class="ficha-kpi-label">Bono total</div></div>
+      <div class="ficha-kpi"><div class="ficha-kpi-val">${confirmadas.length}</div><div class="ficha-kpi-label">Mis sesiones</div></div>
+      <div class="ficha-kpi"><div class="ficha-kpi-val">${misTotalH}h</div><div class="ficha-kpi-label">Mis horas</div></div>
+      <div class="ficha-kpi"><div class="ficha-kpi-val">${todosTotalH}h</div><div class="ficha-kpi-label">Total horas</div></div>
+      <div class="ficha-kpi" style="border-color:${bonoColor}60">
+        <div class="ficha-kpi-val" style="color:${bonoColor}">${hRestantes}h</div>
+        <div class="ficha-kpi-label">Bono restante</div>
+      </div>
+    </div>
+    ${hRestantes <= 0 && hTotal > 0
+      ? `<div style="background:#2d0d0d;border:.5px solid var(--red);border-radius:8px;padding:9px 12px;margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--red)"><i class="ti ti-ban"></i>Sin horas de bono disponibles</div>`
+      : pct <= 25 && hTotal > 0
+        ? `<div style="background:#2d1e0d;border:.5px solid var(--amber);border-radius:8px;padding:9px 12px;margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--amber)"><i class="ti ti-alert-triangle"></i>Bono al ${pct.toFixed(0)}% — quedan ${hRestantes}h de ${hTotal}h</div>`
+        : ''}
+    <div class="ficha-section">Bono</div>
+    <div class="ficha-row"><span>Último bono</span><b>${bonoLabel}</b></div>
+    <div class="ficha-row"><span>Restante</span><b style="color:${bonoColor}">${hRestantes}h / ${hTotal}h</b></div>
+    <div style="margin:6px 0 14px">
+      <div style="height:5px;background:var(--border2);border-radius:20px;overflow:hidden">
+        <div style="height:5px;border-radius:20px;background:${bonoColor};width:${Math.min(100,pct).toFixed(0)}%"></div>
+      </div>
     </div>
     <div class="ficha-section">Información</div>
-    <div class="ficha-row"><span>Asignatura</span><b>${(alumno._asignaturas||[]).join(', ')}</b></div>
+    <div class="ficha-row"><span>Asignatura</span><b>${(alumno._asignaturas||[]).join(', ')||'—'}</b></div>
     <div class="ficha-row"><span>Horario</span><b>${alumno.horario_habitual||'—'}</b></div>
     <div class="ficha-row"><span>Modalidad</span><b>${alumno.modalidad==='presencial'?'Presencial':'Online'}</b></div>
     <div class="ficha-row"><span>Desde</span><b>${formatDate(alumno.fecha_inicio)}</b></div>
     ${confirmadas.length > 0 ? `
     <div class="ficha-section">Métricas (últimas ${confirmadas.length} sesiones)</div>
-    ${[['Comprensión', avgComp,'var(--blue)'],['Aplicación', avgAplic,'var(--amber)'],['Motivación', avgMotiv,'var(--green)']].map(([lbl,v,c]) => `
+    ${[['Comprensión',avgComp,'var(--blue)'],['Aplicación',avgAplic,'var(--amber)'],['Motivación',avgMotiv,'var(--green)']].map(([lbl,v,c]) => `
       <div style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;margin-bottom:3px">
           <span style="color:var(--muted);font-size:11px">${lbl}</span>
@@ -1340,9 +1379,9 @@ async function abrirFicha(alumnoId) {
     `).join('')}
     ` : ''}
     <div class="ficha-section">Últimas sesiones</div>
-    ${sesiones && sesiones.length > 0 ? sesiones.slice(0,5).map(s => {
-      const pillMap = { confirmada:'st-ok Conf.', pendiente_confirmacion:'st-pend Pend.', rechazada:'st-red Rech.', cancelada:'st-grey Canc.' };
-      const [pc, pt] = (pillMap[s.estado]||'st-grey —').split(' ');
+    ${sesList && sesList.length > 0 ? sesList.slice(0,5).map(s => {
+      const pm = { confirmada:'st-ok Conf.', pendiente_confirmacion:'st-pend Pend.', rechazada:'st-red Rech.', cancelada:'st-grey Canc.' };
+      const [pc, pt] = (pm[s.estado]||'st-grey —').split(' ');
       return `<div class="ficha-row"><span>${formatShortDate(s.fecha)} · ${s.asignatura}</span><b><span class="status-pill ${pc}" style="font-size:9px">${pt}</span></b></div>`;
     }).join('') : '<div style="color:var(--muted);font-size:12px;text-align:center;padding:12px">Sin sesiones</div>'}
     <div style="margin-top:20px">
