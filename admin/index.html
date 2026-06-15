@@ -415,6 +415,7 @@
     <select class="fi" id="fil-bono-estado" onchange="loadBonos()" style="width:auto;padding:8px 12px">
       <option value="">Todos los estados</option>
       <option value="solicitado">Solicitados</option>
+      <option value="en_espera">En espera</option>
       <option value="activo">Activos</option>
       <option value="vencido">Vencidos</option>
       <option value="cancelado">Cancelados</option>
@@ -973,6 +974,7 @@
         <select class="fi" id="bono-estado">
           <option value="activo">Activo</option>
           <option value="solicitado">Solicitado</option>
+          <option value="en_espera">En espera</option>
           <option value="vencido">Vencido</option>
           <option value="cancelado">Cancelado</option>
         </select>
@@ -2960,6 +2962,7 @@ async function loadBonos() {
   const pillMap = {
     activo:     ['st-ok',   'Activo'],
     solicitado: ['st-pend', 'Solicitado'],
+    en_espera:  ['st-pend', 'En espera'],
     vencido:    ['st-grey', 'Vencido'],
     cancelado:  ['st-red',  'Cancelado'],
   };
@@ -2967,7 +2970,8 @@ async function loadBonos() {
   el.innerHTML = `<table class="tabla">
     <thead><tr>
       <th>Alumno</th><th>Horas</th><th>Consumidas</th><th>Restantes</th>
-      <th>Modalidad</th><th>Fecha</th><th>Desc.</th><th>Precio</th><th>Estado</th><th style="text-align:center">Acciones</th>
+      <th>Modalidad</th><th>Fecha</th><th>Desc.</th><th>Precio</th>
+      <th>Estado</th><th>Pago</th><th style="text-align:center">Acciones</th>
     </tr></thead>
     <tbody>
       ${data.map(b => {
@@ -2980,6 +2984,13 @@ async function loadBonos() {
         const precioFmt  = b.precio_final != null ? b.precio_final.toFixed(2) + '€' : '—';
         const descFmt    = b.descuento > 0 ? b.descuento + '%' : '—';
         const lowBono    = b.estado === 'activo' && restantes <= 2;
+        const pagoCell   = b.pagado
+          ? `<span class="status-pill st-ok" title="${b.fecha_pago ? 'Pagado ' + formatShortDate(b.fecha_pago) : 'Pagado'}">✓ Pagado</span>`
+          : (b.estado === 'solicitado'
+              ? `<button class="btn-edit" style="font-size:11px;padding:5px 9px;white-space:nowrap" onclick="marcarPagadoBono('${b.id}','${b.alumno_id}',${b.horas_contratadas})">
+                   <i class="ti ti-coin"></i> Marcar pagado
+                 </button>`
+              : `<span style="color:var(--muted);font-size:11px">—</span>`);
         return `<tr>
           <td style="color:#fff">${alumnoNom}</td>
           <td>${b.horas_contratadas}h</td>
@@ -2990,6 +3001,7 @@ async function loadBonos() {
           <td>${descFmt}</td>
           <td>${precioFmt}</td>
           <td><span class="status-pill ${pc}">${pt}</span></td>
+          <td>${pagoCell}</td>
           <td style="white-space:nowrap;text-align:center">
             <button class="btn-edit" onclick="abrirEditBono('${b.id}')"><i class="ti ti-pencil"></i></button>
             <button class="btn-danger" style="margin-left:4px" onclick="eliminarBono('${b.id}','${b.alumno_id}','${b.estado}')">
@@ -3007,6 +3019,38 @@ function limpiarFiltrosBonos() {
   document.getElementById('fil-bono-estado').value = '';
   document.getElementById('fil-bono-mes').value = '';
   loadBonos();
+}
+
+async function marcarPagadoBono(bonoId, alumnoId, horas) {
+  const hoy = new Date().toISOString().split('T')[0];
+
+  // Determinar si el alumno ya tiene un bono activo
+  const { data: activos } = await db.from('bonos')
+    .select('id')
+    .eq('alumno_id', alumnoId)
+    .eq('estado', 'activo')
+    .limit(1);
+
+  const hayActivo    = activos && activos.length > 0;
+  const nuevoEstado  = hayActivo ? 'en_espera' : 'activo';
+
+  const { error } = await db.from('bonos')
+    .update({ pagado: true, fecha_pago: hoy, estado: nuevoEstado })
+    .eq('id', bonoId);
+
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+
+  if (nuevoEstado === 'activo') {
+    await vencerBonosActivos(alumnoId, bonoId);
+    await db.from('alumnos')
+      .update({ horas_bono_restantes: +parseFloat(horas).toFixed(2), horas_bono_total: +parseFloat(horas).toFixed(2) })
+      .eq('id', alumnoId);
+    showToast('Pago registrado — bono activado');
+  } else {
+    showToast('Pago registrado — bono en espera (hay otro bono activo)');
+  }
+
+  await loadBonos();
 }
 
 function abrirModalBono() {
@@ -3170,7 +3214,13 @@ async function guardarBono() {
 
     if (!fechaCompra) { showToast('La fecha es obligatoria', 'error'); btn.disabled = false; return; }
 
-    const payload = { horas_contratadas: horas, modalidad, precio_base: precioBase, descuento, precio_final: precioFinal, fecha_compra: fechaCompra, estado, notas };
+    const hoy = new Date().toISOString().split('T')[0];
+    const esPagado = (estado === 'activo' || estado === 'en_espera');
+    const payload = {
+      horas_contratadas: horas, modalidad, precio_base: precioBase, descuento,
+      precio_final: precioFinal, fecha_compra: fechaCompra, estado, notas,
+      ...(esPagado ? { pagado: true, fecha_pago: hoy } : {}),
+    };
 
     if (editBonoId) {
       const oldHoras  = parseFloat(document.getElementById('bono-old-horas').value)  || 0;
@@ -3183,19 +3233,16 @@ async function guardarBono() {
       if (estado === 'activo') {
         const consumidasWrap = document.getElementById('bono-consumidas-wrap');
         if (consumidasWrap.style.display !== 'none') {
-          // Admin ajustó horas_consumidas → recalcular restantes
           const consumidas   = parseFloat(document.getElementById('bono-consumidas').value) || 0;
           const newRestantes = Math.max(0, horas - consumidas);
           await db.from('alumnos').update({ horas_bono_restantes: +newRestantes.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
         } else if (horas !== oldHoras) {
-          // Solo cambió horas_contratadas → ajuste delta
           const { data: al } = await db.from('alumnos').select('horas_bono_restantes').eq('id', alumnoId).single();
           const delta        = horas - oldHoras;
           const newRestantes = Math.max(0, (al?.horas_bono_restantes || 0) + delta);
           await db.from('alumnos').update({ horas_bono_restantes: +newRestantes.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
         }
         if (oldEstado !== 'activo') {
-          // Activar: vecer otros activos y resetear bono
           await vencerBonosActivos(alumnoId, editBonoId);
           await db.from('alumnos').update({ horas_bono_restantes: +horas.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
         }
