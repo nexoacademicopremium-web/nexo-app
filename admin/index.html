@@ -593,9 +593,124 @@
       <textarea class="fi" id="fich-observaciones" rows="3" placeholder="Notas internas sobre el alumno..."></textarea>
     </div>
 
+    <!-- 6. SESIONES -->
+    <div class="ficha-section">
+      <div class="ficha-sec-title"><i class="ti ti-calendar-check"></i> Sesiones <span style="color:var(--muted);font-size:10px;font-weight:400">(últimas 10 — haz clic en Editar para corregir)</span></div>
+      <div id="ficha-sesiones">
+        <div class="loading-section" style="padding:12px"><div class="spinner"></div></div>
+      </div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn-cancel" onclick="cerrarModal('modal-ficha')">Cerrar</button>
       <button class="btn-primary" id="btn-guardar-ficha" onclick="guardarFicha()"><i class="ti ti-device-floppy"></i> Guardar cambios</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDITAR SESIÓN (admin) -->
+<div class="modal-overlay" id="modal-edit-sesion">
+  <div class="modal-box" style="max-width:680px">
+    <div class="modal-title">
+      <span><i class="ti ti-pencil" style="color:var(--blue);margin-right:6px"></i>Editar sesión</span>
+      <button class="modal-close" onclick="cerrarModal('modal-edit-sesion')">×</button>
+    </div>
+    <input type="hidden" id="eses-id">
+    <input type="hidden" id="eses-old-duracion">
+    <input type="hidden" id="eses-old-estado">
+    <input type="hidden" id="eses-alumno-id">
+
+    <!-- Sección básica -->
+    <div style="background:var(--dark);border:.5px solid var(--border);border-radius:8px;padding:14px;margin-bottom:14px">
+      <div style="color:var(--soft);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px">Identificación</div>
+      <label class="fl" style="margin-top:0">Asignatura *</label>
+      <input class="fi" id="eses-asignatura" required>
+      <div class="fi-grid2">
+        <div><label class="fl">Fecha *</label><input class="fi" id="eses-fecha" type="date" required></div>
+        <div><label class="fl">Hora inicio</label><input class="fi" id="eses-hora" type="time"></div>
+      </div>
+      <div class="fi-grid2">
+        <div>
+          <label class="fl">Duración *</label>
+          <select class="fi" id="eses-duracion" required>
+            <option value="45">45 min</option>
+            <option value="60">60 min (1h)</option>
+            <option value="90">90 min (1h 30min)</option>
+            <option value="120">120 min (2h)</option>
+          </select>
+        </div>
+        <div>
+          <label class="fl">Estado *</label>
+          <select class="fi" id="eses-estado" required>
+            <option value="pendiente_confirmacion">Pendiente de confirmación</option>
+            <option value="confirmada">Confirmada</option>
+            <option value="rechazada">Rechazada</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
+        </div>
+      </div>
+      <div id="eses-bono-aviso" style="display:none;margin-top:8px;padding:8px 10px;background:var(--amber-lt);border:.5px solid var(--amber);border-radius:6px;color:var(--amber);font-size:11px">
+        <i class="ti ti-alert-triangle"></i> El cambio de duración o estado ajustará automáticamente las horas del bono del alumno.
+      </div>
+    </div>
+
+    <!-- Narrativa -->
+    <details style="margin-bottom:14px">
+      <summary style="cursor:pointer;color:var(--soft);font-size:12px;font-weight:500;padding:8px 0;border-bottom:.5px solid var(--border);list-style:none;display:flex;align-items:center;gap:6px">
+        <i class="ti ti-chevron-right" id="eses-chev-nar" style="color:var(--blue);font-size:14px;transition:transform .15s"></i>
+        Narrativa de la sesión
+      </summary>
+      <div style="padding-top:12px">
+        <label class="fl" style="margin-top:0">Contenido trabajado</label>
+        <textarea class="fi" id="eses-contenido" rows="3" style="resize:vertical"></textarea>
+        <div class="fi-grid2">
+          <div>
+            <label class="fl">Estado del alumno al inicio</label>
+            <select class="fi" id="eses-estado-alumno">
+              <option value="">—</option>
+              <option value="Activo y receptivo">Activo y receptivo</option>
+              <option value="Normal, sin más">Normal, sin más</option>
+              <option value="Cansado o apagado">Cansado o apagado</option>
+              <option value="Nervioso o bloqueado">Nervioso o bloqueado</option>
+              <option value="Disperso, con la cabeza en otro lado">Disperso, con la cabeza en otro lado</option>
+            </select>
+          </div>
+          <div>
+            <label class="fl">Nota estimada (0–10)</label>
+            <input class="fi" id="eses-nota" type="number" min="0" max="10" step="0.5">
+          </div>
+        </div>
+        <div class="fi-grid2">
+          <div><label class="fl">Arranque próxima sesión</label><textarea class="fi" id="eses-arranque" rows="2" style="resize:vertical"></textarea></div>
+          <div><label class="fl">Tarea para casa</label><textarea class="fi" id="eses-tarea" rows="2" style="resize:vertical"></textarea></div>
+        </div>
+      </div>
+    </details>
+
+    <!-- Valoraciones -->
+    <details style="margin-bottom:14px">
+      <summary style="cursor:pointer;color:var(--soft);font-size:12px;font-weight:500;padding:8px 0;border-bottom:.5px solid var(--border);list-style:none;display:flex;align-items:center;gap:6px">
+        <i class="ti ti-chevron-right" style="color:var(--blue);font-size:14px"></i>
+        Valoraciones (1 – 10)
+      </summary>
+      <div style="padding-top:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div><label class="fl" style="margin-top:0">Comprensión</label><input class="fi" id="eses-comp" type="number" min="1" max="10" step="1"></div>
+          <div><label class="fl" style="margin-top:0">Aplicación / Esfuerzo</label><input class="fi" id="eses-aplic" type="number" min="1" max="10" step="1"></div>
+          <div><label class="fl" style="margin-top:0">Concentración</label><input class="fi" id="eses-conc" type="number" min="1" max="10" step="1"></div>
+          <div><label class="fl" style="margin-top:0">Actitud / Motivación</label><input class="fi" id="eses-motiv" type="number" min="1" max="10" step="1"></div>
+          <div><label class="fl" style="margin-top:0">Autonomía</label><input class="fi" id="eses-auto" type="number" min="1" max="10" step="1"></div>
+        </div>
+        <label class="fl">Observaciones para la familia</label>
+        <textarea class="fi" id="eses-obs" rows="2" style="resize:vertical"></textarea>
+        <label class="fl">Observaciones para Nexo <span style="color:var(--muted);font-size:10px">(privado)</span></label>
+        <textarea class="fi" id="eses-obs-nexo" rows="2" style="resize:vertical"></textarea>
+      </div>
+    </details>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModal('modal-edit-sesion')">Cancelar</button>
+      <button class="btn-primary" id="btn-guardar-edit-ses" onclick="guardarEditSesion()"><i class="ti ti-device-floppy"></i> Guardar cambios</button>
     </div>
   </div>
 </div>
@@ -1716,7 +1831,7 @@ async function abrirFicha(alumnoId) {
 
   document.getElementById('modal-ficha').classList.add('open');
 
-  await Promise.all([refreshFichaProfs(), refreshFichaAsignaturas()]);
+  await Promise.all([refreshFichaProfs(), refreshFichaAsignaturas(), refreshFichaSesiones()]);
 }
 
 async function guardarFicha() {
@@ -2014,13 +2129,14 @@ async function quitarProfesorFicha(relId) {
 
 async function refreshFichaSesiones() {
   const el = document.getElementById('ficha-sesiones');
+  if (!el) return;
   el.innerHTML = '<div class="loading-section" style="padding:12px"><div class="spinner"></div></div>';
 
   const { data: sesiones, error } = await db.from('sesiones')
-    .select('id, asignatura, fecha, duracion_minutos, estado, profesor_id')
+    .select('id, asignatura, fecha, hora_inicio, duracion_minutos, estado, profesor_id, contenido_trabajado')
     .eq('alumno_id', fichaAlumnoId)
     .order('fecha', { ascending: false })
-    .limit(6);
+    .limit(10);
 
   if (error || !sesiones || sesiones.length === 0) {
     el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:4px 0">Sin sesiones registradas.</p>';
@@ -2028,29 +2144,132 @@ async function refreshFichaSesiones() {
   }
 
   const pillMap = {
-    confirmada: ['st-ok', 'Confirmada'],
-    pendiente_confirmacion: ['st-pend', 'Pendiente'],
-    rechazada: ['st-red', 'Rechazada'],
-    cancelada: ['st-grey', 'Cancelada'],
+    confirmada: ['st-ok','Confirmada'],
+    pendiente_confirmacion: ['st-pend','Pendiente'],
+    rechazada: ['st-red','Rechazada'],
+    cancelada: ['st-grey','Cancelada'],
   };
 
   el.innerHTML = `<table class="tabla" style="margin-top:0">
-    <thead><tr><th>Fecha</th><th>Asignatura</th><th>Profesor</th><th>Duración</th><th>Estado</th></tr></thead>
+    <thead><tr><th>Fecha</th><th>Asignatura</th><th>Profesor</th><th>Dur.</th><th>Estado</th><th></th></tr></thead>
     <tbody>
       ${sesiones.map(s => {
         const [pc, pt] = pillMap[s.estado] || ['st-grey', s.estado];
         const p = allProfesores.find(x => x.id === s.profesor_id);
         const pu = p?.usuario || {};
         return `<tr>
-          <td>${formatShortDate(s.fecha)}</td>
-          <td>${s.asignatura}</td>
-          <td>${pu.nombre ? pu.nombre + ' ' + pu.apellidos : '—'}</td>
-          <td>${s.duracion_minutos} min</td>
-          <td><span class="status-pill ${pc}">${pt}</span></td>
+          <td style="font-size:12px">${formatShortDate(s.fecha)}</td>
+          <td style="font-size:12px;color:#fff">${s.asignatura}</td>
+          <td style="font-size:12px">${pu.nombre ? pu.nombre + ' ' + pu.apellidos : '—'}</td>
+          <td style="font-size:12px">${s.duracion_minutos}m</td>
+          <td><span class="status-pill ${pc}" style="font-size:10px">${pt}</span></td>
+          <td><button class="btn-edit" style="padding:4px 8px;font-size:11px" onclick="abrirEditSesion('${s.id}')"><i class="ti ti-pencil"></i> Editar</button></td>
         </tr>`;
       }).join('')}
     </tbody>
   </table>`;
+}
+
+async function abrirEditSesion(sesionId) {
+  const { data: s, error } = await db.from('sesiones').select('*').eq('id', sesionId).single();
+  if (error || !s) { showToast('No se pudo cargar la sesión', 'error'); return; }
+
+  document.getElementById('eses-id').value           = s.id;
+  document.getElementById('eses-old-duracion').value  = s.duracion_minutos;
+  document.getElementById('eses-old-estado').value    = s.estado;
+  document.getElementById('eses-alumno-id').value     = s.alumno_id;
+
+  document.getElementById('eses-asignatura').value    = s.asignatura || '';
+  document.getElementById('eses-fecha').value         = s.fecha || '';
+  document.getElementById('eses-hora').value          = s.hora_inicio ? s.hora_inicio.substring(0,5) : '';
+  document.getElementById('eses-duracion').value      = s.duracion_minutos || 60;
+  document.getElementById('eses-estado').value        = s.estado || 'pendiente_confirmacion';
+  document.getElementById('eses-contenido').value     = s.contenido_trabajado || '';
+  document.getElementById('eses-estado-alumno').value = s.estado_alumno_inicio || '';
+  document.getElementById('eses-nota').value          = s.nota_estimada != null ? s.nota_estimada : '';
+  document.getElementById('eses-arranque').value      = s.arranque_proxima || '';
+  document.getElementById('eses-tarea').value         = s.tarea_casa || '';
+  document.getElementById('eses-comp').value          = s.valoracion_comprension || '';
+  document.getElementById('eses-aplic').value         = s.valoracion_aplicacion || '';
+  document.getElementById('eses-conc').value          = s.valoracion_concentracion || '';
+  document.getElementById('eses-motiv').value         = s.valoracion_motivacion || '';
+  document.getElementById('eses-auto').value          = s.valoracion_autonomia || '';
+  document.getElementById('eses-obs').value           = s.observaciones || '';
+  document.getElementById('eses-obs-nexo').value      = s.observaciones_nexo || '';
+
+  // Mostrar aviso de bono
+  document.getElementById('eses-bono-aviso').style.display =
+    s.estado === 'confirmada' ? 'block' : 'none';
+
+  document.getElementById('modal-edit-sesion').classList.add('open');
+}
+
+async function guardarEditSesion() {
+  const btn = document.getElementById('btn-guardar-edit-ses');
+  btn.disabled = true;
+
+  const sesionId    = document.getElementById('eses-id').value;
+  const oldDuracion = parseInt(document.getElementById('eses-old-duracion').value);
+  const oldEstado   = document.getElementById('eses-old-estado').value;
+  const alumnoId    = document.getElementById('eses-alumno-id').value;
+  const newDuracion = parseInt(document.getElementById('eses-duracion').value);
+  const newEstado   = document.getElementById('eses-estado').value;
+
+  const v = n => { const x = parseInt(n); return (isNaN(x) || n === '') ? null : x; };
+  const f = n => { const x = parseFloat(n); return (isNaN(x) || n === '') ? null : x; };
+
+  const updates = {
+    asignatura:               document.getElementById('eses-asignatura').value.trim(),
+    fecha:                    document.getElementById('eses-fecha').value,
+    hora_inicio:              document.getElementById('eses-hora').value || null,
+    duracion_minutos:         newDuracion,
+    estado:                   newEstado,
+    contenido_trabajado:      document.getElementById('eses-contenido').value || null,
+    estado_alumno_inicio:     document.getElementById('eses-estado-alumno').value || null,
+    nota_estimada:            f(document.getElementById('eses-nota').value),
+    arranque_proxima:         document.getElementById('eses-arranque').value || null,
+    tarea_casa:               document.getElementById('eses-tarea').value || null,
+    valoracion_comprension:   v(document.getElementById('eses-comp').value),
+    valoracion_aplicacion:    v(document.getElementById('eses-aplic').value),
+    valoracion_concentracion: v(document.getElementById('eses-conc').value),
+    valoracion_motivacion:    v(document.getElementById('eses-motiv').value),
+    valoracion_autonomia:     v(document.getElementById('eses-auto').value),
+    observaciones:            document.getElementById('eses-obs').value || null,
+    observaciones_nexo:       document.getElementById('eses-obs-nexo').value || null,
+  };
+
+  // Si se confirma ahora, marcar confirmada_at
+  if (oldEstado !== 'confirmada' && newEstado === 'confirmada') {
+    updates.confirmada_at = new Date().toISOString();
+  }
+
+  const { error } = await db.from('sesiones').update(updates).eq('id', sesionId);
+  if (error) { showToast('Error al guardar: ' + error.message, 'error'); btn.disabled = false; return; }
+
+  // Recalcular bono si hay cambio de estado o duración
+  const oldConf = oldEstado === 'confirmada';
+  const newConf = newEstado === 'confirmada';
+  let bonoDelta = 0;
+  if (oldConf && newConf) {
+    bonoDelta = -(newDuracion - oldDuracion) / 60.0;        // solo ajuste por duración
+  } else if (!oldConf && newConf) {
+    bonoDelta = -newDuracion / 60.0;                         // nueva confirmación: descontar
+  } else if (oldConf && !newConf) {
+    bonoDelta = oldDuracion / 60.0;                          // desconfirmada: devolver
+  }
+
+  if (bonoDelta !== 0) {
+    const { data: al } = await db.from('alumnos').select('horas_bono_restantes').eq('id', alumnoId).single();
+    const newBono = Math.max(0, ((al?.horas_bono_restantes || 0) + bonoDelta));
+    await db.from('alumnos').update({ horas_bono_restantes: +newBono.toFixed(2) }).eq('id', alumnoId);
+  }
+
+  btn.disabled = false;
+  cerrarModal('modal-edit-sesion');
+  showToast('Sesión actualizada correctamente');
+  await refreshFichaSesiones();
+  // Refrescar la tabla global de sesiones si está visible
+  if (document.getElementById('section-sesiones')?.classList.contains('active')) loadSesionesAdmin();
 }
 
 async function refreshFichaInformes() {

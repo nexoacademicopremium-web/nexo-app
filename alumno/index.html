@@ -822,20 +822,21 @@ async function loadSesiones() {
     confirmada: ['st-ok','Confirmada'], rechazada:['st-red','Rechazada'], cancelada:['st-grey','Cancelada']
   };
 
+  const th = t => `<th style="text-align:left;padding:10px 14px;color:var(--muted);font-size:10px;font-weight:500;text-transform:uppercase;border-bottom:.5px solid var(--border)">${t}</th>`;
+  const td = (v, extra='') => `<td style="padding:11px 14px;border-bottom:.5px solid var(--border2);font-size:12px${extra}">${v}</td>`;
+
   histEl.innerHTML = `<table style="width:100%;border-collapse:collapse">
-    <thead><tr>
-      <th style="text-align:left;padding:10px 14px;color:var(--muted);font-size:10px;font-weight:500;text-transform:uppercase;border-bottom:.5px solid var(--border)">Fecha</th>
-      <th style="text-align:left;padding:10px 14px;color:var(--muted);font-size:10px;font-weight:500;text-transform:uppercase;border-bottom:.5px solid var(--border)">Asignatura</th>
-      <th style="text-align:left;padding:10px 14px;color:var(--muted);font-size:10px;font-weight:500;text-transform:uppercase;border-bottom:.5px solid var(--border)">Duración</th>
-      <th style="text-align:left;padding:10px 14px;color:var(--muted);font-size:10px;font-weight:500;text-transform:uppercase;border-bottom:.5px solid var(--border)">Estado</th>
-    </tr></thead>
+    <thead><tr>${th('Fecha')}${th('Asignatura')}${th('Profesor')}${th('Dur.')}${th('Estado')}</tr></thead>
     <tbody>
       ${historial.map(s => {
         const [cls, txt] = statusMap[s.estado] || ['st-grey', s.estado];
+        const profU = s.profesor?.usuario;
+        const profNom = profU ? profU.nombre + ' ' + profU.apellidos : '—';
         return `<tr>
-          <td style="padding:11px 14px;border-bottom:.5px solid var(--border2);font-size:12px">${formatShortDate(s.fecha)}</td>
-          <td style="padding:11px 14px;border-bottom:.5px solid var(--border2);font-size:12px;color:#fff">${s.asignatura}</td>
-          <td style="padding:11px 14px;border-bottom:.5px solid var(--border2);font-size:12px">${s.duracion_minutos} min</td>
+          ${td(formatShortDate(s.fecha))}
+          ${td(s.asignatura, ';color:#fff')}
+          ${td(profNom)}
+          ${td(s.duracion_minutos + ' min')}
           <td style="padding:11px 14px;border-bottom:.5px solid var(--border2)"><span class="status-pill ${cls}">${txt}</span></td>
         </tr>`;
       }).join('')}

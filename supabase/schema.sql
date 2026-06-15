@@ -77,15 +77,23 @@ CREATE POLICY "usuarios_admin_all" ON public.usuarios
     public.is_admin()
   );
 
--- Permite a un alumno leer la fila de usuarios de su profesor asignado
--- (necesario para que el panel del alumno muestre nombre/email del profesor)
+-- Permite a un alumno leer la fila de usuarios de su profesor
+-- (vía profesor_id directo, junction alumno_profesor, o sesiones registradas)
+DROP POLICY IF EXISTS "usuarios_prof_for_alumno" ON public.usuarios;
 CREATE POLICY "usuarios_prof_for_alumno" ON public.usuarios
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM public.profesores p
-      JOIN public.alumnos a ON a.profesor_id = p.id
       WHERE p.usuario_id = public.usuarios.id
-        AND a.usuario_id = auth.uid()
+        AND EXISTS (
+          SELECT 1 FROM public.alumnos a
+          WHERE a.usuario_id = auth.uid()
+            AND (
+              a.profesor_id = p.id
+              OR EXISTS (SELECT 1 FROM public.alumno_profesor ap WHERE ap.alumno_id = a.id AND ap.profesor_id = p.id)
+              OR EXISTS (SELECT 1 FROM public.sesiones s WHERE s.alumno_id = a.id AND s.profesor_id = p.id)
+            )
+        )
     )
   );
 
@@ -177,15 +185,19 @@ CREATE POLICY "alumnos_profesor_read" ON public.alumnos
     profesor_id = public.get_profesor_id()
   );
 
--- Permite a un alumno ver la ficha de su profesor asignado
--- (get_alumno_id no se usa aquí porque necesitamos el profesor_id del alumno;
---  la subquery a alumnos es segura porque alumnos_profesor_read ya no consulta profesores)
+-- Permite a un alumno ver la ficha de su profesor
+-- (vía profesor_id directo, junction alumno_profesor, o sesiones registradas)
+DROP POLICY IF EXISTS "profesores_alumno_read" ON public.profesores;
 CREATE POLICY "profesores_alumno_read" ON public.profesores
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM public.alumnos a
       WHERE a.usuario_id = auth.uid()
-        AND a.profesor_id = public.profesores.id
+        AND (
+          a.profesor_id = public.profesores.id
+          OR EXISTS (SELECT 1 FROM public.alumno_profesor ap WHERE ap.alumno_id = a.id AND ap.profesor_id = public.profesores.id)
+          OR EXISTS (SELECT 1 FROM public.sesiones s WHERE s.alumno_id = a.id AND s.profesor_id = public.profesores.id)
+        )
     )
   );
 
