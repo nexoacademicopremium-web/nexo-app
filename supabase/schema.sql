@@ -787,3 +787,111 @@ CREATE INDEX IF NOT EXISTS idx_mat_alumno        ON public.material_alumno(alumn
 CREATE INDEX IF NOT EXISTS idx_resultados_alumno ON public.resultados_test(alumno_id);
 CREATE INDEX IF NOT EXISTS idx_cal_alumno        ON public.calendario_alumno(alumno_id, fecha);
 CREATE INDEX IF NOT EXISTS idx_cal_profesor      ON public.calendario_profesor(profesor_id, fecha);
+
+-- ============================================================
+-- TARIFAS_BONOS — Catálogo de precios por grupo/modalidad/horas
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.tarifas_bonos (
+  id        SERIAL PRIMARY KEY,
+  grupo     TEXT      NOT NULL CHECK (grupo IN ('Primaria','ESO','Bachillerato','Universidad')),
+  modalidad TEXT      NOT NULL CHECK (modalidad IN ('Presencial','Online')),
+  horas     SMALLINT  NOT NULL CHECK (horas IN (2,4,8,12)),
+  precio    NUMERIC(8,2) NOT NULL,
+  activo    BOOLEAN   DEFAULT TRUE,
+  UNIQUE(grupo, modalidad, horas)
+);
+
+ALTER TABLE public.tarifas_bonos ENABLE ROW LEVEL SECURITY;
+
+-- Todos los usuarios autenticados pueden leer el catálogo
+CREATE POLICY "tarifas_bonos_read_all" ON public.tarifas_bonos
+  FOR SELECT USING (TRUE);
+
+CREATE POLICY "tarifas_bonos_admin_all" ON public.tarifas_bonos
+  FOR ALL USING (public.is_admin());
+
+-- Carga inicial de tarifas
+INSERT INTO public.tarifas_bonos (grupo, modalidad, horas, precio) VALUES
+  -- Primaria (solo Presencial)
+  ('Primaria','Presencial', 2,  32),
+  ('Primaria','Presencial', 4,  70),
+  ('Primaria','Presencial', 8, 135),
+  ('Primaria','Presencial',12, 200),
+  -- ESO Presencial
+  ('ESO','Presencial', 2,  40),
+  ('ESO','Presencial', 4,  90),
+  ('ESO','Presencial', 8, 175),
+  ('ESO','Presencial',12, 260),
+  -- ESO Online
+  ('ESO','Online', 2,  44),
+  ('ESO','Online', 4,  94),
+  ('ESO','Online', 8, 185),
+  ('ESO','Online',12, 270),
+  -- Bachillerato Presencial
+  ('Bachillerato','Presencial', 2,  42),
+  ('Bachillerato','Presencial', 4,  92),
+  ('Bachillerato','Presencial', 8, 180),
+  ('Bachillerato','Presencial',12, 265),
+  -- Bachillerato Online
+  ('Bachillerato','Online', 2,  46),
+  ('Bachillerato','Online', 4,  98),
+  ('Bachillerato','Online', 8, 195),
+  ('Bachillerato','Online',12, 285),
+  -- Universidad Presencial
+  ('Universidad','Presencial', 2,  44),
+  ('Universidad','Presencial', 4,  96),
+  ('Universidad','Presencial', 8, 190),
+  ('Universidad','Presencial',12, 280),
+  -- Universidad Online
+  ('Universidad','Online', 2,  48),
+  ('Universidad','Online', 4, 105),
+  ('Universidad','Online', 8, 205),
+  ('Universidad','Online',12, 300)
+ON CONFLICT (grupo, modalidad, horas) DO NOTHING;
+
+-- ============================================================
+-- BONOS — Historial de bonos contratados / solicitados por alumno
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.bonos (
+  id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  alumno_id         UUID NOT NULL REFERENCES public.alumnos(id) ON DELETE CASCADE,
+  horas_contratadas NUMERIC(6,2) NOT NULL,
+  modalidad         TEXT NOT NULL CHECK (modalidad IN ('Presencial','Online')),
+  precio_base       NUMERIC(8,2),
+  descuento         NUMERIC(5,2) DEFAULT 0
+                      CHECK (descuento >= 0 AND descuento <= 100),  -- porcentaje 0-100
+  precio_final      NUMERIC(8,2),
+  fecha_compra      DATE DEFAULT CURRENT_DATE,
+  estado            TEXT NOT NULL DEFAULT 'activo'
+                      CHECK (estado IN ('solicitado','activo','vencido','cancelado')),
+  notas             TEXT,
+  created_at        TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.bonos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "bonos_admin_all" ON public.bonos
+  FOR ALL USING (public.is_admin());
+
+-- El alumno ve solo sus propios bonos
+CREATE POLICY "bonos_alumno_read" ON public.bonos
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.alumnos a
+      WHERE a.id = public.bonos.alumno_id AND a.usuario_id = auth.uid()
+    )
+  );
+
+-- El alumno puede crear solicitudes (solo con estado='solicitado')
+CREATE POLICY "bonos_alumno_insert" ON public.bonos
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.alumnos a
+      WHERE a.id = public.bonos.alumno_id AND a.usuario_id = auth.uid()
+    )
+    AND estado = 'solicitado'
+  );
+
+CREATE INDEX IF NOT EXISTS idx_bonos_alumno ON public.bonos(alumno_id);
+CREATE INDEX IF NOT EXISTS idx_bonos_estado ON public.bonos(estado);
+CREATE INDEX IF NOT EXISTS idx_bonos_fecha  ON public.bonos(fecha_compra);

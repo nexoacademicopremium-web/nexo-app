@@ -314,6 +314,59 @@ Registro de clases impartidas por un profesor. Formulario de 22 campos en 3 secc
 
 ---
 
+### `tarifas_bonos`
+
+Catálogo de precios cerrado, editable por admin. Primaria solo tiene Presencial.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | `SERIAL PK` | |
+| `grupo` | `TEXT NOT NULL` | `'Primaria'\|'ESO'\|'Bachillerato'\|'Universidad'` |
+| `modalidad` | `TEXT NOT NULL` | `'Presencial'\|'Online'` |
+| `horas` | `SMALLINT NOT NULL` | `2\|4\|8\|12` |
+| `precio` | `NUMERIC(8,2) NOT NULL` | |
+| `activo` | `BOOLEAN` | default `TRUE` |
+| UNIQUE | `(grupo, modalidad, horas)` | |
+
+**Nivel → grupo mapping (para panel alumno):** `1ESO-4ESO → ESO`, `1BACH-2BACH → Bachillerato`. Primaria/Universidad no existen aún en `alumnos.nivel`.
+
+**RLS:**
+- `tarifas_bonos_read_all` — SELECT TRUE (todos los autenticados)
+- `tarifas_bonos_admin_all` — ALL donde `is_admin()`
+
+---
+
+### `bonos`
+
+Historial de bonos contratados o solicitados por alumno. `alumnos.horas_bono_restantes` sigue siendo la fuente de verdad para descuentos en sesiones.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | `UUID PK` | |
+| `alumno_id` | `UUID NOT NULL` | FK → `alumnos(id)` ON DELETE CASCADE |
+| `horas_contratadas` | `NUMERIC(6,2) NOT NULL` | |
+| `modalidad` | `TEXT NOT NULL` | `'Presencial'\|'Online'` |
+| `precio_base` | `NUMERIC(8,2)` | Precio del catálogo sin descuento |
+| `descuento` | `NUMERIC(5,2)` | Porcentaje 0–100; default 0 |
+| `precio_final` | `NUMERIC(8,2)` | Calculado: `precio_base * (1 - descuento/100)` |
+| `fecha_compra` | `DATE` | default `CURRENT_DATE` |
+| `estado` | `TEXT NOT NULL` | `'solicitado'\|'activo'\|'vencido'\|'cancelado'` |
+| `notas` | `TEXT` | |
+| `created_at` | `TIMESTAMPTZ` | |
+
+**Lógica de horas:**
+- `horas_consumidas` (en UI) = `bono.horas_contratadas - alumno.horas_bono_restantes` para bono activo
+- Cuando admin activa un bono: actualizar `alumnos.horas_bono_total = horas_contratadas`, `horas_bono_restantes = horas_contratadas`
+- Cuando admin edita `horas_contratadas` de bono activo: delta se suma a `alumnos.horas_bono_restantes`
+- Las RPCs de confirmación de sesión siguen tocando solo `alumnos.horas_bono_restantes` (sin cambios)
+
+**RLS:**
+- `bonos_admin_all` — ALL donde `is_admin()`
+- `bonos_alumno_read` — SELECT: EXISTS alumno del usuario con `id = bonos.alumno_id`
+- `bonos_alumno_insert` — INSERT: mismo check + `estado = 'solicitado'` (solicitudes desde panel alumno)
+
+---
+
 ### `tests` / `preguntas_test` / `resultados_test`
 
 Tests de autoevaluación.
