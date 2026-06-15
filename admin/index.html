@@ -659,6 +659,14 @@
       </div>
     </div>
 
+    <!-- 7. BONO -->
+    <div class="ficha-section" id="ficha-bono-section" style="display:none">
+      <div class="ficha-sec-title"><i class="ti ti-credit-card"></i> Bono activo</div>
+      <div id="ficha-bono-info">
+        <div class="loading-section" style="padding:12px"><div class="spinner"></div></div>
+      </div>
+    </div>
+
     <div class="modal-footer">
       <button class="btn-cancel" onclick="cerrarModal('modal-ficha')">Cerrar</button>
       <button class="btn-primary" id="btn-guardar-ficha" onclick="guardarFicha()"><i class="ti ti-device-floppy"></i> Guardar cambios</button>
@@ -1420,21 +1428,23 @@ function filtrar(tipo) {
 
 // Modo creación: fichaAlumnoId === null; modo edición: fichaAlumnoId = UUID
 function fichaAlumnoModoCreacion() {
-  document.getElementById('ficha-titulo').textContent        = 'Nuevo alumno';
-  document.getElementById('ficha-section-profs').style.display = 'none';
-  document.getElementById('ficha-pwd-title').innerHTML       = '<i class="ti ti-lock"></i> Contraseña inicial';
-  document.getElementById('fich-pwd-label').textContent      = 'Contraseña inicial *';
-  document.getElementById('fich-password').placeholder       = 'nexo2025AB';
-  document.getElementById('btn-guardar-ficha').innerHTML     = '<i class="ti ti-user-plus"></i> Crear alumno';
+  document.getElementById('ficha-titulo').textContent           = 'Nuevo alumno';
+  document.getElementById('ficha-section-profs').style.display  = 'none';
+  document.getElementById('ficha-bono-section').style.display   = 'none';
+  document.getElementById('ficha-pwd-title').innerHTML          = '<i class="ti ti-lock"></i> Contraseña inicial';
+  document.getElementById('fich-pwd-label').textContent         = 'Contraseña inicial *';
+  document.getElementById('fich-password').placeholder          = 'nexo2025AB';
+  document.getElementById('btn-guardar-ficha').innerHTML        = '<i class="ti ti-user-plus"></i> Crear alumno';
 }
 function fichaAlumnoModoEdicion(a) {
   const u = a.usuario || {};
-  document.getElementById('ficha-titulo').textContent        = `${u.nombre || '?'} ${u.apellidos || ''}`;
-  document.getElementById('ficha-section-profs').style.display = '';
-  document.getElementById('ficha-pwd-title').innerHTML       = '<i class="ti ti-lock"></i> Cambiar contraseña';
-  document.getElementById('fich-pwd-label').textContent      = 'Nueva contraseña';
-  document.getElementById('fich-password').placeholder       = 'mínimo 6 caracteres';
-  document.getElementById('btn-guardar-ficha').innerHTML     = '<i class="ti ti-device-floppy"></i> Guardar cambios';
+  document.getElementById('ficha-titulo').textContent           = `${u.nombre || '?'} ${u.apellidos || ''}`;
+  document.getElementById('ficha-section-profs').style.display  = '';
+  document.getElementById('ficha-bono-section').style.display   = '';
+  document.getElementById('ficha-pwd-title').innerHTML          = '<i class="ti ti-lock"></i> Cambiar contraseña';
+  document.getElementById('fich-pwd-label').textContent         = 'Nueva contraseña';
+  document.getElementById('fich-password').placeholder          = 'mínimo 6 caracteres';
+  document.getElementById('btn-guardar-ficha').innerHTML        = '<i class="ti ti-device-floppy"></i> Guardar cambios';
 }
 
 function abrirModalAlumno() {
@@ -2016,7 +2026,7 @@ async function abrirFicha(alumnoId) {
 
   document.getElementById('modal-ficha').classList.add('open');
 
-  await Promise.all([refreshFichaProfs(), refreshFichaAsignaturas(), refreshFichaSesiones()]);
+  await Promise.all([refreshFichaProfs(), refreshFichaAsignaturas(), refreshFichaSesiones(), refreshFichaBono()]);
 }
 
 async function guardarFicha() {
@@ -2353,6 +2363,52 @@ async function refreshFichaSesiones() {
       }).join('')}
     </tbody>
   </table>`;
+}
+
+async function refreshFichaBono() {
+  const el = document.getElementById('ficha-bono-info');
+  if (!el || fichaAlumnoId === null) return;
+
+  const alumno = allAlumnos.find(a => a.id === fichaAlumnoId);
+  if (!alumno) return;
+
+  const hTotal    = parseFloat(alumno.horas_bono_total)     || 0;
+  const hRest     = parseFloat(alumno.horas_bono_restantes) || 0;
+  const pct       = hTotal > 0 ? (hRest / hTotal) * 100 : 0;
+  const bonoColor = hRest <= 0 && hTotal > 0 ? 'var(--red)' : pct <= 25 && hTotal > 0 ? 'var(--amber)' : 'var(--blue)';
+
+  const [{ data: bonos }, { data: todasSes }] = await Promise.all([
+    db.from('bonos')
+      .select('horas_contratadas, modalidad, fecha_compra, estado')
+      .eq('alumno_id', fichaAlumnoId)
+      .order('created_at', { ascending: false })
+      .limit(1),
+    db.from('sesiones')
+      .select('duracion_minutos')
+      .eq('alumno_id', fichaAlumnoId)
+      .eq('estado', 'confirmada'),
+  ]);
+
+  const totalHoras = (todasSes || []).reduce((a, s) => a + s.duracion_minutos / 60, 0).toFixed(1);
+  const ub = bonos?.[0];
+
+  el.innerHTML = `
+    ${hRest <= 0 && hTotal > 0
+      ? `<div style="background:#2d0d0d;border:.5px solid var(--red);border-radius:7px;padding:9px 12px;margin-bottom:10px;font-size:12px;color:var(--red);display:flex;gap:8px;align-items:center"><i class="ti ti-ban"></i>Sin horas de bono disponibles — contactar familia</div>`
+      : pct <= 25 && hTotal > 0
+        ? `<div style="background:#2d1e0d;border:.5px solid var(--amber);border-radius:7px;padding:9px 12px;margin-bottom:10px;font-size:12px;color:var(--amber);display:flex;gap:8px;align-items:center"><i class="ti ti-alert-triangle"></i>Bono al ${pct.toFixed(0)}% — quedan ${hRest}h de ${hTotal}h</div>`
+        : ''}
+    ${ub ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:.5px solid var(--border2)"><span style="color:var(--muted)">Último bono</span><b>${ub.horas_contratadas}h ${ub.modalidad} · ${formatShortDate(ub.fecha_compra)}</b></div>` : ''}
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:.5px solid var(--border2)"><span style="color:var(--muted)">Total horas impartidas (todos)</span><b>${totalHoras}h</b></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:.5px solid var(--border2)"><span style="color:var(--muted)">Bono restante</span><b style="color:${bonoColor}">${hRest}h / ${hTotal}h</b></div>
+    <div style="margin-top:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="color:var(--muted);font-size:11px">${pct.toFixed(0)}% disponible</span>
+        <span style="color:var(--muted);font-size:11px">${Math.max(0, hTotal - hRest).toFixed(1)}h consumidas</span>
+      </div>
+      <div class="bono-bar-wrap"><div class="bono-bar-fill" style="width:${Math.min(100, pct).toFixed(0)}%;background:${bonoColor}"></div></div>
+    </div>
+  `;
 }
 
 async function abrirEditSesion(sesionId) {
@@ -3381,12 +3437,18 @@ async function abrirQuickFicha(alumnoId) {
   const ini = getInitials(u.nombre, u.apellidos);
   const pillCls = (alumno.nivel||'').includes('BACH') ? 'pill-bach' : 'pill-eso';
 
-  const { data: sesiones } = await db
-    .from('sesiones')
-    .select('id, asignatura, fecha, duracion_minutos, estado')
-    .eq('alumno_id', alumnoId)
-    .order('fecha', { ascending: false })
-    .limit(10);
+  const [{ data: sesiones }, { data: ultimoBonoArr }] = await Promise.all([
+    db.from('sesiones')
+      .select('id, asignatura, fecha, duracion_minutos, estado')
+      .eq('alumno_id', alumnoId)
+      .order('fecha', { ascending: false })
+      .limit(10),
+    db.from('bonos')
+      .select('horas_contratadas, modalidad, fecha_compra, estado')
+      .eq('alumno_id', alumnoId)
+      .order('created_at', { ascending: false })
+      .limit(1),
+  ]);
 
   const confirmadas = (sesiones || []).filter(s => s.estado === 'confirmada');
   const totalH = confirmadas.reduce((s, ses) => s + ses.duracion_minutos / 60, 0).toFixed(1);
@@ -3395,7 +3457,8 @@ async function abrirQuickFicha(alumnoId) {
   const restantes = parseFloat(alumno.horas_bono_restantes) || 0;
   const consumidas = Math.max(0, total - restantes);
   const pct = total > 0 ? Math.min(100, (restantes / total) * 100) : 0;
-  const bonoColor = pct > 50 ? 'var(--green)' : pct > 20 ? 'var(--amber)' : 'var(--red)';
+  const bonoColor = restantes <= 0 && total > 0 ? 'var(--red)' : pct <= 25 ? 'var(--amber)' : 'var(--green)';
+  const ub = ultimoBonoArr?.[0];
 
   // Profesores desde junction (con fallback al campo directo)
   const profsAsig = alumnoProfesorMap[alumnoId] || [];
@@ -3447,7 +3510,8 @@ async function abrirQuickFicha(alumnoId) {
     <div class="aqf-row"><span>Teléfono</span><b>${alumno.telefono_familia||'—'}</b></div>
 
     <div class="aqf-section"><i class="ti ti-credit-card"></i> Bono</div>
-    <div style="margin-bottom:4px">
+    ${ub ? `<div class="aqf-row"><span>Último bono</span><b>${ub.horas_contratadas}h ${ub.modalidad} · ${formatShortDate(ub.fecha_compra)}</b></div>` : ''}
+    <div style="margin-bottom:4px;margin-top:6px">
       <div style="display:flex;justify-content:space-between;margin-bottom:5px">
         <span style="color:var(--muted);font-size:11px">${restantes.toFixed(1)}h restantes</span>
         <span style="color:var(--muted);font-size:11px">${consumidas.toFixed(1)}h consumidas</span>
@@ -3455,6 +3519,11 @@ async function abrirQuickFicha(alumnoId) {
       <div class="bono-bar-wrap"><div class="bono-bar-fill" style="width:${pct.toFixed(0)}%;background:${bonoColor}"></div></div>
       <p style="color:var(--muted);font-size:11px;margin-top:4px">${pct.toFixed(0)}% disponible de ${total.toFixed(1)}h contratadas</p>
     </div>
+    ${restantes <= 0 && total > 0
+      ? `<div style="background:#2d0d0d;border:.5px solid var(--red);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--red);display:flex;gap:6px;align-items:center;margin-top:4px"><i class="ti ti-ban"></i>Sin horas de bono — avisar familia</div>`
+      : pct <= 25 && total > 0
+        ? `<div style="background:#2d1e0d;border:.5px solid var(--amber);border-radius:6px;padding:7px 10px;font-size:11px;color:var(--amber);display:flex;gap:6px;align-items:center;margin-top:4px"><i class="ti ti-alert-triangle"></i>Bono al ${pct.toFixed(0)}% — quedan ${restantes.toFixed(1)}h</div>`
+        : ''}
 
     <div class="aqf-section"><i class="ti ti-chalkboard"></i> Profesores asignados</div>
     ${profsHtml}
