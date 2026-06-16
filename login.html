@@ -95,10 +95,10 @@
     <div class="card-sub" id="card-sub">Introduce tus credenciales para acceder a tu panel.</div>
 
     <form id="login-form" onsubmit="handleLogin(event)">
-      <label>Correo electrónico</label>
+      <label>Usuario</label>
       <div class="input-wrap">
-        <i class="ti ti-mail"></i>
-        <input type="email" id="email" placeholder="tu@email.com" required autocomplete="email">
+        <i class="ti ti-user"></i>
+        <input type="text" id="email" placeholder="ALU2026MCR" required autocomplete="username">
       </div>
 
       <label>Contraseña</label>
@@ -142,8 +142,9 @@ async function handleLogin(e) {
   e.preventDefault();
   const btn    = document.getElementById('btn-login');
   const errEl  = document.getElementById('error-msg');
-  const email  = document.getElementById('email').value.trim();
-  const pass   = document.getElementById('password').value;
+  const rawInput = document.getElementById('email').value.trim();
+  const email    = rawInput.includes('@') ? rawInput : `${rawInput}@nexo.internal`;
+  const pass     = document.getElementById('password').value;
 
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div>';
@@ -153,7 +154,7 @@ async function handleLogin(e) {
     const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
 
     if (error) {
-      throw new Error('Credenciales incorrectas. Revisa tu email y contraseña.');
+      throw new Error('Credenciales incorrectas. Revisa tu usuario y contraseña.');
     }
 
     // Verify role

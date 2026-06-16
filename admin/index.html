@@ -498,25 +498,33 @@
         <div><label class="fl" style="margin-top:0">Nombre *</label><input class="fi" id="fich-prof-nombre" required></div>
         <div><label class="fl" style="margin-top:0">Apellidos *</label><input class="fi" id="fich-prof-apellidos" required></div>
       </div>
-      <label class="fl">Email *</label>
-      <input class="fi" id="fich-prof-email" type="email" required>
-      <div class="fi-grid2">
-        <div><label class="fl">Teléfono</label><input class="fi" id="fich-prof-telefono" type="tel" placeholder="600 000 000"></div>
-        <div><label class="fl">Zona</label><input class="fi" id="fich-prof-zona" placeholder="Valencia Norte"></div>
+      <div id="ficha-prof-row-email">
+        <label class="fl">Email</label>
+        <input class="fi" id="fich-prof-email" type="email">
       </div>
-      <label class="fl">Estudios</label>
-      <input class="fi" id="fich-prof-estudios" placeholder="Ingeniería Industrial · UPV">
-      <div class="fi-grid2">
-        <div>
-          <label class="fl">Nivel máximo</label>
-          <select class="fi" id="fich-prof-nivel-max">
-            <option value="">—</option>
-            <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
-            <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
-            <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
-          </select>
+      <div id="ficha-prof-row-contacto">
+        <div class="fi-grid2">
+          <div><label class="fl">Teléfono</label><input class="fi" id="fich-prof-telefono" type="tel" placeholder="600 000 000"></div>
+          <div><label class="fl">Zona</label><input class="fi" id="fich-prof-zona" placeholder="Valencia Norte"></div>
         </div>
-        <div><label class="fl">Fecha inicio</label><input class="fi" id="fich-prof-fecha-inicio" type="date"></div>
+      </div>
+      <div id="ficha-prof-row-estudios">
+        <label class="fl">Estudios</label>
+        <input class="fi" id="fich-prof-estudios" placeholder="Ingeniería Industrial · UPV">
+      </div>
+      <div id="ficha-prof-row-nivel">
+        <div class="fi-grid2">
+          <div>
+            <label class="fl">Nivel máximo</label>
+            <select class="fi" id="fich-prof-nivel-max">
+              <option value="">—</option>
+              <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
+              <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
+              <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
+            </select>
+          </div>
+          <div><label class="fl">Fecha inicio</label><input class="fi" id="fich-prof-fecha-inicio" type="date"></div>
+        </div>
       </div>
     </div>
 
@@ -528,8 +536,16 @@
       </div>
     </div>
 
+    <!-- 3b. CREDENCIALES (solo edición) -->
+    <div class="ficha-section" id="ficha-prof-section-creds" style="display:none">
+      <div class="ficha-sec-title"><i class="ti ti-key"></i> Credenciales de acceso</div>
+      <div id="ficha-prof-creds-contenido">
+        <div class="loading-section" style="padding:12px"><div class="spinner"></div></div>
+      </div>
+    </div>
+
     <!-- 3. CONTRASEÑA -->
-    <div class="ficha-section">
+    <div class="ficha-section" id="ficha-prof-section-pwd">
       <div class="ficha-sec-title" id="ficha-prof-pwd-title"><i class="ti ti-lock"></i> Cambiar contraseña</div>
       <div style="display:flex;gap:8px;align-items:flex-end">
         <div style="flex:1">
@@ -543,7 +559,7 @@
     </div>
 
     <!-- 4. OBSERVACIONES -->
-    <div class="ficha-section">
+    <div class="ficha-section" id="ficha-prof-section-obs">
       <div class="ficha-sec-title"><i class="ti ti-notes"></i> Observaciones</div>
       <textarea class="fi" id="fich-prof-observaciones" rows="3" placeholder="Notas internas sobre el profesor..."></textarea>
     </div>
@@ -573,8 +589,10 @@
         <div><label class="fl" style="margin-top:0">Nombre *</label><input class="fi" id="fich-nombre" required></div>
         <div><label class="fl" style="margin-top:0">Apellidos *</label><input class="fi" id="fich-apellidos" required></div>
       </div>
-      <label class="fl">Email *</label>
-      <input class="fi" id="fich-email" type="email" required>
+      <div id="ficha-row-email">
+        <label class="fl">Email</label>
+        <input class="fi" id="fich-email" type="email">
+      </div>
       <div class="fi-grid2">
         <div>
           <label class="fl">Nivel / Curso *</label>
@@ -593,14 +611,20 @@
           </select>
         </div>
       </div>
-      <div class="fi-grid2">
-        <div><label class="fl">Teléfono familia</label><input class="fi" id="fich-telefono" type="tel" placeholder="600 000 000"></div>
-        <div><label class="fl">Fecha inicio</label><input class="fi" id="fich-fecha-inicio" type="date"></div>
+      <div id="ficha-row-contacto">
+        <div class="fi-grid2">
+          <div><label class="fl">Teléfono familia</label><input class="fi" id="fich-telefono" type="tel" placeholder="600 000 000"></div>
+          <div><label class="fl">Fecha inicio</label><input class="fi" id="fich-fecha-inicio" type="date"></div>
+        </div>
       </div>
-      <label class="fl">Horario habitual</label>
-      <input class="fi" id="fich-horario" placeholder="Lunes y Miércoles 17:00h">
-      <label class="fl">Dirección</label>
-      <input class="fi" id="fich-direccion">
+      <div id="ficha-row-horario">
+        <label class="fl">Horario habitual</label>
+        <input class="fi" id="fich-horario" placeholder="Lunes y Miércoles 17:00h">
+      </div>
+      <div id="ficha-row-dir">
+        <label class="fl">Dirección</label>
+        <input class="fi" id="fich-direccion">
+      </div>
     </div>
 
     <!-- 2. ASIGNATURAS DE REPASO -->
@@ -634,8 +658,16 @@
       </div>
     </div>
 
-    <!-- 4. CONTRASEÑA -->
-    <div class="ficha-section">
+    <!-- 4. CREDENCIALES (solo edición) -->
+    <div class="ficha-section" id="ficha-section-creds" style="display:none">
+      <div class="ficha-sec-title"><i class="ti ti-key"></i> Credenciales de acceso</div>
+      <div id="ficha-creds-contenido">
+        <div class="loading-section" style="padding:12px"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- 4b. CONTRASEÑA -->
+    <div class="ficha-section" id="ficha-section-pwd">
       <div class="ficha-sec-title" id="ficha-pwd-title"><i class="ti ti-lock"></i> Cambiar contraseña</div>
       <div style="display:flex;gap:8px;align-items:flex-end">
         <div style="flex:1">
@@ -649,13 +681,13 @@
     </div>
 
     <!-- 5. OBSERVACIONES -->
-    <div class="ficha-section">
+    <div class="ficha-section" id="ficha-section-obs">
       <div class="ficha-sec-title"><i class="ti ti-notes"></i> Observaciones</div>
       <textarea class="fi" id="fich-observaciones" rows="3" placeholder="Notas internas sobre el alumno..."></textarea>
     </div>
 
     <!-- 6. SESIONES -->
-    <div class="ficha-section">
+    <div class="ficha-section" id="ficha-section-sesiones">
       <div class="ficha-sec-title"><i class="ti ti-calendar-check"></i> Sesiones <span style="color:var(--muted);font-size:10px;font-weight:400">(últimas 10 — haz clic en Editar para corregir)</span></div>
       <div id="ficha-sesiones">
         <div class="loading-section" style="padding:12px"><div class="spinner"></div></div>
@@ -1041,6 +1073,37 @@
     <div class="modal-footer">
       <button type="button" class="btn-cancel" onclick="cerrarModal('modal-cancelar-sesion')">Volver</button>
       <button type="button" class="btn-danger" onclick="confirmarCancelacion()">Cancelar sesión</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CREDENCIALES CREADAS -->
+<div class="modal-overlay" id="modal-creds">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-title">
+      <span><i class="ti ti-key" style="color:var(--blue);margin-right:6px"></i>Credenciales creadas</span>
+      <button class="modal-close" onclick="cerrarModal('modal-creds')">×</button>
+    </div>
+    <p style="color:var(--soft);font-size:13px;margin-bottom:4px">Comparte estas credenciales con <strong id="creds-modal-nombre" style="color:var(--txt)"></strong>.</p>
+    <p style="color:var(--red);font-size:12px;margin-bottom:16px"><i class="ti ti-alert-triangle"></i> Guárdalas ahora — la contraseña no se puede recuperar, solo cambiar.</p>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <div style="flex:1">
+        <label class="fl" style="margin-top:0">Usuario</label>
+        <div style="display:flex;gap:6px">
+          <input class="fi" id="creds-modal-username" readonly style="font-family:monospace">
+          <button class="btn-ghost" onclick="copiarTexto('creds-modal-username')" title="Copiar"><i class="ti ti-copy"></i></button>
+        </div>
+      </div>
+      <div style="flex:1">
+        <label class="fl" style="margin-top:0">Contraseña</label>
+        <div style="display:flex;gap:6px">
+          <input class="fi" id="creds-modal-password" readonly style="font-family:monospace">
+          <button class="btn-ghost" onclick="copiarTexto('creds-modal-password')" title="Copiar"><i class="ti ti-copy"></i></button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" onclick="cerrarModal('modal-creds')"><i class="ti ti-check"></i> Entendido</button>
     </div>
   </div>
 </div>
@@ -1444,23 +1507,36 @@ function filtrar(tipo) {
 
 // Modo creación: fichaAlumnoId === null; modo edición: fichaAlumnoId = UUID
 function fichaAlumnoModoCreacion() {
-  document.getElementById('ficha-titulo').textContent           = 'Nuevo alumno';
-  document.getElementById('ficha-section-profs').style.display  = 'none';
-  document.getElementById('ficha-bono-section').style.display   = 'none';
-  document.getElementById('ficha-pwd-title').innerHTML          = '<i class="ti ti-lock"></i> Contraseña inicial';
-  document.getElementById('fich-pwd-label').textContent         = 'Contraseña inicial *';
-  document.getElementById('fich-password').placeholder          = 'nexo2025AB';
-  document.getElementById('btn-guardar-ficha').innerHTML        = '<i class="ti ti-user-plus"></i> Crear alumno';
+  document.getElementById('ficha-titulo').textContent              = 'Nuevo alumno';
+  document.getElementById('ficha-section-profs').style.display    = 'none';
+  document.getElementById('ficha-bono-section').style.display     = 'none';
+  document.getElementById('ficha-section-sesiones').style.display = 'none';
+  document.getElementById('ficha-section-obs').style.display      = 'none';
+  document.getElementById('ficha-section-creds').style.display    = 'none';
+  document.getElementById('ficha-section-pwd').style.display      = 'none';
+  document.getElementById('ficha-row-email').style.display        = 'none';
+  document.getElementById('ficha-row-contacto').style.display     = 'none';
+  document.getElementById('ficha-row-horario').style.display      = 'none';
+  document.getElementById('ficha-row-dir').style.display          = 'none';
+  document.getElementById('btn-guardar-ficha').innerHTML          = '<i class="ti ti-user-plus"></i> Crear alumno';
 }
 function fichaAlumnoModoEdicion(a) {
   const u = a.usuario || {};
-  document.getElementById('ficha-titulo').textContent           = `${u.nombre || '?'} ${u.apellidos || ''}`;
-  document.getElementById('ficha-section-profs').style.display  = '';
-  document.getElementById('ficha-bono-section').style.display   = '';
-  document.getElementById('ficha-pwd-title').innerHTML          = '<i class="ti ti-lock"></i> Cambiar contraseña';
-  document.getElementById('fich-pwd-label').textContent         = 'Nueva contraseña';
-  document.getElementById('fich-password').placeholder          = 'mínimo 6 caracteres';
-  document.getElementById('btn-guardar-ficha').innerHTML        = '<i class="ti ti-device-floppy"></i> Guardar cambios';
+  document.getElementById('ficha-titulo').textContent              = `${u.nombre || '?'} ${u.apellidos || ''}`;
+  document.getElementById('ficha-section-profs').style.display    = '';
+  document.getElementById('ficha-bono-section').style.display     = '';
+  document.getElementById('ficha-section-sesiones').style.display = '';
+  document.getElementById('ficha-section-obs').style.display      = '';
+  document.getElementById('ficha-section-creds').style.display    = '';
+  document.getElementById('ficha-section-pwd').style.display      = '';
+  document.getElementById('ficha-row-email').style.display        = '';
+  document.getElementById('ficha-row-contacto').style.display     = '';
+  document.getElementById('ficha-row-horario').style.display      = '';
+  document.getElementById('ficha-row-dir').style.display          = '';
+  document.getElementById('ficha-pwd-title').innerHTML            = '<i class="ti ti-lock"></i> Cambiar contraseña';
+  document.getElementById('fich-pwd-label').textContent           = 'Nueva contraseña';
+  document.getElementById('fich-password').placeholder            = 'mínimo 6 caracteres';
+  document.getElementById('btn-guardar-ficha').innerHTML          = '<i class="ti ti-device-floppy"></i> Guardar cambios';
 }
 
 function abrirModalAlumno() {
@@ -1750,19 +1826,30 @@ function renderTablaProfesores(lista) {
 // FICHA DE PROFESOR (unificada — creación y edición)
 // ============================================================
 function fichaProfModoCreacion() {
-  document.getElementById('ficha-prof-titulo').textContent     = 'Nuevo profesor';
-  document.getElementById('ficha-prof-pwd-title').innerHTML    = '<i class="ti ti-lock"></i> Contraseña inicial';
-  document.getElementById('fich-prof-pwd-label').textContent   = 'Contraseña inicial *';
-  document.getElementById('fich-prof-password').placeholder    = 'nexo2025CM';
-  document.getElementById('btn-guardar-ficha-prof').innerHTML  = '<i class="ti ti-user-plus"></i> Crear profesor';
+  document.getElementById('ficha-prof-titulo').textContent           = 'Nuevo profesor';
+  document.getElementById('ficha-prof-section-creds').style.display = 'none';
+  document.getElementById('ficha-prof-section-pwd').style.display   = 'none';
+  document.getElementById('ficha-prof-section-obs').style.display   = 'none';
+  document.getElementById('ficha-prof-row-email').style.display     = 'none';
+  document.getElementById('ficha-prof-row-contacto').style.display  = 'none';
+  document.getElementById('ficha-prof-row-estudios').style.display  = 'none';
+  document.getElementById('ficha-prof-row-nivel').style.display     = 'none';
+  document.getElementById('btn-guardar-ficha-prof').innerHTML       = '<i class="ti ti-user-plus"></i> Crear profesor';
 }
 function fichaProfModoEdicion(p) {
   const u = p.usuario || {};
-  document.getElementById('ficha-prof-titulo').textContent     = `${u.nombre || '?'} ${u.apellidos || ''}`;
-  document.getElementById('ficha-prof-pwd-title').innerHTML    = '<i class="ti ti-lock"></i> Cambiar contraseña';
-  document.getElementById('fich-prof-pwd-label').textContent   = 'Nueva contraseña';
-  document.getElementById('fich-prof-password').placeholder    = 'mínimo 6 caracteres';
-  document.getElementById('btn-guardar-ficha-prof').innerHTML  = '<i class="ti ti-device-floppy"></i> Guardar cambios';
+  document.getElementById('ficha-prof-titulo').textContent           = `${u.nombre || '?'} ${u.apellidos || ''}`;
+  document.getElementById('ficha-prof-section-creds').style.display = '';
+  document.getElementById('ficha-prof-section-pwd').style.display   = '';
+  document.getElementById('ficha-prof-section-obs').style.display   = '';
+  document.getElementById('ficha-prof-row-email').style.display     = '';
+  document.getElementById('ficha-prof-row-contacto').style.display  = '';
+  document.getElementById('ficha-prof-row-estudios').style.display  = '';
+  document.getElementById('ficha-prof-row-nivel').style.display     = '';
+  document.getElementById('ficha-prof-pwd-title').innerHTML         = '<i class="ti ti-lock"></i> Cambiar contraseña';
+  document.getElementById('fich-prof-pwd-label').textContent        = 'Nueva contraseña';
+  document.getElementById('fich-prof-password').placeholder         = 'mínimo 6 caracteres';
+  document.getElementById('btn-guardar-ficha-prof').innerHTML       = '<i class="ti ti-device-floppy"></i> Guardar cambios';
 }
 
 function abrirModalProfesor() {
@@ -1798,7 +1885,7 @@ async function abrirFichaProfesor(profId) {
 
   fichaProfModoEdicion(p);
   document.getElementById('modal-ficha-profesor').classList.add('open');
-  await refreshFichaProfAsignaturas();
+  await Promise.all([refreshFichaProfAsignaturas(), cargarCredencialesAdminProf(profId)]);
 }
 
 async function guardarFichaProfesor() {
@@ -1815,20 +1902,17 @@ async function guardarFichaProfesor() {
   const fecha_inicio  = document.getElementById('fich-prof-fecha-inicio').value;
   const observaciones = document.getElementById('fich-prof-observaciones').value.trim();
 
-  if (!nombre || !apellidos || !email) {
-    showToast('Nombre, apellidos y email son obligatorios', 'error');
-    btn.disabled = false;
-    return;
-  }
-
   // ── MODO CREACIÓN ──
   if (fichaProfesorId === null) {
-    const password = document.getElementById('fich-prof-password').value;
-    if (!password) { showToast('La contraseña inicial es obligatoria', 'error'); btn.disabled = false; return; }
+    if (!nombre || !apellidos) {
+      showToast('Nombre y apellidos son obligatorios', 'error');
+      btn.disabled = false;
+      return;
+    }
 
     try {
       const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
-        body: { email, password, nombre, apellidos, rol: 'profesor' }
+        body: { nombre, apellidos, rol: 'profesor' }
       });
       if (fnErr) {
         let detail = fnErr.message;
@@ -1844,9 +1928,6 @@ async function guardarFichaProfesor() {
       const { data: newProf, error: insErr } = await db.from('profesores').insert({
         usuario_id: newUser.user_id,
         especialidades: asigNombres,
-        telefono: telefono || null, zona: zona || null,
-        estudios: estudios || null, nivel_max: nivel_max || null,
-        fecha_inicio: fecha_inicio || null, observaciones: observaciones || null,
       }).select('id').single();
       if (insErr) throw new Error('Usuario creado pero error al guardar datos: ' + insErr.message);
 
@@ -1856,15 +1937,21 @@ async function guardarFichaProfesor() {
         );
       }
 
-      showToast('Profesor creado correctamente');
       cerrarModal('modal-ficha-profesor');
       await loadAll();
       await loadTablaProfesores();
+      mostrarCredencialesCreadas(newUser.username, newUser.password, `${nombre} ${apellidos}`);
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
       btn.disabled = false;
     }
+    return;
+  }
+
+  if (!nombre || !apellidos) {
+    showToast('Nombre y apellidos son obligatorios', 'error');
+    btn.disabled = false;
     return;
   }
 
@@ -1939,6 +2026,7 @@ async function cambiarPasswordProfesor() {
   showToast('Contraseña cambiada correctamente');
   document.getElementById('fich-prof-password').value = '';
   btn.disabled = false;
+  await cargarCredencialesAdminProf(fichaProfesorId);
 }
 
 function renderFichaProfAsigCheckboxes(el, asignadas) {
@@ -2039,7 +2127,7 @@ async function abrirFicha(alumnoId) {
 
   document.getElementById('modal-ficha').classList.add('open');
 
-  await Promise.all([refreshFichaProfs(), refreshFichaAsignaturas(), refreshFichaSesiones(), refreshFichaBono()]);
+  await Promise.all([refreshFichaProfs(), refreshFichaAsignaturas(), refreshFichaSesiones(), refreshFichaBono(), cargarCredencialesAdmin(alumnoId)]);
 }
 
 async function guardarFicha() {
@@ -2057,20 +2145,17 @@ async function guardarFicha() {
   const direccion     = document.getElementById('fich-direccion').value.trim();
   const observaciones = document.getElementById('fich-observaciones').value.trim();
 
-  if (!nombre || !apellidos || !email || !nivel) {
-    showToast('Nombre, apellidos, email y nivel son obligatorios', 'error');
-    btn.disabled = false;
-    return;
-  }
-
   // ── MODO CREACIÓN ──
   if (fichaAlumnoId === null) {
-    const password = document.getElementById('fich-password').value;
-    if (!password) { showToast('La contraseña inicial es obligatoria', 'error'); btn.disabled = false; return; }
+    if (!nombre || !apellidos || !nivel) {
+      showToast('Nombre, apellidos y nivel son obligatorios', 'error');
+      btn.disabled = false;
+      return;
+    }
 
     try {
       const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
-        body: { email, password, nombre, apellidos, rol: 'alumno' }
+        body: { nombre, apellidos, rol: 'alumno' }
       });
       if (fnErr) {
         let detail = fnErr.message;
@@ -2081,9 +2166,6 @@ async function guardarFicha() {
 
       const { data: newAlumno, error: insErr } = await db.from('alumnos').insert({
         usuario_id: newUser.user_id, nivel, modalidad,
-        telefono_familia: telefono || null, fecha_inicio: fecha_inicio || null,
-        horario_habitual: horario || null, direccion: direccion || null,
-        observaciones: observaciones || null,
       }).select('id').single();
       if (insErr) throw new Error('Usuario creado pero error al guardar datos: ' + insErr.message);
 
@@ -2096,15 +2178,21 @@ async function guardarFicha() {
         );
       }
 
-      showToast('Alumno creado correctamente');
       cerrarModal('modal-ficha');
       await loadAll();
       await loadTablaAlumnos();
+      mostrarCredencialesCreadas(newUser.username, newUser.password, `${nombre} ${apellidos}`);
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
       btn.disabled = false;
     }
+    return;
+  }
+
+  if (!nombre || !apellidos || !nivel) {
+    showToast('Nombre, apellidos y nivel son obligatorios', 'error');
+    btn.disabled = false;
     return;
   }
 
@@ -2182,6 +2270,7 @@ async function cambiarPasswordAlumno() {
   showToast('Contraseña cambiada correctamente');
   document.getElementById('fich-password').value = '';
   btn.disabled = false;
+  await cargarCredencialesAdmin(fichaAlumnoId);
 }
 
 async function refreshFichaProfs() {
@@ -2567,6 +2656,96 @@ async function toggleFichaAsignatura(asignaturaId, checked) {
     alumnoAsignaturasMap[fichaAlumnoId]?.delete(asignaturaId);
   }
   populateFichaAddAsig();
+}
+
+// ============================================================
+// CREDENCIALES ADMIN
+// ============================================================
+function escHTML(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function copiarTexto(inputId) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => showToast('Copiado al portapapeles'));
+}
+
+function mostrarCredencialesCreadas(username, password, nombre) {
+  document.getElementById('creds-modal-nombre').textContent   = nombre;
+  document.getElementById('creds-modal-username').value       = username;
+  document.getElementById('creds-modal-password').value       = password;
+  document.getElementById('modal-creds').classList.add('open');
+}
+
+async function cargarCredencialesAdmin(alumnoId) {
+  const el = document.getElementById('ficha-creds-contenido');
+  if (!el) return;
+  const a = allAlumnos.find(x => x.id === alumnoId);
+  const userId = a?.usuario_id || a?.usuario?.id;
+  if (!userId) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:4px 0">No se puede identificar el usuario.</p>';
+    return;
+  }
+  el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
+  const { data, error } = await db.from('admin_credenciales').select('username, password_plain').eq('usuario_id', userId).maybeSingle();
+  if (error) { el.innerHTML = `<p style="color:var(--red);font-size:12px">${escHTML(error.message)}</p>`; return; }
+  if (!data) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:4px 0">Sin credenciales guardadas (usuario creado antes del nuevo sistema).</p>';
+    return;
+  }
+  el.innerHTML = `
+    <div style="display:flex;gap:8px">
+      <div style="flex:1">
+        <label class="fl" style="margin-top:0">Usuario</label>
+        <div style="display:flex;gap:6px">
+          <input class="fi" id="cred-alu-username" value="${escHTML(data.username)}" readonly style="font-family:monospace">
+          <button class="btn-ghost" onclick="copiarTexto('cred-alu-username')" title="Copiar"><i class="ti ti-copy"></i></button>
+        </div>
+      </div>
+      <div style="flex:1">
+        <label class="fl" style="margin-top:0">Contraseña actual</label>
+        <div style="display:flex;gap:6px">
+          <input class="fi" id="cred-alu-password" value="${escHTML(data.password_plain)}" readonly style="font-family:monospace">
+          <button class="btn-ghost" onclick="copiarTexto('cred-alu-password')" title="Copiar"><i class="ti ti-copy"></i></button>
+        </div>
+      </div>
+    </div>`;
+}
+
+async function cargarCredencialesAdminProf(profId) {
+  const el = document.getElementById('ficha-prof-creds-contenido');
+  if (!el) return;
+  const p = allProfesores.find(x => x.id === profId);
+  const userId = p?.usuario_id || p?.usuario?.id;
+  if (!userId) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:4px 0">No se puede identificar el usuario.</p>';
+    return;
+  }
+  el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
+  const { data, error } = await db.from('admin_credenciales').select('username, password_plain').eq('usuario_id', userId).maybeSingle();
+  if (error) { el.innerHTML = `<p style="color:var(--red);font-size:12px">${escHTML(error.message)}</p>`; return; }
+  if (!data) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:4px 0">Sin credenciales guardadas (usuario creado antes del nuevo sistema).</p>';
+    return;
+  }
+  el.innerHTML = `
+    <div style="display:flex;gap:8px">
+      <div style="flex:1">
+        <label class="fl" style="margin-top:0">Usuario</label>
+        <div style="display:flex;gap:6px">
+          <input class="fi" id="cred-prof-username" value="${escHTML(data.username)}" readonly style="font-family:monospace">
+          <button class="btn-ghost" onclick="copiarTexto('cred-prof-username')" title="Copiar"><i class="ti ti-copy"></i></button>
+        </div>
+      </div>
+      <div style="flex:1">
+        <label class="fl" style="margin-top:0">Contraseña actual</label>
+        <div style="display:flex;gap:6px">
+          <input class="fi" id="cred-prof-password" value="${escHTML(data.password_plain)}" readonly style="font-family:monospace">
+          <button class="btn-ghost" onclick="copiarTexto('cred-prof-password')" title="Copiar"><i class="ti ti-copy"></i></button>
+        </div>
+      </div>
+    </div>`;
 }
 
 // ============================================================
