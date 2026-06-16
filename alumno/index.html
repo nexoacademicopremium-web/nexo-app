@@ -1265,11 +1265,14 @@ async function loadProfesor() {
   const alumnoId = ctx.alumnoData?.id;
   if (!alumnoId) return;
 
-  // Buscar profesores en junction table (fuente principal)
-  const { data: apRows } = await db
+  // Buscar profesores en junction table (fuente principal) — sin nested join para evitar
+  // fallos si la FK asignatura_id no existe en el live DB
+  const { data: apRows, error: apErr } = await db
     .from('alumno_profesor')
-    .select('profesor_id, asignatura, asignatura_id, asig:asignaturas(nombre)')
+    .select('profesor_id, asignatura, asignatura_id')
     .eq('alumno_id', alumnoId);
+
+  if (apErr) console.warn('[Nexo] alumno_profesor query error:', apErr.message);
 
   let profesorIds = (apRows || []).map(r => r.profesor_id).filter(Boolean);
 
@@ -1284,10 +1287,18 @@ async function loadProfesor() {
     return;
   }
 
-  // Mapa asignatura por profesor_id (preferir nombre de asig FK, luego texto libre)
+  // Resolver nombres de asignatura por ID (query independiente, no nested join)
+  const asigIds = [...new Set((apRows || []).map(r => r.asignatura_id).filter(Boolean))];
+  let asigNombreMap = {};
+  if (asigIds.length > 0) {
+    const { data: asigs } = await db.from('asignaturas').select('id, nombre').in('id', asigIds);
+    (asigs || []).forEach(a => { asigNombreMap[a.id] = a.nombre; });
+  }
+
+  // Mapa asignatura por profesor_id
   const asigPorProf = {};
   (apRows || []).forEach(r => {
-    const nombre = r.asig?.nombre || r.asignatura || null;
+    const nombre = asigNombreMap[r.asignatura_id] || r.asignatura || null;
     if (nombre) {
       if (!asigPorProf[r.profesor_id]) asigPorProf[r.profesor_id] = [];
       asigPorProf[r.profesor_id].push(nombre);
