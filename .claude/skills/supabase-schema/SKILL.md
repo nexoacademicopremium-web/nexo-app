@@ -35,7 +35,7 @@ Espeja `auth.users` (mismo UUID como PK).
 **RLS:**
 - `usuarios_self_read` — SELECT donde `id = auth.uid()`
 - `usuarios_admin_all` — ALL donde `is_admin()`
-- `usuarios_prof_for_alumno` — SELECT: permite a un alumno leer la fila del usuario de su profesor; cubre 3 vías: `alumnos.profesor_id`, junction `alumno_profesor`, o `sesiones` donde el alumno tiene sesiones con ese profesor
+- `usuarios_prof_for_alumno` — SELECT: permite a un alumno leer la fila del usuario de su profesor; cubre 2 vías: `alumnos.profesor_id` o junction `alumno_profesor`. **NO incluye sesiones** — causaría bucle infinito con `sesiones_profesor_own` → `profesores` RLS → `sesiones` → ∞
 - `usuarios_alumnos_for_prof` — SELECT: permite a un profesor leer las filas de usuarios de sus alumnos (via FK `alumnos.profesor_id` o via `alumno_profesor`); necesario para que el panel profesor muestre nombre/apellidos en "Mis alumnos"
 
 ---
@@ -86,7 +86,7 @@ Espeja `auth.users` (mismo UUID como PK).
 **RLS:**
 - `profesores_self_read` — SELECT donde `usuario_id = auth.uid()`
 - `profesores_admin_all` — ALL donde `is_admin()`
-- `profesores_alumno_read` — SELECT: alumno puede leer el profesor; cubre 3 vías: `alumnos.profesor_id`, junction `alumno_profesor`, o `sesiones` donde el alumno tiene sesiones con ese profesor
+- `profesores_alumno_read` — SELECT: alumno puede leer su profesor; cubre 2 vías: `alumnos.profesor_id` o junction `alumno_profesor`. **NO incluye sesiones** — causaría bucle infinito con `sesiones_profesor_own` → `profesores` RLS → `sesiones` → ∞
 
 ---
 

@@ -78,7 +78,8 @@ CREATE POLICY "usuarios_admin_all" ON public.usuarios
   );
 
 -- Permite a un alumno leer la fila de usuarios de su profesor
--- (vía profesor_id directo, junction alumno_profesor, o sesiones registradas)
+-- (vía profesor_id directo o junction alumno_profesor)
+-- NOTA: NO incluir sesiones aquí — crearía bucle con sesiones_profesor_own → profesores RLS
 DROP POLICY IF EXISTS "usuarios_prof_for_alumno" ON public.usuarios;
 CREATE POLICY "usuarios_prof_for_alumno" ON public.usuarios
   FOR SELECT USING (
@@ -91,7 +92,6 @@ CREATE POLICY "usuarios_prof_for_alumno" ON public.usuarios
             AND (
               a.profesor_id = p.id
               OR EXISTS (SELECT 1 FROM public.alumno_profesor ap WHERE ap.alumno_id = a.id AND ap.profesor_id = p.id)
-              OR EXISTS (SELECT 1 FROM public.sesiones s WHERE s.alumno_id = a.id AND s.profesor_id = p.id)
             )
         )
     )
@@ -190,7 +190,9 @@ CREATE POLICY "alumnos_profesor_read" ON public.alumnos
   );
 
 -- Permite a un alumno ver la ficha de su profesor
--- (vía profesor_id directo, junction alumno_profesor, o sesiones registradas)
+-- (vía profesor_id directo o junction alumno_profesor)
+-- NOTA: NO incluir sesiones — crearía bucle infinito: profesores_alumno_read
+-- lee sesiones, y sesiones_profesor_own lee profesores → recursión infinita → 500
 DROP POLICY IF EXISTS "profesores_alumno_read" ON public.profesores;
 CREATE POLICY "profesores_alumno_read" ON public.profesores
   FOR SELECT USING (
@@ -200,7 +202,6 @@ CREATE POLICY "profesores_alumno_read" ON public.profesores
         AND (
           a.profesor_id = public.profesores.id
           OR EXISTS (SELECT 1 FROM public.alumno_profesor ap WHERE ap.alumno_id = a.id AND ap.profesor_id = public.profesores.id)
-          OR EXISTS (SELECT 1 FROM public.sesiones s WHERE s.alumno_id = a.id AND s.profesor_id = public.profesores.id)
         )
     )
   );
