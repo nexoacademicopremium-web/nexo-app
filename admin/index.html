@@ -240,7 +240,7 @@
   <div class="nav-item active" id="nav-dashboard" onclick="showSection('dashboard')"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
   <div class="nav-item" id="nav-alumnos" onclick="showSection('alumnos')"><i class="ti ti-user"></i> Alumnos</div>
   <div class="nav-item" id="nav-profesores" onclick="showSection('profesores')"><i class="ti ti-chalkboard"></i> Profesores</div>
-  <div class="nav-item" id="nav-sesiones" onclick="showSection('sesiones')" style="display:none"><i class="ti ti-calendar-check"></i> Sesiones</div>
+  <div class="nav-item" id="nav-sesiones" onclick="showSection('sesiones')"><i class="ti ti-calendar-check"></i> Sesiones</div>
   <div class="nav-section" style="margin-top:8px">Contenido</div>
   <div class="nav-item" id="nav-material" onclick="showSection('material')"><i class="ti ti-files"></i> Material</div>
   <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i> Tests</div>
@@ -325,18 +325,21 @@
   <h1 class="page-title">Sesiones</h1>
   <p class="page-sub">Todas las sesiones del sistema</p>
   <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-    <select class="fi" id="fil-ses-estado" onchange="loadSesionesAdmin()" style="width:auto;padding:8px 12px">
-      <option value="">Todos los estados</option>
-      <option value="pendiente_confirmacion">Pendientes</option>
-      <option value="confirmada">Confirmadas</option>
-      <option value="rechazada">Rechazadas</option>
-      <option value="cancelada">Canceladas</option>
+    <select class="fi" id="fil-ses-alumno" onchange="loadSesionesAdmin()" style="width:auto;padding:8px 12px;min-width:160px">
+      <option value="">Todos los alumnos</option>
     </select>
     <select class="fi" id="fil-ses-profesor" onchange="loadSesionesAdmin()" style="width:auto;padding:8px 12px">
       <option value="">Todos los profesores</option>
     </select>
     <select class="fi" id="fil-ses-mes" onchange="loadSesionesAdmin()" style="width:auto;padding:8px 12px">
       <option value="">Todos los meses</option>
+    </select>
+    <select class="fi" id="fil-ses-estado" onchange="loadSesionesAdmin()" style="width:auto;padding:8px 12px">
+      <option value="">Todos los estados</option>
+      <option value="pendiente_confirmacion">Pendientes</option>
+      <option value="confirmada">Confirmadas</option>
+      <option value="rechazada">Rechazadas</option>
+      <option value="cancelada">Canceladas</option>
     </select>
   </div>
   <div class="card">
@@ -1189,6 +1192,14 @@ async function loadAll() {
     avUserSel.innerHTML = '';
     allUsuarios.forEach(u => {
       avUserSel.add(new Option(`${u.nombre} ${u.apellidos} (${u.rol})`, u.id));
+    });
+
+    // Populate: filtro alumno en sesiones
+    const filSesAlumno = document.getElementById('fil-ses-alumno');
+    while (filSesAlumno.options.length > 1) filSesAlumno.remove(1);
+    allAlumnos.forEach(a => {
+      const u = a.usuario || {};
+      filSesAlumno.add(new Option(`${u.nombre || '?'} ${u.apellidos || ''}`, a.id));
     });
 
     // Populate: filtro de profesor en sesiones
@@ -2562,12 +2573,13 @@ async function toggleFichaAsignatura(asignaturaId, checked) {
 // SESIONES ADMIN
 // ============================================================
 async function loadSesionesAdmin() {
-  const estVal = document.getElementById('fil-ses-estado').value;
+  const aVal   = document.getElementById('fil-ses-alumno').value;
   const pVal   = document.getElementById('fil-ses-profesor').value;
   const mVal   = document.getElementById('fil-ses-mes').value;
+  const estVal = document.getElementById('fil-ses-estado').value;
 
   // Reset a página 0 cuando cambian los filtros
-  const curFilters = `${estVal}|${pVal}|${mVal}`;
+  const curFilters = `${aVal}|${pVal}|${mVal}|${estVal}`;
   if (_lastSesFilters !== curFilters) {
     sesionesPageNum = 0;
     _lastSesFilters = curFilters;
@@ -2580,9 +2592,10 @@ async function loadSesionesAdmin() {
     .select('id, asignatura, fecha, duracion_minutos, estado, alumno_id, profesor_id', { count: 'exact' })
     .order('fecha', { ascending: false });
 
-  if (estVal) query = query.eq('estado', estVal);
+  if (aVal)   query = query.eq('alumno_id', aVal);
   if (pVal)   query = query.eq('profesor_id', pVal);
   if (mVal)   query = query.gte('fecha', mVal + '-01').lte('fecha', mVal + '-31');
+  if (estVal) query = query.eq('estado', estVal);
 
   const from = sesionesPageNum * SESIONES_PAGE_SIZE;
   const to   = from + SESIONES_PAGE_SIZE - 1;
