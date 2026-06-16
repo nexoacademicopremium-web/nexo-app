@@ -179,10 +179,14 @@ ALTER TABLE public.alumnos
 -- IMPORTANTE: NO se usan subqueries cruzadas entre alumnos ↔ profesores porque
 -- crearían recursión infinita. Se usan funciones SECURITY DEFINER en su lugar.
 
--- Permite a un profesor ver los alumnos que tiene asignados (vía profesor_id)
+-- Permite a un profesor ver los alumnos asignados vía junction table alumno_profesor
 CREATE POLICY "alumnos_profesor_read" ON public.alumnos
   FOR SELECT USING (
-    profesor_id = public.get_profesor_id()
+    EXISTS (
+      SELECT 1 FROM public.alumno_profesor ap
+      WHERE ap.alumno_id = alumnos.id
+        AND ap.profesor_id = public.get_profesor_id()
+    )
   );
 
 -- Permite a un alumno ver la ficha de su profesor
@@ -565,7 +569,9 @@ DECLARE
   v_next public.bonos%ROWTYPE;
 BEGIN
   UPDATE public.bonos
-  SET estado = 'agotado'
+  SET estado = 'agotado',
+      horas_restantes  = 0,
+      horas_consumidas = horas_contratadas
   WHERE alumno_id = p_alumno_id AND estado = 'activo';
 
   SELECT * INTO v_next
@@ -575,7 +581,11 @@ BEGIN
   LIMIT 1;
 
   IF FOUND THEN
-    UPDATE public.bonos SET estado = 'activo' WHERE id = v_next.id;
+    UPDATE public.bonos
+    SET estado = 'activo',
+        horas_consumidas = 0,
+        horas_restantes  = v_next.horas_contratadas
+    WHERE id = v_next.id;
     UPDATE public.alumnos
     SET horas_bono_total     = v_next.horas_contratadas,
         horas_bono_restantes = v_next.horas_contratadas
@@ -625,6 +635,11 @@ BEGIN
     SET horas_bono_restantes = GREATEST(0, horas_bono_restantes - (v_session.duracion_minutos / 60.0))
     WHERE id = v_session.alumno_id
     RETURNING horas_bono_restantes INTO v_new_restantes;
+
+    UPDATE public.bonos
+    SET horas_consumidas = horas_consumidas + (v_session.duracion_minutos / 60.0),
+        horas_restantes  = GREATEST(0, horas_restantes - (v_session.duracion_minutos / 60.0))
+    WHERE alumno_id = v_session.alumno_id AND estado = 'activo';
 
     IF v_new_restantes = 0 THEN
       PERFORM public._activar_siguiente_bono(v_session.alumno_id);
@@ -688,6 +703,11 @@ BEGIN
     WHERE id = v_session.alumno_id
     RETURNING horas_bono_restantes INTO v_new_restantes;
 
+    UPDATE public.bonos
+    SET horas_consumidas = horas_consumidas + (v_session.duracion_minutos / 60.0),
+        horas_restantes  = GREATEST(0, horas_restantes - (v_session.duracion_minutos / 60.0))
+    WHERE alumno_id = v_session.alumno_id AND estado = 'activo';
+
     IF v_new_restantes = 0 THEN
       PERFORM public._activar_siguiente_bono(v_session.alumno_id);
     END IF;
@@ -737,6 +757,11 @@ BEGIN
     UPDATE public.alumnos
     SET horas_bono_restantes = horas_bono_restantes + (v_session.duracion_minutos / 60.0)
     WHERE id = v_session.alumno_id;
+
+    UPDATE public.bonos
+    SET horas_consumidas = GREATEST(0, horas_consumidas - (v_session.duracion_minutos / 60.0)),
+        horas_restantes  = horas_restantes + (v_session.duracion_minutos / 60.0)
+    WHERE alumno_id = v_session.alumno_id AND estado = 'activo';
   END IF;
 
   RETURN jsonb_build_object('success', true);
@@ -773,6 +798,11 @@ BEGIN
     SET horas_bono_restantes = GREATEST(0, horas_bono_restantes - (v_row.duracion_minutos / 60.0))
     WHERE id = v_row.alumno_id
     RETURNING horas_bono_restantes INTO v_new_restantes;
+
+    UPDATE public.bonos
+    SET horas_consumidas = horas_consumidas + (v_row.duracion_minutos / 60.0),
+        horas_restantes  = GREATEST(0, horas_restantes - (v_row.duracion_minutos / 60.0))
+    WHERE alumno_id = v_row.alumno_id AND estado = 'activo';
 
     IF v_new_restantes = 0 THEN
       PERFORM public._activar_siguiente_bono(v_row.alumno_id);
@@ -912,6 +942,8 @@ CREATE TABLE IF NOT EXISTS public.bonos (
   id                UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   alumno_id         UUID NOT NULL REFERENCES public.alumnos(id) ON DELETE CASCADE,
   horas_contratadas NUMERIC(6,2) NOT NULL,
+  horas_consumidas  NUMERIC(6,2) NOT NULL DEFAULT 0,
+  horas_restantes   NUMERIC(6,2) NOT NULL DEFAULT 0,
   modalidad         TEXT NOT NULL CHECK (modalidad IN ('Presencial','Online')),
   precio_base       NUMERIC(8,2),
   descuento         NUMERIC(5,2) DEFAULT 0

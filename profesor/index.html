@@ -783,9 +783,7 @@ let editClaseId = null;
       .eq('activo', true);
 
     if (junctionIds.length > 0) {
-      alumnosQuery = alumnosQuery.or(`profesor_id.eq.${profesorData.id},id.in.(${junctionIds.join(',')})`);
-    } else {
-      alumnosQuery = alumnosQuery.eq('profesor_id', profesorData.id);
+      alumnosQuery = alumnosQuery.in('id', junctionIds);
     }
 
     const { data } = await alumnosQuery;

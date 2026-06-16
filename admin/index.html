@@ -699,10 +699,12 @@
         <div>
           <label class="fl">Duración *</label>
           <select class="fi" id="eses-duracion" required>
-            <option value="45">45 min</option>
+            <option value="30">30 min</option>
             <option value="60">60 min (1h)</option>
             <option value="90">90 min (1h 30min)</option>
             <option value="120">120 min (2h)</option>
+            <option value="150">150 min (2h 30min)</option>
+            <option value="180">180 min (3h)</option>
           </select>
         </div>
         <div>
@@ -1049,6 +1051,9 @@
 // ============================================================
 let ctx = null;
 let allAlumnos = [], allProfesores = [], allUsuarios = [], allAsignaturas = [], allBloques = [], allTemas = [], allTarifas = [];
+let sesionesPageNum = 0;
+const SESIONES_PAGE_SIZE = 50;
+let _lastSesFilters = '';
 let alumnoProfesorMap = {};     // alumno_id -> [{id, profesor_id, asignatura_id}]
 let alumnoAsignaturasMap = {};   // alumno_id -> Set<asignatura_id>
 let profesorAsignaturasMap = {}; // profesor_id -> Set<asignatura_id>
@@ -1387,9 +1392,6 @@ function renderTablaAlumnos(lista, horasByAlumno = {}) {
         const asigText = g.asigs.length ? ' · ' + g.asigs.join(', ') : '';
         return `<span class="pill pill-eso" style="margin:1px">${g.nombre}${asigText}</span>`;
       }).join('');
-    } else if (a.profesor_id) {
-      const profNom = allProfesores.find(p => p.id === a.profesor_id)?.usuario || {};
-      profCell = profNom.nombre ? `${profNom.nombre} ${profNom.apellidos}` : '<span style="color:var(--muted)">Sin asignar</span>';
     } else {
       profCell = '<span style="color:var(--muted)">Sin asignar</span>';
     }
@@ -1715,10 +1717,7 @@ function renderTablaProfesores(lista) {
   }
   tbody.innerHTML = lista.map(p => {
     const u = p.usuario || {};
-    // Contar alumnos: desde alumno_profesor + fallback a profesor_id en alumnos
-    const nViaJunction = Object.values(alumnoProfesorMap).filter(aps => aps.some(ap => ap.profesor_id === p.id)).length;
-    const nViaFk       = allAlumnos.filter(a => a.profesor_id === p.id).length;
-    const nAlumnos     = nViaJunction || nViaFk;
+    const nAlumnos = Object.values(alumnoProfesorMap).filter(aps => aps.some(ap => ap.profesor_id === p.id)).length;
     return `<tr>
       <td><b style="color:#fff">${u.nombre || '?'} ${u.apellidos || ''}</b><br><span style="color:var(--muted);font-size:11px">${u.email || ''}</span></td>
       <td>${(p._asigNombres||[]).join(', ') || '—'}</td>
@@ -2171,62 +2170,6 @@ async function cambiarPasswordAlumno() {
   btn.disabled = false;
 }
 
-function renderBonoVisual(total, rest) {
-  const pct   = total > 0 ? Math.min(100, (rest / total) * 100) : 0;
-  const color = rest <= 1 ? 'var(--red)' : rest <= 3 ? 'var(--amber)' : 'var(--blue)';
-  const label = rest <= 1 ? 'Bono crítico' : rest <= 3 ? 'Bono bajo' : 'Bono disponible';
-  document.getElementById('ficha-bono-visual').innerHTML = `
-    <div style="display:flex;justify-content:space-between;margin-bottom:5px">
-      <span style="color:var(--muted);font-size:11px">${label}</span>
-      <span style="color:#fff;font-size:13px;font-weight:600">${rest}h <span style="color:var(--muted);font-weight:400">/ ${total}h</span></span>
-    </div>
-    <div class="bono-bar-wrap">
-      <div class="bono-bar-fill" style="width:${pct}%;background:${color}"></div>
-    </div>
-    <p style="color:var(--muted);font-size:11px;margin-top:4px">${pct.toFixed(0)}% del bono disponible</p>
-  `;
-}
-
-async function guardarBono() {
-  const btn   = document.getElementById('btn-guardar-bono');
-  btn.disabled = true;
-  const total = parseFloat(document.getElementById('ficha-bono-total').value) || 0;
-  const rest  = parseFloat(document.getElementById('ficha-bono-rest').value) || 0;
-
-  if (rest > total) {
-    showToast('Las horas restantes no pueden superar el total', 'error');
-    btn.disabled = false;
-    return;
-  }
-
-  const { error } = await db.from('alumnos').update({
-    horas_bono_total:     total,
-    horas_bono_restantes: rest,
-  }).eq('id', fichaAlumnoId);
-
-  if (error) {
-    showToast('Error al guardar bono: ' + error.message, 'error');
-    btn.disabled = false;
-    return;
-  }
-
-  showToast('Bono actualizado correctamente');
-  renderBonoVisual(total, rest);
-
-  // Actualizar estado local sin recargar todo
-  const idx = allAlumnos.findIndex(a => a.id === fichaAlumnoId);
-  if (idx >= 0) {
-    allAlumnos[idx].horas_bono_total     = total;
-    allAlumnos[idx].horas_bono_restantes = rest;
-  }
-
-  // Refrescar tabla si visible
-  if (document.getElementById('section-alumnos').classList.contains('active')) {
-    renderTablaAlumnos(allAlumnos);
-  }
-  btn.disabled = false;
-}
-
 async function refreshFichaProfs() {
   const el = document.getElementById('ficha-profs-lista');
   el.innerHTML = '<div class="loading-section" style="padding:12px"><div class="spinner"></div></div>';
@@ -2500,9 +2443,18 @@ async function guardarEditSesion() {
   }
 
   if (bonoDelta !== 0) {
-    const { data: al } = await db.from('alumnos').select('horas_bono_restantes').eq('id', alumnoId).single();
-    const newBono = Math.max(0, ((al?.horas_bono_restantes || 0) + bonoDelta));
-    await db.from('alumnos').update({ horas_bono_restantes: +newBono.toFixed(2) }).eq('id', alumnoId);
+    const [{ data: al }, { data: bonoAct }] = await Promise.all([
+      db.from('alumnos').select('horas_bono_restantes').eq('id', alumnoId).single(),
+      db.from('bonos').select('id, horas_consumidas, horas_restantes').eq('alumno_id', alumnoId).eq('estado', 'activo').maybeSingle(),
+    ]);
+    const newAlumRest = Math.max(0, ((al?.horas_bono_restantes || 0) + bonoDelta));
+    await db.from('alumnos').update({ horas_bono_restantes: +newAlumRest.toFixed(2) }).eq('id', alumnoId);
+    if (bonoAct) {
+      await db.from('bonos').update({
+        horas_consumidas: +Math.max(0, (bonoAct.horas_consumidas || 0) - bonoDelta).toFixed(2),
+        horas_restantes:  +Math.max(0, (bonoAct.horas_restantes  || 0) + bonoDelta).toFixed(2),
+      }).eq('id', bonoAct.id);
+    }
   }
 
   btn.disabled = false;
@@ -2607,21 +2559,31 @@ async function toggleFichaAsignatura(asignaturaId, checked) {
 // SESIONES ADMIN
 // ============================================================
 async function loadSesionesAdmin() {
+  const estVal = document.getElementById('fil-ses-estado').value;
+  const pVal   = document.getElementById('fil-ses-profesor').value;
+  const mVal   = document.getElementById('fil-ses-mes').value;
+
+  // Reset a página 0 cuando cambian los filtros
+  const curFilters = `${estVal}|${pVal}|${mVal}`;
+  if (_lastSesFilters !== curFilters) {
+    sesionesPageNum = 0;
+    _lastSesFilters = curFilters;
+  }
+
   const sesEl = document.getElementById('sesiones-tabla');
   sesEl.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
 
   let query = db.from('sesiones')
-    .select('id, asignatura, fecha, duracion_minutos, estado, excede_bono, alumno_id, profesor_id')
+    .select('id, asignatura, fecha, duracion_minutos, estado, excede_bono, alumno_id, profesor_id', { count: 'exact' })
     .order('fecha', { ascending: false });
 
-  const estVal = document.getElementById('fil-ses-estado').value;
   if (estVal) query = query.eq('estado', estVal);
-  const pVal = document.getElementById('fil-ses-profesor').value;
-  if (pVal) query = query.eq('profesor_id', pVal);
-  const mVal = document.getElementById('fil-ses-mes').value;
-  if (mVal) query = query.gte('fecha', mVal + '-01').lte('fecha', mVal + '-31');
+  if (pVal)   query = query.eq('profesor_id', pVal);
+  if (mVal)   query = query.gte('fecha', mVal + '-01').lte('fecha', mVal + '-31');
 
-  const { data: sesiones, error } = await query.limit(100);
+  const from = sesionesPageNum * SESIONES_PAGE_SIZE;
+  const to   = from + SESIONES_PAGE_SIZE - 1;
+  const { data: sesiones, error, count } = await query.range(from, to);
 
   if (error) {
     sesEl.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error al cargar sesiones: ${error.message}</p></div>`;
@@ -2629,10 +2591,10 @@ async function loadSesionesAdmin() {
   }
 
   const pillMap = {
-    confirmada: ['st-ok', 'Confirmada'],
+    confirmada:             ['st-ok',   'Confirmada'],
     pendiente_confirmacion: ['st-pend', 'Pendiente'],
-    rechazada: ['st-red', 'Rechazada'],
-    cancelada: ['st-grey', 'Cancelada'],
+    rechazada:              ['st-red',  'Rechazada'],
+    cancelada:              ['st-grey', 'Cancelada'],
   };
 
   const alumnoMap = {};
@@ -2640,17 +2602,30 @@ async function loadSesionesAdmin() {
   const profMap = {};
   allProfesores.forEach(p => { profMap[p.id] = p; });
 
+  const totalPages  = Math.ceil((count || 0) / SESIONES_PAGE_SIZE);
+  const paginacion  = totalPages > 1 ? `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:.5px solid var(--border)">
+      <span style="color:var(--muted);font-size:12px">${from + 1}–${Math.min(to + 1, count)} de ${count} sesiones</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-ghost" style="padding:5px 11px" ${sesionesPageNum === 0 ? 'disabled' : ''} onclick="sesionesPageNum--;loadSesionesAdmin()">← Anterior</button>
+        <span style="color:var(--soft);font-size:12px">Pág. ${sesionesPageNum + 1} / ${totalPages}</span>
+        <button class="btn-ghost" style="padding:5px 11px" ${sesionesPageNum >= totalPages - 1 ? 'disabled' : ''} onclick="sesionesPageNum++;loadSesionesAdmin()">Siguiente →</button>
+      </div>
+    </div>` : (count > 0 ? `<div style="padding:8px 16px;border-top:.5px solid var(--border);color:var(--muted);font-size:12px">${count} sesion${count !== 1 ? 'es' : ''}</div>` : '');
+
   sesEl.innerHTML = !sesiones || sesiones.length === 0
     ? `<div class="empty-state"><i class="ti ti-calendar-off"></i><p>Sin sesiones en este período</p></div>`
     : `<table class="tabla">
-        <thead><tr><th>Fecha</th><th>Alumno</th><th>Profesor</th><th>Asignatura</th><th>Duración</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <thead><tr><th>Fecha</th><th>Alumno</th><th>Profesor</th><th>Asignatura</th><th>Duración</th><th>Estado</th><th style="text-align:center">Acciones</th></tr></thead>
         <tbody>
           ${sesiones.map(s => {
             const [pc, pt] = pillMap[s.estado] || ['st-grey', s.estado];
             const a  = alumnoMap[s.alumno_id]?.usuario || {};
             const p  = profMap[s.profesor_id]?.usuario || {};
             const excedeBadge = s.excede_bono
-              ? `<span class="status-pill st-red" title="Esta sesión excede las horas de bono disponibles" style="margin-left:5px;font-size:9px">⚠ excede bono</span>` : '';
+              ? `<span class="status-pill st-red" title="Excede horas de bono" style="margin-left:5px;font-size:9px">⚠ bono</span>` : '';
+            const cancelBtn = s.estado !== 'cancelada'
+              ? `<button class="btn-danger" style="padding:5px 9px" onclick="abrirCancelar('${s.id}')"><i class="ti ti-ban"></i></button>` : '';
             return `<tr>
               <td>${formatShortDate(s.fecha)}</td>
               <td style="color:#fff">${a.nombre ? a.nombre + ' ' + a.apellidos : '—'}</td>
@@ -2658,11 +2633,14 @@ async function loadSesionesAdmin() {
               <td>${s.asignatura}</td>
               <td>${s.duracion_minutos} min</td>
               <td><span class="status-pill ${pc}">${pt}</span>${excedeBadge}</td>
-              <td>${s.estado !== 'cancelada' ? `<button class="btn-danger" onclick="abrirCancelar('${s.id}')">Cancelar</button>` : '<span style="color:var(--muted);font-size:11px">—</span>'}</td>
+              <td style="white-space:nowrap;text-align:center">
+                <button class="btn-edit" style="padding:5px 9px" onclick="abrirEditSesion('${s.id}')"><i class="ti ti-pencil"></i></button>
+                ${cancelBtn}
+              </td>
             </tr>`;
           }).join('')}
         </tbody>
-      </table>`;
+      </table>${paginacion}`;
 }
 
 function abrirCancelar(sesId) {
@@ -2989,7 +2967,7 @@ async function loadBonos() {
   el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
 
   let query = db.from('bonos')
-    .select('*, alumno:alumnos(horas_bono_restantes, usuario:usuarios(nombre, apellidos))')
+    .select('*, alumno:alumnos(usuario:usuarios(nombre, apellidos))')
     .order('created_at', { ascending: false });
 
   const alumnoVal = document.getElementById('fil-bono-alumno').value;
@@ -3035,9 +3013,8 @@ async function loadBonos() {
       ${data.map(b => {
         const u = b.alumno?.usuario || {};
         const alumnoNom = u.nombre ? `${u.nombre} ${u.apellidos}` : '—';
-        const bRestantes = parseFloat(b.alumno?.horas_bono_restantes) || 0;
-        const restantes  = b.estado === 'activo' ? bRestantes : 0;
-        const consumidas = b.estado === 'activo' ? Math.max(0, b.horas_contratadas - bRestantes) : b.horas_contratadas;
+        const consumidas = parseFloat(b.horas_consumidas) || 0;
+        const restantes  = parseFloat(b.horas_restantes)  || 0;
         const [pc, pt]   = pillMap[b.estado] || ['st-grey', b.estado];
         const precioFmt  = b.precio_final != null ? b.precio_final.toFixed(2) + '€' : '—';
         const descFmt    = b.descuento > 0 ? b.descuento + '%' : '—';
@@ -3053,7 +3030,7 @@ async function loadBonos() {
           <td style="color:#fff">${alumnoNom}</td>
           <td>${b.horas_contratadas}h</td>
           <td>${consumidas.toFixed(1)}h</td>
-          <td style="color:${lowBono ? 'var(--amber)' : 'inherit'}">${b.estado === 'activo' ? restantes.toFixed(1) + 'h' : '—'}</td>
+          <td style="color:${lowBono ? 'var(--amber)' : 'inherit'}">${b.estado === 'activo' || b.estado === 'agotado' ? restantes.toFixed(1) + 'h' : '—'}</td>
           <td>${b.modalidad}</td>
           <td>${formatShortDate(b.fecha_compra)}</td>
           <td>${descFmt}</td>
@@ -3092,8 +3069,15 @@ async function marcarPagadoBono(bonoId, alumnoId, horas) {
   const hayActivo    = activos && activos.length > 0;
   const nuevoEstado  = hayActivo ? 'pagado_en_espera' : 'activo';
 
+  const horasNum = +parseFloat(horas).toFixed(2);
+  const bonoUpdate = { pagado: true, fecha_pago: hoy, estado: nuevoEstado };
+  if (nuevoEstado === 'activo') {
+    bonoUpdate.horas_consumidas = 0;
+    bonoUpdate.horas_restantes  = horasNum;
+  }
+
   const { error } = await db.from('bonos')
-    .update({ pagado: true, fecha_pago: hoy, estado: nuevoEstado })
+    .update(bonoUpdate)
     .eq('id', bonoId);
 
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
@@ -3101,7 +3085,7 @@ async function marcarPagadoBono(bonoId, alumnoId, horas) {
   if (nuevoEstado === 'activo') {
     await vencerBonosActivos(alumnoId, bonoId);
     await db.from('alumnos')
-      .update({ horas_bono_restantes: +parseFloat(horas).toFixed(2), horas_bono_total: +parseFloat(horas).toFixed(2) })
+      .update({ horas_bono_restantes: horasNum, horas_bono_total: horasNum })
       .eq('id', alumnoId);
     showToast('Pago registrado — bono activado');
   } else {
@@ -3143,7 +3127,7 @@ function abrirModalBono() {
 
 async function abrirEditBono(bonoId) {
   const { data: b, error } = await db.from('bonos')
-    .select('*, alumno:alumnos(horas_bono_restantes)')
+    .select('*')
     .eq('id', bonoId).single();
   if (error || !b) { showToast('Error al cargar bono', 'error'); return; }
 
@@ -3179,9 +3163,7 @@ async function abrirEditBono(bonoId) {
   document.getElementById('bono-notas').value = b.notas || '';
 
   if (b.estado === 'activo') {
-    const bRestantes = parseFloat(b.alumno?.horas_bono_restantes) || 0;
-    const consumidas  = Math.max(0, b.horas_contratadas - bRestantes);
-    document.getElementById('bono-consumidas').value = consumidas.toFixed(1);
+    document.getElementById('bono-consumidas').value = parseFloat(b.horas_consumidas || 0).toFixed(1);
     document.getElementById('bono-consumidas-wrap').style.display = 'block';
     actualizarRestantesPreview();
   } else {
@@ -3287,21 +3269,24 @@ async function guardarBono() {
       const { error } = await db.from('bonos').update(payload).eq('id', editBonoId);
       if (error) throw error;
 
-      // Sync alumnos.horas_bono_restantes
+      // Sync horas en bono y en alumnos
       if (estado === 'activo') {
         const consumidasWrap = document.getElementById('bono-consumidas-wrap');
         if (consumidasWrap.style.display !== 'none') {
           const consumidas   = parseFloat(document.getElementById('bono-consumidas').value) || 0;
           const newRestantes = Math.max(0, horas - consumidas);
+          await db.from('bonos').update({ horas_consumidas: +consumidas.toFixed(2), horas_restantes: +newRestantes.toFixed(2) }).eq('id', editBonoId);
           await db.from('alumnos').update({ horas_bono_restantes: +newRestantes.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
         } else if (horas !== oldHoras) {
           const { data: al } = await db.from('alumnos').select('horas_bono_restantes').eq('id', alumnoId).single();
           const delta        = horas - oldHoras;
           const newRestantes = Math.max(0, (al?.horas_bono_restantes || 0) + delta);
+          await db.from('bonos').update({ horas_restantes: +newRestantes.toFixed(2) }).eq('id', editBonoId);
           await db.from('alumnos').update({ horas_bono_restantes: +newRestantes.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
         }
         if (oldEstado !== 'activo') {
           await vencerBonosActivos(alumnoId, editBonoId);
+          await db.from('bonos').update({ horas_consumidas: 0, horas_restantes: +horas.toFixed(2) }).eq('id', editBonoId);
           await db.from('alumnos').update({ horas_bono_restantes: +horas.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
         }
       } else if (oldEstado === 'activo' && estado !== 'activo') {
@@ -3309,7 +3294,13 @@ async function guardarBono() {
       }
     } else {
       // CREAR
-      const { error } = await db.from('bonos').insert({ ...payload, alumno_id: alumnoId });
+      const horasRestantesInicial = (estado === 'activo' || estado === 'pagado_en_espera' || estado === 'reservado') ? +horas.toFixed(2) : 0;
+      const { error } = await db.from('bonos').insert({
+        ...payload,
+        alumno_id:        alumnoId,
+        horas_consumidas: 0,
+        horas_restantes:  horasRestantesInicial,
+      });
       if (error) throw error;
 
       if (estado === 'activo') {
@@ -3331,7 +3322,7 @@ async function guardarBono() {
 }
 
 async function vencerBonosActivos(alumnoId, exceptId) {
-  let q = db.from('bonos').update({ estado: 'agotado' }).eq('alumno_id', alumnoId).eq('estado', 'activo');
+  let q = db.from('bonos').update({ estado: 'agotado', horas_restantes: 0 }).eq('alumno_id', alumnoId).eq('estado', 'activo');
   if (exceptId) q = q.neq('id', exceptId);
   await q;
 }
@@ -3471,11 +3462,6 @@ async function abrirQuickFicha(alumnoId) {
     }
     if (ap.asignatura_id) grouped[ap.profesor_id].asigs.push(asigNombre(ap.asignatura_id));
   });
-  if (Object.keys(grouped).length === 0 && alumno.profesor_id) {
-    const p = allProfesores.find(x => x.id === alumno.profesor_id);
-    const pu = p?.usuario || {};
-    grouped[alumno.profesor_id] = { nombre: `${pu.nombre||'?'} ${pu.apellidos||''}`.trim(), asigs: [] };
-  }
   const profsHtml = Object.values(grouped).length > 0
     ? Object.values(grouped).map(g => {
         const asigText = g.asigs.length ? `<span style="color:var(--muted);font-size:11px"> · ${g.asigs.join(', ')}</span>` : '';

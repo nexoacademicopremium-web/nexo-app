@@ -63,7 +63,7 @@ Espeja `auth.users` (mismo UUID como PK).
 **RLS:**
 - `alumnos_self_read` — SELECT donde `usuario_id = auth.uid()`
 - `alumnos_admin_all` — ALL donde `is_admin()`
-- `alumnos_profesor_read` — SELECT donde `profesor_id = get_profesor_id()`
+- `alumnos_profesor_read` — SELECT: EXISTS en `alumno_profesor` donde `alumno_id = alumnos.id AND profesor_id = get_profesor_id()` (solo junction, no más FK directa)
 
 ---
 
@@ -345,13 +345,15 @@ Catálogo de precios cerrado, editable por admin. Primaria solo tiene Presencial
 
 ### `bonos`
 
-Historial de bonos contratados o solicitados por alumno. `alumnos.horas_bono_restantes` sigue siendo la fuente de verdad para descuentos en sesiones.
+Historial de bonos contratados o solicitados por alumno. Cada bono tiene sus propias columnas de seguimiento de horas; `alumnos.horas_bono_restantes/total` se mantiene en sync como caché del bono activo.
 
 | Columna | Tipo | Notas |
 |---|---|---|
 | `id` | `UUID PK` | |
 | `alumno_id` | `UUID NOT NULL` | FK → `alumnos(id)` ON DELETE CASCADE |
 | `horas_contratadas` | `NUMERIC(6,2) NOT NULL` | |
+| `horas_consumidas` | `NUMERIC(6,2) NOT NULL DEFAULT 0` | Actualizado por RPCs al confirmar sesiones |
+| `horas_restantes` | `NUMERIC(6,2) NOT NULL DEFAULT 0` | Actualizado por RPCs al confirmar sesiones |
 | `modalidad` | `TEXT NOT NULL` | `'Presencial'\|'Online'` |
 | `precio_base` | `NUMERIC(8,2)` | Precio del catálogo sin descuento |
 | `descuento` | `NUMERIC(5,2)` | Porcentaje 0–100; default 0 |
@@ -369,9 +371,10 @@ Historial de bonos contratados o solicitados por alumno. `alumnos.horas_bono_res
 3. Bono activo se agota (horas=0 tras confirmación sesión) → RPC llama `_activar_siguiente_bono()` → activo pasa a `agotado`, el primer `pagado_en_espera` (por `fecha_pago`) pasa a `activo`
 
 **Lógica de horas:**
-- `horas_consumidas` (en UI) = `bono.horas_contratadas - alumno.horas_bono_restantes` para bono activo
-- Cuando se activa un bono: `alumnos.horas_bono_total = horas_contratadas`, `horas_bono_restantes = horas_contratadas`
-- Las RPCs de confirmación de sesión tocan solo `alumnos.horas_bono_restantes` y llaman al helper si llega a 0
+- Las RPCs de confirmación actualizan `bonos.horas_consumidas/restantes` Y `alumnos.horas_bono_restantes` en sync
+- Cuando `_activar_siguiente_bono` marca un bono como `agotado`: sets `horas_restantes=0, horas_consumidas=horas_contratadas`
+- Cuando activa el siguiente `pagado_en_espera` → `activo`: sets `horas_consumidas=0, horas_restantes=horas_contratadas`
+- La tabla de bonos en admin usa `bono.horas_consumidas/restantes` directamente (no calcula desde `alumnos`)
 
 **RLS:**
 - `bonos_admin_all` — ALL donde `is_admin()`
