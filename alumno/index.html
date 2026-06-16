@@ -1262,66 +1262,97 @@ function toggleInfCat(id) {
 // MI PROFESOR
 // ============================================================
 async function loadProfesor() {
-  if (!ctx.alumnoData?.profesor_id) {
+  const alumnoId = ctx.alumnoData?.id;
+  if (!alumnoId) return;
+
+  // Buscar profesores en junction table (fuente principal)
+  const { data: apRows } = await db
+    .from('alumno_profesor')
+    .select('profesor_id, asignatura, asignatura_id, asig:asignaturas(nombre)')
+    .eq('alumno_id', alumnoId);
+
+  let profesorIds = (apRows || []).map(r => r.profesor_id).filter(Boolean);
+
+  // Fallback a profesor_id legacy si la junction no tiene filas
+  if (profesorIds.length === 0 && ctx.alumnoData?.profesor_id) {
+    profesorIds = [ctx.alumnoData.profesor_id];
+  }
+
+  if (profesorIds.length === 0) {
     document.getElementById('profesor-content').innerHTML =
       `<div class="empty-state"><i class="ti ti-user-off"></i><p>Aún no tienes un profesor asignado.<br>Contacta con Nexo para más información.</p></div>`;
     return;
   }
 
-  const { data: prof } = await db
+  // Mapa asignatura por profesor_id (preferir nombre de asig FK, luego texto libre)
+  const asigPorProf = {};
+  (apRows || []).forEach(r => {
+    const nombre = r.asig?.nombre || r.asignatura || null;
+    if (nombre) {
+      if (!asigPorProf[r.profesor_id]) asigPorProf[r.profesor_id] = [];
+      asigPorProf[r.profesor_id].push(nombre);
+    }
+  });
+
+  const { data: profs } = await db
     .from('profesores')
     .select('*, usuario:usuarios(nombre, apellidos, email)')
-    .eq('id', ctx.alumnoData.profesor_id)
-    .single();
+    .in('id', profesorIds);
 
-  if (!prof) return;
-  const u = prof.usuario;
-  if (!u) {
+  if (!profs || profs.length === 0) {
     document.getElementById('profesor-content').innerHTML =
       `<div class="empty-state"><i class="ti ti-alert-circle"></i><p>No se pudo cargar la información del profesor.<br>Contacta con Nexo si el problema persiste.</p></div>`;
     return;
   }
-  const initials = getInitials(u.nombre, u.apellidos);
 
-  // Count sessions together
-  const { count: sesCnt } = await db
-    .from('sesiones')
-    .select('id', { count: 'exact', head: true })
-    .eq('alumno_id', ctx.alumnoData.id)
-    .eq('profesor_id', prof.id)
-    .eq('estado', 'confirmada');
+  // Contar sesiones por profesor en paralelo
+  const sesCounts = await Promise.all(
+    profs.map(p => db.from('sesiones')
+      .select('id', { count: 'exact', head: true })
+      .eq('alumno_id', alumnoId).eq('profesor_id', p.id).eq('estado', 'confirmada'))
+  );
 
-  const totalH = ((sesCnt || 0) * (ctx.alumnoData.horas_bono_total / Math.max(sesCnt || 1, 1))).toFixed(0);
+  let html = '';
+  profs.forEach((prof, i) => {
+    const u = prof.usuario;
+    if (!u) return;
+    const initials = getInitials(u.nombre, u.apellidos);
+    const asigs    = asigPorProf[prof.id] || [];
+    const sesCnt   = sesCounts[i]?.count || 0;
 
-  document.getElementById('profesor-content').innerHTML = `
-    <div class="card" style="margin-bottom:16px">
+    html += `
+    <div class="card" style="margin-bottom:12px">
       <div class="profe-card">
         <div class="profe-av">${initials}</div>
         <div style="flex:1">
           <div class="profe-name">${u.nombre} ${u.apellidos}</div>
           <div class="profe-det">${prof.estudios || 'Profesor'} · ${prof.zona || 'Valencia'}</div>
           <div class="profe-tags">
-            ${(prof.especialidades || []).map(e => `<span class="tag tag-b">${e}</span>`).join('')}
+            ${asigs.map(a => `<span class="tag tag-b">${a}</span>`).join('')}
             ${prof.nivel_max ? `<span class="tag tag-g">Hasta ${nivelLabel(prof.nivel_max)}</span>` : ''}
           </div>
         </div>
       </div>
     </div>
-    <div class="card">
+    <div class="card" style="margin-bottom:16px">
       <div class="card-head"><div class="card-title"><i class="ti ti-info-circle"></i> Información</div></div>
       <div class="card-body" style="padding:8px 16px">
-        <div class="ev-row"><div class="ev-label">Asignatura</div><b style="color:#fff;font-size:12px">${(ctx.alumnoData._asigNombres||[]).join(', ') || '—'}</b></div>
+        ${asigs.length ? `<div class="ev-row"><div class="ev-label">Asignatura</div><b style="color:#fff;font-size:12px">${asigs.join(', ')}</b></div>` : ''}
         <div class="ev-row"><div class="ev-label">Horario habitual</div><b style="color:#fff;font-size:12px">${ctx.alumnoData.horario_habitual || '—'}</b></div>
         <div class="ev-row"><div class="ev-label">Modalidad</div><b style="color:#fff;font-size:12px">${ctx.alumnoData.modalidad === 'presencial' ? 'Presencial a domicilio' : 'Online'}</b></div>
-        <div class="ev-row"><div class="ev-label">Sesiones juntos</div><b style="color:#fff;font-size:12px">${sesCnt || 0} sesiones confirmadas</b></div>
+        <div class="ev-row"><div class="ev-label">Sesiones juntos</div><b style="color:#fff;font-size:12px">${sesCnt} sesiones confirmadas</b></div>
         <div class="ev-row"><div class="ev-label">Desde</div><b style="color:#fff;font-size:12px">${formatDate(ctx.alumnoData.fecha_inicio)}</b></div>
       </div>
-    </div>
-    <div style="margin-top:16px;background:#0a1a30;border:.5px solid var(--border);border-left:3px solid var(--blue);border-radius:0 8px 8px 0;padding:12px 16px">
-      <div style="color:var(--muted);font-size:11px;margin-bottom:4px">¿Algún problema o quieres hacer un cambio?</div>
-      <a href="https://wa.me/${WHATSAPP_MANU}?text=Hola%20Manu%2C%20tengo%20una%20consulta%20sobre%20mi%20profesor." target="_blank" style="color:var(--blue);font-size:12px;font-weight:500;text-decoration:none">Contactar con Nexo ↗</a>
-    </div>
-  `;
+    </div>`;
+  });
+
+  html += `
+  <div style="margin-top:4px;background:#0a1a30;border:.5px solid var(--border);border-left:3px solid var(--blue);border-radius:0 8px 8px 0;padding:12px 16px">
+    <div style="color:var(--muted);font-size:11px;margin-bottom:4px">¿Algún problema o quieres hacer un cambio?</div>
+    <a href="https://wa.me/${WHATSAPP_MANU}?text=Hola%20Manu%2C%20tengo%20una%20consulta%20sobre%20mi%20profesor." target="_blank" style="color:var(--blue);font-size:12px;font-weight:500;text-decoration:none">Contactar con Nexo ↗</a>
+  </div>`;
+
+  document.getElementById('profesor-content').innerHTML = html;
 }
 
 // ============================================================
