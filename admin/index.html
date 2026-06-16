@@ -2968,7 +2968,7 @@ async function loadBonos() {
   el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
 
   let query = db.from('bonos')
-    .select('*, alumno:alumnos(usuario:usuarios(nombre, apellidos))')
+    .select('*, alumno:alumnos(horas_bono_restantes, horas_bono_total, usuario:usuarios(nombre, apellidos))')
     .order('created_at', { ascending: false });
 
   const alumnoVal = document.getElementById('fil-bono-alumno').value;
@@ -3014,8 +3014,18 @@ async function loadBonos() {
       ${data.map(b => {
         const u = b.alumno?.usuario || {};
         const alumnoNom = u.nombre ? `${u.nombre} ${u.apellidos}` : '—';
-        const consumidas = parseFloat(b.horas_consumidas) || 0;
-        const restantes  = parseFloat(b.horas_restantes)  || 0;
+        let consumidas, restantes;
+        if (b.estado === 'activo') {
+          const bTotal = parseFloat(b.horas_contratadas) || 0;
+          restantes  = parseFloat(b.alumno?.horas_bono_restantes) || 0;
+          consumidas = Math.max(0, bTotal - restantes);
+        } else if (b.estado === 'agotado') {
+          consumidas = parseFloat(b.horas_consumidas) || parseFloat(b.horas_contratadas) || 0;
+          restantes  = parseFloat(b.horas_restantes)  || 0;
+        } else {
+          consumidas = parseFloat(b.horas_consumidas) || 0;
+          restantes  = 0;
+        }
         const [pc, pt]   = pillMap[b.estado] || ['st-grey', b.estado];
         const precioFmt  = b.precio_final != null ? b.precio_final.toFixed(2) + '€' : '—';
         const descFmt    = b.descuento > 0 ? b.descuento + '%' : '—';

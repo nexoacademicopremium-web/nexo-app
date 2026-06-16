@@ -959,7 +959,7 @@ async function loadBonosAlumno() {
   // Cargar bonos del alumno
   const { data: bonos } = await db
     .from('bonos')
-    .select('id, horas_contratadas, horas_consumidas, horas_restantes, modalidad, precio_base, descuento, precio_final, fecha_compra, estado, notas')
+    .select('id, horas_contratadas, modalidad, precio_base, descuento, precio_final, fecha_compra, estado, notas')
     .eq('alumno_id', alumnoId)
     .order('created_at', { ascending: false });
 
@@ -968,9 +968,9 @@ async function loadBonosAlumno() {
 
   // ── Bono activo ───────────────────────────────────────────
   const alumno  = ctx.alumnoData;
-  const hRest   = bonoActivo ? (parseFloat(bonoActivo.horas_restantes) || 0) : (parseFloat(alumno.horas_bono_restantes) || 0);
+  const hRest   = parseFloat(alumno.horas_bono_restantes) || 0;
   const hTotal  = bonoActivo ? parseFloat(bonoActivo.horas_contratadas) : (parseFloat(alumno.horas_bono_total) || 0);
-  const hUsed   = bonoActivo ? (parseFloat(bonoActivo.horas_consumidas) || 0) : Math.max(0, hTotal - hRest);
+  const hUsed   = Math.max(0, hTotal - hRest);
   const pct     = hTotal > 0 ? Math.min(100, (hRest / hTotal) * 100) : 0;
   const barColor = pct > 50 ? 'var(--green)' : pct > 20 ? 'var(--amber)' : 'var(--red)';
 
