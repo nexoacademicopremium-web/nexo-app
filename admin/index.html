@@ -1392,6 +1392,9 @@ function renderTablaAlumnos(lista, horasByAlumno = {}) {
         const asigText = g.asigs.length ? ' · ' + g.asigs.join(', ') : '';
         return `<span class="pill pill-eso" style="margin:1px">${g.nombre}${asigText}</span>`;
       }).join('');
+    } else if (a.profesor_id) {
+      const profNom = allProfesores.find(p => p.id === a.profesor_id)?.usuario || {};
+      profCell = profNom.nombre ? `${profNom.nombre} ${profNom.apellidos}` : '<span style="color:var(--muted)">Sin asignar</span>';
     } else {
       profCell = '<span style="color:var(--muted)">Sin asignar</span>';
     }
@@ -2574,7 +2577,7 @@ async function loadSesionesAdmin() {
   sesEl.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
 
   let query = db.from('sesiones')
-    .select('id, asignatura, fecha, duracion_minutos, estado, excede_bono, alumno_id, profesor_id', { count: 'exact' })
+    .select('id, asignatura, fecha, duracion_minutos, estado, alumno_id, profesor_id', { count: 'exact' })
     .order('fecha', { ascending: false });
 
   if (estVal) query = query.eq('estado', estVal);
@@ -2622,8 +2625,6 @@ async function loadSesionesAdmin() {
             const [pc, pt] = pillMap[s.estado] || ['st-grey', s.estado];
             const a  = alumnoMap[s.alumno_id]?.usuario || {};
             const p  = profMap[s.profesor_id]?.usuario || {};
-            const excedeBadge = s.excede_bono
-              ? `<span class="status-pill st-red" title="Excede horas de bono" style="margin-left:5px;font-size:9px">⚠ bono</span>` : '';
             const cancelBtn = s.estado !== 'cancelada'
               ? `<button class="btn-danger" style="padding:5px 9px" onclick="abrirCancelar('${s.id}')"><i class="ti ti-ban"></i></button>` : '';
             return `<tr>
@@ -2632,7 +2633,7 @@ async function loadSesionesAdmin() {
               <td>${p.nombre ? p.nombre + ' ' + p.apellidos : '—'}</td>
               <td>${s.asignatura}</td>
               <td>${s.duracion_minutos} min</td>
-              <td><span class="status-pill ${pc}">${pt}</span>${excedeBadge}</td>
+              <td><span class="status-pill ${pc}">${pt}</span></td>
               <td style="white-space:nowrap;text-align:center">
                 <button class="btn-edit" style="padding:5px 9px" onclick="abrirEditSesion('${s.id}')"><i class="ti ti-pencil"></i></button>
                 ${cancelBtn}
@@ -3451,7 +3452,7 @@ async function abrirQuickFicha(alumnoId) {
   const bonoColor = restantes <= 0 && total > 0 ? 'var(--red)' : pct <= 25 ? 'var(--amber)' : 'var(--green)';
   const ub = ultimoBonoArr?.[0];
 
-  // Profesores desde junction (con fallback al campo directo)
+  // Profesores desde junction; fallback a profesor_id hasta que se aplique migración SQL
   const profsAsig = alumnoProfesorMap[alumnoId] || [];
   const grouped = {};
   profsAsig.forEach(ap => {
@@ -3462,6 +3463,11 @@ async function abrirQuickFicha(alumnoId) {
     }
     if (ap.asignatura_id) grouped[ap.profesor_id].asigs.push(asigNombre(ap.asignatura_id));
   });
+  if (Object.keys(grouped).length === 0 && alumno.profesor_id) {
+    const p = allProfesores.find(x => x.id === alumno.profesor_id);
+    const pu = p?.usuario || {};
+    grouped[alumno.profesor_id] = { nombre: `${pu.nombre||'?'} ${pu.apellidos||''}`.trim(), asigs: [] };
+  }
   const profsHtml = Object.values(grouped).length > 0
     ? Object.values(grouped).map(g => {
         const asigText = g.asigs.length ? `<span style="color:var(--muted);font-size:11px"> · ${g.asigs.join(', ')}</span>` : '';
