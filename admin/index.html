@@ -3231,13 +3231,25 @@ async function loadBonos() {
 
   const pillMap = {
     activo:           ['st-ok',   'Activo'],
-    reservado:        ['st-pend', 'Reservado'],
+    reservado:        ['st-pend', 'Reservado · pendiente'],
     pagado_en_espera: ['st-pend', 'Pagado · en espera'],
     agotado:          ['st-grey', 'Agotado'],
     cancelado:        ['st-red',  'Cancelado'],
   };
 
-  el.innerHTML = `<table class="tabla">
+  const reservados = data.filter(b => b.estado === 'reservado');
+  const bannerHtml = reservados.length > 0
+    ? `<div style="background:var(--amber-lt);border:.5px solid var(--amber);border-radius:8px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--amber)">
+         <i class="ti ti-clock-exclamation" style="font-size:22px;flex-shrink:0"></i>
+         <div>
+           <b>${reservados.length} bono${reservados.length !== 1 ? 's' : ''} reservado${reservados.length !== 1 ? 's'  : ''} sin confirmar</b> — el alumno ha enviado la solicitud y espera confirmación de pago.
+           <a href="#" onclick="document.getElementById('fil-bono-estado').value='reservado';loadBonos();return false"
+              style="color:var(--amber);text-decoration:underline;margin-left:8px;white-space:nowrap">Ver solo estos →</a>
+         </div>
+       </div>`
+    : '';
+
+  el.innerHTML = bannerHtml + `<table class="tabla">
     <thead><tr>
       <th>Alumno</th><th>Horas</th><th>Consumidas</th><th>Restantes</th>
       <th>Modalidad</th><th>Fecha</th><th>Desc.</th><th>Precio</th>
@@ -3263,15 +3275,16 @@ async function loadBonos() {
         const precioFmt  = b.precio_final != null ? b.precio_final.toFixed(2) + '€' : '—';
         const descFmt    = b.descuento > 0 ? b.descuento + '%' : '—';
         const lowBono    = b.estado === 'activo' && restantes <= 2;
+        const esReservado = b.estado === 'reservado';
         const pagoCell   = b.pagado
           ? `<span class="status-pill st-ok" title="${b.fecha_pago ? 'Pagado ' + formatShortDate(b.fecha_pago) : 'Pagado'}">✓ Pagado</span>`
-          : (b.estado === 'reservado'
-              ? `<button class="btn-edit" style="font-size:11px;padding:5px 9px;white-space:nowrap" onclick="marcarPagadoBono('${b.id}','${b.alumno_id}',${b.horas_contratadas})">
-                   <i class="ti ti-coin"></i> Marcar pagado
+          : (esReservado
+              ? `<button class="btn-edit" style="font-size:11px;padding:5px 9px;white-space:nowrap;background:var(--amber-lt);color:var(--amber);border-color:var(--amber)" onclick="marcarPagadoBono('${b.id}','${b.alumno_id}',${b.horas_contratadas})">
+                   <i class="ti ti-coin"></i> Confirmar pago
                  </button>`
               : `<span style="color:var(--muted);font-size:11px">—</span>`);
-        return `<tr>
-          <td style="color:#fff">${alumnoNom}</td>
+        return `<tr style="${esReservado ? 'background:rgba(180,83,9,.07)' : ''}">
+          <td style="color:#fff;${esReservado ? 'font-weight:500' : ''}">${alumnoNom}</td>
           <td>${b.horas_contratadas}h</td>
           <td>${consumidas.toFixed(1)}h</td>
           <td style="color:${lowBono ? 'var(--amber)' : 'inherit'}">${b.estado === 'activo' || b.estado === 'agotado' ? restantes.toFixed(1) + 'h' : '—'}</td>
