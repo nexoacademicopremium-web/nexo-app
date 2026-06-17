@@ -10,6 +10,17 @@ ALTER TABLE public.bonos
   ADD COLUMN IF NOT EXISTS horas_consumidas NUMERIC(6,2) NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS horas_restantes  NUMERIC(6,2) NOT NULL DEFAULT 0;
 
+-- 1b. Asegurar que el CHECK de estado incluye todos los estados del sistema
+--     (el constraint puede existir con nombre distinto; lo borramos y recreamos de forma segura)
+DO $$ BEGIN
+  ALTER TABLE public.bonos DROP CONSTRAINT IF EXISTS bonos_estado_check;
+  ALTER TABLE public.bonos DROP CONSTRAINT IF EXISTS bonos_check;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $$;
+ALTER TABLE public.bonos
+  ADD CONSTRAINT bonos_estado_check
+  CHECK (estado IN ('reservado','pagado_en_espera','activo','agotado','cancelado'));
+
 -- 2. Asegurar política admin en bonos (puede existir ya, ignorar error)
 DO $$ BEGIN
   CREATE POLICY "bonos_admin_all" ON public.bonos

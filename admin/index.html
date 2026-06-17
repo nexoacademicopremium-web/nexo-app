@@ -1045,7 +1045,13 @@
         <input class="fi" id="bono-fecha" type="date" required>
       </div>
       <div>
-        <label class="fl">Estado</label>
+        <label class="fl" id="bono-estado-label">Estado</label>
+        <!-- Mostrado solo al CREAR: dos opciones simples -->
+        <select class="fi" id="bono-tipo-create" style="display:none">
+          <option value="pendiente">Pendiente (no pagado)</option>
+          <option value="pagado">Pagado</option>
+        </select>
+        <!-- Mostrado solo al EDITAR: todos los estados -->
         <select class="fi" id="bono-estado">
           <option value="activo">Activo</option>
           <option value="reservado">Reservado</option>
@@ -3376,7 +3382,9 @@ function abrirModalBono() {
   document.getElementById('bono-descuento').value = '0';
   document.getElementById('bono-precio-final').value = '';
   document.getElementById('bono-fecha').value = new Date().toISOString().split('T')[0];
-  document.getElementById('bono-estado').value = 'activo';
+  document.getElementById('bono-tipo-create').value = 'pendiente';
+  document.getElementById('bono-tipo-create').style.display = '';
+  document.getElementById('bono-estado').style.display = 'none';
   document.getElementById('bono-notas').value = '';
   document.getElementById('bono-consumidas-wrap').style.display = 'none';
   document.getElementById('modal-bono').classList.add('open');
@@ -3416,6 +3424,8 @@ async function abrirEditBono(bonoId) {
   document.getElementById('bono-descuento').value = b.descuento ?? 0;
   document.getElementById('bono-precio-final').value = b.precio_final ?? '';
   document.getElementById('bono-fecha').value = b.fecha_compra || '';
+  document.getElementById('bono-tipo-create').style.display = 'none';
+  document.getElementById('bono-estado').style.display = '';
   document.getElementById('bono-estado').value = b.estado;
   document.getElementById('bono-notas').value = b.notas || '';
 
@@ -3506,27 +3516,27 @@ async function guardarBono() {
     const descuento   = parseFloat(document.getElementById('bono-descuento').value)   || 0;
     const precioFinal = parseFloat(document.getElementById('bono-precio-final').value)|| null;
     const fechaCompra = document.getElementById('bono-fecha').value;
-    const estado      = document.getElementById('bono-estado').value;
     const notas       = document.getElementById('bono-notas').value.trim() || null;
 
     if (!fechaCompra) { showToast('La fecha es obligatoria', 'error'); btn.disabled = false; return; }
 
     const hoy = new Date().toISOString().split('T')[0];
-    const esPagado = (estado === 'activo' || estado === 'pagado_en_espera');
-    const payload = {
-      horas_contratadas: horas, modalidad, precio_base: precioBase, descuento,
-      precio_final: precioFinal, fecha_compra: fechaCompra, estado, notas,
-      ...(esPagado ? { pagado: true, fecha_pago: hoy } : {}),
-    };
 
     if (editBonoId) {
-      const oldHoras  = parseFloat(document.getElementById('bono-old-horas').value)  || 0;
+      // ── EDITAR ────────────────────────────────────────────────
+      const estado    = document.getElementById('bono-estado').value;
+      const oldHoras  = parseFloat(document.getElementById('bono-old-horas').value) || 0;
       const oldEstado = document.getElementById('bono-old-estado').value;
+      const esPagado  = (estado === 'activo' || estado === 'pagado_en_espera');
+      const payload   = {
+        horas_contratadas: horas, modalidad, precio_base: precioBase, descuento,
+        precio_final: precioFinal, fecha_compra: fechaCompra, estado, notas,
+        ...(esPagado ? { pagado: true, fecha_pago: hoy } : {}),
+      };
 
       const { error } = await db.from('bonos').update(payload).eq('id', editBonoId);
       if (error) throw error;
 
-      // Sync horas en bono y en alumnos
       if (estado === 'activo') {
         const consumidasWrap = document.getElementById('bono-consumidas-wrap');
         if (consumidasWrap.style.display !== 'none') {
@@ -3550,8 +3560,29 @@ async function guardarBono() {
         await db.from('alumnos').update({ horas_bono_restantes: 0, horas_bono_total: 0 }).eq('id', alumnoId);
       }
     } else {
-      // CREAR
-      const horasRestantesInicial = (estado === 'activo' || estado === 'pagado_en_espera' || estado === 'reservado') ? +horas.toFixed(2) : 0;
+      // ── CREAR ─────────────────────────────────────────────────
+      const tipoBono = document.getElementById('bono-tipo-create').value; // 'pendiente' | 'pagado'
+      let estado, esPagado;
+
+      if (tipoBono === 'pendiente') {
+        estado   = 'reservado';
+        esPagado = false;
+      } else {
+        // 'pagado': decidir activo vs pagado_en_espera según si ya hay uno activo
+        const { data: activos } = await db.from('bonos')
+          .select('id').eq('alumno_id', alumnoId).eq('estado', 'activo').limit(1);
+        const hayActivo = activos && activos.length > 0;
+        estado   = hayActivo ? 'pagado_en_espera' : 'activo';
+        esPagado = true;
+      }
+
+      const payload = {
+        horas_contratadas: horas, modalidad, precio_base: precioBase, descuento,
+        precio_final: precioFinal, fecha_compra: fechaCompra, estado, notas,
+        ...(esPagado ? { pagado: true, fecha_pago: hoy } : {}),
+      };
+
+      const horasRestantesInicial = esPagado ? +horas.toFixed(2) : 0;
       const { error } = await db.from('bonos').insert({
         ...payload,
         alumno_id:        alumnoId,
