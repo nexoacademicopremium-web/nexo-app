@@ -83,7 +83,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Solo el administrador puede crear usuarios' }), { status: 403, headers: corsHeaders })
     }
 
-    const { nombre, apellidos, rol } = await req.json()
+    const { nombre, apellidos, rol, username: usernameParam, password: passwordParam } = await req.json()
     if (!nombre || !apellidos || !rol) {
       return new Response(JSON.stringify({ error: 'Faltan campos obligatorios (nombre, apellidos, rol)' }), { status: 400, headers: corsHeaders })
     }
@@ -97,8 +97,12 @@ serve(async (req) => {
     )
 
     const year = new Date().getFullYear()
-    const username = await generarUsernameUnico(adminClient, rol, nombre, apellidos, year)
-    const password = generarPassword()
+    const username = usernameParam?.trim()
+      ? usernameParam.trim()
+      : await generarUsernameUnico(adminClient, rol, nombre, apellidos, year)
+    const password = passwordParam?.trim()?.length >= 6
+      ? passwordParam.trim()
+      : generarPassword()
     const email    = `${username}@nexo.internal`
 
     const { data: newAuthUser, error: createErr } = await adminClient.auth.admin.createUser({

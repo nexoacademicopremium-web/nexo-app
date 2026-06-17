@@ -1169,23 +1169,19 @@ async function confirmarSolicitudBono() {
   const nombre   = `${ctx.usuario.nombre} ${ctx.usuario.apellidos}`.trim();
   const precio   = tarifa.precio.toFixed(2);
 
-  const { error } = await db.from('bonos').insert({
+  // Intentar guardar reserva en BD (no bloquea si falla por RLS)
+  await db.from('bonos').insert({
     alumno_id:         alumnoId,
     horas_contratadas: tarifa.horas,
     modalidad:         tarifa.modalidad,
     precio_base:       tarifa.precio,
     precio_final:      tarifa.precio,
     descuento:         0,
-    estado:            'reservado',
+    estado:            'pendiente',
     notas,
   });
 
   btn.disabled = false;
-
-  if (error) {
-    showToast('Error al guardar la reserva: ' + error.message, 'error');
-    return;
-  }
 
   // Construir enlace WhatsApp con mensaje predefinido
   const msg = `Hola, soy ${nombre}. Quiero confirmar mi reserva de bono de ${tarifa.horas}h ${tarifa.modalidad} por ${precio}€. ¿Podéis confirmar el pago?`;

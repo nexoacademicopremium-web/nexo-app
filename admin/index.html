@@ -536,6 +536,21 @@
       </div>
     </div>
 
+    <!-- 2b. CREDENCIALES INICIALES (solo creación) -->
+    <div class="ficha-section" id="ficha-prof-section-creds-new" style="display:none">
+      <div class="ficha-sec-title"><i class="ti ti-key"></i> Credenciales iniciales <span style="color:var(--muted);font-size:10px;font-weight:400">(dejar en blanco para auto-generar)</span></div>
+      <div class="fi-grid2">
+        <div>
+          <label class="fl" style="margin-top:0">Usuario</label>
+          <input class="fi" id="fich-prof-username-new" placeholder="Auto-generado" autocomplete="off" style="font-family:monospace">
+        </div>
+        <div>
+          <label class="fl" style="margin-top:0">Contraseña</label>
+          <input class="fi" id="fich-prof-password-new" placeholder="Auto-generada" autocomplete="new-password" style="font-family:monospace">
+        </div>
+      </div>
+    </div>
+
     <!-- 3b. CREDENCIALES (solo edición) -->
     <div class="ficha-section" id="ficha-prof-section-creds" style="display:none">
       <div class="ficha-sec-title"><i class="ti ti-key"></i> Credenciales de acceso</div>
@@ -632,6 +647,21 @@
       <div class="ficha-sec-title"><i class="ti ti-books"></i> Asignaturas de repaso <span style="color:var(--muted);font-size:10px;font-weight:400">(determina qué material ve el alumno)</span></div>
       <div id="ficha-asignaturas-lista">
         <div class="loading-section" style="padding:12px"><div class="spinner"></div></div>
+      </div>
+    </div>
+
+    <!-- 2b. CREDENCIALES INICIALES (solo creación) -->
+    <div class="ficha-section" id="ficha-section-creds-new" style="display:none">
+      <div class="ficha-sec-title"><i class="ti ti-key"></i> Credenciales iniciales <span style="color:var(--muted);font-size:10px;font-weight:400">(dejar en blanco para auto-generar)</span></div>
+      <div class="fi-grid2">
+        <div>
+          <label class="fl" style="margin-top:0">Usuario</label>
+          <input class="fi" id="fich-username-new" placeholder="Auto-generado" autocomplete="off" style="font-family:monospace">
+        </div>
+        <div>
+          <label class="fl" style="margin-top:0">Contraseña</label>
+          <input class="fi" id="fich-password-new" placeholder="Auto-generada" autocomplete="new-password" style="font-family:monospace">
+        </div>
       </div>
     </div>
 
@@ -1507,44 +1537,47 @@ function filtrar(tipo) {
 
 // Modo creación: fichaAlumnoId === null; modo edición: fichaAlumnoId = UUID
 function fichaAlumnoModoCreacion() {
-  document.getElementById('ficha-titulo').textContent              = 'Nuevo alumno';
-  document.getElementById('ficha-section-profs').style.display    = 'none';
-  document.getElementById('ficha-bono-section').style.display     = 'none';
-  document.getElementById('ficha-section-sesiones').style.display = 'none';
-  document.getElementById('ficha-section-obs').style.display      = 'none';
-  document.getElementById('ficha-section-creds').style.display    = 'none';
-  document.getElementById('ficha-section-pwd').style.display      = 'none';
-  document.getElementById('ficha-row-email').style.display        = 'none';
-  document.getElementById('ficha-row-contacto').style.display     = 'none';
-  document.getElementById('ficha-row-horario').style.display      = 'none';
-  document.getElementById('ficha-row-dir').style.display          = 'none';
-  document.getElementById('btn-guardar-ficha').innerHTML          = '<i class="ti ti-user-plus"></i> Crear alumno';
+  document.getElementById('ficha-titulo').textContent                  = 'Nuevo alumno';
+  document.getElementById('ficha-section-profs').style.display        = 'none';
+  document.getElementById('ficha-bono-section').style.display         = 'none';
+  document.getElementById('ficha-section-sesiones').style.display     = 'none';
+  document.getElementById('ficha-section-obs').style.display          = 'none';
+  document.getElementById('ficha-section-creds').style.display        = 'none';
+  document.getElementById('ficha-section-creds-new').style.display    = '';
+  document.getElementById('ficha-section-pwd').style.display          = 'none';
+  document.getElementById('ficha-row-email').style.display            = 'none';
+  document.getElementById('ficha-row-contacto').style.display         = 'none';
+  document.getElementById('ficha-row-horario').style.display          = 'none';
+  document.getElementById('ficha-row-dir').style.display              = 'none';
+  document.getElementById('btn-guardar-ficha').innerHTML              = '<i class="ti ti-user-plus"></i> Crear alumno';
 }
 function fichaAlumnoModoEdicion(a) {
   const u = a.usuario || {};
-  document.getElementById('ficha-titulo').textContent              = `${u.nombre || '?'} ${u.apellidos || ''}`;
-  document.getElementById('ficha-section-profs').style.display    = '';
-  document.getElementById('ficha-bono-section').style.display     = '';
-  document.getElementById('ficha-section-sesiones').style.display = '';
-  document.getElementById('ficha-section-obs').style.display      = '';
-  document.getElementById('ficha-section-creds').style.display    = '';
-  document.getElementById('ficha-section-pwd').style.display      = '';
-  document.getElementById('ficha-row-email').style.display        = '';
-  document.getElementById('ficha-row-contacto').style.display     = '';
-  document.getElementById('ficha-row-horario').style.display      = '';
-  document.getElementById('ficha-row-dir').style.display          = '';
-  document.getElementById('ficha-pwd-title').innerHTML            = '<i class="ti ti-lock"></i> Cambiar contraseña';
-  document.getElementById('fich-pwd-label').textContent           = 'Nueva contraseña';
-  document.getElementById('fich-password').placeholder            = 'mínimo 6 caracteres';
-  document.getElementById('btn-guardar-ficha').innerHTML          = '<i class="ti ti-device-floppy"></i> Guardar cambios';
+  document.getElementById('ficha-titulo').textContent                  = `${u.nombre || '?'} ${u.apellidos || ''}`;
+  document.getElementById('ficha-section-profs').style.display        = '';
+  document.getElementById('ficha-bono-section').style.display         = '';
+  document.getElementById('ficha-section-sesiones').style.display     = '';
+  document.getElementById('ficha-section-obs').style.display          = '';
+  document.getElementById('ficha-section-creds').style.display        = '';
+  document.getElementById('ficha-section-creds-new').style.display    = 'none';
+  document.getElementById('ficha-section-pwd').style.display          = '';
+  document.getElementById('ficha-row-email').style.display            = '';
+  document.getElementById('ficha-row-contacto').style.display         = '';
+  document.getElementById('ficha-row-horario').style.display          = '';
+  document.getElementById('ficha-row-dir').style.display              = '';
+  document.getElementById('ficha-pwd-title').innerHTML                = '<i class="ti ti-lock"></i> Cambiar contraseña';
+  document.getElementById('fich-pwd-label').textContent               = 'Nueva contraseña';
+  document.getElementById('fich-password').placeholder                = 'mínimo 6 caracteres';
+  document.getElementById('btn-guardar-ficha').innerHTML              = '<i class="ti ti-device-floppy"></i> Guardar cambios';
 }
 
 function abrirModalAlumno() {
   fichaAlumnoId = null;
   ['fich-nombre','fich-apellidos','fich-email','fich-nivel','fich-modalidad',
    'fich-telefono','fich-fecha-inicio','fich-horario','fich-direccion',
-   'fich-password','fich-observaciones'].forEach(id => {
+   'fich-password','fich-observaciones','fich-username-new','fich-password-new'].forEach(id => {
     const el = document.getElementById(id);
+    if (!el) return;
     if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = '';
   });
   fichaAlumnoModoCreacion();
@@ -1826,38 +1859,42 @@ function renderTablaProfesores(lista) {
 // FICHA DE PROFESOR (unificada — creación y edición)
 // ============================================================
 function fichaProfModoCreacion() {
-  document.getElementById('ficha-prof-titulo').textContent           = 'Nuevo profesor';
-  document.getElementById('ficha-prof-section-creds').style.display = 'none';
-  document.getElementById('ficha-prof-section-pwd').style.display   = 'none';
-  document.getElementById('ficha-prof-section-obs').style.display   = 'none';
-  document.getElementById('ficha-prof-row-email').style.display     = 'none';
-  document.getElementById('ficha-prof-row-contacto').style.display  = 'none';
-  document.getElementById('ficha-prof-row-estudios').style.display  = 'none';
-  document.getElementById('ficha-prof-row-nivel').style.display     = 'none';
-  document.getElementById('btn-guardar-ficha-prof').innerHTML       = '<i class="ti ti-user-plus"></i> Crear profesor';
+  document.getElementById('ficha-prof-titulo').textContent                = 'Nuevo profesor';
+  document.getElementById('ficha-prof-section-creds').style.display      = 'none';
+  document.getElementById('ficha-prof-section-creds-new').style.display  = '';
+  document.getElementById('ficha-prof-section-pwd').style.display        = 'none';
+  document.getElementById('ficha-prof-section-obs').style.display        = 'none';
+  document.getElementById('ficha-prof-row-email').style.display          = 'none';
+  document.getElementById('ficha-prof-row-contacto').style.display       = 'none';
+  document.getElementById('ficha-prof-row-estudios').style.display       = 'none';
+  document.getElementById('ficha-prof-row-nivel').style.display          = 'none';
+  document.getElementById('btn-guardar-ficha-prof').innerHTML            = '<i class="ti ti-user-plus"></i> Crear profesor';
 }
 function fichaProfModoEdicion(p) {
   const u = p.usuario || {};
-  document.getElementById('ficha-prof-titulo').textContent           = `${u.nombre || '?'} ${u.apellidos || ''}`;
-  document.getElementById('ficha-prof-section-creds').style.display = '';
-  document.getElementById('ficha-prof-section-pwd').style.display   = '';
-  document.getElementById('ficha-prof-section-obs').style.display   = '';
-  document.getElementById('ficha-prof-row-email').style.display     = '';
-  document.getElementById('ficha-prof-row-contacto').style.display  = '';
-  document.getElementById('ficha-prof-row-estudios').style.display  = '';
-  document.getElementById('ficha-prof-row-nivel').style.display     = '';
-  document.getElementById('ficha-prof-pwd-title').innerHTML         = '<i class="ti ti-lock"></i> Cambiar contraseña';
-  document.getElementById('fich-prof-pwd-label').textContent        = 'Nueva contraseña';
-  document.getElementById('fich-prof-password').placeholder         = 'mínimo 6 caracteres';
-  document.getElementById('btn-guardar-ficha-prof').innerHTML       = '<i class="ti ti-device-floppy"></i> Guardar cambios';
+  document.getElementById('ficha-prof-titulo').textContent                = `${u.nombre || '?'} ${u.apellidos || ''}`;
+  document.getElementById('ficha-prof-section-creds').style.display      = '';
+  document.getElementById('ficha-prof-section-creds-new').style.display  = 'none';
+  document.getElementById('ficha-prof-section-pwd').style.display        = '';
+  document.getElementById('ficha-prof-section-obs').style.display        = '';
+  document.getElementById('ficha-prof-row-email').style.display          = '';
+  document.getElementById('ficha-prof-row-contacto').style.display       = '';
+  document.getElementById('ficha-prof-row-estudios').style.display       = '';
+  document.getElementById('ficha-prof-row-nivel').style.display          = '';
+  document.getElementById('ficha-prof-pwd-title').innerHTML              = '<i class="ti ti-lock"></i> Cambiar contraseña';
+  document.getElementById('fich-prof-pwd-label').textContent             = 'Nueva contraseña';
+  document.getElementById('fich-prof-password').placeholder              = 'mínimo 6 caracteres';
+  document.getElementById('btn-guardar-ficha-prof').innerHTML            = '<i class="ti ti-device-floppy"></i> Guardar cambios';
 }
 
 function abrirModalProfesor() {
   fichaProfesorId = null;
   ['fich-prof-nombre','fich-prof-apellidos','fich-prof-email','fich-prof-telefono',
    'fich-prof-zona','fich-prof-estudios','fich-prof-nivel-max','fich-prof-fecha-inicio',
-   'fich-prof-password','fich-prof-observaciones'].forEach(id => {
+   'fich-prof-password','fich-prof-observaciones',
+   'fich-prof-username-new','fich-prof-password-new'].forEach(id => {
     const el = document.getElementById(id);
+    if (!el) return;
     if (el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = '';
   });
   fichaProfModoCreacion();
@@ -1911,8 +1948,10 @@ async function guardarFichaProfesor() {
     }
 
     try {
+      const usernameNew = document.getElementById('fich-prof-username-new').value.trim() || null;
+      const passwordNew = document.getElementById('fich-prof-password-new').value.trim() || null;
       const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
-        body: { nombre, apellidos, rol: 'profesor' }
+        body: { nombre, apellidos, rol: 'profesor', username: usernameNew, password: passwordNew }
       });
       if (fnErr) {
         let detail = fnErr.message;
@@ -2154,8 +2193,10 @@ async function guardarFicha() {
     }
 
     try {
+      const usernameNew = document.getElementById('fich-username-new').value.trim() || null;
+      const passwordNew = document.getElementById('fich-password-new').value.trim() || null;
       const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
-        body: { nombre, apellidos, rol: 'alumno' }
+        body: { nombre, apellidos, rol: 'alumno', username: usernameNew, password: passwordNew }
       });
       if (fnErr) {
         let detail = fnErr.message;
