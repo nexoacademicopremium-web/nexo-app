@@ -405,6 +405,18 @@
               <option value="">Seleccionar alumno</option>
             </select>
 
+            <!-- Aviso: sesión pendiente de confirmación de la familia -->
+            <div id="aviso-sesion-pendiente" style="display:none;margin-top:12px;padding:14px 16px;background:var(--amber-lt);border:.5px solid var(--amber);border-radius:8px">
+              <div style="display:flex;align-items:flex-start;gap:10px">
+                <i class="ti ti-clock-pause" style="color:var(--amber);font-size:20px;flex-shrink:0;margin-top:1px"></i>
+                <div>
+                  <div style="color:var(--amber);font-size:13px;font-weight:600;margin-bottom:4px">Sesión pendiente de confirmación</div>
+                  <div id="aviso-sesion-pendiente-txt" style="color:#e0a060;font-size:12px"></div>
+                </div>
+              </div>
+            </div>
+
+            <div id="ses-sec1-rest">
             <label class="field-label">Asignatura *</label>
             <select class="field-input" id="ses-asignatura" required>
               <option value="">— Selecciona primero el alumno —</option>
@@ -431,11 +443,12 @@
               <option value="180">3h (180 min)</option>
             </select>
 
+            </div><!-- /ses-sec1-rest -->
           </div>
         </div>
 
         <!-- ── Sección 2: Narrativa ── -->
-        <div class="ses-seccion">
+        <div class="ses-seccion" id="ses-sec-narrativa">
           <div class="ses-seccion-titulo"><i class="ti ti-notes"></i> Narrativa de la sesión</div>
           <div class="ses-body">
 
@@ -482,7 +495,7 @@
         </div>
 
         <!-- ── Sección 3: Progreso y valoraciones ── -->
-        <div class="ses-seccion">
+        <div class="ses-seccion" id="ses-sec-valoraciones">
           <div class="ses-seccion-titulo"><i class="ti ti-chart-bar"></i> Progreso y valoraciones</div>
           <div class="ses-body">
 
@@ -567,7 +580,7 @@
             </div>
           </div>
         </div>
-        <div style="padding:18px 24px;display:flex;justify-content:flex-end;gap:10px">
+        <div id="ses-footer-btns" style="padding:18px 24px;display:flex;justify-content:flex-end;gap:10px">
           <button type="button" class="btn-cancel" onclick="limpiarFormSesion()">Limpiar</button>
           <button type="submit" class="btn-primary" id="btn-enviar-sesion">
             <i class="ti ti-send"></i> Enviar sesión
@@ -1061,7 +1074,10 @@ async function autoAsignatura() {
   });
   if (asigs.length === 1) aSelect.value = asigs[0];
   if (asigs.length === 0) aSelect.innerHTML = '<option value="">Sin asignaturas asignadas</option>';
-  checkBonoAlumno();
+  await checkSesionPendiente();
+  if (document.getElementById('aviso-sesion-pendiente').style.display !== 'block') {
+    checkBonoAlumno();
+  }
 }
 
 function resetSliders() {
@@ -1166,6 +1182,42 @@ async function checkBonoAlumno() {
   }
 }
 
+async function checkSesionPendiente() {
+  const alumnoId = document.getElementById('ses-alumno').value;
+  const avisoDiv = document.getElementById('aviso-sesion-pendiente');
+  const formIds  = ['ses-sec1-rest', 'ses-sec-narrativa', 'ses-sec-valoraciones', 'ses-footer-btns', 'aviso-bono-bloqueo'];
+
+  if (!alumnoId) {
+    avisoDiv.style.display = 'none';
+    formIds.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
+    return;
+  }
+
+  const { data: pending } = await db
+    .from('sesiones')
+    .select('fecha, profesor:profesores(usuario:usuarios(nombre, apellidos))')
+    .eq('alumno_id', alumnoId)
+    .eq('estado', 'pendiente_confirmacion')
+    .limit(1);
+
+  if (pending && pending.length > 0) {
+    const s = pending[0];
+    const u = s.profesor?.usuario;
+    const profNombre = u ? `${u.nombre} ${u.apellidos}` : 'un profesor';
+    document.getElementById('aviso-sesion-pendiente-txt').textContent =
+      `Este alumno tiene una sesión del ${formatDate(s.fecha)} con ${profNombre} pendiente de confirmación ` +
+      `por la familia. No se puede registrar otra hasta que la familia la confirme, rechace, ` +
+      `o pasen 72h (confirmación automática).`;
+    avisoDiv.style.display = 'block';
+    document.getElementById('btn-enviar-sesion').disabled = true;
+    formIds.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+  } else {
+    avisoDiv.style.display = 'none';
+    document.getElementById('btn-enviar-sesion').disabled = false;
+    formIds.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
+  }
+}
+
 async function enviarSesion(e) {
   e.preventDefault();
   const alumnoId = document.getElementById('ses-alumno').value;
@@ -1185,10 +1237,19 @@ async function enviarSesion(e) {
 
   const durHoras = parseInt(document.getElementById('ses-duracion').value) / 60;
   if (hRestantes > 0 && durHoras > hRestantes) {
+    const { data: siguienteBono } = await db
+      .from('bonos').select('id')
+      .eq('alumno_id', alumnoId).eq('estado', 'pagado_en_espera').limit(1);
+    if (siguienteBono && siguienteBono.length > 0) {
+      _submitSesion(false);
+      return;
+    }
     const fmt = h => Number.isInteger(h) ? `${h}h` : `${h.toFixed(1)}h`;
+    const exceso = durHoras - hRestantes;
     document.getElementById('aviso-bono-txt').textContent =
-      `Esta sesión dura ${fmt(durHoras)} pero al alumno solo le quedan ${fmt(hRestantes)} en el bono activo. ` +
-      `Si continúas, la sesión quedará marcada para revisión de administración.`;
+      `Esta sesión dura ${fmt(durHoras)} pero al alumno solo le quedan ${fmt(hRestantes)} en su bono. ` +
+      `Las ${fmt(exceso)} restantes no están contratadas — Nexo no se hace responsable de esas horas. ` +
+      `Si tienes dudas, contacta con administración antes de continuar.`;
     document.getElementById('modal-aviso-bono').classList.add('open');
     document.getElementById('btn-aviso-bono-continuar').onclick = () => {
       document.getElementById('modal-aviso-bono').classList.remove('open');
@@ -1336,13 +1397,13 @@ async function abrirFicha(alumnoId) {
     <div class="ficha-name">${u.nombre} ${u.apellidos}</div>
     <div class="ficha-sub"><span class="pill ${pillCls}">${nivelLabel(alumno.nivel)}</span></div>
     <div class="ficha-kpi-grid">
-      <div class="ficha-kpi"><div class="ficha-kpi-val">${confirmadas.length}</div><div class="ficha-kpi-label">Mis sesiones</div></div>
-      <div class="ficha-kpi"><div class="ficha-kpi-val">${misTotalH}h</div><div class="ficha-kpi-label">Mis horas</div></div>
-      <div class="ficha-kpi"><div class="ficha-kpi-val">${todosTotalH}h</div><div class="ficha-kpi-label">Total horas</div></div>
+      <div class="ficha-kpi"><div class="ficha-kpi-val">${todosTotalH}h</div><div class="ficha-kpi-label">Horas totales</div></div>
+      <div class="ficha-kpi"><div class="ficha-kpi-val" style="font-size:11px;line-height:1.4">${bonoLabel}</div><div class="ficha-kpi-label">Bono actual</div></div>
       <div class="ficha-kpi" style="border-color:${bonoColor}60">
         <div class="ficha-kpi-val" style="color:${bonoColor}">${hRestantes}h</div>
-        <div class="ficha-kpi-label">Bono restante</div>
+        <div class="ficha-kpi-label">Horas restantes</div>
       </div>
+      <div class="ficha-kpi"><div class="ficha-kpi-val">${(todasSes||[]).length}</div><div class="ficha-kpi-label">Sesiones totales</div></div>
     </div>
     ${hRestantes <= 0 && hTotal > 0
       ? `<div style="background:#2d0d0d;border:.5px solid var(--red);border-radius:8px;padding:9px 12px;margin-bottom:12px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--red)"><i class="ti ti-ban"></i>Sin horas de bono disponibles</div>`

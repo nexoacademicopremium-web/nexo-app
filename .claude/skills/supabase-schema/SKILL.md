@@ -53,7 +53,8 @@ Espeja `auth.users` (mismo UUID como PK).
 | `direccion` | `TEXT` | |
 | `telefono_familia` | `TEXT` | |
 | `horas_bono_total` | `NUMERIC(6,2)` | default `0` |
-| `horas_bono_restantes` | `NUMERIC(6,2)` | default `0` — se descuenta en `process_session_confirmation` |
+| `horas_bono_restantes` | `NUMERIC(6,2)` | default `0` — se descuenta vía `_consumir_horas_sesion` |
+| `horas_deuda` | `NUMERIC(6,2)` | default `0` — horas consumidas sin bono activo; se descuentan del siguiente bono al activarse |
 | `fecha_inicio` | `DATE` | |
 | `profesor_id` | `UUID` | FK → `profesores(id)` — profesor principal (legacy, añadido vía ALTER) |
 | `observaciones` | `TEXT` | Añadido vía migración; notas internas |
@@ -368,12 +369,12 @@ Historial de bonos contratados o solicitados por alumno. Cada bono tiene sus pro
 **Flujo de estados:**
 1. Alumno reserva → `estado='reservado'`, `pagado=false` + botón WhatsApp para confirmar pago
 2. Admin marca pagado → si alumno sin bono activo: `estado='activo'`; si ya tiene activo con horas: `estado='pagado_en_espera'`
-3. Bono activo se agota (horas=0 tras confirmación sesión) → RPC llama `_activar_siguiente_bono()` → activo pasa a `agotado`, el primer `pagado_en_espera` (por `fecha_pago`) pasa a `activo`
+3. Bono activo se agota → `_consumir_horas_sesion` llama a `_activar_siguiente_bono()` → activo pasa a `agotado`, el primer `pagado_en_espera` (por `fecha_pago`) pasa a `activo`; si hay `horas_deuda` acumulada se descuenta al activar
 
 **Lógica de horas:**
-- Las RPCs de confirmación actualizan `bonos.horas_consumidas/restantes` Y `alumnos.horas_bono_restantes` en sync
-- Cuando `_activar_siguiente_bono` marca un bono como `agotado`: sets `horas_restantes=0, horas_consumidas=horas_contratadas`
-- Cuando activa el siguiente `pagado_en_espera` → `activo`: sets `horas_consumidas=0, horas_restantes=horas_contratadas`
+- Las RPCs de confirmación llaman a `_consumir_horas_sesion(alumno_id, duracion_h)` — esta función centraliza toda la lógica
+- Cascada dentro de `_consumir_horas_sesion`: si la sesión excede el bono activo Y hay un siguiente bono → consume el exceso del siguiente bono en el mismo acto
+- Si no hay siguiente bono → el exceso se guarda en `alumnos.horas_deuda`; cuando el próximo bono se activa, `_activar_siguiente_bono` descuenta esa deuda antes de dar horas libres
 - La tabla de bonos en admin usa `bono.horas_consumidas/restantes` directamente (no calcula desde `alumnos`)
 
 **RLS:**
@@ -432,9 +433,10 @@ Tests de autoevaluación.
 
 | Función | Auth requerida | Descripción |
 |---|---|---|
-| `_activar_siguiente_bono(p_alumno_id)` | Interno (SECURITY DEFINER) | Helper: vence bono activo del alumno y activa el siguiente `en_espera` (por `fecha_pago ASC`); si no hay cola, pone alumnos a 0/0 |
-| `process_session_confirmation(p_session_id, p_token, p_action)` | No (enlace email) | Confirma/rechaza sesión por token; descuenta horas y llama `_activar_siguiente_bono` si llegan a 0 |
-| `confirmar_sesion_alumno(p_session_id, p_action)` | Sí (alumno) | Igual pero verifica `auth.uid()` = alumno; también llama al helper si horas=0 |
+| `_consumir_horas_sesion(p_alumno_id, p_duracion_h)` | Interno | Centraliza todo el consumo de horas: cascada entre bono activo y siguiente, o guarda exceso en `horas_deuda` |
+| `_activar_siguiente_bono(p_alumno_id)` | Interno | Vence bono activo, activa siguiente `pagado_en_espera` aplicando `horas_deuda`; si no hay cola, pone alumnos a 0/0 |
+| `process_session_confirmation(p_session_id, p_token, p_action)` | No (enlace email) | Confirma/rechaza sesión por token; llama `_consumir_horas_sesion` si confirma |
+| `confirmar_sesion_alumno(p_session_id, p_action)` | Sí (alumno) | Igual pero verifica `auth.uid()` = alumno |
 | `cancelar_sesion_admin(p_session_id, p_revertir_horas)` | Sí (admin) | Cancela sesión y opcionalmente devuelve horas al bono |
 | `auto_confirm_old_sessions()` | Sí (authenticated) | Confirma sesiones `pendiente_confirmacion` con `registrada_at < NOW() - 72h`; llama helper si horas=0; GRANT EXECUTE a `authenticated`; pg_cron cada hora |
 
