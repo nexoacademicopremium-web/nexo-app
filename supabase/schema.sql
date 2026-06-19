@@ -248,7 +248,9 @@ CREATE TABLE IF NOT EXISTS public.sesiones (
   registrada_at             TIMESTAMPTZ DEFAULT NOW(),
   confirmada_at             TIMESTAMPTZ,
   cancelada_por             TEXT CHECK (cancelada_por IN ('admin','sistema')),
-  confirmation_token        UUID DEFAULT uuid_generate_v4()
+  confirmation_token        UUID DEFAULT uuid_generate_v4(),
+  bono_id                   UUID REFERENCES public.bonos(id),
+  horas_deducidas           NUMERIC(6,2)
 );
 
 ALTER TABLE public.sesiones ENABLE ROW LEVEL SECURITY;
@@ -833,14 +835,7 @@ BEGIN
   WHERE id = p_session_id;
 
   IF p_revertir_horas AND v_session.estado = 'confirmada' THEN
-    UPDATE public.alumnos
-    SET horas_bono_restantes = horas_bono_restantes + (v_session.duracion_minutos / 60.0)
-    WHERE id = v_session.alumno_id;
-
-    UPDATE public.bonos
-    SET horas_consumidas = GREATEST(0, horas_consumidas - (v_session.duracion_minutos / 60.0)),
-        horas_restantes  = horas_restantes + (v_session.duracion_minutos / 60.0)
-    WHERE alumno_id = v_session.alumno_id AND estado = 'activo';
+    PERFORM public._revertir_horas_sesion(p_session_id);
   END IF;
 
   RETURN jsonb_build_object('success', true);

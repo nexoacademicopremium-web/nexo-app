@@ -287,6 +287,8 @@ Registro de clases impartidas por un profesor. Formulario de 22 campos en 3 secc
 | `confirmada_at` | `TIMESTAMPTZ` | |
 | `cancelada_por` | `TEXT` | CHECK: `'admin'\|'sistema'` |
 | `confirmation_token` | `UUID` | Token único para enlace de email sin auth; default `uuid_generate_v4()` |
+| `bono_id` | `UUID` | FK → `bonos(id)`; se registra al confirmar la sesión — identifica qué bono pagó las horas |
+| `horas_deducidas` | `NUMERIC(6,2)` | Horas descontadas del bono `bono_id` (puede ser < duracion si hubo cascada); se registra al confirmar |
 
 **RLS:**
 - `sesiones_profesor_own` — ALL: EXISTS profesor del usuario con `id = sesiones.profesor_id`
@@ -435,10 +437,11 @@ Tests de autoevaluación.
 |---|---|---|
 | `_consumir_horas_sesion(p_alumno_id, p_duracion_h)` | Interno | Centraliza todo el consumo de horas: cascada entre bono activo y siguiente, o guarda exceso en `horas_deuda` |
 | `_activar_siguiente_bono(p_alumno_id)` | Interno | Vence bono activo, activa siguiente `pagado_en_espera` aplicando `horas_deuda`; si no hay cola, pone alumnos a 0/0 |
-| `process_session_confirmation(p_session_id, p_token, p_action)` | No (enlace email) | Confirma/rechaza sesión por token; llama `_consumir_horas_sesion` si confirma |
-| `confirmar_sesion_alumno(p_session_id, p_action)` | Sí (alumno) | Igual pero verifica `auth.uid()` = alumno |
-| `cancelar_sesion_admin(p_session_id, p_revertir_horas)` | Sí (admin) | Cancela sesión y opcionalmente devuelve horas al bono |
-| `auto_confirm_old_sessions()` | Sí (authenticated) | Confirma sesiones `pendiente_confirmacion` con `registrada_at < NOW() - 72h`; llama helper si horas=0; GRANT EXECUTE a `authenticated`; pg_cron cada hora |
+| `_revertir_horas_sesion(p_session_id)` | Interno | Revierte horas de una sesión cancelada al bono correcto; usa `bono_id`+`horas_deducidas` de la sesión para reversión precisa con detección de cascada |
+| `process_session_confirmation(p_session_id, p_token, p_action)` | No (enlace email) | Confirma/rechaza sesión por token; registra `bono_id`+`horas_deducidas` en sesiones y llama `_consumir_horas_sesion` si confirma |
+| `confirmar_sesion_alumno(p_session_id, p_action)` | Sí (alumno) | Igual pero verifica `auth.uid()` = alumno; también registra `bono_id`+`horas_deducidas` |
+| `cancelar_sesion_admin(p_session_id, p_revertir_horas)` | Sí (admin) | Cancela sesión; si `p_revertir_horas=TRUE` y sesión confirmada, llama `_revertir_horas_sesion` para devolución real al bono correcto (con soporte de cascada) |
+| `auto_confirm_old_sessions()` | Sí (authenticated) | Confirma sesiones `pendiente_confirmacion` con `registrada_at < NOW() - 72h`; registra `bono_id`+`horas_deducidas`; GRANT EXECUTE a `authenticated`; pg_cron cada hora |
 
 ---
 

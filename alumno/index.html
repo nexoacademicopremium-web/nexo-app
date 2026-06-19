@@ -322,12 +322,33 @@
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-head">
-          <div class="card-title"><i class="ti ti-chart-line"></i> Evolución del mes</div>
+      <div class="card" onclick="showSection('material')" style="cursor:pointer;border:.5px solid var(--blue);transition:border-color .2s">
+        <div class="card-head" style="border-bottom:none;padding:16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:9px;background:#0f2240;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-folder-open" style="color:var(--blue);font-size:18px"></i>
+            </div>
+            <div>
+              <div style="color:var(--txt);font-size:14px;font-weight:600">Material</div>
+              <div style="color:var(--muted);font-size:11px;margin-top:1px">Fichas y recursos de estudio</div>
+            </div>
+          </div>
+          <i class="ti ti-arrow-right" style="color:var(--blue);font-size:16px"></i>
         </div>
-        <div class="card-body" style="padding:8px 14px" id="evolucion-mes">
-          <div class="loading-section"><div class="spinner"></div></div>
+      </div>
+
+      <div class="card" onclick="showSection('tests')" style="cursor:pointer;border:.5px solid var(--green);transition:border-color .2s">
+        <div class="card-head" style="border-bottom:none;padding:16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:36px;height:36px;border-radius:9px;background:var(--green-lt);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <i class="ti ti-list-check" style="color:var(--green);font-size:18px"></i>
+            </div>
+            <div>
+              <div style="color:var(--txt);font-size:14px;font-weight:600">Tests</div>
+              <div style="color:var(--muted);font-size:11px;margin-top:1px">Pon a prueba lo aprendido</div>
+            </div>
+          </div>
+          <i class="ti ti-arrow-right" style="color:var(--green);font-size:16px"></i>
         </div>
       </div>
     </div>
@@ -520,6 +541,30 @@
       </select>
       <label class="field-label">Notas</label>
       <textarea class="field-input" id="ev-notas" rows="3" style="resize:vertical" placeholder="Opcional"></textarea>
+      <div id="ev-recurrente-wrap" style="margin-top:14px;padding-top:14px;border-top:.5px solid var(--border2)">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--soft);font-size:12px;font-weight:500">
+          <input type="checkbox" id="ev-recurrente" onchange="toggleRecurrenteAlumno()" style="accent-color:var(--blue);cursor:pointer">
+          Repetir semanalmente
+        </label>
+        <div id="ev-recurrente-opts" style="display:none;margin-top:10px;background:var(--border2);border-radius:8px;padding:12px">
+          <label class="field-label" style="margin-top:0">Día de la semana</label>
+          <select class="field-input" id="ev-diasemana">
+            <option value="1">Lunes</option>
+            <option value="2">Martes</option>
+            <option value="3">Miércoles</option>
+            <option value="4">Jueves</option>
+            <option value="5">Viernes</option>
+            <option value="6">Sábado</option>
+            <option value="0">Domingo</option>
+          </select>
+          <label class="field-label">Repetir hasta</label>
+          <input class="field-input" id="ev-hasta" type="date">
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button type="button" style="flex:1;background:var(--dark);border:.5px solid var(--border);color:var(--soft);border-radius:6px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit" onclick="setFinMesEv()">Fin de mes</button>
+            <button type="button" style="flex:1;background:var(--dark);border:.5px solid var(--border);color:var(--soft);border-radius:6px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit" onclick="setFinTrimEv()">Fin de trimestre</button>
+          </div>
+        </div>
+      </div>
       <div class="modal-footer">
         <button type="button" class="btn-ghost" onclick="cerrarModalEvento()">Cancelar</button>
         <button type="submit" class="btn-primary">Guardar</button>
@@ -747,42 +792,12 @@ async function loadDashboard() {
           <div class="inf-name">${inf.titulo}</div>
           <div class="inf-sub">${formatShortDate(inf.fecha)}</div>
         </div>
-        <span class="pill pill-new">${inf.tipo === 'mensual' ? 'Mensual' : 'Semanal'}</span>
+        <span class="pill pill-new">Mensual</span>
         ${inf.archivo_url ? `<div class="dl" style="margin-left:8px"><i class="ti ti-download"></i></div>` : ''}
       </div>
     `).join('');
   }
 
-  // Evolución (medias de valoraciones de sesiones confirmadas)
-  const { data: valSesiones } = await db
-    .from('sesiones')
-    .select('valoracion_comprension, valoracion_aplicacion, valoracion_motivacion')
-    .eq('alumno_id', alumno.id)
-    .eq('estado', 'confirmada')
-    .order('fecha', { ascending: false })
-    .limit(8);
-
-  const evEl = document.getElementById('evolucion-mes');
-  if (!valSesiones || valSesiones.length === 0) {
-    evEl.innerHTML = `<div class="empty-state"><i class="ti ti-chart-off"></i><p>Sin datos de evolución todavía</p></div>`;
-  } else {
-    const avg = arr => arr.filter(Boolean).reduce((a, b) => a + b, 0) / (arr.filter(Boolean).length || 1);
-    const comp  = avg(valSesiones.map(s => s.valoracion_comprension)).toFixed(1);
-    const motiv = avg(valSesiones.map(s => s.valoracion_motivacion)).toFixed(1);
-    const aplic = avg(valSesiones.map(s => s.valoracion_aplicacion)).toFixed(1);
-    const metrics = [
-      { label:'Comprensión', val: comp,  color:'var(--blue)',  pct: comp*10 },
-      { label:'Motivación',  val: motiv, color:'var(--green)', pct: motiv*10 },
-      { label:'Aplicación',  val: aplic, color:'var(--amber)', pct: aplic*10 },
-    ];
-    evEl.innerHTML = metrics.map(m => `
-      <div class="ev-row">
-        <div class="ev-label">${m.label}</div>
-        <div class="ev-bar-bg"><div class="ev-bar" style="width:${m.pct}%;background:${m.color}"></div></div>
-        <div class="ev-num">${m.val}</div>
-      </div>
-    `).join('');
-  }
 }
 
 async function checkPendingSessions() {
@@ -1215,7 +1230,6 @@ async function loadInformes() {
     .order('fecha', { ascending: false });
 
   const mensuales = (informes || []).filter(i => i.tipo === 'mensual');
-  const semanales = (informes || []).filter(i => i.tipo === 'semanal');
 
   const renderItems = items => items.length === 0
     ? `<div style="padding:16px;color:var(--muted);font-size:12px;text-align:center"><i class="ti ti-file-off" style="font-size:20px;display:block;margin-bottom:6px"></i>Sin informes disponibles</div>`
@@ -1246,7 +1260,6 @@ async function loadInformes() {
   document.getElementById('informes-container').innerHTML = `
     <div class="card" style="overflow:hidden">
       ${renderCat('mensual', 'ti-report-analytics', 'Informes mensuales', mensuales)}
-      ${renderCat('semanal', 'ti-report', 'Informes semanales', semanales)}
     </div>`;
 }
 
@@ -1755,12 +1768,53 @@ function clickDia(dateStr) {
   }
 }
 
+function toggleRecurrenteAlumno() {
+  const checked = document.getElementById('ev-recurrente').checked;
+  document.getElementById('ev-recurrente-opts').style.display = checked ? 'block' : 'none';
+}
+
+function setFinMesEv() {
+  const hoy = new Date();
+  const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+  document.getElementById('ev-hasta').value = fin.toISOString().split('T')[0];
+}
+
+function setFinTrimEv() {
+  const hoy = new Date();
+  const m = hoy.getMonth();
+  let fin;
+  if (m < 3)      fin = new Date(hoy.getFullYear(), 3,  0);
+  else if (m < 6) fin = new Date(hoy.getFullYear(), 6,  0);
+  else if (m < 9) fin = new Date(hoy.getFullYear(), 9,  0);
+  else            fin = new Date(hoy.getFullYear(), 12, 0);
+  document.getElementById('ev-hasta').value = fin.toISOString().split('T')[0];
+}
+
+function generarFechasEv(desdeStr, jsDay, hastaStr) {
+  const hasta = new Date(hastaStr + 'T12:00:00');
+  const fechas = [];
+  let cur = new Date(desdeStr + 'T12:00:00');
+  while (cur.getDay() !== parseInt(jsDay)) cur.setDate(cur.getDate() + 1);
+  while (cur <= hasta) {
+    fechas.push(cur.toISOString().split('T')[0]);
+    cur.setDate(cur.getDate() + 7);
+  }
+  return fechas;
+}
+
+function _resetRecurrenteEv() {
+  document.getElementById('ev-recurrente-opts').style.display = 'none';
+  document.getElementById('ev-recurrente-wrap').style.display = 'block';
+}
+
 function prepararNuevoEvento(dateStr) {
   const list = document.getElementById('modal-ev-list');
   if (list) list.remove();
+  document.getElementById('form-evento').reset();
   document.getElementById('form-evento').style.display = 'block';
   document.getElementById('modal-evento-title').textContent = 'Nueva entrada';
   document.getElementById('ev-fecha').value = dateStr;
+  _resetRecurrenteEv();
   editEventoId = null;
   document.getElementById('modal-evento').classList.add('open');
 }
@@ -1771,6 +1825,7 @@ function abrirModalEvento() {
   if (list) list.remove();
   document.getElementById('form-evento').style.display = 'block';
   document.getElementById('modal-evento-title').textContent = 'Nueva entrada';
+  _resetRecurrenteEv();
   editEventoId = null;
   document.getElementById('modal-evento').classList.add('open');
 }
@@ -1781,6 +1836,7 @@ function cerrarModalEvento() {
   const list = document.getElementById('modal-ev-list');
   if (list) list.remove();
   document.getElementById('form-evento').style.display = 'block';
+  document.getElementById('ev-recurrente-opts').style.display = 'none';
 }
 
 async function guardarEvento(e) {
@@ -1794,6 +1850,23 @@ async function guardarEvento(e) {
     duracion_minutos: parseInt(document.getElementById('ev-duracion').value),
     notas:            document.getElementById('ev-notas').value || null,
   };
+
+  const esRecurrente = !editEventoId && document.getElementById('ev-recurrente').checked;
+
+  if (esRecurrente) {
+    const jsDay = parseInt(document.getElementById('ev-diasemana').value);
+    const hasta = document.getElementById('ev-hasta').value;
+    if (!hasta) { showToast('Elige hasta qué fecha repetir', 'error'); return; }
+    const fechas = generarFechasEv(ev.fecha, jsDay, hasta);
+    if (fechas.length === 0) { showToast('No hay fechas en ese rango para el día seleccionado', 'error'); return; }
+    const entradas = fechas.map(f => ({ ...ev, fecha: f }));
+    const { error } = await db.from('calendario_alumno').insert(entradas);
+    if (error) { showToast('Error al crear entradas', 'error'); return; }
+    showToast(`${fechas.length} entrada${fechas.length !== 1 ? 's' : ''} creada${fechas.length !== 1 ? 's' : ''}`);
+    cerrarModalEvento();
+    await renderCalendario();
+    return;
+  }
 
   const { error } = editEventoId
     ? await db.from('calendario_alumno').update(ev).eq('id', editEventoId)

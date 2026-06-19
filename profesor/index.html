@@ -706,6 +706,30 @@
       </select>
       <label class="field-label">Notas</label>
       <textarea class="field-input" id="mc-notas" rows="2" style="resize:vertical"></textarea>
+      <div id="mc-recurrente-wrap" style="margin-top:14px;padding-top:14px;border-top:.5px solid var(--border2)">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--soft);font-size:12px;font-weight:500">
+          <input type="checkbox" id="mc-recurrente" onchange="toggleRecurrenteProf()" style="accent-color:var(--blue);cursor:pointer">
+          Repetir semanalmente
+        </label>
+        <div id="mc-recurrente-opts" style="display:none;margin-top:10px;background:var(--border2);border-radius:8px;padding:12px">
+          <label class="field-label" style="margin-top:0">Día de la semana</label>
+          <select class="field-input" id="mc-diasemana">
+            <option value="1">Lunes</option>
+            <option value="2">Martes</option>
+            <option value="3">Miércoles</option>
+            <option value="4">Jueves</option>
+            <option value="5">Viernes</option>
+            <option value="6">Sábado</option>
+            <option value="0">Domingo</option>
+          </select>
+          <label class="field-label">Repetir hasta</label>
+          <input class="field-input" id="mc-hasta" type="date">
+          <div style="display:flex;gap:6px;margin-top:8px">
+            <button type="button" style="flex:1;background:var(--dark);border:.5px solid var(--border);color:var(--soft);border-radius:6px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit" onclick="setFinMesCal()">Fin de mes</button>
+            <button type="button" style="flex:1;background:var(--dark);border:.5px solid var(--border);color:var(--soft);border-radius:6px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit" onclick="setFinTrimestreCal()">Fin de trimestre</button>
+          </div>
+        </div>
+      </div>
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModalClase()">Cancelar</button>
         <button type="submit" class="btn-primary">Guardar</button>
@@ -1515,14 +1539,52 @@ function cambiarMesCal(delta) {
 }
 
 function clickDiaProf(dateStr) {
+  document.getElementById('form-clase').reset();
   document.getElementById('mc-fecha').value = dateStr;
+  document.getElementById('mc-recurrente-opts').style.display = 'none';
   editClaseId = null;
   document.getElementById('modal-clase').classList.add('open');
+}
+
+function toggleRecurrenteProf() {
+  const checked = document.getElementById('mc-recurrente').checked;
+  document.getElementById('mc-recurrente-opts').style.display = checked ? 'block' : 'none';
+}
+
+function setFinMesCal() {
+  const hoy = new Date();
+  const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+  document.getElementById('mc-hasta').value = fin.toISOString().split('T')[0];
+}
+
+function setFinTrimestreCal() {
+  const hoy = new Date();
+  const m = hoy.getMonth();
+  let fin;
+  if (m < 3)      fin = new Date(hoy.getFullYear(), 3,  0);
+  else if (m < 6) fin = new Date(hoy.getFullYear(), 6,  0);
+  else if (m < 9) fin = new Date(hoy.getFullYear(), 9,  0);
+  else            fin = new Date(hoy.getFullYear(), 12, 0);
+  document.getElementById('mc-hasta').value = fin.toISOString().split('T')[0];
+}
+
+function generarFechasRecurrentes(desdeStr, jsDay, hastaStr) {
+  const hasta = new Date(hastaStr + 'T12:00:00');
+  const fechas = [];
+  let cur = new Date(desdeStr + 'T12:00:00');
+  while (cur.getDay() !== parseInt(jsDay)) cur.setDate(cur.getDate() + 1);
+  while (cur <= hasta) {
+    fechas.push(cur.toISOString().split('T')[0]);
+    cur.setDate(cur.getDate() + 7);
+  }
+  return fechas;
 }
 
 function abrirModalClase() {
   document.getElementById('form-clase').reset();
   document.getElementById('mc-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('mc-recurrente-opts').style.display = 'none';
+  document.getElementById('mc-recurrente-wrap').style.display = 'block';
   editClaseId = null;
   document.getElementById('modal-clase').classList.add('open');
 }
@@ -1530,20 +1592,39 @@ function abrirModalClase() {
 function cerrarModalClase() {
   document.getElementById('modal-clase').classList.remove('open');
   document.getElementById('form-clase').reset();
+  document.getElementById('mc-recurrente-opts').style.display = 'none';
   editClaseId = null;
 }
 
 async function guardarClase(e) {
   e.preventDefault();
   const clase = {
-    profesor_id:     ctx.profesorData.id,
-    alumno_id:       document.getElementById('mc-alumno').value || null,
-    asignatura:      document.getElementById('mc-asignatura').value || null,
-    fecha:           document.getElementById('mc-fecha').value,
-    hora_inicio:     document.getElementById('mc-hora').value || null,
+    profesor_id:      ctx.profesorData.id,
+    alumno_id:        document.getElementById('mc-alumno').value || null,
+    asignatura:       document.getElementById('mc-asignatura').value || null,
+    fecha:            document.getElementById('mc-fecha').value,
+    hora_inicio:      document.getElementById('mc-hora').value || null,
     duracion_minutos: parseInt(document.getElementById('mc-duracion').value),
-    notas:           document.getElementById('mc-notas').value || null,
+    notas:            document.getElementById('mc-notas').value || null,
   };
+
+  const esRecurrente = !editClaseId && document.getElementById('mc-recurrente').checked;
+
+  if (esRecurrente) {
+    const jsDay = parseInt(document.getElementById('mc-diasemana').value);
+    const hasta = document.getElementById('mc-hasta').value;
+    if (!hasta) { showToast('Elige hasta qué fecha repetir', 'error'); return; }
+    const fechas = generarFechasRecurrentes(clase.fecha, jsDay, hasta);
+    if (fechas.length === 0) { showToast('No hay fechas en ese rango para el día seleccionado', 'error'); return; }
+    const clases = fechas.map(f => ({ ...clase, fecha: f }));
+    const { error } = await db.from('calendario_profesor').insert(clases);
+    if (error) { showToast('Error al crear clases recurrentes', 'error'); return; }
+    showToast(`${fechas.length} clase${fechas.length !== 1 ? 's' : ''} creada${fechas.length !== 1 ? 's' : ''}`);
+    cerrarModalClase();
+    await renderCalendarioProf();
+    await renderMiniCal();
+    return;
+  }
 
   const { error } = editClaseId
     ? await db.from('calendario_profesor').update(clase).eq('id', editClaseId)
