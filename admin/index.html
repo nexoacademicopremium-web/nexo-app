@@ -2458,28 +2458,28 @@ async function refreshFichaBono() {
   const el = document.getElementById('ficha-bono-info');
   if (!el || fichaAlumnoId === null) return;
 
-  const alumno = allAlumnos.find(a => a.id === fichaAlumnoId);
-  if (!alumno) return;
-
-  const hTotal    = parseFloat(alumno.horas_bono_total)     || 0;
-  const hRest     = parseFloat(alumno.horas_bono_restantes) || 0;
-  const pct       = hTotal > 0 ? (hRest / hTotal) * 100 : 0;
-  const bonoColor = hRest <= 0 && hTotal > 0 ? 'var(--red)' : pct <= 25 && hTotal > 0 ? 'var(--amber)' : 'var(--blue)';
-
   const [{ data: bonos }, { data: todasSes }] = await Promise.all([
     db.from('bonos')
-      .select('horas_contratadas, modalidad, fecha_compra, estado')
+      .select('horas_contratadas, horas_consumidas, horas_restantes, modalidad, fecha_compra, estado')
       .eq('alumno_id', fichaAlumnoId)
       .order('created_at', { ascending: false })
-      .limit(1),
+      .limit(5),
     db.from('sesiones')
       .select('duracion_minutos')
       .eq('alumno_id', fichaAlumnoId)
       .eq('estado', 'confirmada'),
   ]);
 
-  const totalHoras = (todasSes || []).reduce((a, s) => a + s.duracion_minutos / 60, 0).toFixed(1);
-  const ub = bonos?.[0];
+  const totalHoras  = (todasSes || []).reduce((a, s) => a + s.duracion_minutos / 60, 0).toFixed(1);
+  const ub          = (bonos || [])[0];
+  const bonoActivo  = (bonos || []).find(b => b.estado === 'activo');
+
+  // Fuente de verdad: campos directos del bono activo (no las columnas en alumnos)
+  const hTotal    = bonoActivo ? parseFloat(bonoActivo.horas_contratadas) || 0 : 0;
+  const hRest     = bonoActivo ? parseFloat(bonoActivo.horas_restantes)   || 0 : 0;
+  const hUsed     = bonoActivo ? parseFloat(bonoActivo.horas_consumidas)  || 0 : 0;
+  const pct       = hTotal > 0 ? (hRest / hTotal) * 100 : 0;
+  const bonoColor = hRest <= 0 && hTotal > 0 ? 'var(--red)' : pct <= 25 && hTotal > 0 ? 'var(--amber)' : 'var(--blue)';
 
   el.innerHTML = `
     ${hRest <= 0 && hTotal > 0
@@ -2489,14 +2489,14 @@ async function refreshFichaBono() {
         : ''}
     ${ub ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:.5px solid var(--border2)"><span style="color:var(--muted)">Último bono</span><b>${ub.horas_contratadas}h ${ub.modalidad} · ${formatShortDate(ub.fecha_compra)}</b></div>` : ''}
     <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:.5px solid var(--border2)"><span style="color:var(--muted)">Total horas impartidas (todos)</span><b>${totalHoras}h</b></div>
-    <div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:.5px solid var(--border2)"><span style="color:var(--muted)">Bono restante</span><b style="color:${bonoColor}">${hRest}h / ${hTotal}h</b></div>
+    ${bonoActivo ? `<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:.5px solid var(--border2)"><span style="color:var(--muted)">Bono restante</span><b style="color:${bonoColor}">${hRest}h / ${hTotal}h</b></div>
     <div style="margin-top:10px">
       <div style="display:flex;justify-content:space-between;margin-bottom:4px">
         <span style="color:var(--muted);font-size:11px">${pct.toFixed(0)}% disponible</span>
-        <span style="color:var(--muted);font-size:11px">${Math.max(0, hTotal - hRest).toFixed(1)}h consumidas</span>
+        <span style="color:var(--muted);font-size:11px">${hUsed.toFixed(1)}h consumidas</span>
       </div>
       <div class="bono-bar-wrap"><div class="bono-bar-fill" style="width:${Math.min(100, pct).toFixed(0)}%;background:${bonoColor}"></div></div>
-    </div>
+    </div>` : `<div style="color:var(--muted);font-size:12px;padding:6px 0">Sin bono activo actualmente</div>`}
   `;
 }
 
@@ -3261,18 +3261,8 @@ async function loadBonos() {
       ${data.map(b => {
         const u = b.alumno?.usuario || {};
         const alumnoNom = u.nombre ? `${u.nombre} ${u.apellidos}` : '—';
-        let consumidas, restantes;
-        if (b.estado === 'activo') {
-          const bTotal = parseFloat(b.horas_contratadas) || 0;
-          restantes  = parseFloat(b.alumno?.horas_bono_restantes) || 0;
-          consumidas = Math.max(0, bTotal - restantes);
-        } else if (b.estado === 'agotado') {
-          consumidas = parseFloat(b.horas_consumidas) || parseFloat(b.horas_contratadas) || 0;
-          restantes  = parseFloat(b.horas_restantes)  || 0;
-        } else {
-          consumidas = parseFloat(b.horas_consumidas) || 0;
-          restantes  = 0;
-        }
+        const consumidas = parseFloat(b.horas_consumidas) || 0;
+        const restantes  = parseFloat(b.horas_restantes)  || 0;
         const [pc, pt]   = pillMap[b.estado] || ['st-grey', b.estado];
         const precioFmt  = b.precio_final != null ? b.precio_final.toFixed(2) + '€' : '—';
         const descFmt    = b.descuento > 0 ? b.descuento + '%' : '—';

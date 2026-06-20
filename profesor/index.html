@@ -1393,10 +1393,10 @@ async function abrirFicha(alumnoId) {
       .eq('alumno_id', alumnoId)
       .eq('estado', 'confirmada'),
     db.from('bonos')
-      .select('horas_contratadas, modalidad, fecha_compra, estado')
+      .select('horas_contratadas, horas_consumidas, horas_restantes, modalidad, fecha_compra, estado')
       .eq('alumno_id', alumnoId)
       .order('created_at', { ascending: false })
-      .limit(1),
+      .limit(5),
   ]);
 
   const confirmadas  = (sesList || []).filter(s => s.estado === 'confirmada');
@@ -1406,13 +1406,17 @@ async function abrirFicha(alumnoId) {
   const avgAplic = avg(confirmadas.map(s => s.valoracion_aplicacion));
   const avgMotiv = avg(confirmadas.map(s => s.valoracion_motivacion));
 
-  const hTotal     = parseFloat(alumno.horas_bono_total)     || 0;
-  const hRestantes = parseFloat(alumno.horas_bono_restantes) || 0;
-  const pct        = hTotal > 0 ? (hRestantes / hTotal) * 100 : 0;
-  const bonoColor  = hRestantes <= 0 ? 'var(--red)' : pct <= 25 ? 'var(--amber)' : 'var(--green)';
+  // Fuente de verdad: campos directos del bono activo
+  const bonoActivo  = (bonosData || []).find(b => b.estado === 'activo');
+  const ub          = (bonosData || [])[0];
+  const hTotal      = bonoActivo ? parseFloat(bonoActivo.horas_contratadas) || 0 : 0;
+  const hRestantes  = bonoActivo ? parseFloat(bonoActivo.horas_restantes)   || 0 : 0;
+  const pct         = hTotal > 0 ? (hRestantes / hTotal) * 100 : 0;
+  const bonoColor   = hRestantes <= 0 && hTotal > 0 ? 'var(--red)' : pct <= 25 && hTotal > 0 ? 'var(--amber)' : 'var(--green)';
 
-  const ub        = bonosData?.[0];
-  const bonoLabel = ub ? `${ub.horas_contratadas}h ${ub.modalidad} · ${formatDate(ub.fecha_compra)}` : '—';
+  const bonoLabel = bonoActivo
+    ? `${bonoActivo.horas_contratadas}h ${bonoActivo.modalidad} · ${formatDate(bonoActivo.fecha_compra)}`
+    : (ub ? `${ub.horas_contratadas}h ${ub.modalidad} · ${formatDate(ub.fecha_compra)}` : '—');
 
   const pillCls = alumno.nivel?.includes('BACH') ? 'pill-bach' : 'pill-eso';
 
