@@ -152,7 +152,38 @@
   .badge-test{background:#0d2d1e;color:var(--green)}
   .badge-ok{background:var(--green-lt);color:var(--green)}
 
-  /* ── Material alumno — acordeón Bloque → Tema → Archivo ── */
+  /* ── Material alumno — nuevo diseño burbujas ── */
+  .mat-back{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;cursor:pointer;margin-bottom:18px;padding:6px 0;width:fit-content;transition:color .15s}
+  .mat-back:hover{color:var(--blue)}
+  .mat-back i{font-size:18px}
+  .mat-bloque-sec{margin-bottom:24px}
+  .mat-bloque-hdr{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;margin-bottom:12px;border-left:3px solid var(--cc,var(--blue));background:linear-gradient(90deg,rgba(255,255,255,.03) 0%,transparent 100%)}
+  .mat-bloque-hdr i{font-size:18px;color:var(--cc,var(--blue));flex-shrink:0}
+  .mat-bloque-nom{color:#fff;font-size:14px;font-weight:600;flex:1}
+  .mat-bloque-cnt{color:var(--muted);font-size:11px;background:var(--border2);padding:2px 8px;border-radius:20px}
+  /* grid de temas */
+  .mat-tema-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .mat-tema-bubble{background:#060d20;border:1px solid var(--cc,var(--border));border-radius:16px;padding:20px 14px 16px;cursor:pointer;position:relative;overflow:hidden;text-align:center;transition:transform .2s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
+  .mat-tema-bubble::after{content:'';position:absolute;top:-20px;right:-20px;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,var(--cc,var(--blue)) 0%,transparent 70%);opacity:.1;pointer-events:none}
+  .mat-tema-bubble:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.45),0 0 0 1px var(--cc,var(--border))}
+  .mat-tema-bubble:active{transform:translateY(-1px)}
+  .mat-tema-ico{width:52px;height:52px;border-radius:13px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;border:1.5px solid var(--cc,var(--border));background:rgba(255,255,255,.04)}
+  .mat-tema-ico i{font-size:22px;color:var(--cc,var(--blue))}
+  .mat-tema-nom{color:#fff;font-size:13px;font-weight:600;margin-bottom:4px;line-height:1.3}
+  .mat-tema-cnt{color:var(--muted);font-size:11px}
+  /* grid de archivos */
+  .mat-item-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px}
+  .mat-item-card{background:#060d20;border:1px solid var(--cc,var(--border));border-radius:16px;padding:22px 16px 16px;cursor:pointer;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;text-align:center;transition:transform .2s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
+  .mat-item-card::after{content:'';position:absolute;top:-15px;right:-15px;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,var(--cc,var(--blue)) 0%,transparent 70%);opacity:.1;pointer-events:none}
+  .mat-item-card:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(0,0,0,.45),0 0 0 1px var(--cc,var(--border))}
+  .mat-item-card:active{transform:translateY(-1px)}
+  .mat-item-ico{width:58px;height:58px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:13px;border:1.5px solid var(--cc,var(--border));background:rgba(255,255,255,.04);flex-shrink:0}
+  .mat-item-ico i{font-size:26px;color:var(--cc,var(--blue))}
+  .mat-item-nom{color:#fff;font-size:13px;font-weight:600;margin-bottom:5px;line-height:1.3;flex:1}
+  .mat-item-badge{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:500;margin-top:auto;margin-bottom:8px}
+  .mat-item-btn{background:var(--cc,var(--blue));color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;width:100%;transition:opacity .15s}
+  .mat-item-btn:hover{opacity:.85}
+  /* legacy (accordion) — se mantiene por si el admin lo usa */
   .mal-bloque{border-top:.5px solid var(--border2)}
   .mal-bloque:first-child{border-top:none}
   .mal-bloque-hd{display:flex;align-items:center;gap:9px;padding:11px 16px;cursor:pointer;user-select:none;background:#071228;transition:background .1s}
@@ -266,6 +297,7 @@
   .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:89}
   @media(max-width:900px){
     .asig-bubble-grid{grid-template-columns:repeat(2,1fr)}
+    .mat-tema-grid{grid-template-columns:repeat(2,1fr)}
     .grid2{grid-template-columns:1fr}
   }
   @media(max-width:768px){
@@ -288,6 +320,8 @@
     .asig-bubble{padding:20px 12px 14px}
     .asig-bubble-ico{width:56px;height:56px}
     .asig-bubble-ico i{font-size:24px}
+    .mat-tema-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+    .mat-item-grid{grid-template-columns:repeat(2,1fr);gap:10px}
     .grid2{grid-template-columns:1fr!important}
     .alerta{flex-direction:row;flex-wrap:wrap}
   }
@@ -1529,8 +1563,10 @@ function mostrarDetalle(asigEnc) {
   document.getElementById('estudiar-asignaturas').style.display = 'none';
   document.getElementById('estudiar-detalle').style.display = 'block';
 
-  const tipoIcon  = t => ({pdf:'ti-file-text',recurso:'ti-layout-grid'}[t] || 'ti-file');
-  const tipoBadge = t => ({pdf:'badge-pdf PDF',recurso:'badge-pdf Recurso'}[t] || 'badge-pdf Recurso');
+  // Colores para bloques y temas
+  const bColors = ['#154ca9','#0891b2','#7c3aed','#1a7f5e','#b45309','#9d174d'];
+  const tColors = ['#1a7f5e','#0891b2','#7c3aed','#154ca9','#b45309','#9d174d'];
+  const tIcons  = ['ti-bookmark','ti-star','ti-bulb','ti-puzzle','ti-writing','ti-atom','ti-math-function','ti-chart-bar'];
 
   // Agrupar material: bloque_id → tema_id → items
   const bloques = {};
@@ -1546,80 +1582,123 @@ function mostrarDetalle(asigEnc) {
     }
   });
 
-  const renderItem = m => {
-    const [badgeCls, badgeTxt] = tipoBadge(m.tipo).split(' ');
-    return `
-      <div class="recurso-row" onclick="${m.archivo_url ? `window.open('${m.archivo_url}','_blank')` : ''}">
-        <div class="recurso-ico" style="background:#0f2240">
-          <i class="ti ${tipoIcon(m.tipo)}" style="color:var(--blue);font-size:17px"></i>
-        </div>
-        <div style="flex:1">
-          <div class="recurso-name">${m.titulo}</div>
-        </div>
-        <span class="recurso-badge ${badgeCls}">${badgeTxt}</span>
-      </div>`;
-  };
-
-  const renderTemasAlm = (temasPorId, bid) => Object.keys(temasPorId).map(tid => {
-    const items  = temasPorId[tid];
-    const nomTem = tid !== '__sin__' ? (temaMap[parseInt(tid)] || '') : '';
-    if (!nomTem) return `<div class="mal-recurso-indent">${items.map(renderItem).join('')}</div>`;
-    return `
-      <div class="mal-tema" id="alm-tema-${bid}-${tid}">
-        <div class="mal-tema-hd" onclick="toggleAlmTema('${bid}','${tid}')">
-          <i class="ti ti-chevron-right mal-chevron"></i>
-          <i class="ti ti-bookmark" style="font-size:12px;color:var(--soft)"></i>
-          <span style="flex:1">${nomTem}</span>
-          <span class="mal-count">${items.length} archivo${items.length !== 1 ? 's' : ''}</span>
-        </div>
-        <div class="mal-tema-body mal-recurso-indent">${items.map(renderItem).join('')}</div>
-      </div>`;
-  }).join('');
-
   const bloqueIds = Object.keys(bloques);
-  const materialHTML = material.length === 0
-    ? `<div class="card"><div class="card-body" style="padding:20px 16px;color:var(--muted);font-size:13px;text-align:center"><i class="ti ti-clock" style="font-size:22px;display:block;margin-bottom:6px"></i>Sin material disponible todavía</div></div>`
-    : `
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title"><i class="ti ti-files"></i> Material disponible</div>
-      </div>
-      ${bloqueIds.map(bid => {
-        const temas   = bloques[bid];
-        const bloque  = bloqueMap[parseInt(bid)] || {};
-        const nomBlq  = bloque.nombre || 'Bloque';
-        const nItems  = Object.values(temas).reduce((s, a) => s + a.length, 0);
-        return `
-          <div class="mal-bloque" id="alm-bloque-${bid}">
-            <div class="mal-bloque-hd" onclick="toggleAlmBloque('${bid}')">
-              <i class="ti ti-chevron-right mal-chevron"></i>
-              <i class="ti ti-folder" style="color:var(--blue);font-size:15px"></i>
-              <span class="mal-bloque-name">${nomBlq}</span>
-              <span class="mal-count">${nItems} archivo${nItems !== 1 ? 's' : ''}</span>
-            </div>
-            <div class="mal-bloque-body">${renderTemasAlm(temas, bid)}</div>
-          </div>`;
-      }).join('')}
-      ${sinEstructura.length > 0 ? `<div class="mal-recurso-indent">${sinEstructura.map(renderItem).join('')}</div>` : ''}
-    </div>`;
 
-  const testsHTML = tests.length > 0 ? `
-    <div class="card" style="margin-top:12px">
-      <div class="card-head"><div class="card-title"><i class="ti ti-list-check"></i> Tests</div></div>
-      ${tests.map(t => {
+  let html = '';
+
+  if (material.length === 0 && tests.length === 0) {
+    html = `<div class="empty-state"><i class="ti ti-clock"></i><p>Sin contenido disponible todavía</p></div>`;
+  } else {
+    // Bloques con temas como burbujas
+    bloqueIds.forEach((bid, bi) => {
+      const temas  = bloques[bid];
+      const bloque = bloqueMap[parseInt(bid)] || {};
+      const nomBlq = bloque.nombre || 'Bloque';
+      const nItems = Object.values(temas).reduce((s, a) => s + a.length, 0);
+      const cc     = bColors[bi % bColors.length];
+
+      const temasHTML = Object.keys(temas).map((tid, ti) => {
+        const items  = temas[tid];
+        const nomTem = tid !== '__sin__' ? (temaMap[parseInt(tid)] || 'Sin categoría') : 'Sin categoría';
+        const tc     = tColors[ti % tColors.length];
+        const tico   = tIcons[ti % tIcons.length];
+        const key    = JSON.stringify({ asigEnc, bid, tid });
+        return `
+          <div class="mat-tema-bubble" style="--cc:${tc}" onclick='mostrarTemaItems(${JSON.stringify(asigEnc)},${JSON.stringify(bid)},${JSON.stringify(tid)})'>
+            <div class="mat-tema-ico"><i class="ti ${tico}"></i></div>
+            <div class="mat-tema-nom">${nomTem}</div>
+            <div class="mat-tema-cnt">${items.length} archivo${items.length !== 1 ? 's' : ''}</div>
+          </div>`;
+      }).join('');
+
+      html += `
+        <div class="mat-bloque-sec">
+          <div class="mat-bloque-hdr" style="--cc:${cc}">
+            <i class="ti ti-folder-filled"></i>
+            <span class="mat-bloque-nom">${nomBlq}</span>
+            <span class="mat-bloque-cnt">${nItems} archivo${nItems !== 1 ? 's' : ''}</span>
+          </div>
+          <div class="mat-tema-grid">${temasHTML}</div>
+        </div>`;
+    });
+
+    // Material sin estructura: mostrar directamente como tarjetas
+    if (sinEstructura.length > 0) {
+      html += `<div class="mat-bloque-sec">
+        <div class="mat-bloque-hdr" style="--cc:#154ca9">
+          <i class="ti ti-files"></i>
+          <span class="mat-bloque-nom">Recursos generales</span>
+          <span class="mat-bloque-cnt">${sinEstructura.length} archivo${sinEstructura.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="mat-item-grid">${sinEstructura.map((m, i) => renderMatItem(m, i)).join('')}</div>
+      </div>`;
+    }
+
+    // Tests de la asignatura
+    if (tests.length > 0) {
+      const testsCards = tests.map((t, i) => {
         const nota = t.resultado?.[0]?.nota;
+        const cc   = nota != null ? '#1a7f5e' : '#154ca9';
         return `
-          <div class="recurso-row" onclick="iniciarTest('${t.id}','${encodeURIComponent(t.titulo)}')">
-            <div class="recurso-ico" style="background:#0d2d1e">
-              <i class="ti ti-player-play" style="color:var(--green);font-size:17px"></i>
-            </div>
-            <div style="flex:1"><div class="recurso-name">${t.titulo}</div></div>
-            ${nota != null ? `<span class="recurso-badge badge-ok">Nota: ${nota}</span>` : '<span class="recurso-badge badge-test">Nuevo</span>'}
+          <div class="mat-item-card" style="--cc:${cc}" onclick="iniciarTest('${t.id}','${encodeURIComponent(t.titulo)}')">
+            <div class="mat-item-ico"><i class="ti ${nota != null ? 'ti-check' : 'ti-player-play'}"></i></div>
+            <div class="mat-item-nom">${t.titulo}</div>
+            <span class="mat-item-badge" style="background:${nota != null ? 'var(--green-lt)' : '#0f2240'};color:${nota != null ? 'var(--green)' : 'var(--blue)'}">
+              ${nota != null ? `Nota: ${nota}` : 'Nuevo'}
+            </span>
+            <button class="mat-item-btn">${nota != null ? 'Repetir test' : 'Iniciar test'}</button>
           </div>`;
-      }).join('')}
-    </div>` : '';
+      }).join('');
+      html += `<div class="mat-bloque-sec">
+        <div class="mat-bloque-hdr" style="--cc:#1a7f5e">
+          <i class="ti ti-list-check"></i>
+          <span class="mat-bloque-nom">Tests de autoevaluación</span>
+          <span class="mat-bloque-cnt">${tests.length} test${tests.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div class="mat-item-grid">${testsCards}</div>
+      </div>`;
+    }
+  }
 
-  document.getElementById('detalle-material').innerHTML = materialHTML + testsHTML;
+  document.getElementById('detalle-material').innerHTML = html;
+}
+
+function renderMatItem(m, i) {
+  const colors = ['#154ca9','#0891b2','#7c3aed','#1a7f5e','#b45309','#9d174d'];
+  const icoMap = { pdf: 'ti-file-text', recurso: 'ti-layout-grid' };
+  const ico    = icoMap[m.tipo] || 'ti-file';
+  const tipTxt = m.tipo === 'pdf' ? 'PDF' : 'Recurso';
+  const tipBg  = m.tipo === 'pdf' ? '#0f2240' : '#0d2d1e';
+  const tipCl  = m.tipo === 'pdf' ? 'var(--blue)' : 'var(--green)';
+  const cc     = colors[i % colors.length];
+  const onclick = m.archivo_url ? `window.open('${m.archivo_url}','_blank')` : '';
+  return `
+    <div class="mat-item-card" style="--cc:${cc}" onclick="${onclick}">
+      <div class="mat-item-ico"><i class="ti ${ico}"></i></div>
+      <div class="mat-item-nom">${m.titulo}</div>
+      <span class="mat-item-badge" style="background:${tipBg};color:${tipCl}">${tipTxt}</span>
+      ${m.archivo_url ? `<button class="mat-item-btn" onclick="event.stopPropagation();window.open('${m.archivo_url}','_blank')">Abrir</button>` : '<button class="mat-item-btn" style="opacity:.4" disabled>Sin enlace</button>'}
+    </div>`;
+}
+
+function mostrarTemaItems(asigEnc, bid, tid) {
+  const { bloqueMap, temaMap } = window._estudiarData || {};
+  const bloque = bloqueMap[parseInt(bid)] || {};
+  const nomTem = tid !== '__sin__' ? (temaMap[parseInt(tid)] || 'Tema') : 'Recursos';
+  const nomBlq = bloque.nombre || '';
+  const items  = window._estudiarData?.byAsig?.[decodeURIComponent(asigEnc)]?.filter(m =>
+    String(m.bloque_id) === String(bid) && (tid === '__sin__' ? !m.tema_id : String(m.tema_id) === String(tid))
+  ) || [];
+
+  document.getElementById('detalle-titulo').textContent = nomTem;
+  document.getElementById('detalle-material').innerHTML = `
+    <div class="mat-back" onclick="mostrarDetalle('${asigEnc}')">
+      <i class="ti ti-arrow-left"></i> ${nomBlq || decodeURIComponent(asigEnc)}
+    </div>
+    ${items.length === 0
+      ? `<div class="empty-state"><i class="ti ti-clock"></i><p>Sin archivos en este tema</p></div>`
+      : `<div class="mat-item-grid">${items.map((m, i) => renderMatItem(m, i)).join('')}</div>`
+    }`;
 }
 
 function toggleAlmBloque(bid) {
@@ -1632,6 +1711,7 @@ function toggleAlmTema(bid, tid) {
 function volverAsignaturas() {
   document.getElementById('estudiar-asignaturas').style.display = '';
   document.getElementById('estudiar-detalle').style.display = 'none';
+  document.getElementById('detalle-titulo').textContent = '';
 }
 
 // ============================================================
