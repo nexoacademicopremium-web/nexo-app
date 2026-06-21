@@ -724,11 +724,11 @@ async function loadDashboard() {
   document.getElementById('prog-bono').style.width = pct + '%';
   document.getElementById('prog-bono').style.background = barColor;
 
-  if (hRest <= 3) {
+  if (hTotal > 0 && hUsed / hTotal > 0.75) {
     const a = document.getElementById('alerta-bono');
     a.style.display = 'flex';
     document.getElementById('alerta-bono-txt').textContent =
-      `Quedan ${hRest.toFixed(1)} horas en tu bono. Renueva para no interrumpir las clases.`;
+      `Has consumido más del 75% de tu bono. Renueva para no interrumpir las clases.`;
     document.getElementById('alerta-bono-btn').href =
       `https://wa.me/${WHATSAPP_MANU}?text=Hola%20Manu%2C%20quiero%20renovar%20el%20bono%20de%20${encodeURIComponent(ctx.usuario.nombre)}.`;
   }
