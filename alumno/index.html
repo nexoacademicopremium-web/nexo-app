@@ -265,6 +265,7 @@
   <div class="nav-item" id="nav-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i> Mi bono</div>
   <div class="nav-item" id="nav-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i> Mi profesor</div>
   <div class="nav-item" id="nav-estudiar" onclick="showSection('estudiar')"><i class="ti ti-book"></i> Estudiar</div>
+  <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i> Tests</div>
   <div class="nav-item" id="nav-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i> Mi calendario</div>
   <div class="nav-divider"></div>
   <div class="nav-bottom">
@@ -322,7 +323,7 @@
         </div>
       </div>
 
-      <div class="card" onclick="showSection('material')" style="cursor:pointer;border:.5px solid var(--blue);transition:border-color .2s">
+      <div class="card" onclick="showSection('estudiar')" style="cursor:pointer;border:.5px solid var(--blue);transition:border-color .2s">
         <div class="card-head" style="border-bottom:none;padding:16px">
           <div style="display:flex;align-items:center;gap:10px">
             <div style="width:36px;height:36px;border-radius:9px;background:#0f2240;display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -422,10 +423,28 @@
   </div>
 </div>
 
+<!-- ═══ TESTS LISTA ═══ -->
+<div class="section" id="section-tests">
+  <h1 class="page-title">Mis tests</h1>
+  <p class="page-sub" id="tests-sub">Tests de autoevaluación por asignatura</p>
+
+  <div id="tests-lista-asignaturas">
+    <div class="loading-section"><div class="spinner"></div></div>
+  </div>
+
+  <div id="tests-lista-detalle" style="display:none">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <button onclick="volverTestsAsignaturas()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:20px">←</button>
+      <h2 id="tests-lista-titulo" style="color:#fff;font-size:16px;font-weight:600"></h2>
+    </div>
+    <div id="tests-lista-contenido"></div>
+  </div>
+</div>
+
 <!-- ═══ TEST MODAL / INLINE ═══ -->
 <div class="section" id="section-test">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
-    <button onclick="showSection('estudiar')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:20px">←</button>
+    <button onclick="showSection(_testOriginSection||'estudiar')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:20px">←</button>
     <h1 class="page-title" id="test-titulo" style="margin:0">Test</h1>
   </div>
   <div id="test-content"></div>
@@ -528,7 +547,9 @@
       <label class="field-label">Título / Asignatura</label>
       <input class="field-input" id="ev-titulo" type="text" placeholder="Ej: Repaso de álgebra" required>
       <label class="field-label">Asignatura</label>
-      <input class="field-input" id="ev-asignatura" type="text" placeholder="Matemáticas">
+      <select class="field-input" id="ev-asignatura">
+        <option value="">— Sin asignatura —</option>
+      </select>
       <label class="field-label">Fecha</label>
       <input class="field-input" id="ev-fecha" type="date" required>
       <label class="field-label">Hora de inicio</label>
@@ -645,6 +666,7 @@ function showSection(id) {
     bonos:      loadBonosAlumno,
     profesor:   loadProfesor,
     estudiar:   loadEstudiar,
+    tests:      loadTests,
     calendario: loadCalendario,
   };
   if (loaders[id]) loaders[id]();
@@ -941,7 +963,10 @@ async function loadSesiones() {
           ${td(s.asignatura, ';color:#fff')}
           ${td(profNom)}
           ${td(s.duracion_minutos + ' min')}
-          <td style="padding:11px 14px;border-bottom:.5px solid var(--border2)"><span class="status-pill ${cls}">${txt}</span></td>
+          <td style="padding:11px 14px;border-bottom:.5px solid var(--border2);white-space:nowrap">
+            <span class="status-pill ${cls}">${txt}</span>
+            ${s.estado === 'cancelada' ? `<button onclick="eliminarSesionAlumno('${s.id}')" title="Eliminar" style="margin-left:6px;background:var(--red-lt);color:var(--red);border:.5px solid var(--red);border-radius:5px;padding:2px 6px;font-size:10px;cursor:pointer;font-family:inherit;vertical-align:middle"><i class="ti ti-trash" style="font-size:11px"></i></button>` : ''}
+          </td>
         </tr>`;
       }).join('')}
     </tbody>
@@ -982,7 +1007,7 @@ async function loadBonosAlumno() {
   // Cargar bonos del alumno
   const { data: bonos } = await db
     .from('bonos')
-    .select('id, horas_contratadas, horas_consumidas, horas_restantes, modalidad, precio_base, descuento, precio_final, fecha_compra, estado, notas')
+    .select('id, horas_contratadas, horas_consumidas, horas_restantes, modalidad, precio_base, descuento, precio_final, fecha_compra, agotado_at, estado, notas')
     .eq('alumno_id', alumnoId)
     .order('created_at', { ascending: false });
 
@@ -1043,17 +1068,16 @@ async function loadBonosAlumno() {
     .sort((a, b) => (a.fecha_pago || a.created_at).localeCompare(b.fecha_pago || b.created_at));
 
   if (enEspera.length > 0) {
-    enEspera.forEach(be => {
-      wrap.innerHTML += `
-        <div style="margin-top:10px;padding:12px 14px;background:var(--surface);border:.5px solid var(--border);border-radius:8px;display:flex;align-items:center;gap:10px">
-          <i class="ti ti-clock-play" style="color:var(--blue);font-size:18px;flex-shrink:0"></i>
-          <div style="font-size:12px">
-            <span style="color:var(--soft)">Bono pagado en espera:</span>
-            <span style="color:#fff;font-weight:500;margin-left:6px">${be.horas_contratadas}h ${be.modalidad}</span>
-            <span style="color:var(--muted);margin-left:6px">— se activará cuando termines el bono actual.</span>
-          </div>
-        </div>`;
-    });
+    const encabezado = `<div style="margin-top:14px"><div style="color:var(--soft);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">En espera</div>`;
+    wrap.innerHTML += encabezado + enEspera.map(be => `
+      <div style="margin-bottom:6px;padding:12px 14px;background:var(--surface);border:.5px solid var(--border);border-radius:8px;display:flex;align-items:center;gap:10px">
+        <i class="ti ti-clock-play" style="color:var(--blue);font-size:18px;flex-shrink:0"></i>
+        <div style="font-size:12px">
+          <span style="color:#fff;font-weight:500">${be.horas_contratadas}h ${be.modalidad}</span>
+          <span style="color:var(--muted);margin-left:8px">· Compra: ${formatDate(be.fecha_compra)}</span>
+          <div style="color:var(--muted);font-size:11px;margin-top:2px">Se activará cuando se agote el bono actual</div>
+        </div>
+      </div>`).join('') + `</div>`;
   }
 
   // ── Alerta 75% consumo ────────────────────────────────────
@@ -1080,21 +1104,23 @@ async function loadBonosAlumno() {
     cancelado: ['st-red',  'Cancelado'],
     reservado: ['st-pend', 'Reservado'],
   };
-  const historial2 = bonosData.filter(b => b.estado === 'agotado' || b.estado === 'cancelado');
-  const histCard   = document.getElementById('bonos-historial-card');
-  const histEl     = document.getElementById('bonos-historial-lista');
+  const agotados  = bonosData.filter(b => b.estado === 'agotado').sort((a, b) =>
+    (b.agotado_at || b.created_at || '').localeCompare(a.agotado_at || a.created_at || ''));
+  const histCard  = document.getElementById('bonos-historial-card');
+  const histEl    = document.getElementById('bonos-historial-lista');
 
-  if (historial2.length > 0) {
+  if (agotados.length > 0) {
     histCard.style.display = 'block';
-    histEl.innerHTML = historial2.map(b => {
-      const [pc, pt] = pillMap[b.estado] || ['st-grey', b.estado];
-      const precioStr = b.precio_final != null ? `${b.precio_final.toFixed(2)}€` : '—';
+    histEl.innerHTML = agotados.map(b => {
+      const precioStr   = b.precio_final != null ? `${b.precio_final.toFixed(2)}€` : '—';
+      const agotadoStr  = b.agotado_at ? formatDate(b.agotado_at) : '—';
       return `<div class="bono-hist-row">
         <div>
           <div style="color:#fff;font-size:13px;font-weight:500">${b.horas_contratadas}h · ${b.modalidad}</div>
-          <div style="color:var(--muted);font-size:11px;margin-top:2px">${formatDate(b.fecha_compra)} · ${precioStr}</div>
+          <div style="color:var(--muted);font-size:11px;margin-top:2px">Compra: ${formatDate(b.fecha_compra)} · ${precioStr}</div>
+          <div style="color:var(--muted);font-size:11px;margin-top:1px">Agotado: ${agotadoStr}</div>
         </div>
-        <span class="status-pill ${pc}">${pt}</span>
+        <span class="status-pill st-grey">Agotado</span>
       </div>`;
     }).join('');
   } else {
@@ -1602,8 +1628,10 @@ function volverAsignaturas() {
 // TESTS
 // ============================================================
 let testState = { testId: null, preguntas: [], respuestas: {}, enviado: false };
+let _testOriginSection = 'estudiar';
 
-async function iniciarTest(testId, tituloEnc) {
+async function iniciarTest(testId, tituloEnc, from) {
+  _testOriginSection = from || 'estudiar';
   const titulo = decodeURIComponent(tituloEnc);
   showSection('test');
   document.getElementById('test-titulo').textContent = titulo;
@@ -1681,10 +1709,148 @@ async function enviarTest() {
     <div style="font-size:40px;font-weight:700;color:${nota >= 5 ? 'var(--green)' : 'var(--red)'};margin-bottom:8px">${nota}</div>
     <div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:4px">${nota >= 9 ? '¡Excelente!' : nota >= 7 ? '¡Muy bien!' : nota >= 5 ? 'Aprobado' : 'Sigue practicando'}</div>
     <div style="color:var(--muted);font-size:13px;margin-bottom:20px">${correctas} de ${preguntas.length} respuestas correctas</div>
-    <button class="btn-primary" onclick="showSection('estudiar')">← Volver a Estudiar</button>
+    <button class="btn-primary" onclick="showSection(_testOriginSection||'estudiar')">← Volver</button>
   `;
   content.prepend(resultDiv);
   window.scrollTo(0, 0);
+}
+
+// ============================================================
+// TESTS LISTA
+// ============================================================
+async function loadTests() {
+  if (!ctx.alumnoData) return;
+  const alumno = ctx.alumnoData;
+  const el = document.getElementById('tests-lista-asignaturas');
+  el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+  document.getElementById('tests-lista-detalle').style.display = 'none';
+  el.style.display = '';
+
+  const [{ data: misAsigs }, { data: catalogo }, { data: tests }, { data: testsAllNiv }, { data: misResultados }] = await Promise.all([
+    db.from('alumno_asignaturas').select('asignatura_id').eq('alumno_id', alumno.id),
+    db.from('asignaturas').select('id,nombre').order('nombre'),
+    db.from('tests').select('id,titulo,asignatura,bloque_tema').eq('visible', true).eq('nivel', alumno.nivel),
+    db.from('tests').select('asignatura,bloque_tema').eq('visible', true),
+    db.from('resultados_test').select('test_id,nota').eq('alumno_id', alumno.id),
+  ]);
+
+  const asigIds   = (misAsigs || []).map(a => a.asignatura_id);
+  const asigNames = asigIds.map(id => (catalogo || []).find(c => c.id === id)?.nombre).filter(Boolean);
+  const resultMap = Object.fromEntries((misResultados || []).map(r => [r.test_id, r.nota]));
+
+  const byAsig = {};
+  (tests || []).forEach(t => {
+    const k = t.asignatura || 'General';
+    if (!byAsig[k]) byAsig[k] = [];
+    byAsig[k].push(t);
+  });
+
+  // Catálogo completo de temas por asignatura (todos los niveles) para mostrar "Próximamente"
+  const temasPerAsig = {};
+  (testsAllNiv || []).forEach(t => {
+    const k = t.asignatura || 'General';
+    if (!temasPerAsig[k]) temasPerAsig[k] = new Set();
+    if (t.bloque_tema) temasPerAsig[k].add(t.bloque_tema);
+  });
+
+  const allAsigs = asigNames.length > 0 ? asigNames : Object.keys(byAsig);
+  document.getElementById('tests-sub').textContent =
+    `Tests de autoevaluación · ${allAsigs.length} asignatura${allAsigs.length !== 1 ? 's' : ''}`;
+
+  if (allAsigs.length === 0) {
+    el.innerHTML = '<div class="empty-state"><i class="ti ti-list-check"></i><p>Sin asignaturas asignadas todavía</p></div>';
+    return;
+  }
+
+  const colors = ['#154ca9','#1a7f5e','#7c3aed','#b45309','#0891b2','#9d174d'];
+  el.innerHTML = `<div class="asig-grid">${allAsigs.map((asig, i) => {
+    const n = (byAsig[asig] || []).length;
+    const completados = (byAsig[asig] || []).filter(t => resultMap[t.id] != null).length;
+    return `<div class="asig-card${n === 0 ? ' asig-card-empty' : ''}" onclick="mostrarDetalleTests('${encodeURIComponent(asig)}')">
+      <div class="asig-icon" style="background:${n === 0 ? 'var(--border2)' : colors[i % colors.length]}">
+        <i class="ti ${n === 0 ? 'ti-clock' : 'ti-list-check'}" style="${n === 0 ? 'color:var(--muted)' : ''}"></i>
+      </div>
+      <div class="asig-name" style="${n === 0 ? 'color:var(--muted)' : ''}">${asig}</div>
+      <div class="asig-det">${n === 0 ? 'Próximamente' : `${n} test${n !== 1 ? 's' : ''} · ${completados} hechos`}</div>
+    </div>`;
+  }).join('')}</div>`;
+
+  window._testsData = { byAsig, resultMap, temasPerAsig };
+}
+
+function mostrarDetalleTests(asigEnc) {
+  const asig = decodeURIComponent(asigEnc);
+  const { byAsig, resultMap, temasPerAsig } = window._testsData || {};
+  const tests = byAsig?.[asig] || [];
+
+  document.getElementById('tests-lista-titulo').textContent = asig;
+  document.getElementById('tests-lista-asignaturas').style.display = 'none';
+  document.getElementById('tests-lista-detalle').style.display = 'block';
+
+  const byTema = {};
+  tests.forEach(t => {
+    const k = t.bloque_tema || 'Sin categoría';
+    if (!byTema[k]) byTema[k] = [];
+    byTema[k].push(t);
+  });
+
+  // Combinar temas conocidos del catálogo con los que tienen tests para este nivel
+  const temasConocidos = [...(temasPerAsig?.[asig] || new Set())].sort();
+  const temasConTests  = Object.keys(byTema).sort();
+  const temasAMostrar  = temasConocidos.length > 0
+    ? [...new Set([...temasConocidos, ...temasConTests])].sort()
+    : temasConTests;
+
+  if (temasAMostrar.length === 0) {
+    document.getElementById('tests-lista-contenido').innerHTML =
+      '<div class="empty-state"><i class="ti ti-list-check"></i><p>Próximamente</p></div>';
+    return;
+  }
+
+  document.getElementById('tests-lista-contenido').innerHTML = temasAMostrar.map(tema => {
+    const testsEnTema = byTema[tema] || [];
+    if (testsEnTema.length === 0) {
+      return `<div class="card" style="margin-bottom:10px">
+        <div class="card-head">
+          <div class="card-title"><i class="ti ti-bookmark"></i> ${tema}</div>
+          <span class="status-pill st-pend" style="font-size:10px">Próximamente</span>
+        </div>
+      </div>`;
+    }
+    return `<div class="card" style="margin-bottom:10px">
+      <div class="card-head"><div class="card-title"><i class="ti ti-bookmark"></i> ${tema}</div></div>
+      <div style="padding:4px 16px 8px">
+        ${testsEnTema.map(t => {
+          const nota = resultMap?.[t.id];
+          const notaColor = nota != null ? (nota >= 5 ? 'var(--green)' : 'var(--red)') : null;
+          return `<div class="recurso-row" onclick="iniciarTest('${t.id}','${encodeURIComponent(t.titulo)}','tests')" style="cursor:pointer">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;align-items:center;gap:8px">
+                <i class="ti ti-list-check" style="color:var(--green);font-size:14px;flex-shrink:0"></i>
+                <span style="color:var(--txt);font-size:13px">${t.titulo}</span>
+              </div>
+              ${nota != null
+                ? `<span style="color:${notaColor};font-size:12px;font-weight:600;flex-shrink:0">${nota}/10</span>`
+                : '<span style="color:var(--muted);font-size:11px;flex-shrink:0">Sin hacer</span>'}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function volverTestsAsignaturas() {
+  document.getElementById('tests-lista-asignaturas').style.display = '';
+  document.getElementById('tests-lista-detalle').style.display = 'none';
+}
+
+async function eliminarSesionAlumno(sesionId) {
+  if (!confirm('¿Eliminar esta sesión cancelada? No se puede deshacer.')) return;
+  const { data, error } = await db.rpc('eliminar_sesion_cancelada', { p_session_id: sesionId });
+  if (error || !data?.success) { showToast(data?.error || 'Error al eliminar', 'error'); return; }
+  showToast('Sesión eliminada');
+  await loadSesiones();
 }
 
 // ============================================================
@@ -1814,7 +1980,7 @@ function _resetRecurrenteEv() {
   document.getElementById('ev-recurrente-wrap').style.display = 'block';
 }
 
-function prepararNuevoEvento(dateStr) {
+async function prepararNuevoEvento(dateStr) {
   const list = document.getElementById('modal-ev-list');
   if (list) list.remove();
   document.getElementById('form-evento').reset();
@@ -1823,10 +1989,32 @@ function prepararNuevoEvento(dateStr) {
   document.getElementById('ev-fecha').value = dateStr;
   _resetRecurrenteEv();
   editEventoId = null;
+  await _poblarAsignaturaSelect(null);
   document.getElementById('modal-evento').classList.add('open');
 }
 
-function abrirModalEvento() {
+let _cachedAsignaturas = null;
+
+async function _cargarAsignaturas() {
+  if (_cachedAsignaturas !== null) return _cachedAsignaturas;
+  const alumno = ctx.alumnoData;
+  const [{ data: misAsigs }, { data: catalogo }] = await Promise.all([
+    db.from('alumno_asignaturas').select('asignatura_id').eq('alumno_id', alumno.id),
+    db.from('asignaturas').select('id,nombre').order('nombre'),
+  ]);
+  const ids = (misAsigs || []).map(a => a.asignatura_id);
+  _cachedAsignaturas = (catalogo || []).filter(a => ids.includes(a.id)).map(a => a.nombre);
+  return _cachedAsignaturas;
+}
+
+async function _poblarAsignaturaSelect(valor) {
+  const nombres = await _cargarAsignaturas();
+  const sel = document.getElementById('ev-asignatura');
+  sel.innerHTML = '<option value="">— Sin asignatura —</option>' +
+    nombres.map(n => `<option value="${n}"${n === valor ? ' selected' : ''}>${n}</option>`).join('');
+}
+
+async function abrirModalEvento() {
   document.getElementById('form-evento').reset();
   const list = document.getElementById('modal-ev-list');
   if (list) list.remove();
@@ -1834,6 +2022,7 @@ function abrirModalEvento() {
   document.getElementById('modal-evento-title').textContent = 'Nueva entrada';
   _resetRecurrenteEv();
   editEventoId = null;
+  await _poblarAsignaturaSelect(null);
   document.getElementById('modal-evento').classList.add('open');
 }
 

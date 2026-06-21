@@ -287,7 +287,7 @@ Registro de clases impartidas por un profesor. Formulario de 22 campos en 3 secc
 | `confirmada_at` | `TIMESTAMPTZ` | |
 | `cancelada_por` | `TEXT` | CHECK: `'admin'\|'sistema'` |
 | `confirmation_token` | `UUID` | Token único para enlace de email sin auth; default `uuid_generate_v4()` |
-| `bono_id` | `UUID` | FK → `bonos(id)`; se registra al confirmar la sesión — identifica qué bono pagó las horas |
+| `bono_id` | `UUID` | FK → `bonos(id)`; **añadido vía ALTER TABLE** (no en CREATE TABLE de sesiones — `bonos` se define después de `sesiones` en schema.sql); identifica el primer bono que pagó las horas |
 | `horas_deducidas` | `NUMERIC(6,2)` | Horas descontadas del bono `bono_id` (puede ser < duracion si hubo cascada); se registra al confirmar |
 
 **RLS:**
@@ -366,6 +366,7 @@ Historial de bonos contratados o solicitados por alumno. Cada bono tiene sus pro
 | `fecha_pago` | `DATE` | Fecha en que el admin marca pagado; determina orden de cola |
 | `estado` | `TEXT NOT NULL` | `'reservado'\|'pagado_en_espera'\|'activo'\|'agotado'\|'cancelado'`; default `'reservado'` |
 | `notas` | `TEXT` | |
+| `agotado_at` | `TIMESTAMPTZ` | Fecha en que el bono quedó agotado; seteada por `_consumir_horas_sesion` / `_activar_siguiente_bono` |
 | `created_at` | `TIMESTAMPTZ` | |
 
 **Flujo de estados:**
@@ -373,11 +374,12 @@ Historial de bonos contratados o solicitados por alumno. Cada bono tiene sus pro
 2. Admin marca pagado → si alumno sin bono activo: `estado='activo'`; si ya tiene activo con horas: `estado='pagado_en_espera'`
 3. Bono activo se agota → `_consumir_horas_sesion` llama a `_activar_siguiente_bono()` → activo pasa a `agotado`, el primer `pagado_en_espera` (por `fecha_pago`) pasa a `activo`; si hay `horas_deuda` acumulada se descuenta al activar
 
-**Lógica de horas:**
-- Las RPCs de confirmación llaman a `_consumir_horas_sesion(alumno_id, duracion_h)` — esta función centraliza toda la lógica
-- Cascada dentro de `_consumir_horas_sesion`: si la sesión excede el bono activo Y hay un siguiente bono → consume el exceso del siguiente bono en el mismo acto
-- Si no hay siguiente bono → el exceso se guarda en `alumnos.horas_deuda`; cuando el próximo bono se activa, `_activar_siguiente_bono` descuenta esa deuda antes de dar horas libres
+**Lógica de horas (implementada en `_consumir_horas_sesion` con bucle LOOP):**
+- Si hay bono `activo`: consume de él. Si no hay bono `activo` pero sí uno `pagado_en_espera`, lo activa (aplicando `horas_deuda`) y consume de él.
+- Si la sesión supera un bono → lo agota y el bucle continúa al siguiente `pagado_en_espera` (N niveles de cascada).
+- Si se agotan todos los bonos → el exceso va a `alumnos.horas_deuda`; el siguiente bono al activarse descuenta esa deuda primero.
 - La tabla de bonos en admin usa `bono.horas_consumidas/restantes` directamente (no calcula desde `alumnos`)
+- `recalcular_bonos_alumno` actualiza también `sesiones.bono_id` y `horas_deducidas` durante el replay
 
 **RLS:**
 - `bonos_admin_all` — ALL donde `is_admin()`
@@ -435,13 +437,15 @@ Tests de autoevaluación.
 
 | Función | Auth requerida | Descripción |
 |---|---|---|
-| `_consumir_horas_sesion(p_alumno_id, p_duracion_h)` | Interno | Centraliza todo el consumo de horas: cascada entre bono activo y siguiente, o guarda exceso en `horas_deuda` |
-| `_activar_siguiente_bono(p_alumno_id)` | Interno | Vence bono activo, activa siguiente `pagado_en_espera` aplicando `horas_deuda`; si no hay cola, pone alumnos a 0/0 |
+| `_consumir_horas_sesion(p_alumno_id, p_duracion_h, p_fecha_ts?)` | Interno | **Bucle** de cascada bono a bono. Si no hay bono `activo` pero sí `pagado_en_espera`, lo activa aplicando `horas_deuda` antes de consumir. Si se agotan todos los bonos, acumula el exceso en `alumnos.horas_deuda`. Soporta N bonos encadenados. |
+| `_activar_siguiente_bono(p_alumno_id, p_fecha_ts?)` | Interno | Vence bono activo (con `agotado_at`), activa siguiente `pagado_en_espera` aplicando `horas_deuda`; si no hay cola, pone alumnos a 0/0 |
 | `_revertir_horas_sesion(p_session_id)` | Interno | Revierte horas de una sesión cancelada al bono correcto; usa `bono_id`+`horas_deducidas` de la sesión para reversión precisa con detección de cascada |
-| `process_session_confirmation(p_session_id, p_token, p_action)` | No (enlace email) | Confirma/rechaza sesión por token; registra `bono_id`+`horas_deducidas` en sesiones y llama `_consumir_horas_sesion` si confirma |
-| `confirmar_sesion_alumno(p_session_id, p_action)` | Sí (alumno) | Igual pero verifica `auth.uid()` = alumno; también registra `bono_id`+`horas_deducidas` |
+| `process_session_confirmation(p_session_id, p_token, p_action)` | No (enlace email) | Confirma/rechaza sesión por token; busca bono activo o `pagado_en_espera` para registrar `bono_id`+`horas_deducidas`; llama `_consumir_horas_sesion` si confirma |
+| `confirmar_sesion_alumno(p_session_id, p_action)` | Sí (alumno) | Igual pero verifica `auth.uid()` = alumno; busca activo o `pagado_en_espera` para `bono_id`+`horas_deducidas` |
 | `cancelar_sesion_admin(p_session_id, p_revertir_horas)` | Sí (admin) | Cancela sesión; si `p_revertir_horas=TRUE` y sesión confirmada, llama `_revertir_horas_sesion` para devolución real al bono correcto (con soporte de cascada) |
-| `auto_confirm_old_sessions()` | Sí (authenticated) | Confirma sesiones `pendiente_confirmacion` con `registrada_at < NOW() - 72h`; registra `bono_id`+`horas_deducidas`; GRANT EXECUTE a `authenticated`; pg_cron cada hora |
+| `auto_confirm_old_sessions()` | Sí (authenticated) | Confirma sesiones `pendiente_confirmacion` con `registrada_at < NOW() - 72h`; busca activo o `pagado_en_espera` para `bono_id`+`horas_deducidas`; GRANT EXECUTE a `authenticated`; pg_cron cada hora |
+| `recalcular_bonos_alumno(p_alumno_id)` | Admin/service | Resetea bonos del alumno y reproduce sesiones confirmadas en orden cronológico; actualiza `sesiones.bono_id` y `horas_deducidas` además de recalcular `horas_consumidas`, `horas_restantes`, `agotado_at` y `horas_deuda`. El DO block al final de schema.sql lo ejecuta para todos los alumnos. |
+| `eliminar_sesion_cancelada(p_session_id)` | Sí (alumno) | Elimina físicamente una sesión cancelada propia; verifica `auth.uid()` = alumno y `estado = 'cancelada'` |
 
 ---
 

@@ -397,7 +397,7 @@
 
         <!-- ── Sección 1: Identificación ── -->
         <div class="ses-seccion">
-          <div class="ses-seccion-titulo"><i class="ti ti-info-circle"></i> Identificación</div>
+          <div id="ses-sec1-titulo" class="ses-seccion-titulo"><i class="ti ti-info-circle"></i> Identificación</div>
           <div class="ses-body">
 
             <label class="field-label">Alumno *</label>
@@ -1209,7 +1209,7 @@ async function checkBonoAlumno() {
 async function checkSesionPendiente() {
   const alumnoId = document.getElementById('ses-alumno').value;
   const avisoDiv = document.getElementById('aviso-sesion-pendiente');
-  const formIds  = ['ses-sec1-rest', 'ses-sec-narrativa', 'ses-sec-valoraciones', 'ses-footer-btns', 'aviso-bono-bloqueo'];
+  const formIds  = ['ses-sec1-titulo', 'ses-sec1-rest', 'ses-sec-narrativa', 'ses-sec-valoraciones', 'ses-footer-btns', 'aviso-bono-bloqueo'];
 
   if (!alumnoId) {
     avisoDiv.style.display = 'none';
