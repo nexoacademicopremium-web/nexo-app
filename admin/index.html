@@ -499,10 +499,8 @@
         <input class="fi" id="fich-prof-email" type="email">
       </div>
       <div id="ficha-prof-row-contacto">
-        <div class="fi-grid2">
-          <div><label class="fl">Teléfono</label><input class="fi" id="fich-prof-telefono" type="tel" placeholder="600 000 000"></div>
-          <div><label class="fl">Zona</label><input class="fi" id="fich-prof-zona" placeholder="Valencia Norte"></div>
-        </div>
+        <label class="fl">Zona</label>
+        <input class="fi" id="fich-prof-zona" placeholder="Valencia Norte">
       </div>
       <div id="ficha-prof-row-estudios">
         <label class="fl">Estudios</label>
@@ -609,9 +607,13 @@
           <label class="fl">Nivel / Curso *</label>
           <select class="fi" id="fich-nivel" required>
             <option value="">—</option>
+            <option value="1PRI">1.º Primaria</option><option value="2PRI">2.º Primaria</option>
+            <option value="3PRI">3.º Primaria</option><option value="4PRI">4.º Primaria</option>
+            <option value="5PRI">5.º Primaria</option><option value="6PRI">6.º Primaria</option>
             <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
             <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
             <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
+            <option value="UNIV">Universidad</option>
           </select>
         </div>
         <div>
@@ -623,18 +625,12 @@
         </div>
       </div>
       <div id="ficha-row-contacto">
-        <div class="fi-grid2">
-          <div><label class="fl">Teléfono familia</label><input class="fi" id="fich-telefono" type="tel" placeholder="600 000 000"></div>
-          <div><label class="fl">Fecha inicio</label><input class="fi" id="fich-fecha-inicio" type="date"></div>
-        </div>
-      </div>
-      <div id="ficha-row-horario">
-        <label class="fl">Horario habitual</label>
-        <input class="fi" id="fich-horario" placeholder="Lunes y Miércoles 17:00h">
+        <label class="fl">Fecha inicio</label>
+        <input class="fi" id="fich-fecha-inicio" type="date">
       </div>
       <div id="ficha-row-dir">
-        <label class="fl">Dirección</label>
-        <input class="fi" id="fich-direccion">
+        <label class="fl">Zona</label>
+        <input class="fi" id="fich-direccion" placeholder="Valencia Norte">
       </div>
     </div>
 
@@ -1093,12 +1089,8 @@
 <div class="modal-overlay" id="modal-cancelar-sesion">
   <div class="modal-box" style="max-width:420px">
     <div class="modal-title"><span style="color:var(--red)">Cancelar sesión</span><button class="modal-close" onclick="cerrarModal('modal-cancelar-sesion')">×</button></div>
-    <p style="color:var(--soft);font-size:13px;margin-bottom:18px">Esta acción cancelará la sesión definitivamente.</p>
+    <p style="color:var(--soft);font-size:13px;margin-bottom:18px">Esta acción cancelará la sesión y devolverá las horas al bono del alumno si estaba confirmada.</p>
     <input type="hidden" id="cancel-ses-id">
-    <label style="display:flex;align-items:center;gap:10px;cursor:pointer;color:var(--soft);font-size:13px;margin-bottom:18px">
-      <input type="checkbox" id="cancel-revertir" style="accent-color:var(--blue)">
-      Revertir horas al bono del alumno (si estaba confirmada)
-    </label>
     <div class="modal-footer">
       <button type="button" class="btn-cancel" onclick="cerrarModal('modal-cancelar-sesion')">Volver</button>
       <button type="button" class="btn-danger" onclick="confirmarCancelacion()">Cancelar sesión</button>
@@ -1385,7 +1377,7 @@ async function loadDashboard() {
   ] = await Promise.all([
     db.from('alumnos').select('id', { count: 'exact', head: true }).eq('activo', true),
     db.from('profesores').select('id', { count: 'exact', head: true }).eq('activo', true),
-    db.from('sesiones').select('duracion_minutos, estado').gte('fecha', mesIni),
+    db.from('sesiones').select('duracion_minutos').gte('fecha', mesIni).eq('estado', 'confirmada'),
     db.from('sesiones').select('id, asignatura, fecha, registrada_at, alumno_id, profesor_id')
       .eq('estado', 'pendiente_confirmacion')
       .order('registrada_at', { ascending: false })
@@ -1400,7 +1392,7 @@ async function loadDashboard() {
   document.getElementById('dash-kpis').innerHTML = `
     <div class="kpi blue"><div class="kpi-label">Alumnos activos</div><div class="kpi-val">${nAlumnos || 0}</div></div>
     <div class="kpi green"><div class="kpi-label">Profesores activos</div><div class="kpi-val">${nProfs || 0}</div></div>
-    <div class="kpi navy"><div class="kpi-label">Sesiones este mes</div><div class="kpi-val">${(sesMes||[]).length}</div><div class="kpi-sub">${hMes}h trabajadas</div></div>
+    <div class="kpi navy"><div class="kpi-label">Horas confirmadas</div><div class="kpi-val">${hMes}h</div><div class="kpi-sub">${(sesMes||[]).length} sesiones este mes</div></div>
     <div class="kpi ${nPend > 0 ? 'amber' : 'navy'}"><div class="kpi-label">Pendientes confirmar</div><div class="kpi-val">${nPend}</div></div>
     <div class="kpi ${(bonos?.length||0) > 0 ? 'red' : 'green'}"><div class="kpi-label">Bonos bajos</div><div class="kpi-val">${bonos?.length||0}</div></div>
   `;
@@ -1573,7 +1565,7 @@ function fichaAlumnoModoEdicion(a) {
 function abrirModalAlumno() {
   fichaAlumnoId = null;
   ['fich-nombre','fich-apellidos','fich-email','fich-nivel','fich-modalidad',
-   'fich-telefono','fich-fecha-inicio','fich-horario','fich-direccion',
+   'fich-fecha-inicio','fich-direccion',
    'fich-password','fich-observaciones','fich-username-new','fich-password-new'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
@@ -1840,15 +1832,16 @@ function renderTablaProfesores(lista) {
   tbody.innerHTML = lista.map(p => {
     const u = p.usuario || {};
     const nAlumnos = Object.values(alumnoProfesorMap).filter(aps => aps.some(ap => ap.profesor_id === p.id)).length;
-    return `<tr>
+    return `<tr onclick="abrirFichaProfesor('${p.id}')" style="cursor:pointer">
       <td><b style="color:#fff">${u.nombre || '?'} ${u.apellidos || ''}</b><br><span style="color:var(--muted);font-size:11px">${u.email || ''}</span></td>
       <td>${(p._asigNombres||[]).join(', ') || '—'}</td>
       <td>${p.zona || '—'}</td>
       <td><span class="pill pill-ok">${nAlumnos} alumno${nAlumnos !== 1 ? 's' : ''}</span></td>
       <td><span class="pill ${p.activo ? 'pill-ok' : 'pill-grey'}">${p.activo ? 'Activo' : 'Inactivo'}</span></td>
-      <td style="white-space:nowrap">
+      <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <button class="btn-ficha" onclick="abrirFichaProfesor('${p.id}')"><i class="ti ti-id-badge"></i> Ficha</button>
         <button class="btn-danger" style="margin-left:4px" onclick="toggleActivo('profesor','${p.id}',${!p.activo})">${p.activo ? 'Desactivar' : 'Activar'}</button>
+        ${!p.activo ? `<button class="btn-danger" style="margin-left:4px" onclick="eliminarProfesor('${p.id}')"><i class="ti ti-trash"></i></button>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -1888,7 +1881,7 @@ function fichaProfModoEdicion(p) {
 
 function abrirModalProfesor() {
   fichaProfesorId = null;
-  ['fich-prof-nombre','fich-prof-apellidos','fich-prof-email','fich-prof-telefono',
+  ['fich-prof-nombre','fich-prof-apellidos','fich-prof-email',
    'fich-prof-zona','fich-prof-estudios','fich-prof-nivel-max','fich-prof-fecha-inicio',
    'fich-prof-password','fich-prof-observaciones',
    'fich-prof-username-new','fich-prof-password-new'].forEach(id => {
@@ -1911,7 +1904,6 @@ async function abrirFichaProfesor(profId) {
   document.getElementById('fich-prof-nombre').value           = u.nombre || '';
   document.getElementById('fich-prof-apellidos').value        = u.apellidos || '';
   document.getElementById('fich-prof-email').value            = u.email || '';
-  document.getElementById('fich-prof-telefono').value         = p.telefono || '';
   document.getElementById('fich-prof-zona').value             = p.zona || '';
   document.getElementById('fich-prof-estudios').value         = p.estudios || '';
   document.getElementById('fich-prof-nivel-max').value        = p.nivel_max || '';
@@ -1931,7 +1923,6 @@ async function guardarFichaProfesor() {
   const nombre        = document.getElementById('fich-prof-nombre').value.trim();
   const apellidos     = document.getElementById('fich-prof-apellidos').value.trim();
   const email         = document.getElementById('fich-prof-email').value.trim();
-  const telefono      = document.getElementById('fich-prof-telefono').value.trim();
   const zona          = document.getElementById('fich-prof-zona').value.trim();
   const estudios      = document.getElementById('fich-prof-estudios').value.trim();
   const nivel_max     = document.getElementById('fich-prof-nivel-max').value;
@@ -2001,7 +1992,6 @@ async function guardarFichaProfesor() {
       ? db.from('usuarios').update({ nombre, apellidos, email }).eq('id', p.usuario_id)
       : Promise.resolve({ error: null }),
     db.from('profesores').update({
-      telefono:      telefono || null,
       zona:          zona || null,
       estudios:      estudios || null,
       nivel_max:     nivel_max || null,
@@ -2025,7 +2015,6 @@ async function guardarFichaProfesor() {
       allProfesores[idx].usuario.apellidos = apellidos;
       allProfesores[idx].usuario.email     = email;
     }
-    allProfesores[idx].telefono      = telefono;
     allProfesores[idx].zona          = zona;
     allProfesores[idx].estudios      = estudios;
     allProfesores[idx].nivel_max     = nivel_max;
@@ -2132,6 +2121,19 @@ async function toggleActivo(tipo, id, nuevoEstado) {
   if (tipo === 'alumno') await loadTablaAlumnos(); else await loadTablaProfesores();
 }
 
+async function eliminarProfesor(profId) {
+  const p = allProfesores.find(x => x.id === profId);
+  if (!p) return;
+  const nombre = `${p.usuario?.nombre || ''} ${p.usuario?.apellidos || ''}`.trim();
+  if (!confirm(`¿Eliminar definitivamente al profesor ${nombre}? Esta acción no se puede deshacer.`)) return;
+  const usuarioId = p.usuario_id || p.usuario?.id;
+  const { error } = await db.from('usuarios').delete().eq('id', usuarioId);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast('Profesor eliminado');
+  allProfesores = allProfesores.filter(x => x.id !== profId);
+  filtrar('profesores');
+}
+
 // ============================================================
 // FICHA DE ALUMNO (unificada)
 // ============================================================
@@ -2148,9 +2150,7 @@ async function abrirFicha(alumnoId) {
   document.getElementById('fich-email').value         = u.email || '';
   document.getElementById('fich-nivel').value         = a.nivel || '';
   document.getElementById('fich-modalidad').value     = a.modalidad || 'presencial';
-  document.getElementById('fich-telefono').value      = a.telefono_familia || '';
   document.getElementById('fich-fecha-inicio').value  = a.fecha_inicio || '';
-  document.getElementById('fich-horario').value       = a.horario_habitual || '';
   document.getElementById('fich-direccion').value     = a.direccion || '';
   document.getElementById('fich-password').value      = '';
   document.getElementById('fich-observaciones').value = a.observaciones || '';
@@ -2177,9 +2177,7 @@ async function guardarFicha() {
   const email         = document.getElementById('fich-email').value.trim();
   const nivel         = document.getElementById('fich-nivel').value;
   const modalidad     = document.getElementById('fich-modalidad').value;
-  const telefono      = document.getElementById('fich-telefono').value.trim();
   const fecha_inicio  = document.getElementById('fich-fecha-inicio').value;
-  const horario       = document.getElementById('fich-horario').value.trim();
   const direccion     = document.getElementById('fich-direccion').value.trim();
   const observaciones = document.getElementById('fich-observaciones').value.trim();
 
@@ -2246,11 +2244,9 @@ async function guardarFicha() {
       : Promise.resolve({ error: null }),
     db.from('alumnos').update({
       nivel, modalidad,
-      telefono_familia: telefono || null,
-      fecha_inicio:     fecha_inicio || null,
-      horario_habitual: horario || null,
-      direccion:        direccion || null,
-      observaciones:    observaciones || null,
+      fecha_inicio:  fecha_inicio || null,
+      direccion:     direccion || null,
+      observaciones: observaciones || null,
     }).eq('id', fichaAlumnoId),
   ]);
 
@@ -2272,10 +2268,8 @@ async function guardarFicha() {
     }
     allAlumnos[idx].nivel             = nivel;
     allAlumnos[idx].modalidad         = modalidad;
-    allAlumnos[idx].telefono_familia  = telefono;
-    allAlumnos[idx].fecha_inicio      = fecha_inicio;
-    allAlumnos[idx].horario_habitual  = horario;
-    allAlumnos[idx].direccion         = direccion;
+    allAlumnos[idx].fecha_inicio  = fecha_inicio;
+    allAlumnos[idx].direccion     = direccion;
     allAlumnos[idx].observaciones     = observaciones;
   }
   document.getElementById('ficha-titulo').textContent = `${nombre} ${apellidos}`;
@@ -2442,7 +2436,7 @@ async function refreshFichaSesiones() {
           <td style="font-size:12px">${formatShortDate(s.fecha)}</td>
           <td style="font-size:12px;color:#fff">${s.asignatura}</td>
           <td style="font-size:12px">${pu.nombre ? pu.nombre + ' ' + pu.apellidos : '—'}</td>
-          <td style="font-size:12px">${s.duracion_minutos}m</td>
+          <td style="font-size:12px">${(s.duracion_minutos/60).toFixed(1).replace('.0','') + 'h'}</td>
           <td><span class="status-pill ${pc}" style="font-size:10px">${pt}</span></td>
           <td><button class="btn-edit" style="padding:4px 8px;font-size:11px" onclick="abrirEditSesion('${s.id}')"><i class="ti ti-pencil"></i> Editar</button></td>
         </tr>`;
@@ -2838,18 +2832,19 @@ async function loadSesionesAdmin() {
             const [pc, pt] = pillMap[s.estado] || ['st-grey', s.estado];
             const a  = alumnoMap[s.alumno_id]?.usuario || {};
             const p  = profMap[s.profesor_id]?.usuario || {};
-            const cancelBtn = s.estado !== 'cancelada'
-              ? `<button class="btn-danger" style="padding:5px 9px" onclick="abrirCancelar('${s.id}')"><i class="ti ti-ban"></i></button>` : '';
+            const durH = (s.duracion_minutos / 60).toFixed(1).replace('.0','') + 'h';
             return `<tr>
               <td>${formatShortDate(s.fecha)}</td>
               <td style="color:#fff">${a.nombre ? a.nombre + ' ' + a.apellidos : '—'}</td>
               <td>${p.nombre ? p.nombre + ' ' + p.apellidos : '—'}</td>
               <td>${s.asignatura}</td>
-              <td>${s.duracion_minutos} min</td>
+              <td>${durH}</td>
               <td><span class="status-pill ${pc}">${pt}</span></td>
               <td style="white-space:nowrap;text-align:center">
                 <button class="btn-edit" style="padding:5px 9px" onclick="abrirEditSesion('${s.id}')"><i class="ti ti-pencil"></i></button>
-                ${cancelBtn}
+                ${s.estado !== 'cancelada'
+                  ? `<button class="btn-danger" style="padding:5px 9px;margin-left:4px" onclick="abrirCancelar('${s.id}')"><i class="ti ti-ban"></i></button>`
+                  : `<button class="btn-danger" style="padding:5px 9px;margin-left:4px" onclick="eliminarSesionAdmin('${s.id}')"><i class="ti ti-trash"></i></button>`}
               </td>
             </tr>`;
           }).join('')}
@@ -2859,14 +2854,20 @@ async function loadSesionesAdmin() {
 
 function abrirCancelar(sesId) {
   document.getElementById('cancel-ses-id').value = sesId;
-  document.getElementById('cancel-revertir').checked = false;
   document.getElementById('modal-cancelar-sesion').classList.add('open');
+}
+
+async function eliminarSesionAdmin(sesId) {
+  if (!confirm('¿Eliminar esta sesión cancelada? Esta acción no se puede deshacer.')) return;
+  const { error } = await db.from('sesiones').delete().eq('id', sesId);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast('Sesión eliminada');
+  if (document.getElementById('section-sesiones').classList.contains('active')) loadSesionesAdmin();
 }
 
 async function confirmarCancelacion() {
   const id  = document.getElementById('cancel-ses-id').value;
-  const rev = document.getElementById('cancel-revertir').checked;
-  const { data, error } = await db.rpc('cancelar_sesion_admin', { p_session_id: id, p_revertir_horas: rev });
+  const { data, error } = await db.rpc('cancelar_sesion_admin', { p_session_id: id, p_revertir_horas: true });
   if (error || !data?.success) {
     showToast('Error al cancelar: ' + (error?.message || data?.error), 'error');
     return;
@@ -3515,7 +3516,6 @@ async function guardarBono() {
       if (error) throw error;
 
       if (estado === 'activo') {
-        await vencerBonosActivos(alumnoId, null);
         await db.from('alumnos').update({ horas_bono_restantes: +horas.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
         const a = allAlumnos.find(x => x.id === alumnoId);
         if (a) { a.horas_bono_restantes = +horas.toFixed(2); a.horas_bono_total = +horas.toFixed(2); }
@@ -3697,9 +3697,8 @@ async function abrirQuickFicha(alumnoId) {
 
     <div class="aqf-section"><i class="ti ti-info-circle"></i> Datos</div>
     <div class="aqf-row"><span>Asignaturas</span><b>${(alumno._asigNombres||[]).join(', ')||'—'}</b></div>
-    <div class="aqf-row"><span>Horario</span><b>${alumno.horario_habitual||'—'}</b></div>
+    <div class="aqf-row"><span>Zona</span><b>${alumno.direccion||'—'}</b></div>
     <div class="aqf-row"><span>Desde</span><b>${formatDate(alumno.fecha_inicio)}</b></div>
-    <div class="aqf-row"><span>Teléfono</span><b>${alumno.telefono_familia||'—'}</b></div>
 
     <div class="aqf-section"><i class="ti ti-credit-card"></i> Bono</div>
     ${ub ? `<div class="aqf-row"><span>Último bono</span><b>${ub.horas_contratadas}h ${ub.modalidad} · ${formatShortDate(ub.fecha_compra)}</b></div>` : ''}

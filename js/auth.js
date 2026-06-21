@@ -88,8 +88,11 @@ function formatTime(timeStr) {
 
 function nivelLabel(nivel) {
   const map = {
+    '1PRI': '1.º Primaria', '2PRI': '2.º Primaria', '3PRI': '3.º Primaria',
+    '4PRI': '4.º Primaria', '5PRI': '5.º Primaria', '6PRI': '6.º Primaria',
     '1ESO': '1.º ESO', '2ESO': '2.º ESO', '3ESO': '3.º ESO', '4ESO': '4.º ESO',
-    '1BACH': '1.º Bach', '2BACH': '2.º Bach'
+    '1BACH': '1.º Bach', '2BACH': '2.º Bach',
+    'UNIV': 'Universidad'
   };
   return map[nivel] || nivel || '—';
 }

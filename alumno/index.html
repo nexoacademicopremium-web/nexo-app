@@ -482,6 +482,12 @@
     <div class="loading-section"><div class="spinner"></div></div>
   </div>
 
+  <!-- Bonos en espera -->
+  <div class="card" id="bonos-enespera-card" style="display:none;margin-top:12px">
+    <div class="card-head"><div class="card-title"><i class="ti ti-clock"></i> Bonos en espera</div></div>
+    <div id="bonos-enespera-lista" style="padding:0 16px"></div>
+  </div>
+
   <!-- Historial -->
   <div class="card" id="bonos-historial-card" style="display:none;margin-top:12px">
     <div class="card-head"><div class="card-title"><i class="ti ti-history"></i> Historial de bonos</div></div>
@@ -518,21 +524,19 @@
       <button class="modal-close" onclick="cerrarModalEvento()">×</button>
     </div>
     <form id="form-evento" onsubmit="guardarEvento(event)">
-      <label class="field-label">Título / Asignatura</label>
-      <input class="field-input" id="ev-titulo" type="text" placeholder="Ej: Repaso de álgebra" required>
+      <input type="hidden" id="ev-titulo">
+      <input type="hidden" id="ev-fecha">
       <label class="field-label">Asignatura</label>
       <select class="field-input" id="ev-asignatura">
         <option value="">— Sin asignatura —</option>
       </select>
-      <label class="field-label">Fecha</label>
-      <input class="field-input" id="ev-fecha" type="date" required>
       <label class="field-label">Hora de inicio</label>
       <input class="field-input" id="ev-hora" type="time">
-      <label class="field-label">Duración (minutos)</label>
+      <label class="field-label">Duración</label>
       <select class="field-input" id="ev-duracion">
-        <option value="60">60 minutos</option>
-        <option value="90">90 minutos</option>
-        <option value="120">120 minutos</option>
+        <option value="60">1h</option>
+        <option value="90">1,5h</option>
+        <option value="120">2h</option>
       </select>
       <label class="field-label">Notas</label>
       <textarea class="field-input" id="ev-notas" rows="3" style="resize:vertical" placeholder="Opcional"></textarea>
@@ -1062,9 +1066,6 @@ async function loadBonosAlumno() {
   }
 
   // ── Historial ─────────────────────────────────────────────
-  const pillMap = {
-    agotado: ['st-grey', 'Agotado'],
-  };
   const agotados  = bonosData.filter(b => b.estado === 'agotado').sort((a, b) =>
     (b.agotado_at || b.created_at || '').localeCompare(a.agotado_at || a.created_at || ''));
   const histCard  = document.getElementById('bonos-historial-card');
@@ -1086,6 +1087,30 @@ async function loadBonosAlumno() {
     }).join('');
   } else {
     histCard.style.display = 'none';
+  }
+
+  // ── Bonos en espera ───────────────────────────────────────
+  const enEsperaHist = bonosData.filter(b => b.estado === 'en_espera')
+    .sort((a, b) => (a.fecha_pago || a.created_at || '').localeCompare(b.fecha_pago || b.created_at || ''));
+  const espCard = document.getElementById('bonos-enespera-card');
+  const espEl   = document.getElementById('bonos-enespera-lista');
+  if (espCard) {
+    if (enEsperaHist.length > 0) {
+      espCard.style.display = 'block';
+      espEl.innerHTML = enEsperaHist.map(b => {
+        const precioStr = b.precio_final != null ? `${b.precio_final.toFixed(2)}€` : '—';
+        return `<div class="bono-hist-row">
+          <div>
+            <div style="color:#fff;font-size:13px;font-weight:500">${b.horas_contratadas}h · ${b.modalidad}</div>
+            <div style="color:var(--muted);font-size:11px;margin-top:2px">Compra: ${formatDate(b.fecha_compra)} · ${precioStr}</div>
+            <div style="color:var(--blue);font-size:11px;margin-top:1px">Se activará cuando se agote el bono actual</div>
+          </div>
+          <span class="status-pill st-pend">En espera</span>
+        </div>`;
+      }).join('');
+    } else {
+      espCard.style.display = 'none';
+    }
   }
 
   renderWACardsAlumno();
@@ -1277,7 +1302,6 @@ async function loadProfesor() {
         <div class="ev-row"><div class="ev-label">Horario habitual</div><b style="color:#fff;font-size:12px">${ctx.alumnoData.horario_habitual || '—'}</b></div>
         <div class="ev-row"><div class="ev-label">Modalidad</div><b style="color:#fff;font-size:12px">${ctx.alumnoData.modalidad === 'presencial' ? 'Presencial a domicilio' : 'Online'}</b></div>
         <div class="ev-row"><div class="ev-label">Sesiones juntos</div><b style="color:#fff;font-size:12px">${sesCnt} sesiones confirmadas</b></div>
-        <div class="ev-row"><div class="ev-label">Desde</div><b style="color:#fff;font-size:12px">${formatDate(ctx.alumnoData.fecha_inicio)}</b></div>
       </div>
     </div>`;
   });
@@ -1804,7 +1828,7 @@ function clickDia(dateStr) {
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:.5px solid var(--border2)">
         <div>
           <div style="color:#fff;font-size:13px;font-weight:500">${e.titulo}</div>
-          <div style="color:var(--muted);font-size:11px">${e.asignatura || ''}${e.hora_inicio ? ' · ' + formatTime(e.hora_inicio) + 'h' : ''} · ${e.duracion_minutos} min</div>
+          <div style="color:var(--muted);font-size:11px">${e.asignatura || ''}${e.hora_inicio ? ' · ' + formatTime(e.hora_inicio) + 'h' : ''} · ${(e.duracion_minutos/60).toFixed(1).replace('.0','') + 'h'}</div>
           ${e.notas ? `<div style="color:var(--muted);font-size:11px;margin-top:2px">${e.notas}</div>` : ''}
         </div>
         <button onclick="eliminarEvento('${e.id}')" style="background:var(--red-lt);color:var(--red);border:.5px solid var(--red);border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit">Borrar</button>
@@ -1920,10 +1944,11 @@ function cerrarModalEvento() {
 
 async function guardarEvento(e) {
   e.preventDefault();
+  const asignatura = document.getElementById('ev-asignatura').value || null;
   const ev = {
     alumno_id:        ctx.alumnoData.id,
-    titulo:           document.getElementById('ev-titulo').value,
-    asignatura:       document.getElementById('ev-asignatura').value || null,
+    titulo:           asignatura || 'Clase',
+    asignatura,
     fecha:            document.getElementById('ev-fecha').value,
     hora_inicio:      document.getElementById('ev-hora').value || null,
     duracion_minutos: parseInt(document.getElementById('ev-duracion').value),
