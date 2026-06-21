@@ -1062,7 +1062,7 @@ BEGIN
     SELECT id, horas_contratadas
     FROM public.bonos
     WHERE alumno_id = p_alumno_id
-      AND estado NOT IN ('reservado', 'cancelado')
+      AND estado NOT IN ('cancelado')
     ORDER BY COALESCE(fecha_pago, created_at) ASC, id ASC
   LOOP
     UPDATE public.bonos
@@ -1150,6 +1150,34 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION public.eliminar_sesion_cancelada(UUID) TO authenticated;
+
+CREATE OR REPLACE FUNCTION public.eliminar_bono_cancelado(p_bono_id UUID)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_bono public.bonos%ROWTYPE;
+BEGIN
+  IF NOT public.is_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Sin permisos de administrador');
+  END IF;
+
+  SELECT * INTO v_bono FROM public.bonos WHERE id = p_bono_id;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Bono no encontrado');
+  END IF;
+
+  IF v_bono.estado != 'cancelado' THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Solo se pueden eliminar bonos cancelados');
+  END IF;
+
+  DELETE FROM public.bonos WHERE id = p_bono_id;
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION public.eliminar_bono_cancelado(UUID) TO authenticated;
 
 -- ── pg_cron (ejecutar en Supabase SQL Editor una sola vez) ──────────────
 -- Requiere que la extensión pg_cron esté habilitada en Supabase Dashboard.
@@ -1285,8 +1313,8 @@ CREATE TABLE IF NOT EXISTS public.bonos (
   fecha_compra      DATE DEFAULT CURRENT_DATE,
   pagado            BOOLEAN DEFAULT FALSE,
   fecha_pago        DATE,
-  estado            TEXT NOT NULL DEFAULT 'reservado'
-                      CHECK (estado IN ('reservado','pagado_en_espera','activo','agotado','cancelado')),
+  estado            TEXT NOT NULL DEFAULT 'pagado_en_espera'
+                      CHECK (estado IN ('pagado_en_espera','activo','agotado','cancelado')),
   notas             TEXT,
   agotado_at        TIMESTAMPTZ,
   created_at        TIMESTAMPTZ DEFAULT NOW()
@@ -1304,16 +1332,6 @@ CREATE POLICY "bonos_alumno_read" ON public.bonos
       SELECT 1 FROM public.alumnos a
       WHERE a.id = public.bonos.alumno_id AND a.usuario_id = auth.uid()
     )
-  );
-
--- El alumno puede crear reservas (solo con estado='reservado')
-CREATE POLICY "bonos_alumno_insert" ON public.bonos
-  FOR INSERT WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM public.alumnos a
-      WHERE a.id = public.bonos.alumno_id AND a.usuario_id = auth.uid()
-    )
-    AND estado = 'reservado'
   );
 
 -- El profesor puede leer bonos de sus alumnos (para bloqueo/aviso en registro de sesiones)

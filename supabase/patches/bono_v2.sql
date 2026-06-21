@@ -543,7 +543,7 @@ BEGIN
     SELECT id, horas_contratadas
     FROM public.bonos
     WHERE alumno_id = p_alumno_id
-      AND estado NOT IN ('reservado', 'cancelado')
+      AND estado NOT IN ('cancelado')
     ORDER BY COALESCE(fecha_pago, created_at) ASC, id ASC
   LOOP
     UPDATE public.bonos
@@ -632,9 +632,51 @@ BEGIN
 END;
 $$;
 
+-- 11. eliminar_bono_cancelado — admin elimina un bono cancelado permanentemente
+CREATE OR REPLACE FUNCTION public.eliminar_bono_cancelado(p_bono_id UUID)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_bono public.bonos%ROWTYPE;
+BEGIN
+  IF NOT public.is_admin() THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Sin permisos de administrador');
+  END IF;
+
+  SELECT * INTO v_bono FROM public.bonos WHERE id = p_bono_id;
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Bono no encontrado');
+  END IF;
+
+  IF v_bono.estado != 'cancelado' THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Solo se pueden eliminar bonos cancelados');
+  END IF;
+
+  DELETE FROM public.bonos WHERE id = p_bono_id;
+  RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+-- Eliminar política de INSERT de alumnos (ya no pueden crear bonos directamente)
+DROP POLICY IF EXISTS "bonos_alumno_insert" ON public.bonos;
+
+-- Actualizar CHECK constraint y DEFAULT del estado de bonos
+ALTER TABLE public.bonos
+  DROP CONSTRAINT IF EXISTS bonos_estado_check;
+
+ALTER TABLE public.bonos
+  ADD CONSTRAINT bonos_estado_check
+    CHECK (estado IN ('pagado_en_espera','activo','agotado','cancelado'));
+
+ALTER TABLE public.bonos
+  ALTER COLUMN estado SET DEFAULT 'pagado_en_espera';
+
 -- Grants
 GRANT EXECUTE ON FUNCTION public.recalcular_bonos_alumno(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.eliminar_sesion_cancelada(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.eliminar_bono_cancelado(UUID) TO authenticated;
 
 -- ============================================================
 -- RECALCULAR TODOS LOS ALUMNOS (corregir datos históricos)

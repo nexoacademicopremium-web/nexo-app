@@ -364,14 +364,14 @@ Historial de bonos contratados o solicitados por alumno. Cada bono tiene sus pro
 | `fecha_compra` | `DATE` | default `CURRENT_DATE` |
 | `pagado` | `BOOLEAN` | default `FALSE`; admin lo marca cuando recibe el pago |
 | `fecha_pago` | `DATE` | Fecha en que el admin marca pagado; determina orden de cola |
-| `estado` | `TEXT NOT NULL` | `'reservado'\|'pagado_en_espera'\|'activo'\|'agotado'\|'cancelado'`; default `'reservado'` |
+| `estado` | `TEXT NOT NULL` | `'pagado_en_espera'\|'activo'\|'agotado'\|'cancelado'`; default `'pagado_en_espera'` |
 | `notas` | `TEXT` | |
 | `agotado_at` | `TIMESTAMPTZ` | Fecha en que el bono quedó agotado; seteada por `_consumir_horas_sesion` / `_activar_siguiente_bono` |
 | `created_at` | `TIMESTAMPTZ` | |
 
 **Flujo de estados:**
-1. Alumno reserva → `estado='reservado'`, `pagado=false` + botón WhatsApp para confirmar pago
-2. Admin marca pagado → si alumno sin bono activo: `estado='activo'`; si ya tiene activo con horas: `estado='pagado_en_espera'`
+1. Alumno solicita bono por WhatsApp (no crea registro en BD). Admin crea el bono desde el panel admin.
+2. Admin crea bono → si alumno sin bono activo: `estado='activo'`; si ya tiene activo: `estado='pagado_en_espera'`
 3. Bono activo se agota → `_consumir_horas_sesion` llama a `_activar_siguiente_bono()` → activo pasa a `agotado`, el primer `pagado_en_espera` (por `fecha_pago`) pasa a `activo`; si hay `horas_deuda` acumulada se descuenta al activar
 
 **Lógica de horas (implementada en `_consumir_horas_sesion` con bucle LOOP):**
@@ -384,8 +384,9 @@ Historial de bonos contratados o solicitados por alumno. Cada bono tiene sus pro
 **RLS:**
 - `bonos_admin_all` — ALL donde `is_admin()`
 - `bonos_alumno_read` — SELECT: EXISTS alumno del usuario con `id = bonos.alumno_id`
-- `bonos_alumno_insert` — INSERT: mismo check + `estado = 'reservado'` (reservas desde panel alumno)
 - `bonos_profesor_read` — SELECT: EXISTS alumno del profesor (via `profesor_id`, `alumno_profesor`, o `sesiones`); necesario para que el profesor verifique estado de bono antes de registrar sesión
+
+> `bonos_alumno_insert` fue **eliminada** — alumnos ya no pueden crear bonos desde la app; solicitan por WhatsApp y el admin los crea desde el panel admin.
 
 ---
 
@@ -446,6 +447,7 @@ Tests de autoevaluación.
 | `auto_confirm_old_sessions()` | Sí (authenticated) | Confirma sesiones `pendiente_confirmacion` con `registrada_at < NOW() - 72h`; busca activo o `pagado_en_espera` para `bono_id`+`horas_deducidas`; GRANT EXECUTE a `authenticated`; pg_cron cada hora |
 | `recalcular_bonos_alumno(p_alumno_id)` | Admin/service | Resetea bonos del alumno y reproduce sesiones confirmadas en orden cronológico; actualiza `sesiones.bono_id` y `horas_deducidas` además de recalcular `horas_consumidas`, `horas_restantes`, `agotado_at` y `horas_deuda`. El DO block al final de schema.sql lo ejecuta para todos los alumnos. |
 | `eliminar_sesion_cancelada(p_session_id)` | Sí (alumno) | Elimina físicamente una sesión cancelada propia; verifica `auth.uid()` = alumno y `estado = 'cancelada'` |
+| `eliminar_bono_cancelado(p_bono_id)` | Sí (admin) | Elimina físicamente un bono en estado `cancelado`; verifica `is_admin()` y `estado = 'cancelado'` |
 
 ---
 

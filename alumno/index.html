@@ -488,47 +488,21 @@
     <div id="bonos-historial-lista" style="padding:0 16px"></div>
   </div>
 
-  <!-- Solicitar nuevo bono -->
-  <div style="margin-top:14px" id="solicitar-wrap">
-    <button class="btn-primary" style="width:100%" onclick="mostrarTarifasAlumno()">
-      <i class="ti ti-shopping-cart"></i> Reservar nuevo bono
-    </button>
-  </div>
-
-  <!-- Tarifa selector (oculto por defecto) -->
-  <div id="tarifas-alumno-wrap" style="display:none;margin-top:12px">
+  <!-- Contratar nuevo bono -->
+  <div style="margin-top:14px" id="contratar-wrap">
     <div class="card">
       <div class="card-head">
-        <div class="card-title"><i class="ti ti-tag"></i> Elige tu bono</div>
-        <button class="btn-ghost" style="font-size:11px;padding:5px 10px" onclick="ocultarTarifasAlumno()">Cancelar</button>
+        <div class="card-title"><i class="ti ti-brand-whatsapp"></i> Contratar bono</div>
       </div>
       <div style="padding:16px">
-        <div id="mod-toggle-wrap" style="text-align:center;margin-bottom:4px;display:none">
+        <p style="color:var(--soft);font-size:12px;margin-bottom:12px">Elige el bono que quieres contratar y contacta con Nexo directamente por WhatsApp.</p>
+        <div id="mod-toggle-wa" style="text-align:center;margin-bottom:12px;display:none">
           <div class="mod-toggle">
-            <button class="mod-btn active" id="mod-btn-pre" onclick="setModTarifa('Presencial')">Presencial</button>
-            <button class="mod-btn" id="mod-btn-onl" onclick="setModTarifa('Online')">Online</button>
+            <button class="mod-btn active" id="mod-btn-wa-pre" onclick="setModTarifaWA('Presencial')">Presencial</button>
+            <button class="mod-btn" id="mod-btn-wa-onl" onclick="setModTarifaWA('Online')">Online</button>
           </div>
         </div>
-        <div class="tarifa-grid" id="tarifas-cards"></div>
-        <div id="solicitud-confirm-wrap" style="display:none;margin-top:16px">
-          <label style="color:var(--soft);font-size:11px;font-weight:500;margin-bottom:5px;display:block">Nota para Nexo (opcional)</label>
-          <textarea class="field-input" id="solicitud-notas" rows="2" style="resize:none" placeholder="Horario preferido, dudas…"></textarea>
-          <div style="display:flex;gap:8px;margin-top:10px">
-            <button class="btn-ghost" style="flex:1" onclick="deseleccionarTarifa()">Cambiar</button>
-            <button class="btn-primary" style="flex:2" id="btn-confirmar-solicitud" onclick="confirmarSolicitudBono()">
-              <i class="ti ti-check"></i> Guardar reserva
-            </button>
-          </div>
-          <div id="wa-cta-wrap" style="display:none;margin-top:14px;padding:14px;background:#0a1e0a;border:.5px solid #1a5e1a;border-radius:10px">
-            <div style="color:#4ade80;font-size:13px;font-weight:600;margin-bottom:4px"><i class="ti ti-check"></i> ¡Reserva guardada!</div>
-            <div style="color:var(--soft);font-size:12px;margin-bottom:12px">Ahora contacta con Nexo por WhatsApp para confirmar el pago:</div>
-            <a id="wa-bono-link" href="#" target="_blank"
-               style="display:flex;align-items:center;justify-content:center;gap:8px;background:#25d366;color:#fff;border-radius:8px;padding:11px 16px;font-size:13px;font-weight:600;text-decoration:none;margin-bottom:8px">
-              <i class="ti ti-brand-whatsapp" style="font-size:18px"></i> Confirmar pago por WhatsApp
-            </a>
-            <button class="btn-ghost" style="width:100%;font-size:11px" onclick="ocultarTarifasAlumno();loadBonosAlumno()">Cerrar — lo haré más tarde</button>
-          </div>
-        </div>
+        <div class="tarifa-grid" id="tarifas-wa-cards"></div>
       </div>
     </div>
   </div>
@@ -991,8 +965,7 @@ async function procesarSesion(sesionId, accion) {
 // BONOS ALUMNO (Bloque 4)
 // ============================================================
 let tarifasAlumno = [];
-let tarifaModActual = 'Presencial';
-let tarifaSelId = null;
+let modTarifaWA = 'Presencial';
 
 async function loadBonosAlumno() {
   if (!ctx.alumnoData) return;
@@ -1053,16 +1026,6 @@ async function loadBonosAlumno() {
       </div>`;
   }
 
-  // Reservas pendientes de pago
-  const reservados = bonosData.filter(b => b.estado === 'reservado');
-  if (reservados.length > 0) {
-    wrap.innerHTML += `
-      <div style="margin-top:10px;padding:10px 14px;background:var(--amber-lt);border:.5px solid var(--amber);border-radius:8px;display:flex;align-items:center;gap:10px">
-        <i class="ti ti-clock" style="color:var(--amber);font-size:16px"></i>
-        <div style="font-size:12px;color:var(--amber)">Tienes ${reservados.length} reserva${reservados.length > 1 ? 's' : ''} de bono pendiente${reservados.length > 1 ? 's' : ''} de pago. Contacta con Nexo si no lo has hecho.</div>
-      </div>`;
-  }
-
   // ── Bonos pagado_en_espera ─────────────────────────────────
   const enEspera = bonosData.filter(b => b.estado === 'pagado_en_espera')
     .sort((a, b) => (a.fecha_pago || a.created_at).localeCompare(b.fecha_pago || b.created_at));
@@ -1081,7 +1044,7 @@ async function loadBonosAlumno() {
   }
 
   // ── Alerta 75% consumo ────────────────────────────────────
-  const yaHayBonoSiguiente = reservados.length > 0 || enEspera.length > 0;
+  const yaHayBonoSiguiente = enEspera.length > 0;
   if (bonoActivo && hTotal > 0 && hUsed >= 0.75 * hTotal && !yaHayBonoSiguiente) {
     wrap.innerHTML += `
       <div style="margin-top:12px;padding:14px 16px;background:#1a1000;border:.5px solid var(--amber);border-radius:10px">
@@ -1089,11 +1052,11 @@ async function loadBonosAlumno() {
           <i class="ti ti-alert-triangle" style="color:var(--amber);font-size:18px;flex-shrink:0;margin-top:1px"></i>
           <div>
             <div style="color:var(--amber);font-size:13px;font-weight:600;margin-bottom:4px">Has consumido el 75% de tu bono</div>
-            <div style="color:#c8a060;font-size:12px">Si quieres continuar sin interrupciones, elige tu próximo bono ahora.</div>
+            <div style="color:#c8a060;font-size:12px">Cuando estés listo, contacta con Nexo para contratar el siguiente bono.</div>
           </div>
         </div>
-        <button class="btn-primary" style="width:100%;background:#b45309" onclick="mostrarTarifasAlumno()">
-          <i class="ti ti-shopping-cart"></i> Reservar siguiente bono
+        <button class="btn-primary" style="width:100%;background:#b45309" onclick="document.getElementById('contratar-wrap').scrollIntoView({behavior:'smooth'})">
+          <i class="ti ti-brand-whatsapp"></i> Ver bonos disponibles
         </button>
       </div>`;
   }
@@ -1102,7 +1065,6 @@ async function loadBonosAlumno() {
   const pillMap = {
     agotado:   ['st-grey', 'Agotado'],
     cancelado: ['st-red',  'Cancelado'],
-    reservado: ['st-pend', 'Reservado'],
   };
   const agotados  = bonosData.filter(b => b.estado === 'agotado').sort((a, b) =>
     (b.agotado_at || b.created_at || '').localeCompare(a.agotado_at || a.created_at || ''));
@@ -1126,119 +1088,41 @@ async function loadBonosAlumno() {
   } else {
     histCard.style.display = 'none';
   }
+
+  renderWACardsAlumno();
 }
 
-function mostrarTarifasAlumno() {
+function renderWACardsAlumno() {
   const alumno = ctx.alumnoData;
   const grupo  = nivelToGrupoAlumno(alumno?.nivel);
-  if (!grupo) {
-    showToast('No se puede determinar tu grupo de tarifa', 'error'); return;
-  }
-  tarifaSelId    = null;
-  tarifaModActual = alumno?.modalidad || 'Presencial';
+  const el     = document.getElementById('tarifas-wa-cards');
+  if (!grupo || tarifasAlumno.length === 0 || !el) return;
 
-  // Mostrar toggle modalidad solo si grupo tiene ambas
   const tieneOnline = tarifasAlumno.some(t => t.grupo === grupo && t.modalidad === 'Online');
-  const modWrap = document.getElementById('mod-toggle-wrap');
-  modWrap.style.display = tieneOnline ? 'block' : 'none';
-  document.getElementById('mod-btn-pre').classList.toggle('active', tarifaModActual === 'Presencial');
-  document.getElementById('mod-btn-onl').classList.toggle('active', tarifaModActual === 'Online');
+  const modWrap = document.getElementById('mod-toggle-wa');
+  if (modWrap) modWrap.style.display = tieneOnline ? 'block' : 'none';
+  if (!tieneOnline) modTarifaWA = 'Presencial';
 
-  document.getElementById('solicitud-confirm-wrap').style.display = 'none';
-  document.getElementById('solicitar-wrap').style.display = 'none';
-  document.getElementById('tarifas-alumno-wrap').style.display = 'block';
-  renderTarifasCards(grupo);
-}
-
-function ocultarTarifasAlumno() {
-  document.getElementById('tarifas-alumno-wrap').style.display = 'none';
-  document.getElementById('solicitar-wrap').style.display = 'block';
-  tarifaSelId = null;
-}
-
-function setModTarifa(mod) {
-  tarifaModActual = mod;
-  document.getElementById('mod-btn-pre').classList.toggle('active', mod === 'Presencial');
-  document.getElementById('mod-btn-onl').classList.toggle('active', mod === 'Online');
-  tarifaSelId = null;
-  document.getElementById('solicitud-confirm-wrap').style.display = 'none';
-  const grupo = nivelToGrupoAlumno(ctx.alumnoData?.nivel);
-  if (grupo) renderTarifasCards(grupo);
-}
-
-function renderTarifasCards(grupo) {
-  const horas = [2, 4, 8, 12];
-  const el = document.getElementById('tarifas-cards');
+  const nombre = `${ctx.usuario?.nombre || ''} ${ctx.usuario?.apellidos || ''}`.trim();
+  const horas  = [2, 4, 8, 12];
   el.innerHTML = horas.map(h => {
-    const t = tarifasAlumno.find(x => x.grupo === grupo && x.modalidad === tarifaModActual && x.horas === h);
+    const t = tarifasAlumno.find(x => x.grupo === grupo && x.modalidad === modTarifaWA && x.horas === h);
     if (!t) return '';
-    const sel = tarifaSelId === t.id;
-    return `<div class="tarifa-card${sel ? ' selected' : ''}" onclick="seleccionarTarifa(${t.id})">
+    const msg = encodeURIComponent(`Hola, soy ${nombre}. Quiero contratar el bono ${grupo} ${modTarifaWA} de ${h} horas.`);
+    return `<div class="tarifa-card" onclick="window.open('https://wa.me/34699529399?text=${msg}','_blank')" style="cursor:pointer">
       <div class="tarifa-h">${h}</div>
       <div class="tarifa-h-lbl">horas</div>
       <div class="tarifa-precio">${t.precio.toFixed(2)}€</div>
-      <div class="tarifa-mod">${tarifaModActual}</div>
+      <div class="tarifa-mod">${modTarifaWA}</div>
     </div>`;
   }).join('');
 }
 
-function seleccionarTarifa(tarifaId) {
-  tarifaSelId = tarifaId;
-  const grupo = nivelToGrupoAlumno(ctx.alumnoData?.nivel);
-  if (grupo) renderTarifasCards(grupo);
-  document.getElementById('solicitud-confirm-wrap').style.display = 'block';
-  document.getElementById('solicitud-notas').value = '';
-  document.getElementById('solicitud-confirm-wrap').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-}
-
-function deseleccionarTarifa() {
-  tarifaSelId = null;
-  const grupo = nivelToGrupoAlumno(ctx.alumnoData?.nivel);
-  if (grupo) renderTarifasCards(grupo);
-  document.getElementById('solicitud-confirm-wrap').style.display = 'none';
-  // Restaurar botones por si se mostró el CTA de WA
-  const btnConf = document.getElementById('btn-confirmar-solicitud');
-  if (btnConf) { btnConf.style.display = ''; }
-  const btnCambiar = document.querySelector('#solicitud-confirm-wrap .btn-ghost');
-  if (btnCambiar) { btnCambiar.style.display = ''; }
-  document.getElementById('wa-cta-wrap').style.display = 'none';
-}
-
-async function confirmarSolicitudBono() {
-  if (!tarifaSelId) return;
-  const btn = document.getElementById('btn-confirmar-solicitud');
-  btn.disabled = true;
-
-  const tarifa = tarifasAlumno.find(t => t.id === tarifaSelId);
-  if (!tarifa) { btn.disabled = false; return; }
-
-  const notas    = document.getElementById('solicitud-notas').value.trim() || null;
-  const alumnoId = ctx.alumnoData.id;
-  const nombre   = `${ctx.usuario.nombre} ${ctx.usuario.apellidos}`.trim();
-  const precio   = tarifa.precio.toFixed(2);
-
-  // Intentar guardar reserva en BD (no bloquea si falla por RLS)
-  await db.from('bonos').insert({
-    alumno_id:         alumnoId,
-    horas_contratadas: tarifa.horas,
-    modalidad:         tarifa.modalidad,
-    precio_base:       tarifa.precio,
-    precio_final:      tarifa.precio,
-    descuento:         0,
-    estado:            'reservado',
-    notas,
-  });
-
-  btn.disabled = false;
-
-  // Construir enlace WhatsApp con mensaje predefinido
-  const msg = `Hola, soy ${nombre}. Quiero confirmar mi reserva de bono de ${tarifa.horas}h ${tarifa.modalidad} por ${precio}€. ¿Podéis confirmar el pago?`;
-  document.getElementById('wa-bono-link').href = `https://wa.me/${WHATSAPP_MANU}?text=${encodeURIComponent(msg)}`;
-
-  // Mostrar CTA de WhatsApp, ocultar botón "Guardar reserva"
-  btn.style.display = 'none';
-  document.querySelector('#solicitud-confirm-wrap .btn-ghost').style.display = 'none';
-  document.getElementById('wa-cta-wrap').style.display = 'block';
+function setModTarifaWA(mod) {
+  modTarifaWA = mod;
+  document.getElementById('mod-btn-wa-pre').classList.toggle('active', mod === 'Presencial');
+  document.getElementById('mod-btn-wa-onl').classList.toggle('active', mod === 'Online');
+  renderWACardsAlumno();
 }
 
 function nivelToGrupoAlumno(nivel) {
