@@ -416,10 +416,9 @@
     </select>
     <select class="fi" id="fil-bono-estado" onchange="loadBonos()" style="width:auto;padding:8px 12px">
       <option value="">Todos los estados</option>
-      <option value="pagado_en_espera">Pagado · en espera</option>
+      <option value="en_espera">En espera</option>
       <option value="activo">Activos</option>
       <option value="agotado">Agotados</option>
-      <option value="cancelado">Cancelados</option>
     </select>
     <input type="month" class="fi" id="fil-bono-mes" onchange="loadBonos()" style="width:auto;padding:8px 12px">
     <button class="btn-ghost" onclick="limpiarFiltrosBonos()"><i class="ti ti-x"></i> Limpiar</button>
@@ -2574,31 +2573,12 @@ async function guardarEditSesion() {
   const { error } = await db.from('sesiones').update(updates).eq('id', sesionId);
   if (error) { showToast('Error al guardar: ' + error.message, 'error'); btn.disabled = false; return; }
 
-  // Recalcular bono si hay cambio de estado o duración
+  // Recalcular bonos completo si hay cambio de estado o duración que afecte confirmación
   const oldConf = oldEstado === 'confirmada';
   const newConf = newEstado === 'confirmada';
-  let bonoDelta = 0;
-  if (oldConf && newConf) {
-    bonoDelta = -(newDuracion - oldDuracion) / 60.0;        // solo ajuste por duración
-  } else if (!oldConf && newConf) {
-    bonoDelta = -newDuracion / 60.0;                         // nueva confirmación: descontar
-  } else if (oldConf && !newConf) {
-    bonoDelta = oldDuracion / 60.0;                          // desconfirmada: devolver
-  }
-
-  if (bonoDelta !== 0) {
-    const [{ data: al }, { data: bonoAct }] = await Promise.all([
-      db.from('alumnos').select('horas_bono_restantes').eq('id', alumnoId).single(),
-      db.from('bonos').select('id, horas_consumidas, horas_restantes').eq('alumno_id', alumnoId).eq('estado', 'activo').maybeSingle(),
-    ]);
-    const newAlumRest = Math.max(0, ((al?.horas_bono_restantes || 0) + bonoDelta));
-    await db.from('alumnos').update({ horas_bono_restantes: +newAlumRest.toFixed(2) }).eq('id', alumnoId);
-    if (bonoAct) {
-      await db.from('bonos').update({
-        horas_consumidas: +Math.max(0, (bonoAct.horas_consumidas || 0) - bonoDelta).toFixed(2),
-        horas_restantes:  +Math.max(0, (bonoAct.horas_restantes  || 0) + bonoDelta).toFixed(2),
-      }).eq('id', bonoAct.id);
-    }
+  if (oldConf || newConf) {
+    const { error: rpcErr } = await db.rpc('recalcular_bonos_alumno', { p_alumno_id: alumnoId });
+    if (rpcErr) console.error('recalcular_bonos_alumno:', rpcErr.message);
   }
 
   btn.disabled = false;
@@ -3230,10 +3210,9 @@ async function loadBonos() {
   }
 
   const pillMap = {
-    activo:           ['st-ok',   'Activo'],
-    pagado_en_espera: ['st-pend', 'Pagado · en espera'],
-    agotado:          ['st-grey', 'Agotado'],
-    cancelado:        ['st-red',  'Cancelado'],
+    activo:    ['st-ok',   'Activo'],
+    en_espera: ['st-pend', 'En espera'],
+    agotado:   ['st-grey', 'Agotado'],
   };
 
   el.innerHTML = `<table class="tabla">
@@ -3255,7 +3234,6 @@ async function loadBonos() {
         const pagoCell = b.pagado
           ? `<span class="status-pill st-ok" title="${b.fecha_pago ? 'Pagado ' + formatShortDate(b.fecha_pago) : 'Pagado'}">✓ Pagado</span>`
           : `<span style="color:var(--muted);font-size:11px">—</span>`;
-        const esCancelado = b.estado === 'cancelado';
         return `<tr>
           <td style="color:#fff">${alumnoNom}</td>
           <td>${b.horas_contratadas}h</td>
@@ -3268,11 +3246,8 @@ async function loadBonos() {
           <td><span class="status-pill ${pc}">${pt}</span></td>
           <td>${pagoCell}</td>
           <td style="white-space:nowrap;text-align:center">
-            ${esCancelado
-              ? `<button class="btn-danger" onclick="eliminarBonoCancelado('${b.id}')"><i class="ti ti-trash"></i> Eliminar</button>`
-              : `<button class="btn-edit" onclick="abrirEditBono('${b.id}')"><i class="ti ti-pencil"></i></button>
-                 <button class="btn-danger" style="margin-left:4px" onclick="eliminarBono('${b.id}','${b.alumno_id}','${b.estado}')"><i class="ti ti-trash"></i></button>`
-            }
+            <button class="btn-edit" onclick="abrirEditBono('${b.id}')"><i class="ti ti-pencil"></i></button>
+            <button class="btn-danger" style="margin-left:4px" onclick="eliminarBono('${b.id}')"><i class="ti ti-trash"></i></button>
           </td>
         </tr>`;
       }).join('')}
@@ -3287,9 +3262,9 @@ function limpiarFiltrosBonos() {
   loadBonos();
 }
 
-async function eliminarBonoCancelado(bonoId) {
-  if (!confirm('¿Eliminar definitivamente este bono cancelado? Esta acción no se puede deshacer.')) return;
-  const { data, error } = await db.rpc('eliminar_bono_cancelado', { p_bono_id: bonoId });
+async function eliminarBono(bonoId) {
+  if (!confirm('¿Eliminar este bono? Esta acción no se puede deshacer.')) return;
+  const { data, error } = await db.rpc('eliminar_bono', { p_bono_id: bonoId });
   if (error || !data?.success) {
     showToast('Error: ' + (data?.error || error?.message), 'error'); return;
   }
@@ -3366,10 +3341,9 @@ async function abrirEditBono(bonoId) {
   document.getElementById('bono-pago').value = b.pagado ? 'pagado' : 'pendiente';
   document.getElementById('bono-estado').value = b.estado;
   const _bEtiqMap = {
-    activo:           ['st-ok',   'Activo (consumiendo horas)'],
-    pagado_en_espera: ['st-pend', 'En reserva · se activa al agotar el actual'],
-    agotado:          ['st-grey', 'Agotado'],
-    cancelado:        ['st-red',  'Cancelado'],
+    activo:    ['st-ok',   'Activo (consumiendo horas)'],
+    en_espera: ['st-pend', 'En espera · se activa al agotar el actual'],
+    agotado:   ['st-grey', 'Agotado'],
   };
   const [_bc, _bt] = _bEtiqMap[b.estado] || ['st-grey', b.estado];
   document.getElementById('bono-estado-badge').innerHTML = `<span class="status-pill ${_bc}">${_bt}</span>`;
@@ -3477,14 +3451,13 @@ async function guardarBono() {
 
       const esPagado = true;
       let newEstado;
-      if (currentEstado === 'activo' || currentEstado === 'pagado_en_espera' ||
-          currentEstado === 'agotado' || currentEstado === 'cancelado') {
+      if (currentEstado === 'activo' || currentEstado === 'en_espera' || currentEstado === 'agotado') {
         newEstado = currentEstado;
       } else {
         const { data: activos } = await db.from('bonos')
           .select('id').eq('alumno_id', alumnoId).eq('estado', 'activo').neq('id', editBonoId).limit(1);
         const hayActivo = activos && activos.length > 0;
-        newEstado = hayActivo ? 'pagado_en_espera' : 'activo';
+        newEstado = hayActivo ? 'en_espera' : 'activo';
       }
 
       const payload = {
@@ -3523,7 +3496,7 @@ async function guardarBono() {
       const { data: activos } = await db.from('bonos')
         .select('id').eq('alumno_id', alumnoId).eq('estado', 'activo').limit(1);
       const hayActivo = activos && activos.length > 0;
-      const estado    = hayActivo ? 'pagado_en_espera' : 'activo';
+      const estado    = hayActivo ? 'en_espera' : 'activo';
       const esPagado  = true;
 
       const payload = {
@@ -3565,16 +3538,6 @@ async function vencerBonosActivos(alumnoId, exceptId) {
   await q;
 }
 
-async function eliminarBono(bonoId, alumnoId, estado) {
-  if (!confirm('¿Eliminar este bono? Esta acción no se puede deshacer.')) return;
-  const { error } = await db.from('bonos').delete().eq('id', bonoId);
-  if (error) { showToast('Error: ' + error.message, 'error'); return; }
-  if (estado === 'activo') {
-    await db.from('alumnos').update({ horas_bono_restantes: 0, horas_bono_total: 0 }).eq('id', alumnoId);
-  }
-  showToast('Bono eliminado');
-  await loadBonos();
-}
 
 // ── CATÁLOGO TARIFAS ─────────────────────────────────────────
 function toggleCatalogoTarifas() {

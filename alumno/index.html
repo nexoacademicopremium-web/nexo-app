@@ -836,13 +836,13 @@ function tiempoDesdeRegistro(registradaAt) {
   const horas = (Date.now() - new Date(registradaAt).getTime()) / 3600000;
   let texto, clase;
   if (horas < 24) {
-    texto = `Registrada hace ${Math.round(horas)}h · Se confirma auto en ${Math.round(72 - horas)}h si no respondes`;
+    texto = `Registrada hace ${Math.round(horas)}h · Se confirma auto en ${Math.round(48 - horas)}h si no respondes`;
     clase = 'ok';
-  } else if (horas < 48) {
-    texto = `Registrada hace ${Math.floor(horas)}h · Quedan ~${Math.round(72 - horas)}h para auto-confirmación`;
+  } else if (horas < 36) {
+    texto = `Registrada hace ${Math.floor(horas)}h · Quedan ~${Math.round(48 - horas)}h para auto-confirmación`;
     clase = 'warn';
   } else {
-    texto = `Registrada hace ${Math.floor(horas)}h · ¡Se auto-confirma en menos de ${Math.ceil(72 - horas)}h!`;
+    texto = `Registrada hace ${Math.floor(horas)}h · ¡Se auto-confirma en menos de ${Math.ceil(48 - horas)}h!`;
     clase = 'urgent';
   }
   return { texto, clase };
@@ -852,7 +852,7 @@ async function loadSesiones() {
   if (!ctx.alumnoData) return;
   const alumnoId = ctx.alumnoData.id;
 
-  // Fallback cliente: auto-confirmar sesiones > 72h (por si pg_cron no está activo)
+  // Fallback cliente: auto-confirmar sesiones > 48h (por si pg_cron no está activo)
   try { await db.rpc('auto_confirm_old_sessions'); } catch (_) {}
 
   const { data: pendientes } = await db
@@ -1026,8 +1026,8 @@ async function loadBonosAlumno() {
       </div>`;
   }
 
-  // ── Bonos pagado_en_espera ─────────────────────────────────
-  const enEspera = bonosData.filter(b => b.estado === 'pagado_en_espera')
+  // ── Bonos en_espera ───────────────────────────────────────
+  const enEspera = bonosData.filter(b => b.estado === 'en_espera')
     .sort((a, b) => (a.fecha_pago || a.created_at).localeCompare(b.fecha_pago || b.created_at));
 
   if (enEspera.length > 0) {
@@ -1063,8 +1063,7 @@ async function loadBonosAlumno() {
 
   // ── Historial ─────────────────────────────────────────────
   const pillMap = {
-    agotado:   ['st-grey', 'Agotado'],
-    cancelado: ['st-red',  'Cancelado'],
+    agotado: ['st-grey', 'Agotado'],
   };
   const agotados  = bonosData.filter(b => b.estado === 'agotado').sort((a, b) =>
     (b.agotado_at || b.created_at || '').localeCompare(a.agotado_at || a.created_at || ''));

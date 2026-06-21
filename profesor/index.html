@@ -571,12 +571,12 @@
         </div>
 
         <!-- Footer -->
-        <div id="aviso-bono-bloqueo" style="display:none;margin:0 24px 12px;padding:14px 16px;background:#1a0000;border:.5px solid var(--red);border-radius:8px">
+        <div id="aviso-bono-bloqueo" style="display:none;margin:0 24px 12px;padding:14px 16px;background:#1a0d00;border:.5px solid var(--amber);border-radius:8px">
           <div style="display:flex;align-items:flex-start;gap:10px">
-            <i class="ti ti-ban" style="color:var(--red);font-size:20px;flex-shrink:0;margin-top:1px"></i>
+            <i class="ti ti-alert-triangle" style="color:var(--amber);font-size:20px;flex-shrink:0;margin-top:1px"></i>
             <div>
-              <div style="color:var(--red);font-size:13px;font-weight:600;margin-bottom:4px">Sin horas de bono disponibles</div>
-              <div style="color:#e08080;font-size:12px">Este alumno no tiene horas de bono disponibles ni un bono pagado pendiente. Contacta con administración antes de impartir esta clase.</div>
+              <div style="color:var(--amber);font-size:13px;font-weight:600;margin-bottom:4px">Sin horas de bono disponibles</div>
+              <div style="color:#d4a040;font-size:12px">Atención: este alumno no tiene horas suficientes en su bono activo. Nexo solo se hará cargo de las horas cubiertas por bono. Si el alumno no contrata más horas, las horas excedidas no serán remuneradas.</div>
             </div>
           </div>
         </div>
@@ -761,8 +761,7 @@
       <i class="ti ti-check" style="color:var(--green);font-size:28px"></i>
     </div>
     <div style="color:#fff;font-size:18px;font-weight:600;margin-bottom:8px">Sesión registrada</div>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:24px">El alumno recibirá un email para confirmar la asistencia.</div>
-    <button onclick="cerrarModalOk();showSection('sesion')" style="width:100%;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit;margin-bottom:10px">Registrar otra sesión</button>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:24px">Clase pendiente de confirmación por el alumno.</div>
     <a href="#" onclick="cerrarModalOk();showSection('panel');return false;" style="display:block;color:var(--blue);font-size:13px;text-decoration:none">Volver al panel</a>
   </div>
 </div>
@@ -1180,29 +1179,21 @@ async function _submitSesion(excedeBono = false) {
 
 async function checkBonoAlumno() {
   const alumnoId = document.getElementById('ses-alumno').value;
-  const bloqueo = document.getElementById('aviso-bono-bloqueo');
-  const btnEnviar = document.getElementById('btn-enviar-sesion');
-  if (!alumnoId) {
-    bloqueo.style.display = 'none';
-    btnEnviar.disabled = false;
-    return;
-  }
-  const alumno = misAlumnos.find(a => a.id === alumnoId);
+  const bloqueo  = document.getElementById('aviso-bono-bloqueo');
+  if (!alumnoId) { bloqueo.style.display = 'none'; return; }
+
+  const alumno    = misAlumnos.find(a => a.id === alumnoId);
   const hRestantes = parseFloat(alumno?.horas_bono_restantes ?? 0);
-  if (hRestantes > 0) {
-    bloqueo.style.display = 'none';
-    btnEnviar.disabled = false;
-    return;
-  }
-  const { data: pendientes } = await db
+  if (hRestantes > 0) { bloqueo.style.display = 'none'; return; }
+
+  // Mostrar aviso amber (no bloquea el envío)
+  const { data: enEspera } = await db
     .from('bonos').select('id')
-    .eq('alumno_id', alumnoId).eq('estado', 'pagado_en_espera').limit(1);
-  if (pendientes && pendientes.length > 0) {
-    bloqueo.style.display = 'none';
-    btnEnviar.disabled = false;
-  } else {
+    .eq('alumno_id', alumnoId).eq('estado', 'en_espera').limit(1);
+  if (!enEspera || enEspera.length === 0) {
     bloqueo.style.display = 'block';
-    btnEnviar.disabled = true;
+  } else {
+    bloqueo.style.display = 'none';
   }
 }
 
@@ -1231,7 +1222,7 @@ async function checkSesionPendiente() {
     document.getElementById('aviso-sesion-pendiente-txt').textContent =
       `Este alumno tiene una sesión del ${formatDate(s.fecha)} con ${profNombre} pendiente de confirmación ` +
       `por la familia. No se puede registrar otra hasta que la familia la confirme, rechace, ` +
-      `o pasen 72h (confirmación automática).`;
+      `o pasen 48h (confirmación automática).`;
     avisoDiv.style.display = 'block';
     document.getElementById('btn-enviar-sesion').disabled = true;
     formIds.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
@@ -1244,36 +1235,16 @@ async function checkSesionPendiente() {
 
 async function enviarSesion(e) {
   e.preventDefault();
-  const alumnoId = document.getElementById('ses-alumno').value;
-  const alumno = misAlumnos.find(a => a.id === alumnoId);
+  const alumnoId   = document.getElementById('ses-alumno').value;
+  const alumno     = misAlumnos.find(a => a.id === alumnoId);
   const hRestantes = parseFloat(alumno?.horas_bono_restantes ?? 0);
+  const durHoras   = parseInt(document.getElementById('ses-duracion').value) / 60;
 
-  if (hRestantes <= 0) {
-    const { data: pendientes } = await db
-      .from('bonos').select('id')
-      .eq('alumno_id', alumnoId).eq('estado', 'pagado_en_espera').limit(1);
-    if (!pendientes || pendientes.length === 0) {
-      document.getElementById('aviso-bono-bloqueo').style.display = 'block';
-      document.getElementById('btn-enviar-sesion').disabled = true;
-      return;
-    }
-  }
-
-  const durHoras = parseInt(document.getElementById('ses-duracion').value) / 60;
-  if (hRestantes > 0 && durHoras > hRestantes) {
-    const { data: siguienteBono } = await db
-      .from('bonos').select('id')
-      .eq('alumno_id', alumnoId).eq('estado', 'pagado_en_espera').limit(1);
-    if (siguienteBono && siguienteBono.length > 0) {
-      _submitSesion(false);
-      return;
-    }
-    const fmt = h => Number.isInteger(h) ? `${h}h` : `${h.toFixed(1)}h`;
-    const exceso = durHoras - hRestantes;
+  if (durHoras > hRestantes) {
     document.getElementById('aviso-bono-txt').textContent =
-      `Esta sesión dura ${fmt(durHoras)} pero al alumno solo le quedan ${fmt(hRestantes)} en su bono. ` +
-      `Las ${fmt(exceso)} restantes no están contratadas — Nexo no se hace responsable de esas horas. ` +
-      `Si tienes dudas, contacta con administración antes de continuar.`;
+      'Atención: este alumno no tiene horas suficientes en su bono activo. ' +
+      'Nexo solo se hará cargo de las horas cubiertas por bono. ' +
+      'Si el alumno no contrata más horas, las horas excedidas no serán remuneradas.';
     document.getElementById('modal-aviso-bono').classList.add('open');
     document.getElementById('btn-aviso-bono-continuar').onclick = () => {
       document.getElementById('modal-aviso-bono').classList.remove('open');

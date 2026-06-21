@@ -1,10 +1,10 @@
 -- ============================================================
--- PATCH bono_v2 — Lógica de bonos coherente + recalcular
+-- PATCH bono_v3 — en_espera, 48h auto-confirm, eliminar lógica cancelado
 -- Ejecutar COMPLETO en Supabase → SQL Editor
 -- Es idempotente: ADD COLUMN IF NOT EXISTS, CREATE OR REPLACE
 -- ============================================================
 
--- 1. Columnas nuevas
+-- 1. Columnas nuevas (idempotente)
 ALTER TABLE public.alumnos
   ADD COLUMN IF NOT EXISTS horas_deuda NUMERIC(6,2) NOT NULL DEFAULT 0;
 
@@ -15,7 +15,20 @@ ALTER TABLE public.sesiones
   ADD COLUMN IF NOT EXISTS bono_id        UUID REFERENCES public.bonos(id),
   ADD COLUMN IF NOT EXISTS horas_deducidas NUMERIC(6,2);
 
--- 2. _activar_siguiente_bono — aplica deuda al activar; soporta p_fecha_ts
+-- 2. Migración de datos: renombrar estados
+UPDATE public.bonos SET estado = 'en_espera' WHERE estado = 'pagado_en_espera';
+UPDATE public.bonos SET estado = 'agotado'   WHERE estado = 'cancelado';
+
+-- 3. Actualizar CHECK constraint y DEFAULT
+ALTER TABLE public.bonos DROP CONSTRAINT IF EXISTS bonos_estado_check;
+ALTER TABLE public.bonos ADD CONSTRAINT bonos_estado_check
+  CHECK (estado IN ('en_espera','activo','agotado'));
+ALTER TABLE public.bonos ALTER COLUMN estado SET DEFAULT 'en_espera';
+
+-- Eliminar política de INSERT de alumnos
+DROP POLICY IF EXISTS "bonos_alumno_insert" ON public.bonos;
+
+-- 4. _activar_siguiente_bono
 CREATE OR REPLACE FUNCTION public._activar_siguiente_bono(
   p_alumno_id UUID,
   p_fecha_ts  TIMESTAMPTZ DEFAULT NOW()
@@ -38,7 +51,7 @@ BEGIN
 
   SELECT * INTO v_next
   FROM public.bonos
-  WHERE alumno_id = p_alumno_id AND estado = 'pagado_en_espera'
+  WHERE alumno_id = p_alumno_id AND estado = 'en_espera'
   ORDER BY fecha_pago ASC NULLS LAST, created_at ASC
   LIMIT 1;
 
@@ -72,7 +85,7 @@ BEGIN
 END;
 $$;
 
--- 3. _consumir_horas_sesion — cascada bono a bono (bucle); activa pagado_en_espera si no hay activo
+-- 5. _consumir_horas_sesion — cascada bono a bono; activa en_espera si no hay activo
 CREATE OR REPLACE FUNCTION public._consumir_horas_sesion(
   p_alumno_id  UUID,
   p_duracion_h NUMERIC,
@@ -91,22 +104,19 @@ BEGIN
   v_remaining := p_duracion_h;
 
   LOOP
-    -- Buscar bono activo
     SELECT * INTO v_activo
     FROM public.bonos
     WHERE alumno_id = p_alumno_id AND estado = 'activo'
     LIMIT 1;
 
-    -- Si no hay activo, intentar activar el siguiente en espera
     IF NOT FOUND THEN
       SELECT * INTO v_activo
       FROM public.bonos
-      WHERE alumno_id = p_alumno_id AND estado = 'pagado_en_espera'
+      WHERE alumno_id = p_alumno_id AND estado = 'en_espera'
       ORDER BY fecha_pago ASC NULLS LAST, created_at ASC
       LIMIT 1;
 
       IF NOT FOUND THEN
-        -- Sin bonos: acumular toda la deuda pendiente y salir
         UPDATE public.alumnos
         SET horas_deuda          = COALESCE(horas_deuda, 0) + v_remaining,
             horas_bono_total     = 0,
@@ -115,7 +125,6 @@ BEGIN
         RETURN;
       END IF;
 
-      -- Activar el bono en espera aplicando la deuda acumulada
       SELECT COALESCE(horas_deuda, 0) INTO v_deuda
       FROM public.alumnos WHERE id = p_alumno_id;
       v_net := GREATEST(0, v_activo.horas_contratadas - v_deuda);
@@ -134,14 +143,12 @@ BEGIN
       WHERE id = p_alumno_id;
 
       IF v_net = 0 THEN
-        CONTINUE; -- Bono inmediatamente agotado: buscar el siguiente
+        CONTINUE;
       END IF;
 
-      -- Refrescar v_activo con el estado real tras la activación
       SELECT * INTO v_activo FROM public.bonos WHERE id = v_activo.id;
     END IF;
 
-    -- Consumir horas del bono activo
     IF v_remaining <= v_activo.horas_restantes THEN
       UPDATE public.bonos
       SET horas_consumidas = horas_consumidas + v_remaining,
@@ -152,14 +159,12 @@ BEGIN
       SET horas_bono_restantes = GREATEST(0, horas_bono_restantes - v_remaining)
       WHERE id = p_alumno_id;
 
-      -- Si el bono quedó exactamente a 0, activar el siguiente
       IF v_activo.horas_restantes - v_remaining = 0 THEN
         PERFORM public._activar_siguiente_bono(p_alumno_id, p_fecha_ts);
       END IF;
       RETURN;
 
     ELSE
-      -- La sesión supera el bono actual: agotar y continuar en cascada
       UPDATE public.bonos
       SET estado           = 'agotado',
           horas_consumidas = horas_contratadas,
@@ -168,13 +173,12 @@ BEGIN
       WHERE id = v_activo.id;
 
       v_remaining := v_remaining - v_activo.horas_restantes;
-      -- El bucle continúa buscando el siguiente bono
     END IF;
   END LOOP;
 END;
 $$;
 
--- 4. _revertir_horas_sesion — devuelve horas al bono correcto al cancelar
+-- 6. _revertir_horas_sesion
 CREATE OR REPLACE FUNCTION public._revertir_horas_sesion(p_session_id UUID)
 RETURNS VOID
 LANGUAGE plpgsql
@@ -225,7 +229,7 @@ BEGIN
             agotado_at       = NULL
         WHERE id = v_session.bono_id;
         UPDATE public.bonos
-        SET estado           = 'pagado_en_espera',
+        SET estado           = 'en_espera',
             horas_consumidas = 0,
             horas_restantes  = 0,
             agotado_at       = NULL
@@ -286,7 +290,7 @@ BEGIN
 END;
 $$;
 
--- 5. process_session_confirmation — registra bono_id y horas_deducidas (activo o pagado_en_espera)
+-- 7. process_session_confirmation
 CREATE OR REPLACE FUNCTION public.process_session_confirmation(
   p_session_id UUID,
   p_token      UUID,
@@ -325,7 +329,7 @@ BEGIN
     WHERE alumno_id = v_session.alumno_id AND estado = 'activo' LIMIT 1;
     IF NOT FOUND THEN
       SELECT * INTO v_bono_pre FROM public.bonos
-      WHERE alumno_id = v_session.alumno_id AND estado = 'pagado_en_espera'
+      WHERE alumno_id = v_session.alumno_id AND estado = 'en_espera'
       ORDER BY fecha_pago ASC NULLS LAST, created_at ASC LIMIT 1;
     END IF;
 
@@ -345,7 +349,6 @@ BEGIN
     END IF;
 
     PERFORM public._consumir_horas_sesion(v_session.alumno_id, v_duracion_h, NOW());
-
     RETURN jsonb_build_object('success', true, 'action', 'confirmada');
 
   ELSIF p_action = 'rechazar' THEN
@@ -357,7 +360,7 @@ BEGIN
 END;
 $$;
 
--- 6. confirmar_sesion_alumno — registra bono_id y horas_deducidas (activo o pagado_en_espera)
+-- 8. confirmar_sesion_alumno
 CREATE OR REPLACE FUNCTION public.confirmar_sesion_alumno(
   p_session_id UUID,
   p_action     TEXT
@@ -395,7 +398,7 @@ BEGIN
     WHERE alumno_id = v_session.alumno_id AND estado = 'activo' LIMIT 1;
     IF NOT FOUND THEN
       SELECT * INTO v_bono_pre FROM public.bonos
-      WHERE alumno_id = v_session.alumno_id AND estado = 'pagado_en_espera'
+      WHERE alumno_id = v_session.alumno_id AND estado = 'en_espera'
       ORDER BY fecha_pago ASC NULLS LAST, created_at ASC LIMIT 1;
     END IF;
 
@@ -415,7 +418,6 @@ BEGIN
     END IF;
 
     PERFORM public._consumir_horas_sesion(v_session.alumno_id, v_duracion_h, NOW());
-
     RETURN jsonb_build_object('success', true, 'action', 'confirmada');
 
   ELSIF p_action = 'rechazar' THEN
@@ -427,7 +429,7 @@ BEGIN
 END;
 $$;
 
--- 7. auto_confirm_old_sessions — registra bono_id y horas_deducidas (activo o pagado_en_espera)
+-- 9. auto_confirm_old_sessions — 48 horas
 CREATE OR REPLACE FUNCTION public.auto_confirm_old_sessions()
 RETURNS INTEGER
 LANGUAGE plpgsql
@@ -445,7 +447,7 @@ BEGIN
     SELECT id, alumno_id, duracion_minutos
     FROM public.sesiones
     WHERE estado = 'pendiente_confirmacion'
-      AND registrada_at < NOW() - INTERVAL '72 hours'
+      AND registrada_at < NOW() - INTERVAL '48 hours'
   LOOP
     v_duracion_h := v_row.duracion_minutos / 60.0;
 
@@ -457,7 +459,7 @@ BEGIN
     WHERE alumno_id = v_row.alumno_id AND estado = 'activo' LIMIT 1;
     IF NOT FOUND THEN
       SELECT * INTO v_bono_pre FROM public.bonos
-      WHERE alumno_id = v_row.alumno_id AND estado = 'pagado_en_espera'
+      WHERE alumno_id = v_row.alumno_id AND estado = 'en_espera'
       ORDER BY fecha_pago ASC NULLS LAST, created_at ASC LIMIT 1;
     END IF;
 
@@ -484,7 +486,7 @@ BEGIN
 END;
 $$;
 
--- 8. cancelar_sesion_admin — usa _revertir_horas_sesion
+-- 10. cancelar_sesion_admin — recalcula bonos si la sesión estaba confirmada
 CREATE OR REPLACE FUNCTION public.cancelar_sesion_admin(
   p_session_id     UUID,
   p_revertir_horas BOOLEAN DEFAULT FALSE
@@ -511,15 +513,16 @@ BEGIN
   SET estado = 'cancelada', cancelada_por = 'admin'
   WHERE id = p_session_id;
 
-  IF p_revertir_horas AND v_session.estado = 'confirmada' THEN
-    PERFORM public._revertir_horas_sesion(p_session_id);
+  -- Recalcular siempre si la sesión estaba confirmada (reemplaza _revertir_horas_sesion)
+  IF v_session.estado = 'confirmada' THEN
+    PERFORM public.recalcular_bonos_alumno(v_session.alumno_id);
   END IF;
 
   RETURN jsonb_build_object('success', true);
 END;
 $$;
 
--- 9. recalcular_bonos_alumno — replica sesiones sobre bonos; actualiza sesiones.bono_id
+-- 11. recalcular_bonos_alumno — FIFO, usa en_espera
 CREATE OR REPLACE FUNCTION public.recalcular_bonos_alumno(p_alumno_id UUID)
 RETURNS VOID
 LANGUAGE plpgsql
@@ -533,36 +536,34 @@ DECLARE
   v_duracion_h NUMERIC;
   v_deuda      NUMERIC;
 BEGIN
-  -- Solo admin o service role
   IF auth.uid() IS NOT NULL AND NOT public.is_admin() THEN
     RAISE EXCEPTION 'Solo administradores pueden recalcular bonos';
   END IF;
 
-  -- 1. Resetear bonos elegibles en orden cronológico
+  -- 1. Resetear todos los bonos en orden FIFO
   FOR v_bono_row IN
     SELECT id, horas_contratadas
     FROM public.bonos
     WHERE alumno_id = p_alumno_id
-      AND estado NOT IN ('cancelado')
     ORDER BY COALESCE(fecha_pago, created_at) ASC, id ASC
   LOOP
     UPDATE public.bonos
     SET horas_consumidas = 0,
         horas_restantes  = CASE WHEN v_primera THEN v_bono_row.horas_contratadas ELSE 0 END,
-        estado           = CASE WHEN v_primera THEN 'activo' ELSE 'pagado_en_espera' END,
+        estado           = CASE WHEN v_primera THEN 'activo' ELSE 'en_espera' END,
         agotado_at       = NULL
     WHERE id = v_bono_row.id;
     v_primera := FALSE;
   END LOOP;
 
-  -- 2. Resetear deuda y contadores del alumno
+  -- 2. Resetear contadores del alumno
   UPDATE public.alumnos
   SET horas_deuda          = 0,
       horas_bono_total     = 0,
       horas_bono_restantes = 0
   WHERE id = p_alumno_id;
 
-  -- 3. Reproducir sesiones confirmadas en orden actualizando bono_id/horas_deducidas
+  -- 3. Reproducir sesiones confirmadas en orden cronológico
   FOR v_sesion IN
     SELECT id, duracion_minutos,
            COALESCE(confirmada_at, registrada_at, NOW()) AS fecha_ts
@@ -576,7 +577,7 @@ BEGIN
     WHERE alumno_id = p_alumno_id AND estado = 'activo' LIMIT 1;
     IF NOT FOUND THEN
       SELECT * INTO v_bono_pre FROM public.bonos
-      WHERE alumno_id = p_alumno_id AND estado = 'pagado_en_espera'
+      WHERE alumno_id = p_alumno_id AND estado = 'en_espera'
       ORDER BY fecha_pago ASC NULLS LAST, created_at ASC LIMIT 1;
     END IF;
 
@@ -602,7 +603,7 @@ BEGIN
 END;
 $$;
 
--- 10. eliminar_sesion_cancelada — alumno elimina su propia sesión cancelada
+-- 12. eliminar_sesion_cancelada — alumno elimina su propia sesión cancelada
 CREATE OR REPLACE FUNCTION public.eliminar_sesion_cancelada(p_session_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -632,14 +633,15 @@ BEGIN
 END;
 $$;
 
--- 11. eliminar_bono_cancelado — admin elimina un bono cancelado permanentemente
-CREATE OR REPLACE FUNCTION public.eliminar_bono_cancelado(p_bono_id UUID)
+-- 13. eliminar_bono — admin elimina un bono sin sesiones asociadas; recalcula tras borrado
+CREATE OR REPLACE FUNCTION public.eliminar_bono(p_bono_id UUID)
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_bono public.bonos%ROWTYPE;
+  v_bono      public.bonos%ROWTYPE;
+  v_alumno_id UUID;
 BEGIN
   IF NOT public.is_admin() THEN
     RETURN jsonb_build_object('success', false, 'error', 'Sin permisos de administrador');
@@ -650,33 +652,23 @@ BEGIN
     RETURN jsonb_build_object('success', false, 'error', 'Bono no encontrado');
   END IF;
 
-  IF v_bono.estado != 'cancelado' THEN
-    RETURN jsonb_build_object('success', false, 'error', 'Solo se pueden eliminar bonos cancelados');
+  IF EXISTS (SELECT 1 FROM public.sesiones WHERE bono_id = p_bono_id) THEN
+    RETURN jsonb_build_object('success', false,
+      'error', 'Este bono tiene sesiones registradas y no puede eliminarse');
   END IF;
 
+  v_alumno_id := v_bono.alumno_id;
   DELETE FROM public.bonos WHERE id = p_bono_id;
+  PERFORM public.recalcular_bonos_alumno(v_alumno_id);
+
   RETURN jsonb_build_object('success', true);
 END;
 $$;
 
--- Eliminar política de INSERT de alumnos (ya no pueden crear bonos directamente)
-DROP POLICY IF EXISTS "bonos_alumno_insert" ON public.bonos;
-
--- Actualizar CHECK constraint y DEFAULT del estado de bonos
-ALTER TABLE public.bonos
-  DROP CONSTRAINT IF EXISTS bonos_estado_check;
-
-ALTER TABLE public.bonos
-  ADD CONSTRAINT bonos_estado_check
-    CHECK (estado IN ('pagado_en_espera','activo','agotado','cancelado'));
-
-ALTER TABLE public.bonos
-  ALTER COLUMN estado SET DEFAULT 'pagado_en_espera';
-
 -- Grants
-GRANT EXECUTE ON FUNCTION public.recalcular_bonos_alumno(UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.eliminar_sesion_cancelada(UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.eliminar_bono_cancelado(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.recalcular_bonos_alumno(UUID)     TO authenticated;
+GRANT EXECUTE ON FUNCTION public.eliminar_sesion_cancelada(UUID)   TO authenticated;
+GRANT EXECUTE ON FUNCTION public.eliminar_bono(UUID)               TO authenticated;
 
 -- ============================================================
 -- RECALCULAR TODOS LOS ALUMNOS (corregir datos históricos)

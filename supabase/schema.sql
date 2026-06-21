@@ -586,7 +586,7 @@ BEGIN
 
   SELECT * INTO v_next
   FROM public.bonos
-  WHERE alumno_id = p_alumno_id AND estado = 'pagado_en_espera'
+  WHERE alumno_id = p_alumno_id AND estado = 'en_espera'
   ORDER BY fecha_pago ASC NULLS LAST, created_at ASC
   LIMIT 1;
 
@@ -623,7 +623,7 @@ $$;
 -- ============================================================
 -- Helper: consumir horas de una sesión con cascada de bonos.
 -- Descuenta bono a bono en orden. Si no hay bono activo pero
--- existe uno pagado_en_espera, lo activa (aplicando deuda) y
+-- existe uno en_espera, lo activa (aplicando deuda) y
 -- consume de él. Si se agotan todos los bonos, acumula deuda.
 -- ============================================================
 CREATE OR REPLACE FUNCTION public._consumir_horas_sesion(
@@ -654,7 +654,7 @@ BEGIN
     IF NOT FOUND THEN
       SELECT * INTO v_activo
       FROM public.bonos
-      WHERE alumno_id = p_alumno_id AND estado = 'pagado_en_espera'
+      WHERE alumno_id = p_alumno_id AND estado = 'en_espera'
       ORDER BY fecha_pago ASC NULLS LAST, created_at ASC
       LIMIT 1;
 
@@ -764,12 +764,12 @@ BEGIN
     SET estado = 'confirmada', confirmada_at = NOW()
     WHERE id = p_session_id;
 
-    -- Identificar el bono que recibirá el descuento (activo primero, luego pagado_en_espera)
+    -- Identificar el bono que recibirá el descuento (activo primero, luego en_espera)
     SELECT * INTO v_bono_pre FROM public.bonos
     WHERE alumno_id = v_session.alumno_id AND estado = 'activo' LIMIT 1;
     IF NOT FOUND THEN
       SELECT * INTO v_bono_pre FROM public.bonos
-      WHERE alumno_id = v_session.alumno_id AND estado = 'pagado_en_espera'
+      WHERE alumno_id = v_session.alumno_id AND estado = 'en_espera'
       ORDER BY fecha_pago ASC NULLS LAST, created_at ASC LIMIT 1;
     END IF;
 
@@ -837,12 +837,12 @@ BEGIN
     SET estado = 'confirmada', confirmada_at = NOW()
     WHERE id = p_session_id;
 
-    -- Identificar el bono que recibirá el descuento (activo primero, luego pagado_en_espera)
+    -- Identificar el bono que recibirá el descuento (activo primero, luego en_espera)
     SELECT * INTO v_bono_pre FROM public.bonos
     WHERE alumno_id = v_session.alumno_id AND estado = 'activo' LIMIT 1;
     IF NOT FOUND THEN
       SELECT * INTO v_bono_pre FROM public.bonos
-      WHERE alumno_id = v_session.alumno_id AND estado = 'pagado_en_espera'
+      WHERE alumno_id = v_session.alumno_id AND estado = 'en_espera'
       ORDER BY fecha_pago ASC NULLS LAST, created_at ASC LIMIT 1;
     END IF;
 
@@ -914,7 +914,7 @@ BEGIN
       SELECT * INTO v_bono_activo FROM public.bonos WHERE alumno_id = v_session.alumno_id AND estado = 'activo' LIMIT 1;
       IF FOUND AND v_overflow > 0 AND v_bono_activo.horas_consumidas <= v_overflow THEN
         UPDATE public.bonos SET estado='activo', horas_consumidas=GREATEST(0,v_bono_orig.horas_consumidas-v_deducidas), horas_restantes=v_deducidas, agotado_at=NULL WHERE id = v_session.bono_id;
-        UPDATE public.bonos SET estado='pagado_en_espera', horas_consumidas=0, horas_restantes=0, agotado_at=NULL WHERE id = v_bono_activo.id;
+        UPDATE public.bonos SET estado='en_espera', horas_consumidas=0, horas_restantes=0, agotado_at=NULL WHERE id = v_bono_activo.id;
         UPDATE public.alumnos SET horas_bono_total=v_bono_orig.horas_contratadas, horas_bono_restantes=v_deducidas WHERE id = v_session.alumno_id;
       ELSIF FOUND THEN
         UPDATE public.bonos SET horas_consumidas=GREATEST(0,horas_consumidas-v_duracion_h), horas_restantes=horas_restantes+v_duracion_h WHERE id = v_bono_activo.id;
@@ -995,7 +995,7 @@ BEGIN
     SELECT id, alumno_id, duracion_minutos
     FROM public.sesiones
     WHERE estado = 'pendiente_confirmacion'
-      AND registrada_at < NOW() - INTERVAL '72 hours'
+      AND registrada_at < NOW() - INTERVAL '48 hours'
   LOOP
     v_duracion_h := v_row.duracion_minutos / 60.0;
 
@@ -1007,7 +1007,7 @@ BEGIN
     WHERE alumno_id = v_row.alumno_id AND estado = 'activo' LIMIT 1;
     IF NOT FOUND THEN
       SELECT * INTO v_bono_pre FROM public.bonos
-      WHERE alumno_id = v_row.alumno_id AND estado = 'pagado_en_espera'
+      WHERE alumno_id = v_row.alumno_id AND estado = 'en_espera'
       ORDER BY fecha_pago ASC NULLS LAST, created_at ASC LIMIT 1;
     END IF;
 
@@ -1062,13 +1062,12 @@ BEGIN
     SELECT id, horas_contratadas
     FROM public.bonos
     WHERE alumno_id = p_alumno_id
-      AND estado NOT IN ('cancelado')
     ORDER BY COALESCE(fecha_pago, created_at) ASC, id ASC
   LOOP
     UPDATE public.bonos
     SET horas_consumidas = 0,
         horas_restantes  = CASE WHEN v_primera THEN v_bono_row.horas_contratadas ELSE 0 END,
-        estado           = CASE WHEN v_primera THEN 'activo' ELSE 'pagado_en_espera' END,
+        estado           = CASE WHEN v_primera THEN 'activo' ELSE 'en_espera' END,
         agotado_at       = NULL
     WHERE id = v_bono_row.id;
     v_primera := FALSE;
@@ -1093,7 +1092,7 @@ BEGIN
     WHERE alumno_id = p_alumno_id AND estado = 'activo' LIMIT 1;
     IF NOT FOUND THEN
       SELECT * INTO v_bono_pre FROM public.bonos
-      WHERE alumno_id = p_alumno_id AND estado = 'pagado_en_espera'
+      WHERE alumno_id = p_alumno_id AND estado = 'en_espera'
       ORDER BY fecha_pago ASC NULLS LAST, created_at ASC LIMIT 1;
     END IF;
 
@@ -1313,8 +1312,8 @@ CREATE TABLE IF NOT EXISTS public.bonos (
   fecha_compra      DATE DEFAULT CURRENT_DATE,
   pagado            BOOLEAN DEFAULT FALSE,
   fecha_pago        DATE,
-  estado            TEXT NOT NULL DEFAULT 'pagado_en_espera'
-                      CHECK (estado IN ('pagado_en_espera','activo','agotado','cancelado')),
+  estado            TEXT NOT NULL DEFAULT 'en_espera'
+                      CHECK (estado IN ('en_espera','activo','agotado')),
   notas             TEXT,
   agotado_at        TIMESTAMPTZ,
   created_at        TIMESTAMPTZ DEFAULT NOW()
