@@ -215,7 +215,7 @@
   /* ── RESPONSIVE MÓVIL ─────────────────────────────────────── */
   .hamburger{display:none;background:none;border:none;cursor:pointer;color:var(--txt);font-size:22px;padding:4px 8px;margin-right:8px}
   .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:89}
-  @media(max-width:900px){
+  @media(max-width:1100px){
     .kpi-grid{grid-template-columns:repeat(3,1fr)}
   }
   @media(max-width:768px){
@@ -224,21 +224,25 @@
     .sidebar.open{transform:translateX(0)}
     .sidebar-overlay.open{display:block}
     .main{margin-left:0!important;padding:14px 12px}
-    .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+    .kpi-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px}
+    .kpi{padding:12px}
+    .kpi-val{font-size:20px}
     .fi-grid2{grid-template-columns:1fr!important}
     .card{overflow-x:auto}
     table{min-width:500px}
     .section-filters{flex-wrap:wrap;gap:6px}
-    .section-filters select,.section-filters button{flex:1;min-width:130px}
+    .section-filters select,.section-filters button{flex:1;min-width:120px}
     #admin-quick-ficha{width:100%!important;top:0!important;padding:16px}
     .modal-box{width:100%!important;max-width:100%!important;border-radius:0!important;min-height:100dvh;overflow-y:auto}
     .mat-grid{grid-template-columns:1fr!important}
     .mat-item{min-width:0}
     .topbar-right .topbar-name{display:none}
+    .page-title{font-size:18px}
   }
   @media(max-width:480px){
-    .kpi-grid{grid-template-columns:1fr 1fr}
-    .kpi-val{font-size:18px}
+    .kpi-grid{grid-template-columns:1fr 1fr!important;gap:7px}
+    .kpi-val{font-size:17px}
+    .kpi-label{font-size:9px}
     .card{border-radius:8px}
     .page-title{font-size:16px}
     .card .tabla{font-size:12px}

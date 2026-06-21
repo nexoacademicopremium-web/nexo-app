@@ -109,6 +109,21 @@
   .tag-b{background:#0f2240;color:var(--blue)}
   .tag-g{background:#0d2d1e;color:var(--green)}
 
+  /* ── BURBUJAS ASIGNATURA ───────────────────────────────────── */
+  .asig-bubble-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px}
+  .asig-bubble{background:#060d20;border:1px solid var(--cc,var(--border));border-radius:20px;padding:24px 16px 18px;cursor:pointer;position:relative;overflow:hidden;text-align:center;transition:transform .2s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
+  .asig-bubble::after{content:'';position:absolute;top:-25px;right:-25px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,var(--cc,var(--blue)) 0%,transparent 70%);opacity:.12;pointer-events:none}
+  .asig-bubble:hover,.asig-bubble:focus{transform:translateY(-4px);box-shadow:0 14px 36px rgba(0,0,0,.5),0 0 0 1.5px var(--cc,var(--border));outline:none}
+  .asig-bubble:active{transform:translateY(-1px)}
+  .asig-bubble-ico{width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:1.5px solid var(--cc,var(--border));background:rgba(255,255,255,.05)}
+  .asig-bubble-ico i{font-size:28px;color:var(--cc,var(--blue))}
+  .asig-bubble-name{color:#fff;font-size:14px;font-weight:600;margin-bottom:5px;line-height:1.3}
+  .asig-bubble-det{color:var(--muted);font-size:11px;line-height:1.4}
+  .asig-bubble-prog{height:3px;background:var(--border2);border-radius:20px;margin-top:12px;overflow:hidden}
+  .asig-bubble-prog-fill{height:100%;border-radius:20px;background:var(--cc,var(--blue));transition:width .4s}
+  .asig-bubble.empty{opacity:.55;border-style:dashed}
+  .asig-bubble.empty .asig-bubble-ico{border-style:dashed}
+  /* legacy (admin usa asig-card) */
   .asig-card{background:var(--dark);border:.5px solid var(--border);border-radius:10px;padding:16px;cursor:pointer;transition:all .15s;text-decoration:none;display:block}
   .asig-card:hover{border-color:var(--blue);background:#0a1530}
   .asig-icon{width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;margin-bottom:10px}
@@ -116,6 +131,15 @@
   .asig-name{color:#fff;font-size:13px;font-weight:500;margin-bottom:3px}
   .asig-det{color:var(--muted);font-size:11px}
   .asig-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+
+  /* ── NAV INFERIOR MÓVIL ────────────────────────────────────── */
+  .bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;height:58px;background:rgba(4,7,27,.96);backdrop-filter:blur(12px);border-top:.5px solid var(--border);z-index:80;align-items:stretch;justify-content:space-around}
+  .bn-item{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;color:var(--muted);cursor:pointer;font-size:10px;gap:3px;padding:6px 0;transition:color .15s;position:relative;-webkit-tap-highlight-color:transparent}
+  .bn-item i{font-size:21px;transition:transform .15s}
+  .bn-item.active{color:var(--blue)}
+  .bn-item.active i{transform:scale(1.1)}
+  .bn-dot{display:none;position:absolute;top:5px;right:calc(50% - 14px);width:7px;height:7px;border-radius:50%;background:var(--red);border:1.5px solid #04071b}
+  .bn-dot.show{display:block}
 
   .recurso-row{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:.5px solid var(--border2);cursor:pointer;transition:background .1s}
   .recurso-row:last-child{border-bottom:none}
@@ -240,26 +264,39 @@
   /* ── RESPONSIVE MÓVIL ─────────────────────────────────────── */
   .hamburger{display:none;background:none;border:none;cursor:pointer;color:var(--txt);font-size:22px;padding:4px 8px;margin-right:8px}
   .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:89}
+  @media(max-width:900px){
+    .asig-bubble-grid{grid-template-columns:repeat(2,1fr)}
+    .grid2{grid-template-columns:1fr}
+  }
   @media(max-width:768px){
     .hamburger{display:flex;align-items:center}
     .sidebar{transform:translateX(-110%);transition:transform .25s;z-index:110;width:240px}
     .sidebar.open{transform:translateX(0)}
     .sidebar-overlay.open{display:block}
-    .main{margin-left:0!important;padding:12px}
+    .main{margin-left:0!important;padding:14px 12px 72px}
     .topbar-name{display:none}
-    .kpi-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px}
+    .kpi-grid{grid-template-columns:repeat(2,1fr)!important;gap:10px}
+    .kpi{padding:14px}
     .kpi-val{font-size:22px}
     .card{overflow-x:auto}
     table{min-width:440px}
-    .bono-card{padding:14px}
-    .pend-card{padding:12px}
     .pend-actions{flex-wrap:wrap}
     .btn-confirm,.btn-reject{flex:1;justify-content:center}
     .modal-box{width:100%!important;max-width:100%!important;border-radius:0!important;min-height:100dvh;overflow-y:auto}
+    .bottom-nav{display:flex}
+    .asig-bubble-grid{grid-template-columns:repeat(2,1fr);gap:12px}
+    .asig-bubble{padding:20px 12px 14px}
+    .asig-bubble-ico{width:56px;height:56px}
+    .asig-bubble-ico i{font-size:24px}
+    .grid2{grid-template-columns:1fr!important}
+    .alerta{flex-direction:row;flex-wrap:wrap}
   }
   @media(max-width:480px){
-    .kpi-grid{grid-template-columns:1fr 1fr}
-    .page-title{font-size:16px}
+    .kpi-grid{grid-template-columns:1fr 1fr;gap:8px}
+    .kpi-val{font-size:20px}
+    .page-title{font-size:17px}
+    .asig-bubble-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+    .asig-bubble-name{font-size:13px}
   }
 </style>
 </head>
@@ -300,6 +337,27 @@
   <div class="nav-bottom">
     <a href="https://nexoacademico.es" class="nav-item"><i class="ti ti-arrow-left"></i> Web principal</a>
     <div class="nav-item" onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</div>
+  </div>
+</nav>
+
+<!-- BOTTOM NAV (móvil) -->
+<nav class="bottom-nav" id="bottom-nav">
+  <div class="bn-item active" id="bn-inicio" onclick="showSection('inicio')">
+    <i class="ti ti-home"></i><span>Inicio</span>
+  </div>
+  <div class="bn-item" id="bn-sesiones" onclick="showSection('sesiones')">
+    <i class="ti ti-calendar-check"></i>
+    <div class="bn-dot" id="bn-dot-sesiones"></div>
+    <span>Sesiones</span>
+  </div>
+  <div class="bn-item" id="bn-bonos" onclick="showSection('bonos')">
+    <i class="ti ti-credit-card"></i><span>Mi Bono</span>
+  </div>
+  <div class="bn-item" id="bn-estudiar" onclick="showSection('estudiar')">
+    <i class="ti ti-book"></i><span>Estudiar</span>
+  </div>
+  <div class="bn-item" id="bn-tests" onclick="showSection('tests')">
+    <i class="ti ti-list-check"></i><span>Tests</span>
   </div>
 </nav>
 
@@ -673,6 +731,10 @@ function showSection(id) {
   document.getElementById('section-' + id).classList.add('active');
   const navEl = document.getElementById('nav-' + id);
   if (navEl) navEl.classList.add('active');
+  // bottom nav sync
+  document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
+  const bnEl = document.getElementById('bn-' + id);
+  if (bnEl) bnEl.classList.add('active');
   window.scrollTo(0, 0);
   sessionStorage.setItem('nexo_alumno_seccion', id);
   closeSidebar();
@@ -858,6 +920,8 @@ async function checkPendingSessions() {
   if (count > 0) {
     document.getElementById('badge-sesiones').style.display = 'inline-block';
     document.getElementById('badge-sesiones').textContent = count;
+    const bnDot = document.getElementById('bn-dot-sesiones');
+    if (bnDot) bnDot.classList.add('show');
     const a = document.getElementById('alerta-sesiones');
     a.style.display = 'flex';
     document.getElementById('alerta-sesiones-txt').textContent =
@@ -1434,20 +1498,20 @@ async function loadEstudiar() {
   }
 
   document.getElementById('estudiar-asignaturas').innerHTML = `
-    <div class="asig-grid">
+    <div class="asig-bubble-grid">
       ${allAsigs.map((asig, i) => {
-        const nMat   = (byAsig[asig]      || []).length;
-        const nTest  = (byAsigTests[asig] || []).length;
-        const empty  = nMat === 0 && nTest === 0;
+        const nMat  = (byAsig[asig]      || []).length;
+        const nTest = (byAsigTests[asig] || []).length;
+        const empty = nMat === 0 && nTest === 0;
+        const cc    = empty ? '#1a2a4a' : colors[i % colors.length];
+        const ico   = empty ? 'ti-clock' : icons[i % icons.length];
+        const det   = empty ? 'Próximamente' : `${nMat} recurso${nMat !== 1 ? 's' : ''} · ${nTest} test${nTest !== 1 ? 's' : ''}`;
         return `
-          <div class="asig-card${empty ? ' asig-card-empty' : ''}" onclick="mostrarDetalle('${encodeURIComponent(asig)}')">
-            <div class="asig-icon" style="background:${empty ? 'var(--border2)' : colors[i % colors.length]}">
-              <i class="ti ${empty ? 'ti-clock' : icons[i % icons.length]}" style="${empty ? 'color:var(--muted)' : ''}"></i>
-            </div>
-            <div class="asig-name" style="${empty ? 'color:var(--muted)' : ''}">${asig}</div>
-            <div class="asig-det">${empty ? 'Próximamente' : `${nMat} recurso${nMat !== 1 ? 's' : ''} · ${nTest} test${nTest !== 1 ? 's' : ''}`}</div>
-          </div>
-        `;
+          <div class="asig-bubble${empty ? ' empty' : ''}" style="--cc:${cc}" onclick="mostrarDetalle('${encodeURIComponent(asig)}')">
+            <div class="asig-bubble-ico"><i class="ti ${ico}"></i></div>
+            <div class="asig-bubble-name">${asig}</div>
+            <div class="asig-bubble-det">${det}</div>
+          </div>`;
       }).join('')}
     </div>
   `;
@@ -1709,15 +1773,17 @@ async function loadTests() {
   }
 
   const colors = ['#154ca9','#1a7f5e','#7c3aed','#b45309','#0891b2','#9d174d'];
-  el.innerHTML = `<div class="asig-grid">${allAsigs.map((asig, i) => {
+  el.innerHTML = `<div class="asig-bubble-grid">${allAsigs.map((asig, i) => {
     const n = (byAsig[asig] || []).length;
     const completados = (byAsig[asig] || []).filter(t => resultMap[t.id] != null).length;
-    return `<div class="asig-card${n === 0 ? ' asig-card-empty' : ''}" onclick="mostrarDetalleTests('${encodeURIComponent(asig)}')">
-      <div class="asig-icon" style="background:${n === 0 ? 'var(--border2)' : colors[i % colors.length]}">
-        <i class="ti ${n === 0 ? 'ti-clock' : 'ti-list-check'}" style="${n === 0 ? 'color:var(--muted)' : ''}"></i>
-      </div>
-      <div class="asig-name" style="${n === 0 ? 'color:var(--muted)' : ''}">${asig}</div>
-      <div class="asig-det">${n === 0 ? 'Próximamente' : `${n} test${n !== 1 ? 's' : ''} · ${completados} hechos`}</div>
+    const pct = n > 0 ? Math.round((completados / n) * 100) : 0;
+    const cc  = n === 0 ? '#1a2a4a' : colors[i % colors.length];
+    const det = n === 0 ? 'Próximamente' : `${completados}/${n} completados`;
+    return `<div class="asig-bubble${n === 0 ? ' empty' : ''}" style="--cc:${cc}" onclick="mostrarDetalleTests('${encodeURIComponent(asig)}')">
+      <div class="asig-bubble-ico"><i class="ti ${n === 0 ? 'ti-clock' : 'ti-list-check'}"></i></div>
+      <div class="asig-bubble-name">${asig}</div>
+      <div class="asig-bubble-det">${det}</div>
+      ${n > 0 ? `<div class="asig-bubble-prog"><div class="asig-bubble-prog-fill" style="width:${pct}%"></div></div>` : ''}
     </div>`;
   }).join('')}</div>`;
 
