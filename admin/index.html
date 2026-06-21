@@ -211,19 +211,55 @@
   .aqf-ficha-btn:hover{background:#1a5cc9}
   .add-prof-row .fi{margin-bottom:0}
   .fi-sm{flex:1;min-width:0}
+
+  /* ── RESPONSIVE MÓVIL ─────────────────────────────────────── */
+  .hamburger{display:none;background:none;border:none;cursor:pointer;color:var(--txt);font-size:22px;padding:4px 8px;margin-right:8px}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:89}
+  @media(max-width:900px){
+    .kpi-grid{grid-template-columns:repeat(3,1fr)}
+  }
+  @media(max-width:768px){
+    .hamburger{display:flex;align-items:center}
+    .sidebar{transform:translateX(-110%);transition:transform .25s;z-index:110;width:240px}
+    .sidebar.open{transform:translateX(0)}
+    .sidebar-overlay.open{display:block}
+    .main{margin-left:0!important;padding:14px 12px}
+    .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+    .fi-grid2{grid-template-columns:1fr!important}
+    .card{overflow-x:auto}
+    table{min-width:500px}
+    .section-filters{flex-wrap:wrap;gap:6px}
+    .section-filters select,.section-filters button{flex:1;min-width:130px}
+    #admin-quick-ficha{width:100%!important;top:0!important;padding:16px}
+    .modal-box{width:100%!important;max-width:100%!important;border-radius:0!important;min-height:100dvh;overflow-y:auto}
+    .mat-grid{grid-template-columns:1fr!important}
+    .mat-item{min-width:0}
+    .topbar-right .topbar-name{display:none}
+  }
+  @media(max-width:480px){
+    .kpi-grid{grid-template-columns:1fr 1fr}
+    .kpi-val{font-size:18px}
+    .card{border-radius:8px}
+    .page-title{font-size:16px}
+    .card .tabla{font-size:12px}
+  }
 </style>
 </head>
 <body>
 
 <!-- TOPBAR -->
+<div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 <header class="topbar">
-  <a href="#" class="topbar-brand">
-    <div style="display:flex;align-items:center;gap:4px">
-      <span class="t1">NEXO</span>
-      <span class="t2" style="align-self:flex-end;margin-bottom:1px">Académico</span>
-      <span class="admin-badge">ADMIN</span>
-    </div>
-  </a>
+  <div style="display:flex;align-items:center">
+    <button class="hamburger" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
+    <a href="#" class="topbar-brand">
+      <div style="display:flex;align-items:center;gap:4px">
+        <span class="t1">NEXO</span>
+        <span class="t2" style="align-self:flex-end;margin-bottom:1px">Académico</span>
+        <span class="admin-badge">ADMIN</span>
+      </div>
+    </a>
+  </div>
   <div class="topbar-right">
     <span style="color:var(--soft);font-size:13px" id="topbar-name">Manu</span>
     <div class="avatar" id="avatar-btn" onclick="toggleMenu()">M
@@ -235,7 +271,7 @@
 </header>
 
 <!-- SIDEBAR -->
-<nav class="sidebar">
+<nav class="sidebar" id="sidebar" onclick="closeSidebar()">
   <div class="nav-section">Gestión</div>
   <div class="nav-item active" id="nav-dashboard" onclick="showSection('dashboard')"><i class="ti ti-layout-dashboard"></i> Dashboard</div>
   <div class="nav-item" id="nav-alumnos" onclick="showSection('alumnos')"><i class="ti ti-user"></i> Alumnos</div>
@@ -756,12 +792,12 @@
         <div>
           <label class="fl">Duración *</label>
           <select class="fi" id="eses-duracion" required>
-            <option value="30">30 min</option>
-            <option value="60">60 min (1h)</option>
-            <option value="90">90 min (1h 30min)</option>
-            <option value="120">120 min (2h)</option>
-            <option value="150">150 min (2h 30min)</option>
-            <option value="180">180 min (3h)</option>
+            <option value="30">0,5h</option>
+            <option value="60">1h</option>
+            <option value="90">1,5h</option>
+            <option value="120">2h</option>
+            <option value="150">2,5h</option>
+            <option value="180">3h</option>
           </select>
         </div>
         <div>
@@ -1332,6 +1368,7 @@ function showSection(id) {
   document.getElementById('section-' + id).classList.add('active');
   document.getElementById('nav-' + id).classList.add('active');
   if (id !== 'alumnos') cerrarQuickFicha();
+  closeSidebar();
   window.scrollTo(0, 0);
   sessionStorage.setItem('nexo_admin_seccion', id);
   const loaders = {
@@ -1346,6 +1383,17 @@ function showSection(id) {
     bonos:      loadBonos,
   };
   if (loaders[id]) loaders[id]();
+}
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  sb.classList.toggle('open');
+  ov.classList.toggle('open');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('open');
 }
 
 function toggleMenu() {
@@ -3516,9 +3564,12 @@ async function guardarBono() {
       if (error) throw error;
 
       if (estado === 'activo') {
-        await db.from('alumnos').update({ horas_bono_restantes: +horas.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
+        // Aplica deuda pendiente y recalcula FIFO
+        await db.rpc('recalcular_bonos_alumno', { p_alumno_id: alumnoId });
+        // Refresca estado local desde la BD
+        const { data: al } = await db.from('alumnos').select('horas_bono_restantes,horas_bono_total').eq('id', alumnoId).single();
         const a = allAlumnos.find(x => x.id === alumnoId);
-        if (a) { a.horas_bono_restantes = +horas.toFixed(2); a.horas_bono_total = +horas.toFixed(2); }
+        if (a && al) { a.horas_bono_restantes = al.horas_bono_restantes; a.horas_bono_total = al.horas_bono_total; }
       }
     }
 
