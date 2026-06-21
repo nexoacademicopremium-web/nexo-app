@@ -464,7 +464,7 @@
             </div>
 
             <label class="field-label">Duración *</label>
-            <select class="field-input" id="ses-duracion" required>
+            <select class="field-input" id="ses-duracion" required onchange="checkBonoAlumno()">
               <option value="30">0,5h</option>
               <option value="60" selected>1h</option>
               <option value="90">1,5h</option>
@@ -1222,9 +1222,12 @@ async function checkBonoAlumno() {
   const bloqueo  = document.getElementById('aviso-bono-bloqueo');
   if (!alumnoId) { bloqueo.style.display = 'none'; return; }
 
-  const alumno    = misAlumnos.find(a => a.id === alumnoId);
+  const alumno     = misAlumnos.find(a => a.id === alumnoId);
   const hRestantes = parseFloat(alumno?.horas_bono_restantes ?? 0);
-  if (hRestantes > 0) { bloqueo.style.display = 'none'; return; }
+  const durHoras   = parseInt(document.getElementById('ses-duracion').value) / 60;
+
+  // Solo avisar si la duración es estrictamente mayor que las horas restantes
+  if (durHoras <= hRestantes) { bloqueo.style.display = 'none'; return; }
 
   // Mostrar aviso amber (no bloquea el envío)
   const { data: enEspera } = await db
@@ -1690,9 +1693,9 @@ async function loadActividad() {
 
   // KPIs
   const total = sesiones?.length || 0;
-  const horas = ((sesiones||[]).reduce((a,s) => a + s.duracion_minutos, 0) / 60).toFixed(1);
   const conf  = (sesiones||[]).filter(s => s.estado === 'confirmada').length;
   const pend  = (sesiones||[]).filter(s => s.estado === 'pendiente_confirmacion').length;
+  const horas = ((sesiones||[]).filter(s => s.estado === 'confirmada').reduce((a,s) => a + s.duracion_minutos, 0) / 60).toFixed(1);
 
   document.getElementById('act-kpis').innerHTML = `
     <div style="background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:16px 18px;border-top:3px solid var(--blue)">
