@@ -1948,7 +1948,10 @@ function _nSesRenderAsig(asig, ai, prevTemasMap) {
       </div>
       <div class="nses-asig-body" id="nses-asig-body-${ai}">
         <div class="nses-asig-time-row">
-          <span class="nses-asig-time-label"><i class="ti ti-clock" style="font-size:12px;margin-right:4px"></i>Tiempo dedicado a esta asignatura</span>
+          <span class="nses-asig-time-label">
+            <i class="ti ti-clock" style="font-size:12px;margin-right:4px"></i>Tiempo dedicado
+            <span id="nses-tema-sum-${ai}" style="color:var(--muted);font-size:10px;margin-left:6px"></span>
+          </span>
           <div class="nses-asig-time">
             <input type="number" min="0" step="0.5" value="0" id="nses-atm-${ai}"
               oninput="this.value=Math.max(0,parseFloat(this.value)||0);nSesCheckTotals()"> h
@@ -2073,18 +2076,14 @@ function _nSesRenderMath(pid) {
   </div>`;
 }
 
-function nSesUpdateAsigTime(ai) {
+// Muestra cuántos minutos suman los temas de una asig, sin tocar el campo de la asig
+function nSesCheckTemaTotals(ai) {
   let totalMin = 0;
-  const listEl = document.getElementById(`nses-temas-list-${ai}`);
-  listEl?.querySelectorAll(`[id^="nses-ttm-"]`).forEach(inp => {
-    totalMin += parseInt(inp.value) || 0;
-  });
-  const asigInp = document.getElementById(`nses-atm-${ai}`);
-  if (asigInp) {
-    asigInp.value = totalMin > 0
-      ? parseFloat((totalMin / 60).toFixed(2))
-      : 0;
-  }
+  document.getElementById(`nses-temas-list-${ai}`)
+    ?.querySelectorAll('[id^="nses-ttm-"]')
+    .forEach(inp => { totalMin += parseInt(inp.value) || 0; });
+  const el = document.getElementById(`nses-tema-sum-${ai}`);
+  if (el) el.textContent = totalMin > 0 ? `Temas: ${totalMin} min` : '';
   nSesCheckTotals();
 }
 
@@ -2311,7 +2310,7 @@ function nSesAddTema(ai, isMath, prefill) {
         value="${prefill ? prefill.replace(/"/g,'&quot;') : ''}">
       <div class="nses-tema-time">
         <input type="number" min="0" value="0" id="nses-ttm-${pid}"
-          oninput="this.value=Math.max(0,parseInt(this.value)||0);nSesUpdateAsigTime(${ai})"> min
+          oninput="this.value=Math.max(0,parseInt(this.value)||0);nSesCheckTemaTotals(${ai})"> min
       </div>
       <button type="button" class="nses-tema-del" title="Eliminar tema"
         onclick="this.closest('.nses-tema-block').remove()">×</button>
