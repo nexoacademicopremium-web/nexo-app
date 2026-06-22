@@ -293,14 +293,20 @@
   .nses-asig-time{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
   .nses-asig-time input{width:64px;background:var(--dark);border:.5px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--txt);font-size:12px;font-family:inherit;text-align:center;outline:none}
   .nses-asig-time input:focus{border-color:var(--blue)}
-  .nses-tema-row{padding:9px 16px;border-bottom:.5px solid var(--border2)}
-  .nses-tema-row:last-child{border-bottom:none}
-  .nses-tema-cb-row{display:flex;align-items:center;gap:9px}
-  .nses-tema-cb-row input[type=checkbox]{accent-color:var(--blue);width:14px;height:14px;cursor:pointer;flex-shrink:0}
-  .nses-tema-label{color:var(--txt);font-size:12px;flex:1;cursor:pointer}
-  .nses-tema-time{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:11px}
-  .nses-tema-time input{width:52px;background:var(--surface);border:.5px solid var(--border);border-radius:5px;padding:3px 6px;color:var(--txt);font-size:11px;font-family:inherit;text-align:center}
-  .nses-tema-detail{display:none;padding:12px 16px 10px;background:var(--bg);border-top:.5px solid var(--border2)}
+  .nses-chips-row{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px 6px}
+  .nses-chip{display:inline-flex;align-items:center;gap:5px;background:var(--dark);border:.5px solid var(--border);border-radius:20px;padding:4px 11px;color:var(--soft);font-size:11px;cursor:pointer;transition:all .15s;font-family:inherit}
+  .nses-chip:hover{border-color:var(--blue);color:var(--blue);background:#0a1a30}
+  .nses-chip i{font-size:11px}
+  .nses-tema-block{border-top:.5px solid var(--border2);padding:12px 16px}
+  .nses-tema-block-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .nses-tema-block-hdr input[type=text]{flex:1;font-size:12px;font-weight:500;background:var(--dark);border:.5px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--txt);font-family:inherit;outline:none}
+  .nses-tema-block-hdr input[type=text]:focus{border-color:var(--blue)}
+  .nses-tema-time{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:11px;flex-shrink:0}
+  .nses-tema-time input{width:52px;background:var(--dark);border:.5px solid var(--border);border-radius:5px;padding:4px 7px;color:var(--txt);font-size:11px;font-family:inherit;text-align:center;outline:none}
+  .nses-tema-time input:focus{border-color:var(--blue)}
+  .nses-tema-del{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px;font-size:15px;line-height:1;flex-shrink:0;transition:color .15s}
+  .nses-tema-del:hover{color:var(--red)}
+  .nses-tema-detail{padding:4px 0 2px;background:transparent}
   .nses-test-toggle{display:flex;align-items:center;justify-content:space-between;padding:6px 0;margin-bottom:4px}
   .nses-test-toggle label{color:var(--muted);font-size:11px;display:flex;align-items:center;gap:6px}
   .nses-test-btn{background:transparent;border:.5px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s}
@@ -1876,75 +1882,86 @@ async function nSesLoadAlumno() {
   container.innerHTML = '<div class="loading-section"><div class="spinner"></div> <span style="color:var(--muted);font-size:12px">Cargando asignaturas…</span></div>';
   bloque2.style.display = 'block';
 
-  // Usar la misma jerarquía que el resto de la app:
-  // alumno_profesor (junction profesor↔alumno) ya contiene asignatura_id
-  const [{ data: junction }, { data: bloqData }, { data: temaData }] = await Promise.all([
-    db.from('alumno_profesor')
+  // 1. Asignaturas del perfil del alumno (alumno_asignaturas = "necesita repaso")
+  //    filtradas a las que el profesor puede impartir (alumno_profesor junction)
+  const [{ data: alumnoAsigs }, { data: profJunction }] = await Promise.all([
+    db.from('alumno_asignaturas')
       .select('asignatura_id, asignaturas(id, nombre)')
+      .eq('alumno_id', alumnoId),
+    db.from('alumno_profesor')
+      .select('asignatura_id')
       .eq('alumno_id', alumnoId)
       .eq('profesor_id', ctx.profesorData.id),
-    db.from('bloques').select('id, nombre, asignatura_id').order('nombre'),
-    db.from('temas').select('id, nombre, bloque_id').order('nombre'),
   ]);
 
-  // Deduplicar por id (puede haber varios registros por la misma asignatura)
-  const seen = new Set();
-  const asigs = (junction || [])
-    .map(j => j.asignaturas)
-    .filter(Boolean)
-    .filter(a => seen.has(a.id) ? false : seen.add(a.id));
+  const profAsigIds = new Set((profJunction || []).map(r => r.asignatura_id).filter(Boolean));
 
-  if (asigs.length === 0) {
-    container.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:12px 18px">Este alumno no tiene asignaturas asignadas contigo.</p>';
+  // Deduplicar y filtrar: solo las del perfil que el profesor también imparte
+  const seen = new Set();
+  let asigs = (alumnoAsigs || [])
+    .map(r => r.asignaturas)
+    .filter(Boolean)
+    .filter(a => {
+      if (seen.has(a.id)) return false;
+      seen.add(a.id);
+      return profAsigIds.size === 0 || profAsigIds.has(a.id);
+    });
+
+  // Fallback: si profJunction está vacío, mostrar todas las del perfil
+  if (profAsigIds.size === 0 && asigs.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:12px 18px">Este alumno no tiene asignaturas de repaso en su perfil.</p>';
     return;
   }
+  if (asigs.length === 0) asigs = (alumnoAsigs || []).map(r => r.asignaturas).filter(Boolean);
 
-  _nSesDatos = { asigs, bloqData: bloqData || [], temaData: temaData || [], nextAi: asigs.length };
+  // 2. Temas usados anteriormente con este alumno (desde sesion_temas via sesiones)
+  const { data: sesIds } = await db.from('sesiones')
+    .select('id')
+    .eq('alumno_id', alumnoId)
+    .eq('profesor_id', ctx.profesorData.id);
+
+  let prevTemasMap = {}; // { "NombreAsig": Set<"NombreTema"> }
+  if (sesIds && sesIds.length > 0) {
+    const ids = sesIds.map(s => s.id);
+    const { data: pt } = await db.from('sesion_temas')
+      .select('asignatura, tema')
+      .in('sesion_id', ids);
+    (pt || []).forEach(r => {
+      if (!r.tema || r.tema === '—') return;
+      if (!prevTemasMap[r.asignatura]) prevTemasMap[r.asignatura] = new Set();
+      prevTemasMap[r.asignatura].add(r.tema);
+    });
+  }
+
+  _nSesDatos = { asigs, prevTemasMap, nextAi: asigs.length };
   container.innerHTML = asigs.map((asig, ai) =>
-    _nSesRenderAsig(asig, ai, bloqData || [], temaData || [])
+    _nSesRenderAsig(asig, ai, prevTemasMap)
   ).join('');
 }
 
-function _nSesRenderAsig(asig, ai, bloqData, temaData) {
+function _nSesRenderAsig(asig, ai, prevTemasMap) {
   const isMath = /matem|calculo|algebra|aritm/i.test(asig.nombre);
-  const bloqs = bloqData.filter(b => b.asignatura_id === asig.id);
-  const temas = bloqs.flatMap(b =>
-    temaData.filter(t => t.bloque_id === b.id).map(t => ({ ...t, bloqueNom: b.nombre }))
-  );
-
-  const temasHtml = temas.length > 0
-    ? temas.map(t => {
-        const pid = `${ai}-${t.id}`;
-        return `
-        <div class="nses-tema-row">
-          <div class="nses-tema-cb-row">
-            <input type="checkbox" id="cb-${pid}" onchange="nSesToggleTema(this,'${pid}')">
-            <label for="cb-${pid}" class="nses-tema-label">
-              ${t.nombre}
-              <span style="color:var(--muted);font-size:10px;font-weight:400"> · ${t.bloqueNom}</span>
-            </label>
-            <div class="nses-tema-time" id="nses-tema-time-${pid}" style="display:none">
-              <input type="number" min="0" value="0" id="nses-ttm-${pid}"
-                oninput="this.value=Math.max(0,parseInt(this.value)||0)"> min
-            </div>
-          </div>
-          <div class="nses-tema-detail" id="nses-tema-det-${pid}">
-            ${isMath ? _nSesRenderMath(pid) : _nSesRenderNota(pid)}
-          </div>
-        </div>`;
-      }).join('')
-    : `<p style="color:var(--muted);font-size:11px;padding:10px 16px 4px">
-        Sin temas cargados — usa el botón de abajo para añadirlos manualmente.
-       </p>`;
+  const prevSet = prevTemasMap?.[asig.nombre] || new Set();
+  const chips = prevSet.size > 0
+    ? `<div style="padding:8px 16px 2px">
+         <div style="color:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">
+           Temas anteriores — pulsa para añadir
+         </div>
+         <div class="nses-chips-row" style="padding:0">
+           ${[...prevSet].map(t => `
+             <button type="button" class="nses-chip" onclick="nSesAddTema(${ai},${isMath},'${t.replace(/'/g,"\\'")}')">
+               <i class="ti ti-history"></i>${t}
+             </button>`).join('')}
+         </div>
+       </div>`
+    : '';
 
   return `
     <div class="nses-asig-block" id="nses-asig-block-${ai}">
-      <!-- CABECERA ACORDEÓN -->
       <div class="nses-asig-hdr" onclick="nSesToggleAsigBody(${ai})">
         <i class="ti ti-chevron-right nses-asig-chevron" id="nses-asig-chev-${ai}"></i>
         <span class="nses-asig-nom">${asig.nombre}</span>
       </div>
-      <!-- CUERPO COLAPSABLE -->
       <div class="nses-asig-body" id="nses-asig-body-${ai}">
         <div class="nses-asig-time-row">
           <span class="nses-asig-time-label"><i class="ti ti-clock" style="font-size:12px;margin-right:4px"></i>Tiempo dedicado a esta asignatura</span>
@@ -1953,13 +1970,12 @@ function _nSesRenderAsig(asig, ai, bloqData, temaData) {
               oninput="this.value=Math.max(0,parseFloat(this.value)||0)"> h
           </div>
         </div>
-        <div id="nses-temas-list-${ai}">
-          ${temasHtml}
-        </div>
+        ${chips}
+        <div id="nses-temas-list-${ai}" style="margin-top:4px"></div>
         <div style="padding:8px 16px 12px;border-top:.5px solid var(--border2)">
           <button type="button" class="btn-ghost" style="font-size:11px;padding:5px 12px"
             onclick="nSesAddTema(${ai},${isMath})">
-            <i class="ti ti-plus" style="font-size:12px"></i> Añadir otro tema
+            <i class="ti ti-plus" style="font-size:12px"></i> Añadir tema
           </button>
         </div>
       </div>
@@ -2073,11 +2089,6 @@ function _nSesRenderMath(pid) {
   </div>`;
 }
 
-function nSesToggleTema(cb, pid) {
-  document.getElementById(`nses-tema-det-${pid}`).style.display = cb.checked ? 'block' : 'none';
-  document.getElementById(`nses-tema-time-${pid}`).style.display = cb.checked ? 'flex' : 'none';
-}
-
 function nSesToggleTest(btn, testId) {
   const body = document.getElementById(testId);
   const open = body.style.display === 'block';
@@ -2108,124 +2119,79 @@ async function nSesSubmit(e) {
   let valid = true;
   const temasInsert = [];
 
-  _nSesDatos.asigs.forEach((asig, ai) => {
-    const bloqs = _nSesDatos.bloqData.filter(b => b.asignatura_id === asig.id);
-    const temas = bloqs.flatMap(b =>
-      _nSesDatos.temaData.filter(t => t.bloque_id === b.id)
-    );
-    const isMath = /matem|calculo|algebra|aritm/i.test(asig.nombre);
+  // Recorrer todos los .nses-tema-block del formulario
+  document.querySelectorAll('#nses-asig-container .nses-tema-block').forEach(block => {
+    const pid    = block.dataset.pid;
+    const ai     = parseInt(block.dataset.ai);
+    const isMath = block.dataset.ismath === '1';
 
-    temas.forEach(t => {
-      const pid = `${ai}-${t.id}`;
-      const cb = document.getElementById(`cb-${pid}`);
-      if (!cb?.checked) return;
-
-      const rec = {
-        asignatura: asig.nombre,
-        tema: t.nombre,
-        tiempo_minutos: parseInt(document.getElementById(`nses-ttm-${pid}`)?.value) || 0,
-        nota_profesor: document.getElementById(`nses-nota-${pid}`)?.value || null,
-      };
-
-      if (isMath) {
-        // P1
-        const p1Vals = [...document.querySelectorAll(`input[name="p1-${pid}"]:checked`)].map(c => c.value);
-        const p1Err = document.getElementById(`err-p1-${pid}`);
-        if (p1Vals.length === 0) { if (p1Err) p1Err.textContent = 'Obligatorio'; valid = false; }
-        else { if (p1Err) p1Err.textContent = ''; }
-        rec.tipo_ejercicios = p1Vals;
-
-        // P2
-        if (!nSesValNum('nsp2', pid)) valid = false;
-        rec.ejercicios_propuestos   = parseInt(document.getElementById(`nsp2-prop-${pid}`)?.value) || 0;
-        rec.ejercicios_solo         = parseInt(document.getElementById(`nsp2-solo-${pid}`)?.value) || 0;
-        rec.ejercicios_ayuda        = parseInt(document.getElementById(`nsp2-ayud-${pid}`)?.value) || 0;
-        rec.ejercicios_sin_resolver = parseInt(document.getElementById(`nsp2-sinr-${pid}`)?.value) || 0;
-
-        // P3–P6
-        ['p3','p4','p5','p6'].forEach(pn => {
-          const val = document.querySelector(`input[name="${pn}-${pid}"]:checked`)?.value || null;
-          const err = document.getElementById(`err-${pn}-${pid}`);
-          if (!val) { if (err) err.textContent = 'Obligatorio'; valid = false; }
-          else { if (err) err.textContent = ''; }
-          if (pn === 'p3') rec.donde_falla        = val;
-          if (pn === 'p4') rec.detecta_errores    = val;
-          if (pn === 'p5') rec.actitud_dificultad = val;
-          if (pn === 'p6') rec.actitud_ritmo      = val;
-        });
-
-        // Test inicio (opcional)
-        const tstiBody = document.getElementById(`nsti-${pid}`);
-        if (tstiBody?.style.display === 'block') {
-          nSesValNum('nsti', pid);
-          rec.test_inicio_propuestos   = parseInt(document.getElementById(`nsti-prop-${pid}`)?.value) || 0;
-          rec.test_inicio_solo         = parseInt(document.getElementById(`nsti-solo-${pid}`)?.value) || 0;
-          rec.test_inicio_ayuda        = parseInt(document.getElementById(`nsti-ayud-${pid}`)?.value) || 0;
-          rec.test_inicio_sin_resolver = parseInt(document.getElementById(`nsti-sinr-${pid}`)?.value) || 0;
-        }
-
-        // Test cierre (opcional)
-        const tstcBody = document.getElementById(`nstc-${pid}`);
-        if (tstcBody?.style.display === 'block') {
-          nSesValNum('nstc', pid);
-          rec.test_cierre_propuestos   = parseInt(document.getElementById(`nstc-prop-${pid}`)?.value) || 0;
-          rec.test_cierre_solo         = parseInt(document.getElementById(`nstc-solo-${pid}`)?.value) || 0;
-          rec.test_cierre_ayuda        = parseInt(document.getElementById(`nstc-ayud-${pid}`)?.value) || 0;
-          rec.test_cierre_sin_resolver = parseInt(document.getElementById(`nstc-sinr-${pid}`)?.value) || 0;
-        }
-      }
-      temasInsert.push(rec);
-    });
-  });
-
-  // Recoger también temas custom añadidos manualmente
-  (_nSesDatos._customTemas || []).forEach(({ pid, ai, isMath }) => {
-    const cb = document.getElementById(`cb-${pid}`);
-    if (!cb?.checked) return;
-    const temaNom = document.getElementById(`nses-tema-nombre-${pid}`)?.value?.trim() || '(sin nombre)';
-    // Asignatura: de asigs[ai] si existe, si no de custom
+    // Asignatura: de la lista cargada o del input custom
     const asigNom = _nSesDatos.asigs[ai]?.nombre
       || document.getElementById(`nses-asig-nombre-${ai}`)?.value?.trim()
       || '(sin asignatura)';
+
+    const temaNom = document.getElementById(`nses-tnm-${pid}`)?.value?.trim() || '(sin nombre)';
+
     const rec = {
       asignatura: asigNom,
       tema: temaNom,
       tiempo_minutos: parseInt(document.getElementById(`nses-ttm-${pid}`)?.value) || 0,
-      nota_profesor: document.getElementById(`nses-nota-${pid}`)?.value || null,
+      nota_profesor: document.getElementById(`nses-nota-${pid}`)?.value?.trim() || null,
     };
+
     if (isMath) {
+      // P1
       const p1Vals = [...document.querySelectorAll(`input[name="p1-${pid}"]:checked`)].map(c => c.value);
       const p1Err = document.getElementById(`err-p1-${pid}`);
       if (p1Vals.length === 0) { if (p1Err) p1Err.textContent = 'Obligatorio'; valid = false; }
       else { if (p1Err) p1Err.textContent = ''; }
       rec.tipo_ejercicios = p1Vals;
+
+      // P2
       if (!nSesValNum('nsp2', pid)) valid = false;
       rec.ejercicios_propuestos   = parseInt(document.getElementById(`nsp2-prop-${pid}`)?.value) || 0;
       rec.ejercicios_solo         = parseInt(document.getElementById(`nsp2-solo-${pid}`)?.value) || 0;
       rec.ejercicios_ayuda        = parseInt(document.getElementById(`nsp2-ayud-${pid}`)?.value) || 0;
       rec.ejercicios_sin_resolver = parseInt(document.getElementById(`nsp2-sinr-${pid}`)?.value) || 0;
+
+      // P3–P6
       ['p3','p4','p5','p6'].forEach(pn => {
         const val = document.querySelector(`input[name="${pn}-${pid}"]:checked`)?.value || null;
         const err = document.getElementById(`err-${pn}-${pid}`);
         if (!val) { if (err) err.textContent = 'Obligatorio'; valid = false; }
         else { if (err) err.textContent = ''; }
-        if (pn === 'p3') rec.donde_falla = val;
-        if (pn === 'p4') rec.detecta_errores = val;
+        if (pn === 'p3') rec.donde_falla        = val;
+        if (pn === 'p4') rec.detecta_errores    = val;
         if (pn === 'p5') rec.actitud_dificultad = val;
-        if (pn === 'p6') rec.actitud_ritmo = val;
+        if (pn === 'p6') rec.actitud_ritmo      = val;
       });
+
+      // Test inicio (opcional)
+      const tstiBody = document.getElementById(`nsti-${pid}`);
+      if (tstiBody?.style.display === 'block') {
+        nSesValNum('nsti', pid);
+        rec.test_inicio_propuestos   = parseInt(document.getElementById(`nsti-prop-${pid}`)?.value) || 0;
+        rec.test_inicio_solo         = parseInt(document.getElementById(`nsti-solo-${pid}`)?.value) || 0;
+        rec.test_inicio_ayuda        = parseInt(document.getElementById(`nsti-ayud-${pid}`)?.value) || 0;
+        rec.test_inicio_sin_resolver = parseInt(document.getElementById(`nsti-sinr-${pid}`)?.value) || 0;
+      }
+
+      // Test cierre (opcional)
+      const tstcBody = document.getElementById(`nstc-${pid}`);
+      if (tstcBody?.style.display === 'block') {
+        nSesValNum('nstc', pid);
+        rec.test_cierre_propuestos   = parseInt(document.getElementById(`nstc-prop-${pid}`)?.value) || 0;
+        rec.test_cierre_solo         = parseInt(document.getElementById(`nstc-solo-${pid}`)?.value) || 0;
+        rec.test_cierre_ayuda        = parseInt(document.getElementById(`nstc-ayud-${pid}`)?.value) || 0;
+        rec.test_cierre_sin_resolver = parseInt(document.getElementById(`nstc-sinr-${pid}`)?.value) || 0;
+      }
     }
+
     temasInsert.push(rec);
   });
 
-  // Recoger asignaturas custom que no tienen temas todavía (solo para la asignatura en sesData)
-  (_nSesDatos._customAsigs || []).forEach(({ ai }) => {
-    const nom = document.getElementById(`nses-asig-nombre-${ai}`)?.value?.trim();
-    if (nom) temasInsert.push({ asignatura: nom, tema: '—', tiempo_minutos: 0 });
-  });
-
   if (temasInsert.length === 0) {
-    errTemasEl.textContent = 'Marca al menos un tema trabajado en el bloque 2.';
+    errTemasEl.textContent = 'Añade al menos un tema trabajado en el bloque 2.';
     return;
   }
   if (!valid) {
@@ -2299,36 +2265,31 @@ function nSesToggleAsigBody(ai) {
 
 let _nSesCustomTemaCount = 0;
 
-function nSesAddTema(ai, isMath) {
+function nSesAddTema(ai, isMath, prefill) {
   const listEl = document.getElementById(`nses-temas-list-${ai}`);
   if (!listEl) return;
-  const pid = `${ai}-custom-${_nSesCustomTemaCount++}`;
+  const pid = `${ai}-t${_nSesCustomTemaCount++}`;
   const div = document.createElement('div');
-  div.className = 'nses-tema-row';
-  div.id = `nses-tema-custom-${pid}`;
+  div.className = 'nses-tema-block';
+  div.dataset.pid = pid;
+  div.dataset.ai = ai;
+  div.dataset.ismath = isMath ? '1' : '0';
   div.innerHTML = `
-    <div class="nses-tema-cb-row" style="gap:8px">
-      <input type="checkbox" id="cb-${pid}" onchange="nSesToggleTema(this,'${pid}')">
-      <input type="text" class="field-input" id="nses-tema-nombre-${pid}"
-        placeholder="Nombre del tema…"
-        style="flex:1;font-size:12px;padding:6px 10px;height:32px"
-        data-custom-tema="true">
-      <div class="nses-tema-time" id="nses-tema-time-${pid}" style="display:none">
+    <div class="nses-tema-block-hdr">
+      <input type="text" id="nses-tnm-${pid}" placeholder="Nombre del tema…"
+        value="${prefill ? prefill.replace(/"/g,'&quot;') : ''}">
+      <div class="nses-tema-time">
         <input type="number" min="0" value="0" id="nses-ttm-${pid}"
           oninput="this.value=Math.max(0,parseInt(this.value)||0)"> min
       </div>
+      <button type="button" class="nses-tema-del" title="Eliminar tema"
+        onclick="this.closest('.nses-tema-block').remove()">×</button>
     </div>
-    <div class="nses-tema-detail" id="nses-tema-det-${pid}">
+    <div class="nses-tema-detail">
       ${isMath ? _nSesRenderMath(pid) : _nSesRenderNota(pid)}
     </div>`;
   listEl.appendChild(div);
-  div.querySelector(`#nses-tema-nombre-${pid}`)?.focus();
-
-  // Registrar en _nSesDatos para que nSesSubmit lo recoja
-  if (_nSesDatos) {
-    if (!_nSesDatos._customTemas) _nSesDatos._customTemas = [];
-    _nSesDatos._customTemas.push({ pid, ai, isMath });
-  }
+  if (!prefill) div.querySelector(`#nses-tnm-${pid}`)?.focus();
 }
 
 let _nSesCustomAsigCount = 0;
