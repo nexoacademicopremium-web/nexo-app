@@ -1882,37 +1882,25 @@ async function nSesLoadAlumno() {
   container.innerHTML = '<div class="loading-section"><div class="spinner"></div> <span style="color:var(--muted);font-size:12px">Cargando asignaturas…</span></div>';
   bloque2.style.display = 'block';
 
-  // 1. Asignaturas del perfil del alumno (alumno_asignaturas = "necesita repaso")
-  //    filtradas a las que el profesor puede impartir (alumno_profesor junction)
-  const [{ data: alumnoAsigs }, { data: profJunction }] = await Promise.all([
-    db.from('alumno_asignaturas')
-      .select('asignatura_id, asignaturas(id, nombre)')
-      .eq('alumno_id', alumnoId),
-    db.from('alumno_profesor')
-      .select('asignatura_id')
-      .eq('alumno_id', alumnoId)
-      .eq('profesor_id', ctx.profesorData.id),
-  ]);
+  // Asignaturas que este profesor trabaja con este alumno (alumno_profesor junction)
+  // El profesor tiene acceso RLS a esta tabla; es la fuente de verdad para su relación con el alumno
+  const { data: junction } = await db
+    .from('alumno_profesor')
+    .select('asignatura_id, asignaturas(id, nombre)')
+    .eq('alumno_id', alumnoId)
+    .eq('profesor_id', ctx.profesorData.id);
 
-  const profAsigIds = new Set((profJunction || []).map(r => r.asignatura_id).filter(Boolean));
-
-  // Deduplicar y filtrar: solo las del perfil que el profesor también imparte
+  // Deduplicar por asignatura_id
   const seen = new Set();
-  let asigs = (alumnoAsigs || [])
+  const asigs = (junction || [])
     .map(r => r.asignaturas)
     .filter(Boolean)
-    .filter(a => {
-      if (seen.has(a.id)) return false;
-      seen.add(a.id);
-      return profAsigIds.size === 0 || profAsigIds.has(a.id);
-    });
+    .filter(a => seen.has(a.id) ? false : seen.add(a.id));
 
-  // Fallback: si profJunction está vacío, mostrar todas las del perfil
-  if (profAsigIds.size === 0 && asigs.length === 0) {
-    container.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:12px 18px">Este alumno no tiene asignaturas de repaso en su perfil.</p>';
+  if (asigs.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:12px 18px">No hay asignaturas asignadas entre tú y este alumno.</p>';
     return;
   }
-  if (asigs.length === 0) asigs = (alumnoAsigs || []).map(r => r.asignaturas).filter(Boolean);
 
   // 2. Temas usados anteriormente con este alumno (desde sesion_temas via sesiones)
   const { data: sesIds } = await db.from('sesiones')
