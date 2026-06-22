@@ -538,7 +538,7 @@
             <span class="field-err" id="err-nses-datetime"></span>
 
             <label class="field-label" style="margin-top:14px">Duración *</label>
-            <select class="field-input" id="nses-duracion" required>
+            <select class="field-input" id="nses-duracion" required onchange="nSesCheckTotals()">
               <option value="30">0,5h</option>
               <option value="60" selected>1h</option>
               <option value="90">1,5h</option>
@@ -546,6 +546,7 @@
               <option value="150">2,5h</option>
               <option value="180">3h</option>
             </select>
+            <div id="nses-dur-check" style="font-size:11px;margin-top:7px;min-height:16px"></div>
           </div>
         </div>
 
@@ -1950,7 +1951,7 @@ function _nSesRenderAsig(asig, ai, prevTemasMap) {
           <span class="nses-asig-time-label"><i class="ti ti-clock" style="font-size:12px;margin-right:4px"></i>Tiempo dedicado a esta asignatura</span>
           <div class="nses-asig-time">
             <input type="number" min="0" step="0.5" value="0" id="nses-atm-${ai}"
-              oninput="this.value=Math.max(0,parseFloat(this.value)||0)"> h
+              oninput="this.value=Math.max(0,parseFloat(this.value)||0);nSesCheckTotals()"> h
           </div>
         </div>
         ${chips}
@@ -2072,6 +2073,42 @@ function _nSesRenderMath(pid) {
   </div>`;
 }
 
+function nSesUpdateAsigTime(ai) {
+  let totalMin = 0;
+  const listEl = document.getElementById(`nses-temas-list-${ai}`);
+  listEl?.querySelectorAll(`[id^="nses-ttm-"]`).forEach(inp => {
+    totalMin += parseInt(inp.value) || 0;
+  });
+  const asigInp = document.getElementById(`nses-atm-${ai}`);
+  if (asigInp) {
+    asigInp.value = totalMin > 0
+      ? parseFloat((totalMin / 60).toFixed(2))
+      : 0;
+  }
+  nSesCheckTotals();
+}
+
+function nSesCheckTotals() {
+  const sesMin = parseInt(document.getElementById('nses-duracion')?.value) || 0;
+  const sesHoras = sesMin / 60;
+  let totalAsig = 0;
+  document.querySelectorAll('#nses-asig-container [id^="nses-atm-"]').forEach(inp => {
+    totalAsig += parseFloat(inp.value) || 0;
+  });
+  const el = document.getElementById('nses-dur-check');
+  if (!el) return;
+  if (totalAsig === 0) { el.innerHTML = ''; return; }
+  totalAsig = Math.round(totalAsig * 100) / 100;
+  const diff = Math.abs(sesHoras - totalAsig);
+  if (diff < 0.01) {
+    el.innerHTML = `<span style="color:var(--green)"><i class="ti ti-check" style="font-size:11px"></i> ${totalAsig}h — cuadra con la duración total</span>`;
+  } else if (totalAsig > sesHoras) {
+    el.innerHTML = `<span style="color:var(--red)"><i class="ti ti-alert-triangle" style="font-size:11px"></i> ${totalAsig}h asignadas superan la duración total (${sesHoras}h)</span>`;
+  } else {
+    el.innerHTML = `<span style="color:var(--amber)"><i class="ti ti-info-circle" style="font-size:11px"></i> ${totalAsig}h asignadas de ${sesHoras}h totales — faltan ${Math.round((sesHoras - totalAsig)*60)} min</span>`;
+  }
+}
+
 function nSesToggleTest(btn, testId) {
   const body = document.getElementById(testId);
   const open = body.style.display === 'block';
@@ -2182,6 +2219,17 @@ async function nSesSubmit(e) {
     return;
   }
 
+  // Validar que los tiempos cuadren
+  const sesMin = parseInt(document.getElementById('nses-duracion')?.value) || 0;
+  let totalAsigMin = 0;
+  document.querySelectorAll('#nses-asig-container [id^="nses-atm-"]').forEach(inp => {
+    totalAsigMin += Math.round((parseFloat(inp.value) || 0) * 60);
+  });
+  if (totalAsigMin > sesMin) {
+    showToast(`Los tiempos por asignatura (${totalAsigMin}min) superan la duración total (${sesMin}min). Ajústalos antes de enviar.`, 'error');
+    return;
+  }
+
   const btn = document.getElementById('nses-submit-btn');
   btn.disabled = true;
   btn.innerHTML = '<div style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px"></div> Guardando…';
@@ -2263,7 +2311,7 @@ function nSesAddTema(ai, isMath, prefill) {
         value="${prefill ? prefill.replace(/"/g,'&quot;') : ''}">
       <div class="nses-tema-time">
         <input type="number" min="0" value="0" id="nses-ttm-${pid}"
-          oninput="this.value=Math.max(0,parseInt(this.value)||0)"> min
+          oninput="this.value=Math.max(0,parseInt(this.value)||0);nSesUpdateAsigTime(${ai})"> min
       </div>
       <button type="button" class="nses-tema-del" title="Eliminar tema"
         onclick="this.closest('.nses-tema-block').remove()">×</button>
