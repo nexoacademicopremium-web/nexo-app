@@ -272,6 +272,59 @@
     .kpi-val{font-size:17px}
     .card{font-size:13px}
   }
+
+  /* ── SESIONES — CTA Y NUEVA UI ──────────────────────────────────── */
+  .btn-cta-ses{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(135deg,#154ca9 0%,#0a3070 100%);border:none;border-radius:12px;padding:15px 26px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:0 4px 20px rgba(21,76,169,.4);text-decoration:none;white-space:nowrap}
+  .btn-cta-ses:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(21,76,169,.5)}
+  .btn-cta-ses i{font-size:20px}
+  .nses-bloque{background:var(--surface);border:.5px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+  .nses-bloque-title{padding:12px 18px;color:var(--soft);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;background:var(--dark);border-bottom:.5px solid var(--border);display:flex;align-items:center;gap:8px}
+  .nses-bloque-title i{color:var(--blue);font-size:14px}
+  .nses-bloque-body{padding:18px}
+  .nses-asig-block{border:.5px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden}
+  .nses-asig-hdr{padding:12px 16px;background:var(--dark);display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:.5px solid var(--border2)}
+  .nses-asig-nom{color:#fff;font-size:13px;font-weight:500;flex:1}
+  .nses-asig-time{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
+  .nses-asig-time input{width:60px;background:var(--surface);border:.5px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--txt);font-size:12px;font-family:inherit;text-align:center}
+  .nses-tema-row{padding:9px 16px;border-bottom:.5px solid var(--border2)}
+  .nses-tema-row:last-child{border-bottom:none}
+  .nses-tema-cb-row{display:flex;align-items:center;gap:9px}
+  .nses-tema-cb-row input[type=checkbox]{accent-color:var(--blue);width:14px;height:14px;cursor:pointer;flex-shrink:0}
+  .nses-tema-label{color:var(--txt);font-size:12px;flex:1;cursor:pointer}
+  .nses-tema-time{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:11px}
+  .nses-tema-time input{width:52px;background:var(--surface);border:.5px solid var(--border);border-radius:5px;padding:3px 6px;color:var(--txt);font-size:11px;font-family:inherit;text-align:center}
+  .nses-tema-detail{display:none;padding:12px 16px 10px;background:var(--bg);border-top:.5px solid var(--border2)}
+  .nses-test-toggle{display:flex;align-items:center;justify-content:space-between;padding:6px 0;margin-bottom:4px}
+  .nses-test-toggle label{color:var(--muted);font-size:11px;display:flex;align-items:center;gap:6px}
+  .nses-test-btn{background:transparent;border:.5px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s}
+  .nses-test-btn.active{border-color:var(--blue);color:var(--blue);background:#0a1a30}
+  .nses-test-body{display:none;margin-bottom:10px}
+  .nses-num-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0}
+  .nses-num-col label{color:var(--muted);font-size:10px;display:block;margin-bottom:4px;text-align:center}
+  .nses-num-col input{width:100%;background:var(--dark);border:.5px solid var(--border);border-radius:6px;padding:7px;color:var(--txt);font-size:13px;font-family:inherit;text-align:center;outline:none}
+  .nses-num-col input:focus{border-color:var(--blue)}
+  .nses-radio-group,.nses-check-group{display:flex;flex-direction:column;gap:7px;margin:6px 0 2px}
+  .nses-radio-group label,.nses-check-group label{display:flex;align-items:flex-start;gap:8px;color:var(--soft);font-size:12px;cursor:pointer;line-height:1.4}
+  .nses-radio-group input,.nses-check-group input{accent-color:var(--blue);flex-shrink:0;margin-top:2px}
+  .nses-p-label{color:var(--soft);font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;margin-top:12px;flex-wrap:wrap;gap:4px}
+  .nses-p-err{color:var(--red);font-size:10px;font-style:italic}
+  .field-err{color:var(--red);font-size:11px;display:block;margin-top:3px}
+  .nses-hist-row{display:flex;align-items:center;gap:11px;padding:10px 16px;border-bottom:.5px solid var(--border2)}
+  .nses-hist-row:last-child{border-bottom:none}
+  .nses-hist-ico{width:34px;height:34px;border-radius:8px;background:var(--green-lt);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .nses-hist-body{flex:1;min-width:0}
+  .nses-hist-nom{color:#fff;font-size:12px;font-weight:500;margin-bottom:2px}
+  .nses-hist-sub{color:var(--muted);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .nses-det-section{margin-bottom:12px}
+  .nses-det-title{color:var(--blue);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px}
+  .nses-det-row{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:.5px solid var(--border2);font-size:12px;gap:8px}
+  .nses-det-row:last-child{border-bottom:none}
+  .nses-det-row span{color:var(--muted);flex-shrink:0}
+  .nses-det-row b{color:var(--txt);text-align:right}
+  @media(max-width:768px){
+    .nses-num-grid{grid-template-columns:repeat(2,1fr)}
+    .btn-cta-ses{width:100%;justify-content:center}
+  }
 </style>
 </head>
 <body>
@@ -421,210 +474,101 @@
   </div>
 </div>
 
-<!-- ═══ REGISTRAR SESIÓN ═══ -->
+<!-- ═══ SESIONES — historial + nueva sesión ═══ -->
 <div class="section" id="section-sesion">
-  <h1 class="page-title">Registrar sesión</h1>
-  <p class="page-sub">Rellena todos los datos de la clase que acabas de dar.</p>
 
-  <div class="ses-form-wrap" style="max-width:720px">
-    <div class="card" style="overflow:visible">
-      <form id="form-sesion" onsubmit="enviarSesion(event)">
+  <!-- HISTORIAL (vista por defecto) -->
+  <div id="nses-history-view">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+      <div>
+        <h1 class="page-title">Sesiones</h1>
+        <p class="page-sub" style="margin-bottom:0">Historial de tus sesiones registradas</p>
+      </div>
+      <button class="btn-primary" onclick="nSesShowForm()">
+        <i class="ti ti-plus"></i> Nueva sesión
+      </button>
+    </div>
+    <div id="nses-hist-table">
+      <div class="loading-section"><div class="spinner"></div></div>
+    </div>
+  </div>
 
-        <!-- ── Sección 1: Identificación ── -->
-        <div class="ses-seccion">
-          <div id="ses-sec1-titulo" class="ses-seccion-titulo"><i class="ti ti-info-circle"></i> Identificación</div>
-          <div class="ses-body">
+  <!-- FORMULARIO (oculto por defecto) -->
+  <div id="nses-form-view" style="display:none">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:22px;flex-wrap:wrap">
+      <button class="btn-ghost" onclick="nSesHideForm()"><i class="ti ti-arrow-left"></i> Historial</button>
+      <h1 class="page-title" style="margin:0">Registrar nueva sesión</h1>
+    </div>
+    <div style="max-width:760px">
+      <form id="nses-form" novalidate onsubmit="nSesSubmit(event)">
 
+        <!-- BLOQUE 1 -->
+        <div class="nses-bloque">
+          <div class="nses-bloque-title"><i class="ti ti-info-circle"></i> 1 — Datos de la sesión</div>
+          <div class="nses-bloque-body">
             <label class="field-label">Alumno *</label>
-            <select class="field-input" id="ses-alumno" required onchange="autoAsignatura()">
+            <select class="field-input" id="nses-alumno" required onchange="nSesLoadAlumno()">
               <option value="">Seleccionar alumno</option>
             </select>
+            <span class="field-err" id="err-nses-alumno"></span>
 
-            <!-- Aviso: sesión pendiente de confirmación de la familia -->
-            <div id="aviso-sesion-pendiente" style="display:none;margin-top:12px;padding:14px 16px;background:var(--amber-lt);border:.5px solid var(--amber);border-radius:8px">
-              <div style="display:flex;align-items:flex-start;gap:10px">
-                <i class="ti ti-clock-pause" style="color:var(--amber);font-size:20px;flex-shrink:0;margin-top:1px"></i>
-                <div>
-                  <div style="color:var(--amber);font-size:13px;font-weight:600;margin-bottom:4px">Sesión pendiente de confirmación</div>
-                  <div id="aviso-sesion-pendiente-txt" style="color:#e0a060;font-size:12px"></div>
-                </div>
-              </div>
-            </div>
+            <label class="field-label" style="margin-top:14px">Fecha y hora de inicio *</label>
+            <input class="field-input" type="datetime-local" id="nses-datetime" required>
+            <span class="field-err" id="err-nses-datetime"></span>
 
-            <div id="ses-sec1-rest">
-            <label class="field-label">Asignatura *</label>
-            <select class="field-input" id="ses-asignatura" required>
-              <option value="">— Selecciona primero el alumno —</option>
+            <label class="field-label" style="margin-top:14px">Duración total *</label>
+            <select class="field-input" id="nses-duracion" required>
+              <option value="30">30 min (0,5h)</option>
+              <option value="60" selected>60 min (1h)</option>
+              <option value="90">90 min (1,5h)</option>
+              <option value="120">120 min (2h)</option>
+              <option value="150">150 min (2,5h)</option>
+              <option value="180">180 min (3h)</option>
             </select>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-              <div>
-                <label class="field-label">Fecha de la clase *</label>
-                <input class="field-input" type="date" id="ses-fecha" required>
-              </div>
-              <div>
-                <label class="field-label">Hora de inicio</label>
-                <input class="field-input" type="time" id="ses-hora">
-              </div>
-            </div>
-
-            <label class="field-label">Duración *</label>
-            <select class="field-input" id="ses-duracion" required onchange="checkBonoAlumno()">
-              <option value="30">0,5h</option>
-              <option value="60" selected>1h</option>
-              <option value="90">1,5h</option>
-              <option value="120">2h</option>
-              <option value="150">2,5h</option>
-              <option value="180">3h</option>
-            </select>
-
-            </div><!-- /ses-sec1-rest -->
           </div>
         </div>
 
-        <!-- ── Sección 2: Narrativa ── -->
-        <div class="ses-seccion" id="ses-sec-narrativa">
-          <div class="ses-seccion-titulo"><i class="ti ti-notes"></i> Narrativa de la sesión</div>
-          <div class="ses-body">
-
-            <label class="field-label">Contenido trabajado *</label>
-            <textarea class="field-input" id="ses-contenido" required placeholder="¿Qué temas o ejercicios trabajasteis? Describe el contenido de la sesión."></textarea>
-
-            <label class="field-label">Estado del alumno al inicio *</label>
-            <select class="field-input" id="ses-estado" required>
-              <option value="">Seleccionar estado</option>
-              <option value="Activo y receptivo">Activo y receptivo</option>
-              <option value="Normal, sin más">Normal, sin más</option>
-              <option value="Cansado o apagado">Cansado o apagado</option>
-              <option value="Nervioso o bloqueado">Nervioso o bloqueado</option>
-              <option value="Disperso, con la cabeza en otro lado">Disperso, con la cabeza en otro lado</option>
-            </select>
-
-            <label class="field-label">Momento de bloqueo</label>
-            <textarea class="field-input" id="ses-bloqueo" style="min-height:70px" placeholder="¿En qué momento se bloqueó? ¿Con qué concepto o ejercicio?"></textarea>
-
-            <label class="field-label">¿Lo resolvió solo?</label>
-            <textarea class="field-input" id="ses-resolvio" style="min-height:70px" placeholder="¿Consiguió salir del bloqueo por sus propios medios? ¿Cómo?"></textarea>
-
-            <label class="field-label">Ayuda que necesitó</label>
-            <textarea class="field-input" id="ses-ayuda" style="min-height:70px" placeholder="¿Qué tipo de ayuda requirió para avanzar?"></textarea>
-
-            <label class="field-label">Falta de base</label>
-            <textarea class="field-input" id="ses-base" style="min-height:70px" placeholder="¿Detectas lagunas de cursos anteriores? ¿Cuáles?"></textarea>
-
-            <label class="field-label">Comparación con sesiones anteriores</label>
-            <textarea class="field-input" id="ses-comparacion" style="min-height:70px" placeholder="¿Cómo ha ido respecto a la última sesión? ¿Mejora, retroceso, estable?"></textarea>
-
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-              <div>
-                <label class="field-label">Arranque próxima sesión</label>
-                <textarea class="field-input" id="ses-arranque" style="min-height:70px" placeholder="¿Por dónde empezar la próxima vez?"></textarea>
-              </div>
-              <div>
-                <label class="field-label">Tarea para casa</label>
-                <textarea class="field-input" id="ses-tarea" style="min-height:70px" placeholder="¿Qué debe practicar en casa?"></textarea>
-              </div>
-            </div>
-
-          </div>
+        <!-- BLOQUE 2 — dinámico por alumno -->
+        <div class="nses-bloque" id="nses-bloque2" style="display:none">
+          <div class="nses-bloque-title"><i class="ti ti-books"></i> 2 — Asignaturas y temas trabajados</div>
+          <div id="nses-asig-container" class="nses-bloque-body" style="padding-bottom:8px"></div>
         </div>
 
-        <!-- ── Sección 3: Progreso y valoraciones ── -->
-        <div class="ses-seccion" id="ses-sec-valoraciones">
-          <div class="ses-seccion-titulo"><i class="ti ti-chart-bar"></i> Progreso y valoraciones</div>
-          <div class="ses-body">
+        <span class="field-err" id="err-nses-temas" style="display:block;margin-bottom:12px"></span>
 
-            <!-- Nota estimada -->
-            <div class="val-slider-box">
-              <div class="slider-row">
-                <label style="color:var(--soft);font-size:12px;font-weight:500">Nota estimada al finalizar</label>
-                <span class="slider-val" id="val-nota">5.0</span>
-              </div>
-              <input type="range" min="0" max="10" step="0.5" value="5" id="slider-nota"
-                style="width:100%;accent-color:var(--blue);height:6px;margin:8px 0"
-                oninput="document.getElementById('val-nota').textContent=parseFloat(this.value).toFixed(1)">
-              <div class="slider-labels"><span>0 — Insuficiente</span><span>10 — Sobresaliente</span></div>
-            </div>
-
-            <!-- 5 sliders de valoración -->
-            <div class="val-slider-box">
-              <div class="val-slider-box-title">Valoración del alumno (1 – 10)</div>
-
-              <div class="slider-wrap">
-                <div class="slider-row">
-                  <label>Comprensión</label>
-                  <span class="slider-val" id="val-comp">5</span>
-                </div>
-                <input type="range" min="1" max="10" value="5" id="slider-comp" oninput="document.getElementById('val-comp').textContent=this.value">
-                <div class="slider-labels"><span>1 — No comprende</span><span>10 — Comprende perfectamente</span></div>
-              </div>
-
-              <div class="slider-wrap" style="margin-top:14px">
-                <div class="slider-row">
-                  <label>Aplicación / Esfuerzo</label>
-                  <span class="slider-val" id="val-aplic">5</span>
-                </div>
-                <input type="range" min="1" max="10" value="5" id="slider-aplic" oninput="document.getElementById('val-aplic').textContent=this.value">
-                <div class="slider-labels"><span>1 — No aplica</span><span>10 — Aplica muy bien</span></div>
-              </div>
-
-              <div class="slider-wrap" style="margin-top:14px">
-                <div class="slider-row">
-                  <label>Concentración</label>
-                  <span class="slider-val" id="val-conc">5</span>
-                </div>
-                <input type="range" min="1" max="10" value="5" id="slider-conc" oninput="document.getElementById('val-conc').textContent=this.value">
-                <div class="slider-labels"><span>1 — Muy disperso</span><span>10 — Muy concentrado</span></div>
-              </div>
-
-              <div class="slider-wrap" style="margin-top:14px">
-                <div class="slider-row">
-                  <label>Actitud / Motivación</label>
-                  <span class="slider-val" id="val-motiv">5</span>
-                </div>
-                <input type="range" min="1" max="10" value="5" id="slider-motiv" oninput="document.getElementById('val-motiv').textContent=this.value">
-                <div class="slider-labels"><span>1 — Desmotivado</span><span>10 — Muy motivado</span></div>
-              </div>
-
-              <div class="slider-wrap" style="margin-top:14px">
-                <div class="slider-row">
-                  <label>Autonomía</label>
-                  <span class="slider-val" id="val-auto">5</span>
-                </div>
-                <input type="range" min="1" max="10" value="5" id="slider-auto" oninput="document.getElementById('val-auto').textContent=this.value">
-                <div class="slider-labels"><span>1 — Muy dependiente</span><span>10 — Muy autónomo</span></div>
-              </div>
-            </div>
-
-            <label class="field-label">Observaciones para la familia</label>
-            <textarea class="field-input" id="ses-observaciones" placeholder="Resumen visible para el alumno y su familia sobre cómo ha ido la sesión..."></textarea>
-
-            <label class="field-label">Observaciones para Nexo <span style="color:var(--muted);font-size:10px">(privado, no visible para la familia)</span></label>
-            <textarea class="field-input" id="ses-obs-nexo" placeholder="Comentarios internos, alertas, contexto que Nexo debe conocer..."></textarea>
-
-          </div>
-        </div>
-
-        <!-- Footer -->
-        <div id="aviso-bono-bloqueo" style="display:none;margin:0 24px 12px;padding:14px 16px;background:#1a0d00;border:.5px solid var(--amber);border-radius:8px">
-          <div style="display:flex;align-items:flex-start;gap:10px">
-            <i class="ti ti-alert-triangle" style="color:var(--amber);font-size:20px;flex-shrink:0;margin-top:1px"></i>
-            <div>
-              <div style="color:var(--amber);font-size:13px;font-weight:600;margin-bottom:4px">Sin horas de bono disponibles</div>
-              <div style="color:#d4a040;font-size:12px">Atención: este alumno no tiene horas suficientes en su bono activo. Nexo solo se hará cargo de las horas cubiertas por bono. Si el alumno no contrata más horas, las horas excedidas no serán remuneradas.</div>
-            </div>
-          </div>
-        </div>
-        <div id="ses-footer-btns" style="padding:18px 24px;display:flex;justify-content:flex-end;gap:10px">
-          <button type="button" class="btn-cancel" onclick="limpiarFormSesion()">Limpiar</button>
-          <button type="submit" class="btn-primary" id="btn-enviar-sesion">
-            <i class="ti ti-send"></i> Enviar sesión
+        <div style="display:flex;justify-content:flex-end;gap:10px;padding:4px 0 24px">
+          <button type="button" class="btn-cancel" onclick="nSesHideForm()">Cancelar</button>
+          <button type="submit" class="btn-primary" id="nses-submit-btn">
+            <i class="ti ti-send"></i> Enviar registro
           </button>
         </div>
 
       </form>
     </div>
   </div>
+
+  <!-- elementos legacy ocultos para que las funciones antiguas no lancen errores -->
+  <div style="display:none">
+    <form id="form-sesion">
+      <select id="ses-alumno"></select><select id="ses-asignatura"></select>
+      <input id="ses-fecha" type="date"><input id="ses-hora" type="time">
+      <select id="ses-duracion"></select><textarea id="ses-contenido"></textarea>
+      <select id="ses-estado"></select><textarea id="ses-bloqueo"></textarea>
+      <textarea id="ses-resolvio"></textarea><textarea id="ses-ayuda"></textarea>
+      <textarea id="ses-base"></textarea><textarea id="ses-comparacion"></textarea>
+      <textarea id="ses-arranque"></textarea><textarea id="ses-tarea"></textarea>
+      <input id="slider-nota" type="range"><input id="slider-comp" type="range">
+      <input id="slider-aplic" type="range"><input id="slider-conc" type="range">
+      <input id="slider-motiv" type="range"><input id="slider-auto" type="range">
+      <textarea id="ses-observaciones"></textarea><textarea id="ses-obs-nexo"></textarea>
+    </form>
+    <div id="aviso-sesion-pendiente"><div id="aviso-sesion-pendiente-txt"></div></div>
+    <div id="ses-sec1-rest"></div>
+    <div id="aviso-bono-bloqueo"></div>
+    <div id="ses-footer-btns"></div>
+    <button id="btn-enviar-sesion"></button>
+  </div>
+
 </div>
 
 <!-- ═══ MIS ALUMNOS ═══ -->
@@ -672,6 +616,21 @@
 <div class="section" id="section-actividad">
   <h1 class="page-title">Mi actividad</h1>
   <p class="page-sub">Historial y estadísticas de tus sesiones</p>
+
+  <!-- CTA REGISTRAR SESIÓN -->
+  <div style="background:linear-gradient(135deg,#070e26 0%,#04071b 100%);border:.5px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">
+    <div style="width:50px;height:50px;border-radius:12px;background:var(--navy);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <i class="ti ti-file-pencil" style="font-size:24px;color:#fff"></i>
+    </div>
+    <div style="flex:1;min-width:160px">
+      <div style="color:#fff;font-size:14px;font-weight:600;margin-bottom:3px">Registrar sesión</div>
+      <div style="color:var(--muted);font-size:12px">Accede al historial y registra una nueva clase</div>
+    </div>
+    <button class="btn-cta-ses" onclick="showSection('sesion')">
+      <i class="ti ti-file-pencil"></i> Registrar sesión
+    </button>
+  </div>
+
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px" id="act-kpis"></div>
   <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
     <select class="field-input" id="act-filtro-mes" onchange="loadActividad()" style="width:auto;padding:8px 12px">
@@ -801,6 +760,17 @@
   </div>
 </div>
 
+<!-- MODAL DETALLE SESIÓN -->
+<div class="modal-overlay" id="modal-nses-det">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-title">
+      <span>Detalle de la sesión</span>
+      <button class="modal-close" onclick="document.getElementById('modal-nses-det').classList.remove('open')">×</button>
+    </div>
+    <div id="nses-det-content"><div class="loading-section"><div class="spinner"></div></div></div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
@@ -908,7 +878,7 @@ function showSection(id) {
     calendario: loadCalendarioProf,
     actividad:  loadActividad,
     avisos:     loadAvisos,
-    sesion:     prepararFormSesion,
+    sesion:     nSesInit,
   };
   if (loaders[id]) loaders[id]();
 }
@@ -1491,7 +1461,7 @@ async function abrirFicha(alumnoId) {
       return `<div class="ficha-row"><span>${formatShortDate(s.fecha)} · ${s.asignatura}</span><b><span class="status-pill ${pc}" style="font-size:9px">${pt}</span></b></div>`;
     }).join('') : '<div style="color:var(--muted);font-size:12px;text-align:center;padding:12px">Sin sesiones</div>'}
     <div style="margin-top:20px">
-      <button class="btn-primary" style="width:100%;" onclick="showSection('sesion');document.getElementById('ses-alumno').value='${alumno.id}';autoAsignatura();cerrarFicha()">
+      <button class="btn-primary" style="width:100%;" onclick="showSection('sesion');nSesShowFormWithAlumno('${alumno.id}');cerrarFicha()">
         <i class="ti ti-file-pencil"></i> Registrar sesión
       </button>
     </div>
@@ -1775,6 +1745,508 @@ async function loadAvisos() {
     `).join('');
   }
   document.getElementById('badge-avisos').style.display = 'none';
+}
+
+// ============================================================
+// SESIONES — historial + nuevo formulario
+// ============================================================
+let _nSesDatos = null;
+
+function nSesInit() {
+  nSesHideForm();
+  nSesLoadHist();
+  // Poblar select de alumnos
+  const sel = document.getElementById('nses-alumno');
+  sel.innerHTML = '<option value="">Seleccionar alumno</option>';
+  misAlumnos.forEach(a => {
+    const u = a.usuario || {};
+    const opt = document.createElement('option');
+    opt.value = a.id;
+    opt.textContent = `${u.nombre || ''} ${u.apellidos || ''}`.trim();
+    sel.appendChild(opt);
+  });
+  // Fecha/hora por defecto = ahora
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  document.getElementById('nses-datetime').value = now.toISOString().slice(0, 16);
+}
+
+async function nSesLoadHist() {
+  if (!ctx.profesorData) return;
+  const el = document.getElementById('nses-hist-table');
+  el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+
+  const { data: sesiones } = await db
+    .from('sesiones')
+    .select('*, alumno:alumnos(usuario:usuarios(nombre, apellidos))')
+    .eq('profesor_id', ctx.profesorData.id)
+    .order('fecha', { ascending: false })
+    .limit(60);
+
+  if (!sesiones || sesiones.length === 0) {
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-history"></i><p>Sin sesiones registradas aún</p></div>`;
+    return;
+  }
+
+  const pillMap = {
+    confirmada: 'st-ok Confirmada',
+    pendiente_confirmacion: 'st-pend Pendiente',
+    rechazada: 'st-red Rechazada',
+    cancelada: 'st-grey Cancelada'
+  };
+
+  el.innerHTML = '<div class="card">' + sesiones.map(s => {
+    const [pc, pt] = (pillMap[s.estado] || 'st-grey —').split(' ');
+    const nom = s.alumno?.usuario
+      ? `${s.alumno.usuario.nombre} ${s.alumno.usuario.apellidos}`
+      : '—';
+    const horas = (s.duracion_minutos / 60).toFixed(1).replace('.0', '');
+    const icoColor = s.estado === 'confirmada' ? 'var(--green)' : s.estado === 'rechazada' ? 'var(--red)' : 'var(--amber)';
+    const icoBg    = s.estado === 'confirmada' ? 'var(--green-lt)' : s.estado === 'rechazada' ? 'var(--red-lt)' : 'var(--amber-lt)';
+    const icoIcon  = s.estado === 'confirmada' ? 'ti-check' : s.estado === 'rechazada' ? 'ti-x' : 'ti-clock';
+    return `
+      <div class="nses-hist-row">
+        <div class="nses-hist-ico" style="background:${icoBg}">
+          <i class="ti ${icoIcon}" style="color:${icoColor}"></i>
+        </div>
+        <div class="nses-hist-body">
+          <div class="nses-hist-nom">${nom}</div>
+          <div class="nses-hist-sub">${formatDate(s.fecha)}${s.hora_inicio ? ' · ' + formatTime(s.hora_inicio) : ''} · ${horas}h · ${s.asignatura || '—'}</div>
+        </div>
+        <span class="status-pill ${pc}">${pt}</span>
+        <button class="btn-ghost" style="margin-left:6px;font-size:11px;padding:5px 10px;flex-shrink:0" onclick="nSesVerDetalle('${s.id}',event)">
+          <i class="ti ti-eye" style="font-size:13px"></i> Ver
+        </button>
+      </div>`;
+  }).join('') + '</div>';
+}
+
+function nSesShowForm() {
+  document.getElementById('nses-history-view').style.display = 'none';
+  document.getElementById('nses-form-view').style.display = 'block';
+  window.scrollTo(0, 0);
+}
+
+function nSesHideForm() {
+  document.getElementById('nses-history-view').style.display = 'block';
+  document.getElementById('nses-form-view').style.display = 'none';
+}
+
+function nSesShowFormWithAlumno(alumnoId) {
+  nSesShowForm();
+  const sel = document.getElementById('nses-alumno');
+  if (sel) { sel.value = alumnoId; nSesLoadAlumno(); }
+}
+
+async function nSesLoadAlumno() {
+  const alumnoId = document.getElementById('nses-alumno').value;
+  const container = document.getElementById('nses-asig-container');
+  const bloque2 = document.getElementById('nses-bloque2');
+  _nSesDatos = null;
+
+  if (!alumnoId) {
+    bloque2.style.display = 'none';
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = '<div class="loading-section"><div class="spinner"></div> <span style="color:var(--muted);font-size:12px">Cargando asignaturas…</span></div>';
+  bloque2.style.display = 'block';
+
+  const [{ data: asigLinks }, { data: bloqData }, { data: temaData }] = await Promise.all([
+    db.from('alumno_asignaturas').select('asignaturas(id, nombre)').eq('alumno_id', alumnoId),
+    db.from('bloques').select('id, nombre, asignatura_id').order('nombre'),
+    db.from('temas').select('id, nombre, bloque_id').order('nombre'),
+  ]);
+
+  const asigs = (asigLinks || []).map(a => a.asignaturas).filter(Boolean);
+
+  if (asigs.length === 0) {
+    container.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:12px">Este alumno no tiene asignaturas asignadas.</p>';
+    return;
+  }
+
+  _nSesDatos = { asigs, bloqData: bloqData || [], temaData: temaData || [] };
+  container.innerHTML = asigs.map((asig, ai) =>
+    _nSesRenderAsig(asig, ai, bloqData || [], temaData || [])
+  ).join('');
+}
+
+function _nSesRenderAsig(asig, ai, bloqData, temaData) {
+  const isMath = /matem|calculo|algebra|aritm/i.test(asig.nombre);
+  const bloqs = bloqData.filter(b => b.asignatura_id === asig.id);
+  const temas = bloqs.flatMap(b =>
+    temaData.filter(t => t.bloque_id === b.id).map(t => ({ ...t, bloqueNom: b.nombre }))
+  );
+
+  const temasHtml = temas.length > 0
+    ? temas.map(t => {
+        const pid = `${ai}-${t.id}`;
+        return `
+        <div class="nses-tema-row">
+          <div class="nses-tema-cb-row">
+            <input type="checkbox" id="cb-${pid}" onchange="nSesToggleTema(this,'${pid}')">
+            <label for="cb-${pid}" class="nses-tema-label">
+              ${t.nombre}
+              <span style="color:var(--muted);font-size:10px;font-weight:400">[${t.bloqueNom}]</span>
+            </label>
+            <div class="nses-tema-time" id="nses-tema-time-${pid}" style="display:none">
+              <input type="number" min="0" value="0" id="nses-ttm-${pid}"
+                oninput="this.value=Math.max(0,parseInt(this.value)||0)"> min
+            </div>
+          </div>
+          <div class="nses-tema-detail" id="nses-tema-det-${pid}">
+            ${isMath ? _nSesRenderMath(pid) : _nSesRenderNota(pid)}
+          </div>
+        </div>`;
+      }).join('')
+    : '<p style="color:var(--muted);font-size:11px;padding:10px 16px">Sin temas registrados para esta asignatura.</p>';
+
+  return `
+    <div class="nses-asig-block">
+      <div class="nses-asig-hdr">
+        <span class="nses-asig-nom">${asig.nombre}</span>
+        <div class="nses-asig-time">
+          Tiempo total: <input type="number" min="0" value="0" id="nses-atm-${ai}"
+            oninput="this.value=Math.max(0,parseInt(this.value)||0)"> min
+        </div>
+      </div>
+      ${temasHtml}
+    </div>`;
+}
+
+function _nSesRenderNota(pid) {
+  return `
+    <div style="padding:4px 0">
+      <label style="color:var(--muted);font-size:11px;font-style:italic;display:block;margin-bottom:6px">Nota del profesor (opcional, máx. 200 caracteres)</label>
+      <textarea class="field-input" id="nses-nota-${pid}" maxlength="200" rows="2"
+        placeholder="Solo si hay algo relevante…" style="font-size:12px;min-height:60px"></textarea>
+    </div>`;
+}
+
+function _nSesRenderMath(pid) {
+  return `
+  <div style="margin-bottom:10px">
+    <div class="nses-test-toggle">
+      <label><i class="ti ti-chart-dots" style="font-size:13px"></i> Test de inicio — tema sesión anterior <span style="color:var(--muted)">(opcional)</span></label>
+      <button type="button" class="nses-test-btn" onclick="nSesToggleTest(this,'nsti-${pid}')">Añadir</button>
+    </div>
+    <div class="nses-test-body" id="nsti-${pid}">
+      <div class="nses-num-grid">
+        <div class="nses-num-col"><label>Propuestos</label><input type="number" min="0" value="0" id="nsti-prop-${pid}" oninput="nSesValNum('nsti','${pid}')"></div>
+        <div class="nses-num-col"><label>Solo y bien</label><input type="number" min="0" value="0" id="nsti-solo-${pid}" oninput="nSesValNum('nsti','${pid}')"></div>
+        <div class="nses-num-col"><label>Con ayuda</label><input type="number" min="0" value="0" id="nsti-ayud-${pid}" oninput="nSesValNum('nsti','${pid}')"></div>
+        <div class="nses-num-col"><label>Sin resolver</label><input type="number" min="0" value="0" id="nsti-sinr-${pid}" oninput="nSesValNum('nsti','${pid}')"></div>
+      </div>
+      <span class="field-err" id="nsti-err-${pid}"></span>
+    </div>
+  </div>
+
+  <div>
+    <div class="nses-p-label">P1 — ¿Qué tipo de ejercicios? * <span class="nses-p-err" id="err-p1-${pid}"></span></div>
+    <div class="nses-check-group">
+      <label><input type="checkbox" name="p1-${pid}" value="mecanicos"> Ejercicios mecánicos / operatoria</label>
+      <label><input type="checkbox" name="p1-${pid}" value="aplicacion"> Problemas de aplicación directa</label>
+      <label><input type="checkbox" name="p1-${pid}" value="razonamiento"> Problemas de razonamiento / varios pasos</label>
+      <label><input type="checkbox" name="p1-${pid}" value="demostracion"> Demostración / comprensión conceptual</label>
+    </div>
+  </div>
+
+  <div>
+    <div class="nses-p-label">P2 — Ejercicios durante la sesión * <span class="nses-p-err" id="nsp2-err-${pid}"></span></div>
+    <div class="nses-num-grid">
+      <div class="nses-num-col"><label>Propuestos *</label><input type="number" min="0" value="0" id="nsp2-prop-${pid}" oninput="nSesValNum('nsp2','${pid}')"></div>
+      <div class="nses-num-col"><label>Solo y bien *</label><input type="number" min="0" value="0" id="nsp2-solo-${pid}" oninput="nSesValNum('nsp2','${pid}')"></div>
+      <div class="nses-num-col"><label>Con ayuda *</label><input type="number" min="0" value="0" id="nsp2-ayud-${pid}" oninput="nSesValNum('nsp2','${pid}')"></div>
+      <div class="nses-num-col"><label>Sin resolver *</label><input type="number" min="0" value="0" id="nsp2-sinr-${pid}" oninput="nSesValNum('nsp2','${pid}')"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="nses-p-label">P3 — ¿Dónde fallaba? * <span class="nses-p-err" id="err-p3-${pid}"></span></div>
+    <div class="nses-radio-group">
+      <label><input type="radio" name="p3-${pid}" value="planteamiento"> En el planteamiento — no sabe por dónde empezar</label>
+      <label><input type="radio" name="p3-${pid}" value="procedimiento"> En el procedimiento — sabe qué hacer pero falla en la ejecución</label>
+      <label><input type="radio" name="p3-${pid}" value="operatoria"> En la operatoria básica — errores de cálculo</label>
+      <label><input type="radio" name="p3-${pid}" value="no_errores"> No cometía errores relevantes</label>
+    </div>
+  </div>
+
+  <div>
+    <div class="nses-p-label">P4 — ¿Detectaba sus errores solo? * <span class="nses-p-err" id="err-p4-${pid}"></span></div>
+    <div class="nses-radio-group">
+      <label><input type="radio" name="p4-${pid}" value="si"> Sí, los detectaba y corregía sin ayuda</label>
+      <label><input type="radio" name="p4-${pid}" value="pregunta"> Solo cuando le preguntabas si estaba seguro</label>
+      <label><input type="radio" name="p4-${pid}" value="no"> No los detectaba, necesitaba que se los señalaras</label>
+    </div>
+  </div>
+
+  <div>
+    <div class="nses-p-label">P5 — Ante la dificultad * <span class="nses-p-err" id="err-p5-${pid}"></span></div>
+    <div class="nses-radio-group">
+      <label><input type="radio" name="p5-${pid}" value="bloqueo"> Se bloqueaba</label>
+      <label><input type="radio" name="p5-${pid}" value="intenta"> Lo intentaba solo antes de pedir ayuda</label>
+      <label><input type="radio" name="p5-${pid}" value="pide_adelanta"> Pedía ayuda y seguía adelante</label>
+    </div>
+  </div>
+
+  <div>
+    <div class="nses-p-label">P6 — Ritmo de trabajo * <span class="nses-p-err" id="err-p6-${pid}"></span></div>
+    <div class="nses-radio-group">
+      <label><input type="radio" name="p6-${pid}" value="lento"> Disperso y lento</label>
+      <label><input type="radio" name="p6-${pid}" value="normal"> Normal</label>
+      <label><input type="radio" name="p6-${pid}" value="constante"> Concentrado y constante</label>
+    </div>
+  </div>
+
+  <div style="margin-top:12px">
+    <div class="nses-test-toggle">
+      <label><i class="ti ti-clipboard-check" style="font-size:13px"></i> Test de cierre — lo trabajado hoy <span style="color:var(--muted)">(opcional)</span></label>
+      <button type="button" class="nses-test-btn" onclick="nSesToggleTest(this,'nstc-${pid}')">Añadir</button>
+    </div>
+    <div class="nses-test-body" id="nstc-${pid}">
+      <div class="nses-num-grid">
+        <div class="nses-num-col"><label>Propuestos</label><input type="number" min="0" value="0" id="nstc-prop-${pid}" oninput="nSesValNum('nstc','${pid}')"></div>
+        <div class="nses-num-col"><label>Solo y bien</label><input type="number" min="0" value="0" id="nstc-solo-${pid}" oninput="nSesValNum('nstc','${pid}')"></div>
+        <div class="nses-num-col"><label>Con ayuda</label><input type="number" min="0" value="0" id="nstc-ayud-${pid}" oninput="nSesValNum('nstc','${pid}')"></div>
+        <div class="nses-num-col"><label>Sin resolver</label><input type="number" min="0" value="0" id="nstc-sinr-${pid}" oninput="nSesValNum('nstc','${pid}')"></div>
+      </div>
+      <span class="field-err" id="nstc-err-${pid}"></span>
+    </div>
+  </div>
+
+  <div style="margin-top:12px">
+    <label style="color:var(--muted);font-size:11px;font-style:italic;display:block;margin-bottom:6px">Nota del profesor (opcional, máx. 200 caracteres)</label>
+    <textarea class="field-input" id="nses-nota-${pid}" maxlength="200" rows="2"
+      placeholder="Observaciones que no recogen las preguntas anteriores…" style="font-size:12px;min-height:60px"></textarea>
+  </div>`;
+}
+
+function nSesToggleTema(cb, pid) {
+  document.getElementById(`nses-tema-det-${pid}`).style.display = cb.checked ? 'block' : 'none';
+  document.getElementById(`nses-tema-time-${pid}`).style.display = cb.checked ? 'flex' : 'none';
+}
+
+function nSesToggleTest(btn, testId) {
+  const body = document.getElementById(testId);
+  const open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
+  btn.classList.toggle('active', !open);
+  btn.textContent = open ? 'Añadir' : 'Ocultar';
+}
+
+function nSesValNum(prefix, pid) {
+  const g = s => parseInt(document.getElementById(`${prefix}-${s}-${pid}`)?.value) || 0;
+  const prop = g('prop'), solo = g('solo'), ayud = g('ayud'), sinr = g('sinr');
+  const errEl = document.getElementById(`${prefix}-err-${pid}`);
+  if (!errEl) return true;
+  if (prop > 0 && solo + ayud + sinr > prop) {
+    errEl.textContent = 'La suma (solo + ayuda + sin resolver) supera los propuestos.';
+    return false;
+  }
+  errEl.textContent = '';
+  return true;
+}
+
+async function nSesSubmit(e) {
+  e.preventDefault();
+  if (!_nSesDatos) { showToast('Selecciona un alumno primero', 'error'); return; }
+
+  const errTemasEl = document.getElementById('err-nses-temas');
+  errTemasEl.textContent = '';
+  let valid = true;
+  const temasInsert = [];
+
+  _nSesDatos.asigs.forEach((asig, ai) => {
+    const bloqs = _nSesDatos.bloqData.filter(b => b.asignatura_id === asig.id);
+    const temas = bloqs.flatMap(b =>
+      _nSesDatos.temaData.filter(t => t.bloque_id === b.id)
+    );
+    const isMath = /matem|calculo|algebra|aritm/i.test(asig.nombre);
+
+    temas.forEach(t => {
+      const pid = `${ai}-${t.id}`;
+      const cb = document.getElementById(`cb-${pid}`);
+      if (!cb?.checked) return;
+
+      const rec = {
+        asignatura: asig.nombre,
+        tema: t.nombre,
+        tiempo_minutos: parseInt(document.getElementById(`nses-ttm-${pid}`)?.value) || 0,
+        nota_profesor: document.getElementById(`nses-nota-${pid}`)?.value || null,
+      };
+
+      if (isMath) {
+        // P1
+        const p1Vals = [...document.querySelectorAll(`input[name="p1-${pid}"]:checked`)].map(c => c.value);
+        const p1Err = document.getElementById(`err-p1-${pid}`);
+        if (p1Vals.length === 0) { if (p1Err) p1Err.textContent = 'Obligatorio'; valid = false; }
+        else { if (p1Err) p1Err.textContent = ''; }
+        rec.tipo_ejercicios = p1Vals;
+
+        // P2
+        if (!nSesValNum('nsp2', pid)) valid = false;
+        rec.ejercicios_propuestos   = parseInt(document.getElementById(`nsp2-prop-${pid}`)?.value) || 0;
+        rec.ejercicios_solo         = parseInt(document.getElementById(`nsp2-solo-${pid}`)?.value) || 0;
+        rec.ejercicios_ayuda        = parseInt(document.getElementById(`nsp2-ayud-${pid}`)?.value) || 0;
+        rec.ejercicios_sin_resolver = parseInt(document.getElementById(`nsp2-sinr-${pid}`)?.value) || 0;
+
+        // P3–P6
+        ['p3','p4','p5','p6'].forEach(pn => {
+          const val = document.querySelector(`input[name="${pn}-${pid}"]:checked`)?.value || null;
+          const err = document.getElementById(`err-${pn}-${pid}`);
+          if (!val) { if (err) err.textContent = 'Obligatorio'; valid = false; }
+          else { if (err) err.textContent = ''; }
+          if (pn === 'p3') rec.donde_falla        = val;
+          if (pn === 'p4') rec.detecta_errores    = val;
+          if (pn === 'p5') rec.actitud_dificultad = val;
+          if (pn === 'p6') rec.actitud_ritmo      = val;
+        });
+
+        // Test inicio (opcional)
+        const tstiBody = document.getElementById(`nsti-${pid}`);
+        if (tstiBody?.style.display === 'block') {
+          nSesValNum('nsti', pid);
+          rec.test_inicio_propuestos   = parseInt(document.getElementById(`nsti-prop-${pid}`)?.value) || 0;
+          rec.test_inicio_solo         = parseInt(document.getElementById(`nsti-solo-${pid}`)?.value) || 0;
+          rec.test_inicio_ayuda        = parseInt(document.getElementById(`nsti-ayud-${pid}`)?.value) || 0;
+          rec.test_inicio_sin_resolver = parseInt(document.getElementById(`nsti-sinr-${pid}`)?.value) || 0;
+        }
+
+        // Test cierre (opcional)
+        const tstcBody = document.getElementById(`nstc-${pid}`);
+        if (tstcBody?.style.display === 'block') {
+          nSesValNum('nstc', pid);
+          rec.test_cierre_propuestos   = parseInt(document.getElementById(`nstc-prop-${pid}`)?.value) || 0;
+          rec.test_cierre_solo         = parseInt(document.getElementById(`nstc-solo-${pid}`)?.value) || 0;
+          rec.test_cierre_ayuda        = parseInt(document.getElementById(`nstc-ayud-${pid}`)?.value) || 0;
+          rec.test_cierre_sin_resolver = parseInt(document.getElementById(`nstc-sinr-${pid}`)?.value) || 0;
+        }
+      }
+      temasInsert.push(rec);
+    });
+  });
+
+  if (temasInsert.length === 0) {
+    errTemasEl.textContent = 'Marca al menos un tema trabajado en el bloque 2.';
+    return;
+  }
+  if (!valid) {
+    showToast('Revisa los campos obligatorios marcados en rojo', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('nses-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px"></div> Guardando…';
+
+  const dtVal = document.getElementById('nses-datetime').value;
+  const [fechaStr, horaStr] = dtVal.split('T');
+
+  const sesData = {
+    profesor_id: ctx.profesorData.id,
+    alumno_id: document.getElementById('nses-alumno').value,
+    asignatura: temasInsert.map(t => t.asignatura).filter((v, i, a) => a.indexOf(v) === i).join(', '),
+    fecha: fechaStr,
+    hora_inicio: horaStr || null,
+    duracion_minutos: parseInt(document.getElementById('nses-duracion').value),
+    estado: 'pendiente_confirmacion',
+  };
+
+  const { data: newSes, error: sesErr } = await db.from('sesiones').insert(sesData).select().single();
+  if (sesErr) {
+    showToast('Error al guardar sesión: ' + sesErr.message, 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-send"></i> Enviar registro';
+    return;
+  }
+
+  const rows = temasInsert.map(t => ({ ...t, sesion_id: newSes.id }));
+  const { error: tErr } = await db.from('sesion_temas').insert(rows);
+  if (tErr) {
+    if (/does not exist|relation/i.test(tErr.message)) {
+      showToast('Sesión guardada. Para activar el desglose por temas ejecuta la migración SQL en Supabase.', 'info');
+    } else {
+      showToast('Sesión guardada, error en temas: ' + tErr.message, 'error');
+    }
+  } else {
+    showToast('Sesión registrada correctamente');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-send"></i> Enviar registro';
+
+  document.getElementById('nses-form').reset();
+  document.getElementById('nses-bloque2').style.display = 'none';
+  document.getElementById('nses-asig-container').innerHTML = '';
+  _nSesDatos = null;
+  const nowDt = new Date();
+  nowDt.setMinutes(nowDt.getMinutes() - nowDt.getTimezoneOffset());
+  document.getElementById('nses-datetime').value = nowDt.toISOString().slice(0, 16);
+
+  nSesHideForm();
+  await nSesLoadHist();
+}
+
+async function nSesVerDetalle(sesId, evt) {
+  evt.stopPropagation();
+  const modal = document.getElementById('modal-nses-det');
+  document.getElementById('nses-det-content').innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+  modal.classList.add('open');
+
+  const [{ data: ses }, { data: temas, error: tErr }] = await Promise.all([
+    db.from('sesiones').select('*, alumno:alumnos(usuario:usuarios(nombre,apellidos))').eq('id', sesId).single(),
+    db.from('sesion_temas').select('*').eq('sesion_id', sesId)
+  ]);
+
+  if (!ses) {
+    document.getElementById('nses-det-content').innerHTML = '<p style="color:var(--muted);font-size:12px">No se encontraron datos.</p>';
+    return;
+  }
+
+  const nom = ses.alumno?.usuario ? `${ses.alumno.usuario.nombre} ${ses.alumno.usuario.apellidos}` : '—';
+  const pillMap = { confirmada:'st-ok Confirmada', pendiente_confirmacion:'st-pend Pendiente', rechazada:'st-red Rechazada', cancelada:'st-grey Cancelada' };
+  const [pc, pt] = (pillMap[ses.estado] || 'st-grey —').split(' ');
+
+  const mapaLabel = {
+    planteamiento:'En el planteamiento', procedimiento:'En el procedimiento',
+    operatoria:'En la operatoria básica', no_errores:'Sin errores relevantes',
+    si:'Sí, detectaba solo', pregunta:'Al preguntar', no:'No detectaba',
+    bloqueo:'Se bloqueaba', intenta:'Lo intentaba solo', pide_adelanta:'Pedía ayuda y seguía',
+    lento:'Disperso y lento', normal:'Normal', constante:'Concentrado y constante',
+  };
+
+  let html = `<div class="nses-det-section">
+    <div class="nses-det-title">Información general</div>
+    <div class="nses-det-row"><span>Alumno</span><b>${nom}</b></div>
+    <div class="nses-det-row"><span>Fecha</span><b>${formatDate(ses.fecha)}${ses.hora_inicio ? ' · ' + formatTime(ses.hora_inicio) : ''}</b></div>
+    <div class="nses-det-row"><span>Duración</span><b>${(ses.duracion_minutos / 60).toFixed(1).replace('.0', '')}h</b></div>
+    <div class="nses-det-row"><span>Estado</span><b><span class="status-pill ${pc}" style="font-size:10px">${pt}</span></b></div>
+  </div>`;
+
+  if (tErr && /does not exist|relation/i.test(tErr.message)) {
+    html += `<p style="color:var(--muted);font-size:12px;padding:8px 0;font-style:italic">Detalle de temas no disponible. Ejecuta la migración SQL en Supabase para activarlo.</p>`;
+  } else if (!temas || temas.length === 0) {
+    html += `<p style="color:var(--muted);font-size:12px;padding:8px 0">Sin desglose de temas para esta sesión.</p>`;
+  } else {
+    temas.forEach(t => {
+      html += `<div class="nses-det-section" style="margin-top:14px;padding-top:12px;border-top:.5px solid var(--border)">
+        <div class="nses-det-title">${t.asignatura} — ${t.tema}</div>
+        ${t.tiempo_minutos ? `<div class="nses-det-row"><span>Tiempo</span><b>${t.tiempo_minutos} min</b></div>` : ''}
+        ${t.ejercicios_propuestos > 0 ? `<div class="nses-det-row"><span>Ejercicios</span><b>${t.ejercicios_propuestos} prop · ${t.ejercicios_solo} solo · ${t.ejercicios_ayuda} ayuda · ${t.ejercicios_sin_resolver} sin</b></div>` : ''}
+        ${t.tipo_ejercicios?.length ? `<div class="nses-det-row"><span>Tipo</span><b>${t.tipo_ejercicios.join(', ')}</b></div>` : ''}
+        ${t.donde_falla ? `<div class="nses-det-row"><span>Errores</span><b>${mapaLabel[t.donde_falla] || t.donde_falla}</b></div>` : ''}
+        ${t.detecta_errores ? `<div class="nses-det-row"><span>Detecta errores</span><b>${mapaLabel[t.detecta_errores] || t.detecta_errores}</b></div>` : ''}
+        ${t.actitud_dificultad ? `<div class="nses-det-row"><span>Dificultad</span><b>${mapaLabel[t.actitud_dificultad] || t.actitud_dificultad}</b></div>` : ''}
+        ${t.actitud_ritmo ? `<div class="nses-det-row"><span>Ritmo</span><b>${mapaLabel[t.actitud_ritmo] || t.actitud_ritmo}</b></div>` : ''}
+        ${t.test_inicio_propuestos > 0 ? `<div class="nses-det-row"><span>Test inicio</span><b>${t.test_inicio_propuestos} prop · ${t.test_inicio_solo} solo · ${t.test_inicio_ayuda} ayuda · ${t.test_inicio_sin_resolver} sin</b></div>` : ''}
+        ${t.test_cierre_propuestos > 0 ? `<div class="nses-det-row"><span>Test cierre</span><b>${t.test_cierre_propuestos} prop · ${t.test_cierre_solo} solo · ${t.test_cierre_ayuda} ayuda · ${t.test_cierre_sin_resolver} sin</b></div>` : ''}
+        ${t.nota_profesor ? `<div class="nses-det-row" style="flex-direction:column;align-items:flex-start;gap:4px"><span>Nota</span><b style="text-align:left">${t.nota_profesor}</b></div>` : ''}
+      </div>`;
+    });
+  }
+
+  document.getElementById('nses-det-content').innerHTML = html;
 }
 </script>
 </body>
