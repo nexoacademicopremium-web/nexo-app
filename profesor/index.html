@@ -281,11 +281,18 @@
   .nses-bloque-title{padding:12px 18px;color:var(--soft);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;background:var(--dark);border-bottom:.5px solid var(--border);display:flex;align-items:center;gap:8px}
   .nses-bloque-title i{color:var(--blue);font-size:14px}
   .nses-bloque-body{padding:18px}
-  .nses-asig-block{border:.5px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden}
-  .nses-asig-hdr{padding:12px 16px;background:var(--dark);display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:.5px solid var(--border2)}
+  .nses-asig-block{border:.5px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden}
+  .nses-asig-hdr{padding:13px 16px;background:var(--dark);display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;transition:background .15s}
+  .nses-asig-hdr:hover{background:#0d1530}
   .nses-asig-nom{color:#fff;font-size:13px;font-weight:500;flex:1}
+  .nses-asig-chevron{color:var(--muted);font-size:14px;transition:transform .2s;flex-shrink:0}
+  .nses-asig-chevron.open{transform:rotate(90deg);color:var(--blue)}
+  .nses-asig-body{display:none;border-top:.5px solid var(--border)}
+  .nses-asig-time-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--surface);border-bottom:.5px solid var(--border2);gap:10px}
+  .nses-asig-time-label{color:var(--muted);font-size:11px}
   .nses-asig-time{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
-  .nses-asig-time input{width:60px;background:var(--surface);border:.5px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--txt);font-size:12px;font-family:inherit;text-align:center}
+  .nses-asig-time input{width:64px;background:var(--dark);border:.5px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--txt);font-size:12px;font-family:inherit;text-align:center;outline:none}
+  .nses-asig-time input:focus{border-color:var(--blue)}
   .nses-tema-row{padding:9px 16px;border-bottom:.5px solid var(--border2)}
   .nses-tema-row:last-child{border-bottom:none}
   .nses-tema-cb-row{display:flex;align-items:center;gap:9px}
@@ -1914,7 +1921,7 @@ function _nSesRenderAsig(asig, ai, bloqData, temaData) {
             <input type="checkbox" id="cb-${pid}" onchange="nSesToggleTema(this,'${pid}')">
             <label for="cb-${pid}" class="nses-tema-label">
               ${t.nombre}
-              <span style="color:var(--muted);font-size:10px;font-weight:400">[${t.bloqueNom}]</span>
+              <span style="color:var(--muted);font-size:10px;font-weight:400"> · ${t.bloqueNom}</span>
             </label>
             <div class="nses-tema-time" id="nses-tema-time-${pid}" style="display:none">
               <input type="number" min="0" value="0" id="nses-ttm-${pid}"
@@ -1926,25 +1933,35 @@ function _nSesRenderAsig(asig, ai, bloqData, temaData) {
           </div>
         </div>`;
       }).join('')
-    : '<p style="color:var(--muted);font-size:11px;padding:10px 16px">Sin temas registrados para esta asignatura.</p>';
+    : `<p style="color:var(--muted);font-size:11px;padding:10px 16px 4px">
+        Sin temas cargados — usa el botón de abajo para añadirlos manualmente.
+       </p>`;
 
   return `
     <div class="nses-asig-block" id="nses-asig-block-${ai}">
-      <div class="nses-asig-hdr">
+      <!-- CABECERA ACORDEÓN -->
+      <div class="nses-asig-hdr" onclick="nSesToggleAsigBody(${ai})">
+        <i class="ti ti-chevron-right nses-asig-chevron" id="nses-asig-chev-${ai}"></i>
         <span class="nses-asig-nom">${asig.nombre}</span>
-        <div class="nses-asig-time">
-          Tiempo total: <input type="number" min="0" value="0" id="nses-atm-${ai}"
-            oninput="this.value=Math.max(0,parseInt(this.value)||0)"> min
+      </div>
+      <!-- CUERPO COLAPSABLE -->
+      <div class="nses-asig-body" id="nses-asig-body-${ai}">
+        <div class="nses-asig-time-row">
+          <span class="nses-asig-time-label"><i class="ti ti-clock" style="font-size:12px;margin-right:4px"></i>Tiempo dedicado a esta asignatura</span>
+          <div class="nses-asig-time">
+            <input type="number" min="0" step="0.5" value="0" id="nses-atm-${ai}"
+              oninput="this.value=Math.max(0,parseFloat(this.value)||0)"> h
+          </div>
         </div>
-      </div>
-      <div id="nses-temas-list-${ai}">
-        ${temasHtml}
-      </div>
-      <div style="padding:6px 16px 12px">
-        <button type="button" class="btn-ghost" style="font-size:11px;padding:5px 12px"
-          onclick="nSesAddTema(${ai},${isMath})">
-          <i class="ti ti-plus" style="font-size:12px"></i> Añadir otro tema
-        </button>
+        <div id="nses-temas-list-${ai}">
+          ${temasHtml}
+        </div>
+        <div style="padding:8px 16px 12px;border-top:.5px solid var(--border2)">
+          <button type="button" class="btn-ghost" style="font-size:11px;padding:5px 12px"
+            onclick="nSesAddTema(${ai},${isMath})">
+            <i class="ti ti-plus" style="font-size:12px"></i> Añadir otro tema
+          </button>
+        </div>
       </div>
     </div>`;
 }
@@ -2271,6 +2288,15 @@ async function nSesSubmit(e) {
   await nSesLoadHist();
 }
 
+function nSesToggleAsigBody(ai) {
+  const body = document.getElementById(`nses-asig-body-${ai}`);
+  const chev = document.getElementById(`nses-asig-chev-${ai}`);
+  if (!body) return;
+  const open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
+  chev?.classList.toggle('open', !open);
+}
+
 let _nSesCustomTemaCount = 0;
 
 function nSesAddTema(ai, isMath) {
@@ -2311,31 +2337,38 @@ function nSesAddAsig() {
   const container = document.getElementById('nses-asig-container');
   if (!container) return;
   const ai = (_nSesDatos?.nextAi ?? 0) + _nSesCustomAsigCount++;
-  const isMath = false; // asignaturas custom: solo nota por defecto
+  const isMath = false;
   const div = document.createElement('div');
   div.className = 'nses-asig-block';
   div.id = `nses-asig-block-${ai}`;
   div.innerHTML = `
-    <div class="nses-asig-hdr">
+    <div class="nses-asig-hdr" onclick="nSesToggleAsigBody(${ai})">
+      <i class="ti ti-chevron-right nses-asig-chevron open" id="nses-asig-chev-${ai}"></i>
       <input type="text" class="field-input" id="nses-asig-nombre-${ai}"
         placeholder="Nombre de la asignatura…"
-        style="flex:1;font-size:13px;font-weight:600;padding:6px 10px;height:34px"
+        onclick="event.stopPropagation()"
+        style="flex:1;font-size:13px;font-weight:500;padding:5px 10px;height:32px;background:transparent;border-color:rgba(255,255,255,.15)"
         data-custom-asig="true">
-      <div class="nses-asig-time">
-        Tiempo total: <input type="number" min="0" value="0" id="nses-atm-${ai}"
-          oninput="this.value=Math.max(0,parseInt(this.value)||0)"> min
+    </div>
+    <div class="nses-asig-body" id="nses-asig-body-${ai}" style="display:block">
+      <div class="nses-asig-time-row">
+        <span class="nses-asig-time-label"><i class="ti ti-clock" style="font-size:12px;margin-right:4px"></i>Tiempo dedicado</span>
+        <div class="nses-asig-time">
+          <input type="number" min="0" step="0.5" value="0" id="nses-atm-${ai}"
+            oninput="this.value=Math.max(0,parseFloat(this.value)||0)"> h
+        </div>
       </div>
-    </div>
-    <div id="nses-temas-list-${ai}">
-      <p style="color:var(--muted);font-size:11px;padding:10px 16px">
-        Pulsa "Añadir otro tema" para añadir los temas trabajados.
-      </p>
-    </div>
-    <div style="padding:6px 16px 12px">
-      <button type="button" class="btn-ghost" style="font-size:11px;padding:5px 12px"
-        onclick="nSesAddTema(${ai},${isMath})">
-        <i class="ti ti-plus" style="font-size:12px"></i> Añadir otro tema
-      </button>
+      <div id="nses-temas-list-${ai}">
+        <p style="color:var(--muted);font-size:11px;padding:10px 16px 4px">
+          Pulsa "+ Añadir otro tema" para registrar los temas trabajados.
+        </p>
+      </div>
+      <div style="padding:8px 16px 12px;border-top:.5px solid var(--border2)">
+        <button type="button" class="btn-ghost" style="font-size:11px;padding:5px 12px"
+          onclick="nSesAddTema(${ai},${isMath})">
+          <i class="ti ti-plus" style="font-size:12px"></i> Añadir otro tema
+        </button>
+      </div>
     </div>`;
   container.appendChild(div);
   div.querySelector(`#nses-asig-nombre-${ai}`)?.focus();
