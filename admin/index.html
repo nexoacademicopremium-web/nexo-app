@@ -118,26 +118,35 @@
   .empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
   .empty-state i{font-size:36px;margin-bottom:12px;display:block;color:var(--border)}
 
-  /* ── Material — acordeón Curso → Asignatura → Bloque → Tema ── */
-  .mat-curso{background:var(--surface);border:.5px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden}
-  .mat-curso-hd{display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;user-select:none;transition:background .12s}
-  .mat-curso-hd:hover{background:var(--border2)}
-  .mat-curso-chevron{color:var(--muted);font-size:15px;transition:transform .2s;flex-shrink:0}
-  .mat-curso.open .mat-curso-chevron{transform:rotate(90deg)}
-  .mat-curso-label{color:#fff;font-size:14px;font-weight:600;flex:1}
-  .mat-curso-meta{color:var(--muted);font-size:11px;white-space:nowrap}
-  .mat-curso-body{display:none;border-top:.5px solid var(--border);padding:14px 16px}
-  .mat-curso.open .mat-curso-body{display:block}
-
-  .mat-asig-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:0}
-  .mat-asig-bubble{display:inline-flex;align-items:center;gap:7px;padding:7px 14px;border-radius:8px;border:.5px solid;cursor:pointer;font-size:12px;font-weight:500;transition:all .15s;user-select:none;background:var(--ab-bg,#0f2240);color:var(--ab-clr,var(--blue));border-color:var(--ab-clr,var(--blue))}
-  .mat-asig-bubble:hover{filter:brightness(1.2)}
-  .mat-asig-bubble.active{box-shadow:0 0 0 1.5px var(--ab-clr,var(--blue));filter:brightness(1.2)}
-  .mat-asig-bubble i{font-size:14px}
-
-  .mat-asig-detail{display:none;margin-top:12px;padding-top:12px;border-top:.5px solid var(--border2)}
+  /* ── Material — secciones Exclusivo / Genérico ── */
+  .mat-sec-block{margin-bottom:28px}
+  .mat-sec-hdr{display:flex;align-items:center;gap:14px;padding:13px 18px;border-radius:12px;margin-bottom:18px}
+  .mat-sec-hdr.excl{background:rgba(245,158,11,.07);border:.5px solid rgba(245,158,11,.25)}
+  .mat-sec-hdr.gen{background:rgba(21,76,169,.07);border:.5px solid rgba(21,76,169,.25)}
+  .mat-sec-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .mat-sec-hdr.excl .mat-sec-ico{background:#2a1800;color:#f59e0b}
+  .mat-sec-hdr.gen .mat-sec-ico{background:#0a1830;color:var(--blue)}
+  .mat-sec-ico i{font-size:18px}
+  .mat-sec-title{color:#fff;font-size:14px;font-weight:600;line-height:1.3}
+  .mat-sec-sub{color:var(--muted);font-size:11px;margin-top:2px}
+  /* Separador de nivel dentro de genérico */
+  .mat-nivel-hdr{display:flex;align-items:center;gap:9px;margin:20px 0 12px;padding-bottom:7px;border-bottom:.5px solid var(--border2)}
+  .mat-nivel-hdr-dot{width:5px;height:5px;border-radius:50%;background:var(--blue);flex-shrink:0}
+  .mat-nivel-hdr-label{color:var(--soft);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;flex:1}
+  .mat-nivel-hdr-count{color:var(--muted);font-size:10px}
+  /* Grid de asignaturas — burbujas grandes */
+  .mat-asig-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:12px;margin-bottom:4px}
+  .mat-asig-bubble{background:#060d20;border:1px solid var(--ab-clr,var(--border));border-radius:14px;padding:20px 14px 15px;cursor:pointer;position:relative;overflow:hidden;text-align:center;transition:transform .2s,box-shadow .2s;display:flex;flex-direction:column;align-items:center;gap:8px;user-select:none;-webkit-tap-highlight-color:transparent}
+  .mat-asig-bubble::after{content:'';position:absolute;top:-14px;right:-14px;width:68px;height:68px;border-radius:50%;background:radial-gradient(circle,var(--ab-clr,var(--blue)) 0%,transparent 70%);opacity:.09;pointer-events:none}
+  .mat-asig-bubble:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.45),0 0 0 1px var(--ab-clr,var(--border))}
+  .mat-asig-bubble.active{box-shadow:0 0 0 2px var(--ab-clr,var(--blue));transform:translateY(-1px)}
+  .mat-asig-ico{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--ab-clr,var(--border));background:rgba(255,255,255,.03)}
+  .mat-asig-ico i{font-size:21px;color:var(--ab-clr,var(--blue))}
+  .mat-asig-label{color:#fff;font-size:12px;font-weight:600;line-height:1.3}
+  .mat-asig-count{color:var(--muted);font-size:10px}
+  /* Panel de detalle de asig */
+  .mat-asig-detail{display:none;margin-top:14px;padding:14px;border:.5px solid var(--border2);border-radius:10px;background:var(--surface)}
   .mat-asig-detail.open{display:block}
-
   /* Bloque — colapsable */
   .mat-bloque{background:var(--dark);border:.5px solid var(--border);border-left:3px solid var(--navy);border-radius:8px;margin-bottom:8px;overflow:hidden}
   .mat-bloque:last-child{margin-bottom:0}
@@ -145,7 +154,6 @@
   .mat-bloque-head:hover{background:#091828}
   .mat-bloque-chevron{color:var(--muted);font-size:13px;transition:transform .2s;flex-shrink:0}
   .mat-bloque.b-open>.mat-bloque-head>.mat-bloque-chevron{transform:rotate(90deg)}
-  .mat-bloque-head>.ti-folder{color:var(--blue);font-size:15px;flex-shrink:0}
   .mat-bloque-name{color:#fff;font-size:12px;font-weight:600;flex:1}
   .mat-bloque-count{font-size:10px;color:var(--muted);flex-shrink:0}
   .mat-bloque-body{display:none}
@@ -156,7 +164,6 @@
   .mat-tema-head:hover{background:var(--border2)}
   .mat-tema-chevron{font-size:11px;color:var(--muted);transition:transform .18s;flex-shrink:0}
   .mat-tema.t-open>.mat-tema-head>.mat-tema-chevron{transform:rotate(90deg)}
-  .mat-tema-head>.ti-bookmark{font-size:12px;color:var(--soft);flex-shrink:0}
   .mat-tema-count{margin-left:auto;font-size:10px;color:var(--muted)}
   .mat-tema-body{display:none}
   .mat-tema.t-open>.mat-tema-body{display:block}
@@ -168,15 +175,18 @@
   .mat-item-title{color:#fff;font-size:12px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mat-item-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
   .mat-sinclasif{background:var(--surface);border:.5px solid var(--border);border-left:3px solid var(--border);border-radius:8px;overflow:hidden}
-  /* Item personalizado (asignado a alumno específico) */
+  /* Item personalizado */
   .mat-item-personal{border-left:3px solid #f59e0b;background:rgba(245,158,11,.04)}
   .mat-item-personal .mat-item-ico{background:#2a1800}
   .mat-item-personal .mat-item-ico i{color:#f59e0b}
   .mat-personal-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#2a1800;border:.5px solid #f59e0b;border-radius:20px;font-size:10px;font-weight:600;color:#f59e0b;white-space:nowrap;flex-shrink:0}
   .mat-personal-badge i{font-size:10px}
-  /* Icono de asignatura inteligente en bloque/tema */
   .mat-bloque-head>.mat-ico-smart{flex-shrink:0;font-size:14px}
   .mat-tema-head>.mat-ico-smart{flex-shrink:0;font-size:12px}
+  /* Responsive grid */
+  @media(max-width:1100px){.mat-asig-grid{grid-template-columns:repeat(auto-fill,minmax(135px,1fr))}}
+  @media(max-width:768px){.mat-asig-grid{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:480px){.mat-asig-grid{grid-template-columns:repeat(2,1fr)}}
 
   @keyframes spin{to{transform:rotate(360deg)}}
   .spinner{display:inline-block;width:20px;height:20px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
@@ -2960,48 +2970,37 @@ async function loadTablaMaterial() {
     container.innerHTML = `<div class="empty-state"><i class="ti ti-alert-circle"></i><p style="color:var(--red)">${error.message}</p></div>`;
     return;
   }
-  if (!material || material.length === 0) {
+  if (!material?.length) {
     container.innerHTML = `<div class="empty-state"><i class="ti ti-file-off"></i><p>Sin material todavía</p></div>`;
     return;
   }
   allMaterial = material;
 
-  // bloque_id → { tema_id|'__sin__' → items[] }
-  const byBloque = {};
-  const sinBloque = [];
-  material.forEach(m => {
-    if (m.bloque_id) {
-      if (!byBloque[m.bloque_id]) byBloque[m.bloque_id] = {};
-      const tk = m.tema_id || '__sin__';
-      if (!byBloque[m.bloque_id][tk]) byBloque[m.bloque_id][tk] = [];
-      byBloque[m.bloque_id][tk].push(m);
-    } else {
-      sinBloque.push(m);
-    }
-  });
+  // ── Helpers ──────────────────────────────────────────────
+  const buildStructure = items => {
+    const byB = {}, sinB = [];
+    items.forEach(m => {
+      if (m.bloque_id) {
+        if (!byB[m.bloque_id]) byB[m.bloque_id] = {};
+        const tk = m.tema_id || '__sin__';
+        if (!byB[m.bloque_id][tk]) byB[m.bloque_id][tk] = [];
+        byB[m.bloque_id][tk].push(m);
+      } else { sinB.push(m); }
+    });
+    return { byB, sinB };
+  };
 
-  // nivel → asignatura_id → bloque[]
-  const byNivel = {};
-  const bloqueIdsConMat = new Set(Object.keys(byBloque).map(Number));
-  allBloques.filter(b => bloqueIdsConMat.has(b.id)).forEach(b => {
-    if (!byNivel[b.nivel]) byNivel[b.nivel] = {};
-    if (!byNivel[b.nivel][b.asignatura_id]) byNivel[b.nivel][b.asignatura_id] = [];
-    byNivel[b.nivel][b.asignatura_id].push(b);
-  });
-
-  const tipoIcon = t => ({ pdf:'ti-file-text', recurso:'ti-layout-grid' }[t] || 'ti-file');
-
-  const countInBloque = bid => Object.values(byBloque[bid] || {}).reduce((s, arr) => s + arr.length, 0);
+  const cntB = (byB, bid) => Object.values(byB[bid] || {}).reduce((s, a) => s + a.length, 0);
 
   const renderItem = m => {
-    const alIds    = materialAlumnoMap[m.id] || [];
-    const isPerso  = alIds.length > 0;
-    const nombres  = alIds.map(aid => allAlumnos.find(x => x.id === aid)?.usuario?.nombre?.split(' ')[0] || '?').join(', ');
-    const icoMeta  = getTopicMeta(m.titulo);
-    const itemIco  = isPerso ? 'ti-crown' : (m.tipo === 'pdf' ? 'ti-file-text' : (icoMeta.ico !== 'ti-bookmark' ? icoMeta.ico : 'ti-layout-grid'));
+    const alIds   = materialAlumnoMap[m.id] || [];
+    const isPerso = alIds.length > 0;
+    const nombres = alIds.map(aid => allAlumnos.find(x => x.id === aid)?.usuario?.nombre?.split(' ')[0] || '?').join(', ');
+    const icoMeta = getTopicMeta(m.titulo);
+    const ico     = isPerso ? 'ti-crown' : (m.tipo === 'pdf' ? 'ti-file-text' : (icoMeta.ico !== 'ti-bookmark' ? icoMeta.ico : 'ti-layout-grid'));
     return `
       <div class="mat-item${isPerso ? ' mat-item-personal' : ''}">
-        <div class="mat-item-ico"><i class="ti ${itemIco}"></i></div>
+        <div class="mat-item-ico"><i class="ti ${ico}"></i></div>
         <span class="mat-item-title">${m.titulo}</span>
         ${isPerso ? `<span class="mat-personal-badge"><i class="ti ti-crown"></i> Exclusivo · ${nombres}</span>` : ''}
         <span class="pill ${m.visible ? 'pill-ok' : 'pill-grey'}" style="flex-shrink:0">${m.visible ? 'Visible' : 'Oculto'}</span>
@@ -3014,88 +3013,151 @@ async function loadTablaMaterial() {
       </div>`;
   };
 
-  const renderTemas = (temasPorId, bid) => Object.keys(temasPorId).map(tid => {
-    const items   = temasPorId[tid];
-    const nom     = tid !== '__sin__' ? temaNombre(parseInt(tid)) : '';
-    if (!nom) return `<div>${items.map(renderItem).join('')}</div>`;
-    const tMeta   = getTopicMeta(nom);
-    return `
-      <div class="mat-tema" id="mat-tema-${bid}-${tid}">
-        <div class="mat-tema-head" onclick="toggleMatTema('${bid}','${tid}')">
-          <i class="ti ti-chevron-right mat-tema-chevron"></i>
-          <i class="ti ${tMeta.ico} mat-ico-smart" style="color:${tMeta.cc}"></i>
-          <span style="flex:1">${nom}</span>
-          <span class="mat-tema-count">${items.length} archivo${items.length !== 1 ? 's' : ''}</span>
-        </div>
-        <div class="mat-tema-body">${items.map(renderItem).join('')}</div>
-      </div>`;
-  }).join('');
+  // Bloque/tema accordion para un conjunto de items
+  const renderDetailForItems = (secKey, aid, items) => {
+    const { byB, sinB } = buildStructure(items);
+    const bloqIds = new Set(Object.keys(byB).map(Number));
+    const bloqs   = allBloques.filter(b => bloqIds.has(b.id));
 
-  const renderBloques = (bloques) => bloques.map(b => {
-    const n     = countInBloque(b.id);
-    const bMeta = getTopicMeta(b.nombre);
-    return `
-      <div class="mat-bloque" id="mat-bloque-${b.id}">
-        <div class="mat-bloque-head" onclick="toggleMatBloque('${b.id}')">
-          <i class="ti ti-chevron-right mat-bloque-chevron"></i>
-          <i class="ti ${bMeta.ico} mat-ico-smart" style="color:${bMeta.cc}"></i>
-          <span class="mat-bloque-name">${b.nombre}</span>
-          <span class="mat-bloque-count">${n} archivo${n !== 1 ? 's' : ''}</span>
-        </div>
-        <div class="mat-bloque-body">${renderTemas(byBloque[b.id], b.id)}</div>
-      </div>`;
-  }).join('');
-
-  const niveles = MAT_NIVEL_ORDER.filter(n => byNivel[n]);
-
-  const html = niveles.map(nivel => {
-    const asigPorNivel = byNivel[nivel];
-    const asigIds = Object.keys(asigPorNivel).map(Number);
-    const totalMat = asigIds.reduce((s, aid) =>
-      s + asigPorNivel[aid].reduce((s2, b) => s2 + countInBloque(b.id), 0), 0);
-
-    return `
-      <div class="mat-curso" id="mat-curso-${nivel}">
-        <div class="mat-curso-hd" onclick="toggleCurso('${nivel}')">
-          <i class="ti ti-chevron-right mat-curso-chevron"></i>
-          <span class="mat-curso-label">${nivelLabel(nivel)}</span>
-          <span class="mat-curso-meta">${asigIds.length} asignatura${asigIds.length !== 1 ? 's' : ''} · ${totalMat} archivo${totalMat !== 1 ? 's' : ''}</span>
-        </div>
-        <div class="mat-curso-body" id="mat-curso-body-${nivel}">
-          <div class="mat-asig-grid">
-            ${asigIds.map(aid => {
-              const nom  = asigNombre(aid);
-              const meta = getSubjectMeta(nom);
-              return `<div class="mat-asig-bubble" data-asig="${aid}"
-                style="--ab-clr:${meta.cc};--ab-bg:${meta.cc}22"
-                onclick="toggleMatAsig('${nivel}',${aid})">
-                <i class="ti ${meta.ico}"></i>${nom}
-              </div>`;
-            }).join('')}
+    const renderTemas = (temasPorId, bid) => Object.keys(temasPorId).map(tid => {
+      const its  = temasPorId[tid];
+      const nom  = tid !== '__sin__' ? temaNombre(parseInt(tid)) : '';
+      if (!nom) return `<div>${its.map(renderItem).join('')}</div>`;
+      const tm   = getTopicMeta(nom);
+      return `
+        <div class="mat-tema" id="mat-tema-${bid}-${tid}">
+          <div class="mat-tema-head" onclick="toggleMatTema('${bid}','${tid}')">
+            <i class="ti ti-chevron-right mat-tema-chevron"></i>
+            <i class="ti ${tm.ico} mat-ico-smart" style="color:${tm.cc}"></i>
+            <span style="flex:1">${nom}</span>
+            <span class="mat-tema-count">${its.length} archivo${its.length !== 1 ? 's' : ''}</span>
           </div>
-          ${asigIds.map(aid => `
-            <div class="mat-asig-detail" id="mat-detail-${nivel}-${aid}">
-              ${renderBloques(asigPorNivel[aid])}
-            </div>`).join('')}
-        </div>
+          <div class="mat-tema-body">${its.map(renderItem).join('')}</div>
+        </div>`;
+    }).join('');
+
+    const bloqHTML = bloqs.map(b => {
+      const n  = cntB(byB, b.id);
+      const bm = getTopicMeta(b.nombre);
+      return `
+        <div class="mat-bloque" id="mat-bloque-${b.id}">
+          <div class="mat-bloque-head" onclick="toggleMatBloque('${b.id}')">
+            <i class="ti ti-chevron-right mat-bloque-chevron"></i>
+            <i class="ti ${bm.ico} mat-ico-smart" style="color:${bm.cc}"></i>
+            <span class="mat-bloque-name">${b.nombre}</span>
+            <span class="mat-bloque-count">${n} archivo${n !== 1 ? 's' : ''}</span>
+          </div>
+          <div class="mat-bloque-body">${renderTemas(byB[b.id], b.id)}</div>
+        </div>`;
+    }).join('');
+
+    const inner = bloqHTML + (sinB.length ? `<div class="mat-sinclasif">${sinB.map(renderItem).join('')}</div>` : '');
+    return `<div class="mat-asig-detail" id="mat-detail-${secKey}-${aid}">${inner || '<p style="color:var(--muted);padding:10px;font-size:12px">Sin archivos</p>'}</div>`;
+  };
+
+  const renderAsigBubble = (aid, count, secKey) => {
+    const nom  = asigNombre(Number(aid));
+    const meta = getSubjectMeta(nom);
+    return `
+      <div class="mat-asig-bubble" data-asig="${aid}" data-section="${secKey}"
+        style="--ab-clr:${meta.cc}"
+        onclick="toggleMatAsig('${secKey}','${aid}')">
+        <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
+        <span class="mat-asig-label">${nom}</span>
+        <span class="mat-asig-count">${count} archivo${count !== 1 ? 's' : ''}</span>
       </div>`;
-  }).join('') + (sinBloque.length > 0 ? `
-    <div class="mat-curso" id="mat-curso-sinclasif">
-      <div class="mat-curso-hd" onclick="toggleCurso('sinclasif')">
-        <i class="ti ti-chevron-right mat-curso-chevron"></i>
-        <span class="mat-curso-label" style="color:var(--muted)">Sin clasificar</span>
-        <span class="mat-curso-meta">${sinBloque.length} archivo${sinBloque.length !== 1 ? 's' : ''}</span>
-      </div>
-      <div class="mat-curso-body" id="mat-curso-body-sinclasif">
-        <div class="mat-sinclasif">${sinBloque.map(renderItem).join('')}</div>
-      </div>
-    </div>` : '');
+  };
 
+  // ── Separar exclusivo vs genérico ────────────────────────
+  const exclItems = material.filter(m => (materialAlumnoMap[m.id] || []).length > 0);
+  const genItems  = material.filter(m => (materialAlumnoMap[m.id] || []).length === 0);
+
+  let html = '';
+
+  // ── SECCIÓN 1: EXCLUSIVO ─────────────────────────────────
+  if (exclItems.length > 0) {
+    const exclByAsig = {};
+    exclItems.forEach(m => {
+      const k = m.asignatura_id || 0;
+      if (!exclByAsig[k]) exclByAsig[k] = [];
+      exclByAsig[k].push(m);
+    });
+    const exclAsigIds = Object.keys(exclByAsig);
+    html += `
+      <div class="mat-sec-block">
+        <div class="mat-sec-hdr excl">
+          <div class="mat-sec-ico"><i class="ti ti-crown"></i></div>
+          <div>
+            <div class="mat-sec-title">Material exclusivo</div>
+            <div class="mat-sec-sub">Asignado a alumnos específicos · ${exclItems.length} archivo${exclItems.length !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+        <div class="mat-asig-grid">
+          ${exclAsigIds.map(aid => renderAsigBubble(aid, exclByAsig[aid].length, 'excl')).join('')}
+        </div>
+        ${exclAsigIds.map(aid => renderDetailForItems('excl', aid, exclByAsig[aid])).join('')}
+      </div>`;
+  }
+
+  // ── SECCIÓN 2: GENÉRICO (por nivel) ──────────────────────
+  const { byB: genByB, sinB: genSinB } = buildStructure(genItems);
+  const genBloqIds = new Set(Object.keys(genByB).map(Number));
+  const genByNivel = {};
+  allBloques.filter(b => genBloqIds.has(b.id)).forEach(b => {
+    if (!genByNivel[b.nivel]) genByNivel[b.nivel] = {};
+    if (!genByNivel[b.nivel][b.asignatura_id]) genByNivel[b.nivel][b.asignatura_id] = [];
+    if (!genByNivel[b.nivel][b.asignatura_id].find(x => x.id === b.id))
+      genByNivel[b.nivel][b.asignatura_id].push(b);
+  });
+
+  const genNiveles = MAT_NIVEL_ORDER.filter(n => genByNivel[n]);
+  const totalGen   = genItems.length;
+
+  if (genNiveles.length > 0 || genSinB.length > 0) {
+    let genInner = '';
+    genNiveles.forEach(nivel => {
+      const asigPorNivel = genByNivel[nivel];
+      const asigIds      = Object.keys(asigPorNivel);
+      genInner += `
+        <div class="mat-nivel-hdr">
+          <div class="mat-nivel-hdr-dot"></div>
+          <span class="mat-nivel-hdr-label">${nivelLabel(nivel)}</span>
+          <span class="mat-nivel-hdr-count">${asigIds.length} asig.</span>
+        </div>
+        <div class="mat-asig-grid">
+          ${asigIds.map(aid => {
+            const count = asigPorNivel[aid].reduce((s, b) => s + cntB(genByB, b.id), 0);
+            return renderAsigBubble(aid, count, `gen-${nivel}`);
+          }).join('')}
+        </div>
+        ${asigIds.map(aid => {
+          const items = asigPorNivel[aid].flatMap(b => Object.values(genByB[b.id] || {}).flat());
+          return renderDetailForItems(`gen-${nivel}`, aid, items);
+        }).join('')}`;
+    });
+    if (genSinB.length > 0) {
+      genInner += `
+        <div class="mat-nivel-hdr">
+          <div class="mat-nivel-hdr-dot"></div>
+          <span class="mat-nivel-hdr-label">Sin clasificar</span>
+        </div>
+        <div class="mat-sinclasif">${genSinB.map(renderItem).join('')}</div>`;
+    }
+    html += `
+      <div class="mat-sec-block">
+        <div class="mat-sec-hdr gen">
+          <div class="mat-sec-ico"><i class="ti ti-files"></i></div>
+          <div>
+            <div class="mat-sec-title">Material genérico</div>
+            <div class="mat-sec-sub">Disponible por curso · ${totalGen} archivo${totalGen !== 1 ? 's' : ''}</div>
+          </div>
+        </div>
+        ${genInner}
+      </div>`;
+  }
+
+  if (!html) html = `<div class="empty-state"><i class="ti ti-file-off"></i><p>Sin material todavía</p></div>`;
   container.innerHTML = html;
-}
-
-function toggleCurso(nivel) {
-  document.getElementById('mat-curso-' + nivel)?.classList.toggle('open');
 }
 
 function toggleMatBloque(bid) {
@@ -3105,19 +3167,16 @@ function toggleMatTema(bid, tid) {
   document.getElementById(`mat-tema-${bid}-${tid}`)?.classList.toggle('t-open');
 }
 
-function toggleMatAsig(nivel, asigId) {
-  const bodyId = 'mat-curso-body-' + nivel;
-  const body = document.getElementById(bodyId);
-  if (!body) return;
-  const detailId = `mat-detail-${nivel}-${asigId}`;
-  body.querySelectorAll('.mat-asig-bubble').forEach(b => {
+function toggleMatAsig(secKey, asigId) {
+  const targetId = `mat-detail-${secKey}-${asigId}`;
+  document.querySelectorAll(`[id^="mat-detail-${secKey}-"]`).forEach(d => {
+    if (d.id !== targetId) d.classList.remove('open');
+  });
+  document.querySelectorAll(`[data-section="${secKey}"]`).forEach(b => {
     if (b.dataset.asig !== String(asigId)) b.classList.remove('active');
   });
-  body.querySelectorAll('.mat-asig-detail').forEach(d => {
-    if (d.id !== detailId) d.classList.remove('open');
-  });
-  body.querySelector(`[data-asig="${asigId}"]`)?.classList.toggle('active');
-  document.getElementById(detailId)?.classList.toggle('open');
+  document.querySelector(`[data-section="${secKey}"][data-asig="${asigId}"]`)?.classList.toggle('active');
+  document.getElementById(targetId)?.classList.toggle('open');
 }
 
 function abrirModalMaterial() {
