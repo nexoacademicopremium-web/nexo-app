@@ -183,6 +183,10 @@
   .mat-item-badge{font-size:10px;padding:3px 10px;border-radius:20px;font-weight:500;margin-top:auto;margin-bottom:8px}
   .mat-item-btn{background:var(--cc,var(--blue));color:#fff;border:none;border-radius:8px;padding:7px 18px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;width:100%;transition:opacity .15s}
   .mat-item-btn:hover{opacity:.85}
+  /* Tarjeta exclusiva (personalizada para el alumno) */
+  .mat-item-card.mat-excl{border-color:#f59e0b;box-shadow:0 0 12px rgba(245,158,11,.18)}
+  .mat-excl-corner{position:absolute;top:8px;right:8px;width:22px;height:22px;background:#f59e0b;border-radius:50%;display:flex;align-items:center;justify-content:center;z-index:1}
+  .mat-excl-corner i{font-size:11px;color:#000}
   /* legacy (accordion) — se mantiene por si el admin lo usa */
   .mal-bloque{border-top:.5px solid var(--border2)}
   .mal-bloque:first-child{border-top:none}
@@ -1452,89 +1456,7 @@ async function loadProfesor() {
   document.getElementById('profesor-content').innerHTML = html;
 }
 
-// ============================================================
-// ICONOS Y COLORES POR ASIGNATURA / TEMA
-// ============================================================
-function getSubjectMeta(name) {
-  const n = (name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-  if (/matem|calculo|algebra|aritm|estadis|geometr/.test(n)) return { ico:'ti-math-function', cc:'#2563eb' };
-  if (/fisica|mecanica|termodin|cinemat|dinamica/.test(n))   return { ico:'ti-atom',          cc:'#0891b2' };
-  if (/quimic|organic|inorganic|estequi/.test(n))            return { ico:'ti-flask',          cc:'#7c3aed' };
-  if (/biolog|anatom|celula|geneti|ecolog/.test(n))          return { ico:'ti-dna',            cc:'#059669' };
-  if (/histori|edad|guerra|civilizac|contempor/.test(n))     return { ico:'ti-building-monument', cc:'#b45309' };
-  if (/geograf|mapa|clima|continen|paisaje/.test(n))         return { ico:'ti-map-2',          cc:'#0d9488' };
-  if (/ingles|english|idioma|frances|aleman|chino/.test(n))  return { ico:'ti-world',          cc:'#1d4ed8' };
-  if (/lengua|espanol|gramat|ortogr|sintax|morfol/.test(n))  return { ico:'ti-language',       cc:'#9333ea' };
-  if (/literatur|obra|autor|novela|poesia|teatro/.test(n))   return { ico:'ti-feather',        cc:'#c026d3' };
-  if (/filosof|etica|logica|epistem/.test(n))                return { ico:'ti-brain',          cc:'#7c3aed' };
-  if (/economi|empresa|mercado|finanza/.test(n))             return { ico:'ti-chart-line',     cc:'#0f766e' };
-  if (/tecnolog|informatic|programac|codigo/.test(n))        return { ico:'ti-cpu',            cc:'#0369a1' };
-  if (/arte|plastica|dibujo|diseno|pintura/.test(n))         return { ico:'ti-palette',        cc:'#db2777' };
-  if (/musica|solfeo|armonia|nota/.test(n))                  return { ico:'ti-music',          cc:'#7c3aed' };
-  if (/educac.*fis|edfis|deporte|atletis/.test(n))           return { ico:'ti-run',            cc:'#16a34a' };
-  if (/latin|griego|clasic/.test(n))                         return { ico:'ti-scroll',         cc:'#92400e' };
-  if (/religion|religio|etica.*valor/.test(n))               return { ico:'ti-star',           cc:'#d97706' };
-  if (/psicolog|sociolog/.test(n))                           return { ico:'ti-brain',          cc:'#0891b2' };
-  if (/derecho|justicia|constituc/.test(n))                  return { ico:'ti-scale',          cc:'#374151' };
-  return { ico:'ti-book-2', cc:'#154ca9' };
-}
-
-function getTopicMeta(name) {
-  const n = (name || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
-  // Matemáticas
-  if (/funcion|polinomic|racional|logaritm|exponenc/.test(n)) return { ico:'ti-chart-line',       cc:'#2563eb' };
-  if (/algebra|ecuacion|sistema|inecuac/.test(n))              return { ico:'ti-variable',          cc:'#7c3aed' };
-  if (/geometr|triangul|circul|poli[gy]|figura/.test(n))       return { ico:'ti-triangle',          cc:'#0891b2' };
-  if (/estadis|probabil|combinat|azar/.test(n))                return { ico:'ti-chart-bar',         cc:'#0d9488' };
-  if (/trigon|seno|coseno|tangente/.test(n))                   return { ico:'ti-wave-sine',         cc:'#6d28d9' };
-  if (/matri|determin|vector/.test(n))                         return { ico:'ti-grid-dots',         cc:'#1d4ed8' };
-  if (/sucesion|progresion|serie/.test(n))                     return { ico:'ti-dots',              cc:'#0369a1' };
-  if (/integral|derivad|limite|calculo/.test(n))               return { ico:'ti-sigma',             cc:'#4f46e5' };
-  if (/numero|fraccion|decimal|potenci|radical/.test(n))       return { ico:'ti-numbers',           cc:'#1d4ed8' };
-  if (/porcentaj|proporc|regla/.test(n))                       return { ico:'ti-percentage',        cc:'#0891b2' };
-  // Física
-  if (/electric|circuito|corriente|voltaj|resistenc/.test(n))  return { ico:'ti-bolt',              cc:'#f59e0b' };
-  if (/mecanica|fuerza|movimiento|cinemat|dinamica|energia/.test(n)) return { ico:'ti-arrows-move', cc:'#0369a1' };
-  if (/optica|luz|lente|espejo|refrac/.test(n))                return { ico:'ti-eye',               cc:'#6d28d9' };
-  if (/onda|vibrac|sonido|acustic/.test(n))                    return { ico:'ti-wave-square',       cc:'#0891b2' };
-  if (/termodi|calor|temperatur|gas/.test(n))                  return { ico:'ti-thermometer',       cc:'#dc2626' };
-  if (/magnet|campo|induccion/.test(n))                        return { ico:'ti-magnet',            cc:'#7c3aed' };
-  if (/nuclear|radioact|cuantic/.test(n))                      return { ico:'ti-atom',              cc:'#059669' };
-  // Química
-  if (/element|tabla|period/.test(n))                          return { ico:'ti-table',             cc:'#7c3aed' };
-  if (/reaccion|estequio|ecuac.*quim/.test(n))                 return { ico:'ti-exchange',          cc:'#0891b2' };
-  if (/acido|base|ph|ion/.test(n))                             return { ico:'ti-droplet',           cc:'#dc2626' };
-  if (/organic|hidrocarbur|alcohol|aldehid/.test(n))           return { ico:'ti-molecule',          cc:'#059669' };
-  if (/enlace|orbital|configur/.test(n))                       return { ico:'ti-atom',              cc:'#7c3aed' };
-  // Biología
-  if (/celula|tejido|organel/.test(n))                         return { ico:'ti-dna',               cc:'#059669' };
-  if (/geneti|herencia|adn|evolucion/.test(n))                 return { ico:'ti-dna-2',             cc:'#16a34a' };
-  if (/ecosistem|ecolog|bioma|biotop/.test(n))                 return { ico:'ti-trees',             cc:'#15803d' };
-  if (/anatom|cuerpo|sistem.*organ|aparato/.test(n))           return { ico:'ti-heart-rate-monitor',cc:'#dc2626' };
-  if (/microb|bacteri|virus/.test(n))                          return { ico:'ti-microscope',        cc:'#0891b2' };
-  if (/botanica|planta|fotosint/.test(n))                      return { ico:'ti-leaf',              cc:'#16a34a' };
-  // Historia / Geografía
-  if (/guerra|conflicto|batalla/.test(n))                      return { ico:'ti-sword',             cc:'#dc2626' };
-  if (/revolucion|independenc/.test(n))                        return { ico:'ti-flame',             cc:'#f59e0b' };
-  if (/edad.*medi|medieval|feud/.test(n))                      return { ico:'ti-castle',            cc:'#92400e' };
-  if (/civilizac|antigua|grecia|roma/.test(n))                 return { ico:'ti-building-monument', cc:'#b45309' };
-  if (/siglo|epoca|cronolog/.test(n))                          return { ico:'ti-clock-history',     cc:'#d97706' };
-  if (/mapa|clima|relieve|rio|montaña/.test(n))                return { ico:'ti-map-2',             cc:'#0d9488' };
-  // Lengua / Literatura
-  if (/sintax|oracion|analisis.*sint/.test(n))                 return { ico:'ti-binary-tree',       cc:'#7c3aed' };
-  if (/gramat|morfolog|categoria/.test(n))                     return { ico:'ti-text-grammar',      cc:'#6d28d9' };
-  if (/texto|redacc|escrit|composi/.test(n))                   return { ico:'ti-writing',           cc:'#9333ea' };
-  if (/lectura|comprens|comentar/.test(n))                     return { ico:'ti-book-open',         cc:'#7c3aed' };
-  if (/vocabular|semant|palabr/.test(n))                       return { ico:'ti-abc',               cc:'#0891b2' };
-  if (/literatur|obra|genero|autor|novela|poesia/.test(n))     return { ico:'ti-feather',           cc:'#c026d3' };
-  // General
-  if (/introduc|concept|fundament|base/.test(n))               return { ico:'ti-rocket',            cc:'#2563eb' };
-  if (/practic|ejercic|problem|activid/.test(n))               return { ico:'ti-pencil',            cc:'#059669' };
-  if (/resum|sintesis|esquema/.test(n))                        return { ico:'ti-notes',             cc:'#0891b2' };
-  if (/examen|evaluac|repaso/.test(n))                         return { ico:'ti-clipboard-check',   cc:'#dc2626' };
-  if (/proyecto|trabajo|investig/.test(n))                     return { ico:'ti-folder',            cc:'#b45309' };
-  return { ico:'ti-bookmark', cc:'#154ca9' };
-}
+// getSubjectMeta / getTopicMeta defined in js/auth.js (shared)
 
 // ============================================================
 // ESTUDIAR
@@ -1635,7 +1557,7 @@ async function loadEstudiar() {
     </div>
   `;
 
-  window._estudiarData = { byAsig, byAsigTests, bloqueMap, temaMap };
+  window._estudiarData = { byAsig, byAsigTests, bloqueMap, temaMap, matIds };
 }
 
 function mostrarDetalle(asigEnc) {
@@ -1745,19 +1667,21 @@ function mostrarDetalle(asigEnc) {
 }
 
 function renderMatItem(m, i) {
-  const topicMeta = getTopicMeta(m.titulo);
-  const isPdf     = m.tipo === 'pdf';
-  const ico       = isPdf ? 'ti-file-text' : (topicMeta.ico !== 'ti-bookmark' ? topicMeta.ico : 'ti-layout-grid');
-  const cc        = topicMeta.cc;
-  const tipTxt    = isPdf ? 'PDF' : 'Recurso';
-  const tipBg     = isPdf ? '#0f2240' : '#0d2d1e';
-  const tipCl     = isPdf ? 'var(--blue)' : 'var(--green)';
-  const onclick   = m.archivo_url ? `window.open('${m.archivo_url}','_blank')` : '';
+  const topicMeta  = getTopicMeta(m.titulo);
+  const isPdf      = m.tipo === 'pdf';
+  const ico        = isPdf ? 'ti-file-text' : (topicMeta.ico !== 'ti-bookmark' ? topicMeta.ico : 'ti-layout-grid');
+  const cc         = topicMeta.cc;
+  const tipTxt     = isPdf ? 'PDF' : 'Recurso';
+  const tipBg      = isPdf ? '#0f2240' : '#0d2d1e';
+  const tipCl      = isPdf ? 'var(--blue)' : 'var(--green)';
+  const onclick    = m.archivo_url ? `window.open('${m.archivo_url}','_blank')` : '';
+  const isExclusive = (window._estudiarData?.matIds || []).includes(m.id);
   return `
-    <div class="mat-item-card" style="--cc:${cc}" onclick="${onclick}">
+    <div class="mat-item-card${isExclusive ? ' mat-excl' : ''}" style="--cc:${isExclusive ? '#f59e0b' : cc}" onclick="${onclick}">
+      ${isExclusive ? `<div class="mat-excl-corner"><i class="ti ti-crown"></i></div>` : ''}
       <div class="mat-item-ico"><i class="ti ${ico}"></i></div>
       <div class="mat-item-nom">${m.titulo}</div>
-      <span class="mat-item-badge" style="background:${tipBg};color:${tipCl}">${tipTxt}</span>
+      ${isExclusive ? `<span class="mat-item-badge" style="background:#2a1800;color:#f59e0b"><i class="ti ti-crown" style="font-size:9px"></i> Solo para ti</span>` : `<span class="mat-item-badge" style="background:${tipBg};color:${tipCl}">${tipTxt}</span>`}
       ${m.archivo_url ? `<button class="mat-item-btn" onclick="event.stopPropagation();window.open('${m.archivo_url}','_blank')">Abrir</button>` : '<button class="mat-item-btn" style="opacity:.4" disabled>Sin enlace</button>'}
     </div>`;
 }

@@ -168,6 +168,15 @@
   .mat-item-title{color:#fff;font-size:12px;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .mat-item-actions{display:flex;align-items:center;gap:4px;flex-shrink:0}
   .mat-sinclasif{background:var(--surface);border:.5px solid var(--border);border-left:3px solid var(--border);border-radius:8px;overflow:hidden}
+  /* Item personalizado (asignado a alumno específico) */
+  .mat-item-personal{border-left:3px solid #f59e0b;background:rgba(245,158,11,.04)}
+  .mat-item-personal .mat-item-ico{background:#2a1800}
+  .mat-item-personal .mat-item-ico i{color:#f59e0b}
+  .mat-personal-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;background:#2a1800;border:.5px solid #f59e0b;border-radius:20px;font-size:10px;font-weight:600;color:#f59e0b;white-space:nowrap;flex-shrink:0}
+  .mat-personal-badge i{font-size:10px}
+  /* Icono de asignatura inteligente en bloque/tema */
+  .mat-bloque-head>.mat-ico-smart{flex-shrink:0;font-size:14px}
+  .mat-tema-head>.mat-ico-smart{flex-shrink:0;font-size:12px}
 
   @keyframes spin{to{transform:rotate(360deg)}}
   .spinner{display:inline-block;width:20px;height:20px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite}
@@ -2985,16 +2994,16 @@ async function loadTablaMaterial() {
   const countInBloque = bid => Object.values(byBloque[bid] || {}).reduce((s, arr) => s + arr.length, 0);
 
   const renderItem = m => {
-    const alIds = materialAlumnoMap[m.id] || [];
-    const asignadoHtml = alIds.map(aid => {
-      const nombre = allAlumnos.find(x => x.id === aid)?.usuario?.nombre?.split(' ')[0] || '?';
-      return `<span class="pill pill-eso" style="margin:1px;font-size:10px">${nombre}</span>`;
-    }).join('');
+    const alIds    = materialAlumnoMap[m.id] || [];
+    const isPerso  = alIds.length > 0;
+    const nombres  = alIds.map(aid => allAlumnos.find(x => x.id === aid)?.usuario?.nombre?.split(' ')[0] || '?').join(', ');
+    const icoMeta  = getTopicMeta(m.titulo);
+    const itemIco  = isPerso ? 'ti-crown' : (m.tipo === 'pdf' ? 'ti-file-text' : (icoMeta.ico !== 'ti-bookmark' ? icoMeta.ico : 'ti-layout-grid'));
     return `
-      <div class="mat-item">
-        <div class="mat-item-ico"><i class="ti ${tipoIcon(m.tipo)}"></i></div>
+      <div class="mat-item${isPerso ? ' mat-item-personal' : ''}">
+        <div class="mat-item-ico"><i class="ti ${itemIco}"></i></div>
         <span class="mat-item-title">${m.titulo}</span>
-        ${asignadoHtml ? `<div style="display:flex;gap:2px;flex-wrap:wrap">${asignadoHtml}</div>` : ''}
+        ${isPerso ? `<span class="mat-personal-badge"><i class="ti ti-crown"></i> Exclusivo · ${nombres}</span>` : ''}
         <span class="pill ${m.visible ? 'pill-ok' : 'pill-grey'}" style="flex-shrink:0">${m.visible ? 'Visible' : 'Oculto'}</span>
         <div class="mat-item-actions">
           <button class="btn-edit" onclick="abrirEditarMaterial('${m.id}')"><i class="ti ti-pencil"></i></button>
@@ -3006,14 +3015,15 @@ async function loadTablaMaterial() {
   };
 
   const renderTemas = (temasPorId, bid) => Object.keys(temasPorId).map(tid => {
-    const items = temasPorId[tid];
-    const nom   = tid !== '__sin__' ? temaNombre(parseInt(tid)) : '';
+    const items   = temasPorId[tid];
+    const nom     = tid !== '__sin__' ? temaNombre(parseInt(tid)) : '';
     if (!nom) return `<div>${items.map(renderItem).join('')}</div>`;
+    const tMeta   = getTopicMeta(nom);
     return `
       <div class="mat-tema" id="mat-tema-${bid}-${tid}">
         <div class="mat-tema-head" onclick="toggleMatTema('${bid}','${tid}')">
           <i class="ti ti-chevron-right mat-tema-chevron"></i>
-          <i class="ti ti-bookmark"></i>
+          <i class="ti ${tMeta.ico} mat-ico-smart" style="color:${tMeta.cc}"></i>
           <span style="flex:1">${nom}</span>
           <span class="mat-tema-count">${items.length} archivo${items.length !== 1 ? 's' : ''}</span>
         </div>
@@ -3022,12 +3032,13 @@ async function loadTablaMaterial() {
   }).join('');
 
   const renderBloques = (bloques) => bloques.map(b => {
-    const n = countInBloque(b.id);
+    const n     = countInBloque(b.id);
+    const bMeta = getTopicMeta(b.nombre);
     return `
       <div class="mat-bloque" id="mat-bloque-${b.id}">
         <div class="mat-bloque-head" onclick="toggleMatBloque('${b.id}')">
           <i class="ti ti-chevron-right mat-bloque-chevron"></i>
-          <i class="ti ti-folder"></i>
+          <i class="ti ${bMeta.ico} mat-ico-smart" style="color:${bMeta.cc}"></i>
           <span class="mat-bloque-name">${b.nombre}</span>
           <span class="mat-bloque-count">${n} archivo${n !== 1 ? 's' : ''}</span>
         </div>
@@ -3053,12 +3064,12 @@ async function loadTablaMaterial() {
         <div class="mat-curso-body" id="mat-curso-body-${nivel}">
           <div class="mat-asig-grid">
             ${asigIds.map(aid => {
-              const ci = allAsignaturas.findIndex(a => a.id === aid);
-              const col = MAT_ASIG_COLORS[ci % MAT_ASIG_COLORS.length] || MAT_ASIG_COLORS[0];
+              const nom  = asigNombre(aid);
+              const meta = getSubjectMeta(nom);
               return `<div class="mat-asig-bubble" data-asig="${aid}"
-                style="--ab-clr:${col.clr};--ab-bg:${col.bg}"
+                style="--ab-clr:${meta.cc};--ab-bg:${meta.cc}22"
                 onclick="toggleMatAsig('${nivel}',${aid})">
-                <i class="ti ti-books"></i>${asigNombre(aid)}
+                <i class="ti ${meta.ico}"></i>${nom}
               </div>`;
             }).join('')}
           </div>
