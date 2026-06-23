@@ -896,6 +896,7 @@ function showSection(id) {
   sessionStorage.setItem('nexo_profesor_seccion', id);
 
   const loaders = {
+    panel:      loadDashboardProf,
     alumnos:    loadTablaAlumnos,
     calendario: loadCalendarioProf,
     actividad:  loadActividad,
@@ -921,17 +922,19 @@ async function loadDashboardProf() {
   if (!ctx.profesorData) return;
   const profId = ctx.profesorData.id;
   const now = new Date();
-  const hoy = now.toISOString().split('T')[0];
+  // Siempre usar fecha LOCAL para evitar desfase UTC (usuario en UTC+1/+2)
+  const localISO = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const hoy = localISO(now);
 
-  // Semana actual
+  // Semana actual (lunes–domingo, fecha local)
   const lun = new Date(now); lun.setDate(now.getDate() - ((now.getDay()+6)%7));
   const dom = new Date(lun); dom.setDate(lun.getDate() + 6);
-  const semIni = lun.toISOString().split('T')[0];
-  const semFin = dom.toISOString().split('T')[0];
+  const semIni = localISO(lun);
+  const semFin = localISO(dom);
 
-  // Mes actual
-  const mesIni = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
-  const mesFin = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+  // Mes actual (fecha local)
+  const mesIni = localISO(new Date(now.getFullYear(), now.getMonth(), 1));
+  const mesFin = localISO(new Date(now.getFullYear(), now.getMonth() + 1, 0));
 
   const [{ data: sesSem }, { data: sesMes }, { data: sesPend }, { data: sesRecientes }] = await Promise.all([
     db.from('sesiones').select('duracion_minutos').eq('profesor_id', profId).gte('fecha', semIni).lte('fecha', semFin).in('estado', ['confirmada','pendiente_confirmacion']),
@@ -1666,7 +1669,7 @@ async function loadActividad() {
     for (let i = 0; i < 12; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const o = document.createElement('option');
-      o.value = d.toISOString().split('T')[0].substring(0,7);
+      o.value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
       o.textContent = d.toLocaleDateString('es-ES',{month:'long',year:'numeric'});
       mFiltro.appendChild(o);
     }
@@ -2218,14 +2221,34 @@ async function nSesSubmit(e) {
     return;
   }
 
-  // Validar que los tiempos cuadren
+  // Validar que los tiempos cuadren a todos los niveles
   const sesMin = parseInt(document.getElementById('nses-duracion')?.value) || 0;
   let totalAsigMin = 0;
-  document.querySelectorAll('#nses-asig-container [id^="nses-atm-"]').forEach(inp => {
-    totalAsigMin += Math.round((parseFloat(inp.value) || 0) * 60);
-  });
-  if (totalAsigMin > sesMin) {
-    showToast(`Los tiempos por asignatura (${totalAsigMin}min) superan la duración total (${sesMin}min). Ajústalos antes de enviar.`, 'error');
+  const asigBlocks = [...document.querySelectorAll('#nses-asig-container .nses-asig-block')];
+
+  for (const block of asigBlocks) {
+    const ai = block.id.replace('nses-asig-block-', '');
+    const asigMin = Math.round((parseFloat(document.getElementById(`nses-atm-${ai}`)?.value) || 0) * 60);
+    totalAsigMin += asigMin;
+
+    // Suma de temas de esta asignatura
+    let temasTotalMin = 0;
+    block.querySelectorAll('[id^="nses-ttm-"]').forEach(inp => {
+      temasTotalMin += parseInt(inp.value) || 0;
+    });
+    if (temasTotalMin > asigMin && asigMin > 0) {
+      const asigNom = block.querySelector('.nses-asig-nom')?.textContent?.trim() || `asig ${ai}`;
+      showToast(`Los tiempos de los temas de "${asigNom}" (${temasTotalMin} min) superan el tiempo de la asignatura (${asigMin} min).`, 'error');
+      return;
+    }
+  }
+
+  if (totalAsigMin === 0) {
+    showToast('Rellena los tiempos de las asignaturas trabajadas.', 'error');
+    return;
+  }
+  if (totalAsigMin !== sesMin) {
+    showToast(`El total de asignaturas (${totalAsigMin} min) debe ser igual a la duración de la sesión (${sesMin} min).`, 'error');
     return;
   }
 
@@ -2298,6 +2321,15 @@ let _nSesCustomTemaCount = 0;
 function nSesAddTema(ai, isMath, prefill) {
   const listEl = document.getElementById(`nses-temas-list-${ai}`);
   if (!listEl) return;
+
+  // Evitar duplicados por nombre
+  if (prefill) {
+    const norm = prefill.trim().toLowerCase();
+    const existe = [...listEl.querySelectorAll('[id^="nses-tnm-"]')]
+      .some(inp => inp.value.trim().toLowerCase() === norm);
+    if (existe) { showToast(`El tema "${prefill}" ya está añadido`, 'error'); return; }
+  }
+
   const pid = `${ai}-t${_nSesCustomTemaCount++}`;
   const div = document.createElement('div');
   div.className = 'nses-tema-block';
