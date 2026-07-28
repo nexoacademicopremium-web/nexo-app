@@ -2,8 +2,16 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Acceso — Nexo Académico</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="/assets/logo/icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/logo/icon-180.png">
+<meta name="theme-color" content="#070e26">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Nexo">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
@@ -18,7 +26,7 @@
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
-  body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+  body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:calc(20px + env(safe-area-inset-top,0px)) 20px calc(20px + env(safe-area-inset-bottom,0px))}
 
   .login-wrap{width:100%;max-width:400px}
   .brand{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:36px}
