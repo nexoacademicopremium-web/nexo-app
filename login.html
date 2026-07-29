@@ -28,52 +28,55 @@
   html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
   body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:calc(20px + env(safe-area-inset-top,0px)) 20px calc(20px + env(safe-area-inset-bottom,0px))}
 
-  .login-wrap{width:100%;max-width:400px}
-  .brand{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:36px}
-  .brand-txt .t1{color:#fff;font-size:18px;font-weight:600;letter-spacing:2px;display:block;line-height:1}
-  .brand-txt .t2{color:var(--blue);font-size:10px;letter-spacing:3px;text-transform:uppercase;margin-top:3px;display:block}
+  .login-wrap{width:100%;max-width:420px}
+  .brand{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:40px}
+  .brand-logo{height:48px;filter:brightness(0) invert(1);opacity:.9;flex-shrink:0}
+  .brand-txt .t1{color:#fff;font-size:20px;font-weight:700;letter-spacing:2px;display:block;line-height:1}
+  .brand-txt .t2{color:var(--blue);font-size:10px;letter-spacing:3px;text-transform:uppercase;margin-top:4px;display:block}
 
-  .role-tabs{display:flex;gap:8px;margin-bottom:24px}
-  .role-tab{flex:1;padding:12px;border-radius:8px;border:0.5px solid var(--border);
-    background:var(--surface);color:var(--muted);font-size:13px;font-weight:500;
-    cursor:pointer;text-align:center;transition:all .15s;display:flex;
+  .role-tabs{display:flex;gap:10px;margin-bottom:22px}
+  .role-tab{flex:1;padding:13px 12px;border-radius:14px;border:1px solid var(--border);
+    background:var(--surface);color:var(--muted);font-size:13px;font-weight:600;
+    cursor:pointer;text-align:center;transition:all .22s cubic-bezier(.4,0,.2,1);display:flex;
     align-items:center;justify-content:center;gap:8px;font-family:inherit}
-  .role-tab i{font-size:18px}
-  .role-tab.active{background:#0a1a30;border-color:var(--blue);color:var(--blue)}
-  .role-tab:hover:not(.active){background:var(--border2);color:var(--soft)}
+  .role-tab i{font-size:19px}
+  .role-tab.active{background:linear-gradient(135deg,#0a1e40,#0d2550);border-color:var(--blue);color:var(--blue);box-shadow:0 4px 20px rgba(110,174,240,.15)}
+  .role-tab:hover:not(.active){background:var(--border2);color:var(--soft);border-color:var(--border2)}
 
-  .card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:28px}
-  .card-title{color:#fff;font-size:16px;font-weight:600;margin-bottom:6px}
-  .card-sub{color:var(--muted);font-size:12px;margin-bottom:24px}
+  .card{background:var(--surface);border:.5px solid var(--border);border-radius:22px;padding:30px;box-shadow:0 8px 40px rgba(0,0,0,.35)}
+  .card-title{color:#fff;font-size:17px;font-weight:700;margin-bottom:6px}
+  .card-sub{color:var(--muted);font-size:12px;margin-bottom:24px;line-height:1.5}
 
-  label{display:block;color:var(--soft);font-size:11px;font-weight:500;margin-bottom:6px;margin-top:16px}
+  label{display:block;color:var(--soft);font-size:11px;font-weight:600;margin-bottom:6px;margin-top:16px}
   .input-wrap{position:relative}
-  .input-wrap i{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:17px}
+  .input-wrap i{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:17px}
   input{
-    width:100%;background:var(--dark);border:0.5px solid var(--border);
-    border-radius:8px;padding:11px 12px 11px 40px;color:var(--txt);
-    font-size:13px;font-family:inherit;outline:none;transition:border-color .15s
+    width:100%;background:var(--dark);border:.5px solid var(--border);
+    border-radius:12px;padding:13px 14px 13px 42px;color:var(--txt);
+    font-size:14px;font-family:inherit;outline:none;transition:border-color .18s,box-shadow .18s
   }
-  input:focus{border-color:var(--blue)}
+  input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(110,174,240,.12)}
   input::placeholder{color:var(--muted)}
 
   .btn{
-    width:100%;background:var(--navy);color:#fff;border:none;
-    border-radius:8px;padding:13px;font-size:14px;font-weight:600;
-    cursor:pointer;font-family:inherit;margin-top:24px;
-    transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px
+    width:100%;background:linear-gradient(135deg,var(--navy),#1a5cc9);color:#fff;border:none;
+    border-radius:12px;padding:15px;font-size:15px;font-weight:700;
+    cursor:pointer;font-family:inherit;margin-top:26px;
+    transition:opacity .18s,transform .18s,box-shadow .18s;display:flex;align-items:center;justify-content:center;gap:8px;
+    box-shadow:0 4px 20px rgba(21,76,169,.4)
   }
-  .btn:hover{background:#1a5cc9}
-  .btn:disabled{opacity:.6;cursor:not-allowed}
-  .btn i{font-size:17px}
+  .btn:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 8px 28px rgba(21,76,169,.5)}
+  .btn:active{transform:translateY(0)}
+  .btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+  .btn i{font-size:18px}
 
   .error-msg{
-    background:var(--red-lt);border:0.5px solid var(--red);border-radius:7px;
-    padding:10px 14px;color:#f08080;font-size:12px;margin-top:14px;display:none
+    background:var(--red-lt);border:.5px solid var(--red);border-radius:10px;
+    padding:11px 16px;color:#f08080;font-size:12px;margin-top:14px;display:none;line-height:1.5
   }
 
-  .footer-link{text-align:center;margin-top:20px;color:var(--muted);font-size:12px}
-  .footer-link a{color:var(--blue);text-decoration:none}
+  .footer-link{text-align:center;margin-top:22px;color:var(--muted);font-size:12px}
+  .footer-link a{color:var(--blue);text-decoration:none;font-weight:500}
 
   @keyframes spin{to{transform:rotate(360deg)}}
   .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
@@ -83,6 +86,7 @@
 
 <div class="login-wrap">
   <div class="brand">
+    <img src="assets/logo/logo_n_azul.png" class="brand-logo" alt="">
     <div class="brand-txt">
       <span class="t1">NEXO</span>
       <span class="t2">Académico</span>
