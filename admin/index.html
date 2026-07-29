@@ -777,7 +777,10 @@
 
     <!-- 7. BONO -->
     <div class="ficha-section" id="ficha-bono-section" style="display:none">
-      <div class="ficha-sec-title"><i class="ti ti-credit-card"></i> Bono activo</div>
+      <div class="ficha-sec-title" style="display:flex;align-items:center;justify-content:space-between">
+        <span><i class="ti ti-credit-card"></i> Bono activo</span>
+        <button id="btn-recalcular-bono" class="btn-ghost" style="font-size:11px;padding:5px 10px" onclick="recalcularBono()"><i class="ti ti-refresh"></i> Recalcular</button>
+      </div>
       <div id="ficha-bono-info">
         <div class="loading-section" style="padding:12px"><div class="spinner"></div></div>
       </div>
@@ -2562,6 +2565,16 @@ async function refreshFichaBono() {
   `;
 }
 
+async function recalcularBono() {
+  if (!fichaAlumnoId) return;
+  const btn = document.getElementById('btn-recalcular-bono');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div style="display:inline-block;width:12px;height:12px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle"></div>'; }
+  const { error } = await db.rpc('recalcular_bonos_alumno', { p_alumno_id: fichaAlumnoId });
+  if (error) showToast('Error al recalcular: ' + error.message, 'error');
+  else { showToast('Bono recalculado correctamente'); await refreshFichaBono(); }
+  if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-refresh"></i> Recalcular'; }
+}
+
 async function abrirEditSesion(sesionId) {
   const { data: s, error } = await db.from('sesiones').select('*').eq('id', sesionId).single();
   if (error || !s) { showToast('No se pudo cargar la sesión', 'error'); return; }
@@ -2650,6 +2663,7 @@ async function guardarEditSesion() {
   cerrarModal('modal-edit-sesion');
   showToast('Sesión actualizada correctamente');
   await refreshFichaSesiones();
+  await refreshFichaBono();
   // Refrescar la tabla global de sesiones si está visible
   if (document.getElementById('section-sesiones')?.classList.contains('active')) loadSesionesAdmin();
 }
