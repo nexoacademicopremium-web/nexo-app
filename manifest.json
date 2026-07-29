@@ -2,7 +2,7 @@
   "name": "Nexo Académico",
   "short_name": "Nexo",
   "description": "Plataforma de seguimiento académico personalizado",
-  "start_url": "./",
+  "start_url": "login.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#070e26",
