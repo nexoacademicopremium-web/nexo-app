@@ -4,7 +4,7 @@
   "description": "Plataforma de seguimiento académico personalizado",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#04071b",
+  "background_color": "#ffffff",
   "theme_color": "#070e26",
   "orientation": "portrait-primary",
   "lang": "es",
