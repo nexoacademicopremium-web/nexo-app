@@ -1,0 +1,37 @@
+{
+  "name": "Nexo Admin",
+  "short_name": "Nexo Admin",
+  "description": "Panel de administración — Nexo Académico",
+  "start_url": "login.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#070e26",
+  "orientation": "portrait-primary",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "../assets/logo/icon-192-admin.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../assets/logo/icon-192-admin.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "../assets/logo/icon-512-admin.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../assets/logo/icon-512-admin.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
