@@ -85,7 +85,7 @@
 
 <div class="login-wrap">
   <div class="brand">
-    <img src="assets/logo/logo_nexo_blanco.png" class="brand-logo" alt="Nexo">
+    <img src="assets/logo/logo_nexo_blanco.png?v=3" class="brand-logo" alt="Nexo">
   </div>
 
   <div class="role-tabs">
@@ -227,6 +227,16 @@ if (_rolParam === 'profesor' || _rolParam === 'alumno') setRole(_rolParam);
     if (u?.rol === 'admin')    window.location.href = BASE_PATH + '/admin/index.html';
   }
 })();
+
+// iOS PWA keyboard fix: force focus on tap
+document.querySelectorAll('input').forEach(inp => {
+  inp.addEventListener('touchend', function(e) {
+    e.preventDefault();
+    this.focus();
+    const len = this.value.length;
+    this.setSelectionRange(len, len);
+  }, { passive: false });
+});
 </script>
 </body>
 </html>
