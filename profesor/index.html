@@ -79,12 +79,13 @@
   .prog-bg{background:rgba(255,255,255,.07);border-radius:20px;height:8px;overflow:hidden;margin-top:12px}
   .prog-bar{height:8px;border-radius:20px;transition:width .6s cubic-bezier(.4,0,.2,1)}
 
-  .grid-main{display:grid;grid-template-columns:1.1fr 0.9fr;gap:16px}
+  .grid-main{display:grid;grid-template-columns:1fr;gap:16px}
   .col-stack{display:flex;flex-direction:column;gap:16px}
-  .card{background:var(--surface);border:.5px solid var(--border);border-radius:10px;overflow:hidden}
-  .card-head{padding:13px 16px;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-  .card-title{color:var(--soft);font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px}
-  .card-title i{font-size:15px;color:var(--blue)}
+  .card{background:var(--surface);border:.5px solid var(--border);border-radius:22px;overflow:hidden;margin-bottom:0;box-shadow:0 4px 24px rgba(0,0,0,.22)}
+  .card-head{padding:16px 20px;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .card-body{padding:16px 20px}
+  .card-title{color:var(--soft);font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}
+  .card-title i{font-size:16px;color:var(--blue)}
   .btn-primary{background:var(--navy);color:#fff;border:none;border-radius:7px;padding:9px 18px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:7px;font-family:inherit;text-decoration:none;transition:background .15s}
   .btn-primary:hover{background:#1a5cc9}
   .btn-primary i{font-size:16px}
@@ -484,66 +485,57 @@
     </button>
   </div>
 
-  <div class="grid-main">
-    <div class="col-stack">
-      <div class="card">
-        <div class="card-head">
-          <div class="card-title"><i class="ti ti-calendar"></i> Calendario — <span id="cal-mini-titulo">—</span></div>
-          <button class="btn-ghost" onclick="showSection('calendario')"><i class="ti ti-arrows-maximize"></i> Expandir</button>
-        </div>
-        <div class="cal-wrap">
-          <div class="cal-grid">
-            <div class="cal-h">L</div><div class="cal-h">M</div><div class="cal-h">X</div>
-            <div class="cal-h">J</div><div class="cal-h">V</div><div class="cal-h">S</div><div class="cal-h">D</div>
-          </div>
-          <div class="cal-grid" id="cal-mini-days" style="margin-top:2px"></div>
-        </div>
+  <div class="col-stack">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><i class="ti ti-calendar"></i> Calendario — <span id="cal-mini-titulo">—</span></div>
+        <button class="btn-ghost" onclick="showSection('calendario')"><i class="ti ti-arrows-maximize"></i> Expandir</button>
       </div>
-
-      <div class="card">
-        <div class="card-head">
-          <div class="card-title"><i class="ti ti-history"></i> Sesiones recientes</div>
-          <button class="btn-ghost" onclick="showSection('actividad')"><i class="ti ti-arrow-right"></i> Historial</button>
+      <div class="cal-wrap">
+        <div class="cal-grid">
+          <div class="cal-h">L</div><div class="cal-h">M</div><div class="cal-h">X</div>
+          <div class="cal-h">J</div><div class="cal-h">V</div><div class="cal-h">S</div><div class="cal-h">D</div>
         </div>
-        <div id="sesiones-recientes">
-          <div class="loading-section"><div class="spinner"></div></div>
-        </div>
+        <div class="cal-grid" id="cal-mini-days" style="margin-top:2px"></div>
       </div>
     </div>
 
-    <div class="col-stack">
-      <div class="card">
-        <div class="card-head">
-          <div class="card-title"><i class="ti ti-users"></i> Mis alumnos activos</div>
-          <button class="btn-ghost" onclick="showSection('alumnos')"><i class="ti ti-arrow-right"></i> Ver todos</button>
-        </div>
-        <div id="alumnos-lista">
-          <div class="loading-section"><div class="spinner"></div></div>
-        </div>
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title"><i class="ti ti-history"></i> Sesiones recientes</div>
+        <button class="btn-ghost" onclick="showSection('actividad')"><i class="ti ti-arrow-right"></i> Historial</button>
       </div>
+      <div id="sesiones-recientes">
+        <div class="loading-section"><div class="spinner"></div></div>
+      </div>
+    </div>
 
-      <div class="card">
-        <div class="card-head"><div class="card-title"><i class="ti ti-bolt"></i> Acciones rápidas</div></div>
-        <div class="qa" onclick="showSection('sesion')">
-          <div class="qa-ico"><i class="ti ti-file-pencil"></i></div>
-          <div><div class="qa-title">Registrar sesión</div><div class="qa-sub">Registra la clase de hoy</div></div>
-          <i class="ti ti-chevron-right qa-arrow"></i>
-        </div>
-        <div class="qa" onclick="showSection('calendario')">
-          <div class="qa-ico"><i class="ti ti-calendar-plus"></i></div>
-          <div><div class="qa-title">Añadir al calendario</div><div class="qa-sub">Programa una nueva sesión</div></div>
-          <i class="ti ti-chevron-right qa-arrow"></i>
-        </div>
-        <div class="qa" onclick="showSection('alumnos')">
-          <div class="qa-ico"><i class="ti ti-users"></i></div>
-          <div><div class="qa-title">Ver mis alumnos</div><div class="qa-sub">Ficha completa de cada alumno</div></div>
-          <i class="ti ti-chevron-right qa-arrow"></i>
-        </div>
-        <div class="qa" onclick="showSection('actividad')">
-          <div class="qa-ico"><i class="ti ti-chart-bar"></i></div>
-          <div><div class="qa-title">Mi actividad</div><div class="qa-sub">Historial y estadísticas</div></div>
-          <i class="ti ti-chevron-right qa-arrow"></i>
-        </div>
+    <div class="card">
+      <div class="card-head"><div class="card-title"><i class="ti ti-bolt"></i> Acciones rápidas</div></div>
+      <div class="qa" onclick="showSection('sesion')">
+        <div class="qa-ico"><i class="ti ti-file-pencil"></i></div>
+        <div><div class="qa-title">Registrar sesión</div><div class="qa-sub">Registra la clase de hoy</div></div>
+        <i class="ti ti-chevron-right qa-arrow"></i>
+      </div>
+      <div class="qa" onclick="showSection('alumnos')">
+        <div class="qa-ico"><i class="ti ti-users"></i></div>
+        <div><div class="qa-title">Mis alumnos</div><div class="qa-sub">Ficha completa de cada alumno</div></div>
+        <i class="ti ti-chevron-right qa-arrow"></i>
+      </div>
+      <div class="qa" onclick="showSection('calendario')">
+        <div class="qa-ico"><i class="ti ti-calendar-plus"></i></div>
+        <div><div class="qa-title">Calendario</div><div class="qa-sub">Programa y gestiona tus clases</div></div>
+        <i class="ti ti-chevron-right qa-arrow"></i>
+      </div>
+      <div class="qa" onclick="showSection('actividad')">
+        <div class="qa-ico"><i class="ti ti-chart-bar"></i></div>
+        <div><div class="qa-title">Mi actividad</div><div class="qa-sub">Historial y estadísticas</div></div>
+        <i class="ti ti-chevron-right qa-arrow"></i>
+      </div>
+      <div class="qa" onclick="showSection('tests')">
+        <div class="qa-ico"><i class="ti ti-clipboard-list"></i></div>
+        <div><div class="qa-title">Tests</div><div class="qa-sub">Crea tests para tus alumnos</div></div>
+        <i class="ti ti-chevron-right qa-arrow"></i>
       </div>
     </div>
   </div>
@@ -773,22 +765,19 @@
       <button class="modal-close" onclick="cerrarModalTestProf()">×</button>
     </div>
     <form id="form-test-prof" onsubmit="guardarTestProf(event)">
-      <label class="field-label" style="margin-top:0">Título del test *</label>
+      <label class="field-label" style="margin-top:0">Alumno *</label>
+      <select class="field-input" id="tp-alumno" required onchange="tpAlumnoChange()">
+        <option value="">— Seleccionar alumno —</option>
+      </select>
+
+      <label class="field-label">Asignatura *</label>
+      <select class="field-input" id="tp-asignatura" required disabled>
+        <option value="">— Primero selecciona un alumno —</option>
+      </select>
+
+      <label class="field-label">Título del test *</label>
       <input class="field-input" id="tp-titulo" placeholder="Ej: Repaso tema 3 — Álgebra" required>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div>
-          <label class="field-label">Asignatura</label>
-          <select class="field-input" id="tp-asignatura">
-            <option value="">— Seleccionar —</option>
-          </select>
-        </div>
-        <div>
-          <label class="field-label">Alumno</label>
-          <select class="field-input" id="tp-alumno">
-            <option value="">Todos mis alumnos</option>
-          </select>
-        </div>
-      </div>
+
       <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:10px">
         <span style="color:var(--soft);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.6px">Preguntas</span>
         <button type="button" class="btn-ghost" onclick="addPreguntaProf()"><i class="ti ti-plus"></i> Añadir pregunta</button>
@@ -2601,7 +2590,7 @@ async function refreshApp() {
 // ============================================================
 // TESTS (PROFESOR)
 // ============================================================
-let _tpEditId = null, _tpPregCount = 0;
+let _tpEditId = null, _tpPregCount = 0, _tpAlumnosData = [];
 
 async function loadTestsProf() {
   const el = document.getElementById('prof-tests-lista');
@@ -2636,12 +2625,43 @@ async function toggleTestVis(id, vis) {
   loadTestsProf();
 }
 
-function abrirModalTestProf() {
+async function _cargarAlumnosProf() {
+  if (_tpAlumnosData.length > 0) return; // ya cargados
+  const { data } = await db.from('alumnos')
+    .select('id,nombre,apellidos,asignaturas')
+    .eq('profesor_id', ctx.profesor?.id || '')
+    .eq('activo', true)
+    .order('nombre');
+  _tpAlumnosData = data || [];
+}
+
+function tpAlumnoChange() {
+  const alumnoId = document.getElementById('tp-alumno').value;
+  const selAs = document.getElementById('tp-asignatura');
+  if (!alumnoId) {
+    selAs.innerHTML = '<option value="">— Primero selecciona un alumno —</option>';
+    selAs.disabled = true;
+    return;
+  }
+  const alumno = _tpAlumnosData.find(a => a.id === alumnoId);
+  const asigs = (alumno?.asignaturas || []).sort();
+  selAs.disabled = false;
+  selAs.innerHTML = '<option value="">— Seleccionar asignatura —</option>' +
+    asigs.map(a => `<option value="${a}">${a}</option>`).join('');
+}
+
+async function abrirModalTestProf() {
   _tpEditId = null; _tpPregCount = 0;
   document.getElementById('form-test-prof').reset();
   document.getElementById('modal-test-prof-titulo').textContent = 'Nuevo test';
   document.getElementById('tp-preguntas-container').innerHTML = '';
-  _cargarSelectoresProf();
+  await _cargarAlumnosProf();
+  const selA = document.getElementById('tp-alumno');
+  selA.innerHTML = '<option value="">— Seleccionar alumno —</option>' +
+    _tpAlumnosData.map(a => `<option value="${a.id}">${a.nombre} ${a.apellidos || ''}</option>`).join('');
+  const selAs = document.getElementById('tp-asignatura');
+  selAs.innerHTML = '<option value="">— Primero selecciona un alumno —</option>';
+  selAs.disabled = true;
   addPreguntaProf();
   document.getElementById('modal-test-prof').classList.add('open');
 }
@@ -2654,26 +2674,24 @@ async function editarTestProf(id) {
   document.getElementById('tp-titulo').value = t.titulo || '';
   _tpPregCount = 0;
   document.getElementById('tp-preguntas-container').innerHTML = '';
-  await _cargarSelectoresProf(t.asignatura);
+  await _cargarAlumnosProf();
+  // Poblar alumno
+  const selA = document.getElementById('tp-alumno');
+  selA.innerHTML = '<option value="">— Seleccionar alumno —</option>' +
+    _tpAlumnosData.map(a => `<option value="${a.id}" ${a.id === t.alumno_id ? 'selected' : ''}>${a.nombre} ${a.apellidos || ''}</option>`).join('');
+  // Poblar asignatura del alumno guardado
+  if (t.alumno_id) {
+    const alumno = _tpAlumnosData.find(a => a.id === t.alumno_id);
+    const asigs = (alumno?.asignaturas || []).sort();
+    const selAs = document.getElementById('tp-asignatura');
+    selAs.disabled = false;
+    selAs.innerHTML = '<option value="">— Seleccionar asignatura —</option>' +
+      asigs.map(a => `<option value="${a}" ${a === t.asignatura ? 'selected' : ''}>${a}</option>`).join('');
+  } else {
+    tpAlumnoChange();
+  }
   (pregs || []).forEach(p => addPreguntaProf(p));
   document.getElementById('modal-test-prof').classList.add('open');
-}
-
-async function _cargarSelectoresProf(asigSel = '') {
-  const { data: alumnos } = await db.from('alumnos')
-    .select('id,nombre,apellidos,asignaturas')
-    .eq('profesor_id', ctx.profesor?.id || '')
-    .eq('activo', true)
-    .order('nombre');
-
-  const selA = document.getElementById('tp-alumno');
-  selA.innerHTML = '<option value="">Todos mis alumnos</option>' +
-    (alumnos || []).map(a => `<option value="${a.id}">${a.nombre} ${a.apellidos}</option>`).join('');
-
-  const asigs = [...new Set((alumnos || []).flatMap(a => a.asignaturas || []))].sort();
-  const selAs = document.getElementById('tp-asignatura');
-  selAs.innerHTML = '<option value="">— Seleccionar —</option>' +
-    asigs.map(a => `<option value="${a}" ${a === asigSel ? 'selected' : ''}>${a}</option>`).join('');
 }
 
 function addPreguntaProf(data = null) {
@@ -2709,6 +2727,7 @@ async function guardarTestProf(e) {
   const testData = {
     titulo:     document.getElementById('tp-titulo').value.trim(),
     asignatura: document.getElementById('tp-asignatura').value || null,
+    alumno_id:  document.getElementById('tp-alumno').value || null,
     creado_por: ctx.usuario.id,
     visible:    true,
   };
