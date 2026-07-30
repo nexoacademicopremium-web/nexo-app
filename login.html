@@ -256,6 +256,16 @@ if (_rolParam === 'profesor' || _rolParam === 'alumno') setRole(_rolParam);
     ['.','@','-','_','SPACE','DONE']
   ];
 
+  function press(k) {
+    const isLtr = k.length === 1 && /[a-z]/i.test(k);
+    if (isLtr || (k.length===1 && /[0-9.@\-_]/.test(k))) {
+      ckType(_ck.caps && isLtr ? k.toUpperCase() : k);
+    } else if (k==='SPACE') { ckType(' '); }
+    else if (k==='SHIFT')   { ckCaps(); }
+    else if (k==='BACK')    { ckDel(); }
+    else if (k==='DONE')    { ckClose(); }
+  }
+
   function build() {
     const kb = document.getElementById('ckbd');
     rows.forEach(row => {
@@ -267,80 +277,88 @@ if (_rolParam === 'profesor' || _rolParam === 'alumno') setRole(_rolParam);
         const isLtr = k.length === 1 && /[a-z]/i.test(k);
         let cls = 'ck-key';
         let txt = k;
-        if (isLtr)      { b.dataset.l = k; txt = _ck.caps ? k.toUpperCase() : k; }
-        if (k==='SHIFT') { cls += ' ck-fn ck-shift' + (_ck.caps ? ' ck-on' : ''); txt = '⇧'; }
-        if (k==='BACK')  { cls += ' ck-fn'; txt = '⌫'; }
-        if (k==='SPACE') { cls += ' ck-space'; txt = 'espacio'; }
-        if (k==='DONE')  { cls += ' ck-done'; txt = 'Listo ✓'; }
+        if (isLtr)       { b.dataset.l = k; txt = _ck.caps ? k.toUpperCase() : k; }
+        if (k==='SHIFT')  { cls += ' ck-fn ck-shift' + (_ck.caps ? ' ck-on' : ''); txt = '⇧'; }
+        if (k==='BACK')   { cls += ' ck-fn'; txt = '⌫'; }
+        if (k==='SPACE')  { cls += ' ck-space'; txt = 'espacio'; }
+        if (k==='DONE')   { cls += ' ck-done'; txt = 'Listo ✓'; }
         b.className = cls; b.textContent = txt;
 
+        /* MOBILE: touchstart para respuesta inmediata */
         b.addEventListener('touchstart', e => {
           e.preventDefault(); e.stopPropagation();
           b.classList.add('ck-pressed');
-          if (isLtr || (k.length===1 && /[0-9.@\-_]/.test(k))) {
-            type(_ck.caps && isLtr ? k.toUpperCase() : k);
-          } else if (k==='SPACE') { type(' '); }
-          else if (k==='SHIFT')   { toggleCaps(); }
-          else if (k==='BACK')    { del(); }
-          else if (k==='DONE')    { close(); }
+          press(k);
         }, {passive:false});
-        b.addEventListener('touchend', () => b.classList.remove('ck-pressed'));
+        b.addEventListener('touchend', e => { e.preventDefault(); b.classList.remove('ck-pressed'); }, {passive:false});
+
+        /* PC/ESCRITORIO: mousedown evita que el input pierda foco; click ejecuta */
+        b.addEventListener('mousedown', e => e.preventDefault());
+        b.addEventListener('click', e => { e.preventDefault(); press(k); });
+
         d.appendChild(b);
       });
       kb.appendChild(d);
     });
   }
 
-  function toggleCaps() {
+  function ckCaps() {
     _ck.caps = !_ck.caps;
-    document.querySelectorAll('[data-l]').forEach(b => b.textContent = _ck.caps ? b.dataset.l.toUpperCase() : b.dataset.l);
+    document.querySelectorAll('[data-l]').forEach(b => {
+      b.textContent = _ck.caps ? b.dataset.l.toUpperCase() : b.dataset.l;
+    });
     document.querySelectorAll('.ck-shift').forEach(b => b.classList.toggle('ck-on', _ck.caps));
   }
 
-  function type(ch) {
+  function ckType(ch) {
     const el = _ck.tgt; if (!el) return;
-    const s = el.selectionStart ?? el.value.length;
-    const e = el.selectionEnd ?? s;
-    el.value = el.value.slice(0,s) + ch + el.value.slice(e);
-    el.selectionStart = el.selectionEnd = s + 1;
-    el.dispatchEvent(new Event('input',{bubbles:true}));
+    let s = 0, e2 = 0;
+    try { s = el.selectionStart != null ? el.selectionStart : el.value.length; e2 = el.selectionEnd != null ? el.selectionEnd : s; } catch(_) { s = e2 = el.value.length; }
+    el.value = el.value.slice(0, s) + ch + el.value.slice(e2);
+    try { el.selectionStart = el.selectionEnd = s + 1; } catch(_) {}
+    el.dispatchEvent(new Event('input', {bubbles:true}));
   }
 
-  function del() {
+  function ckDel() {
     const el = _ck.tgt; if (!el) return;
-    const s = el.selectionStart ?? el.value.length;
-    const e = el.selectionEnd ?? s;
-    if (s !== e) { el.value = el.value.slice(0,s)+el.value.slice(e); el.selectionStart=el.selectionEnd=s; }
-    else if (s>0){ el.value = el.value.slice(0,s-1)+el.value.slice(s); el.selectionStart=el.selectionEnd=s-1; }
-    el.dispatchEvent(new Event('input',{bubbles:true}));
+    let s = 0, e2 = 0;
+    try { s = el.selectionStart != null ? el.selectionStart : el.value.length; e2 = el.selectionEnd != null ? el.selectionEnd : s; } catch(_) { s = e2 = el.value.length; }
+    if (s !== e2) { el.value = el.value.slice(0,s)+el.value.slice(e2); try { el.selectionStart=el.selectionEnd=s; } catch(_){} }
+    else if (s > 0) { el.value = el.value.slice(0,s-1)+el.value.slice(s); try { el.selectionStart=el.selectionEnd=s-1; } catch(_){} }
+    el.dispatchEvent(new Event('input', {bubbles:true}));
   }
 
-  function open(inp) {
+  function ckOpen(inp) {
     _ck.tgt = inp;
+    inp.focus();
     document.getElementById('ckbd').classList.add('ck-open');
     setTimeout(() => {
       const kb = document.getElementById('ckbd');
-      const r = inp.getBoundingClientRect();
+      const r  = inp.getBoundingClientRect();
       const vis = window.innerHeight - kb.offsetHeight;
-      if (r.bottom > vis - 12) window.scrollBy({top: r.bottom - vis + 32, behavior:'smooth'});
-    }, 120);
+      if (r.bottom > vis - 12) window.scrollBy({top: r.bottom - vis + 40, behavior:'smooth'});
+    }, 150);
   }
 
-  function close() {
+  function ckClose() {
     document.getElementById('ckbd').classList.remove('ck-open');
-    _ck.tgt = null;
+    if (_ck.tgt) { _ck.tgt.blur(); _ck.tgt = null; }
   }
 
   window.addEventListener('DOMContentLoaded', () => {
     build();
     document.querySelectorAll('input').forEach(inp => {
-      // Prevent native keyboard
-      inp.setAttribute('inputmode','none');
-      inp.addEventListener('touchstart', e => { e.stopPropagation(); open(inp); }, {passive:true});
-      inp.addEventListener('click', () => open(inp));
+      inp.setAttribute('inputmode', 'none');
+      inp.addEventListener('focus',      () => ckOpen(inp));
+      inp.addEventListener('click',      () => ckOpen(inp));
+      inp.addEventListener('touchstart', e => { e.stopPropagation(); ckOpen(inp); }, {passive:true});
+    });
+    /* Cerrar al tocar/clicar fuera del teclado y de un input */
+    document.addEventListener('mousedown', e => {
+      if (!e.target.closest('#ckbd') && !e.target.matches('input')) ckClose();
     });
     document.addEventListener('touchstart', e => {
-      if (!e.target.closest('#ckbd') && !e.target.matches('input')) close();
+      if (!e.target.closest('#ckbd') && !e.target.matches('input')) ckClose();
     }, {passive:true});
   });
 })();
