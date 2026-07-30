@@ -26,7 +26,7 @@
     --red:#c0392b; --red-lt:#2d0d0d;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px;overflow-x:hidden}
+  html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
   .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:calc(62px + env(safe-area-inset-top,0px));background:rgba(4,7,27,.97);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0px) 20px 0}
   .topbar-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
   .topbar-logo-svg{flex-shrink:0;display:block}
@@ -49,7 +49,7 @@
   .nav-bottom{margin-top:auto;padding-top:8px}
   .badge-nav{background:var(--red);color:#fff;font-size:9px;font-weight:600;padding:1px 5px;border-radius:10px;margin-left:auto}
 
-  .main{margin-left:210px;margin-top:calc(62px + env(safe-area-inset-top,0px));padding:24px 26px;min-height:calc(100vh - 62px - env(safe-area-inset-top,0px))}
+  .main{margin-left:210px;margin-top:calc(62px + env(safe-area-inset-top,0px));padding:24px 26px;min-height:calc(100vh - 62px - env(safe-area-inset-top,0px));overflow-x:hidden}
   .page-title{color:#fff;font-size:22px;font-weight:700;margin-bottom:4px;letter-spacing:-.3px}
   .page-sub{color:var(--muted);font-size:13px;margin-bottom:22px}
 
@@ -348,11 +348,13 @@
     .modal-box{width:100%!important;max-width:100%!important;border-radius:24px 24px 0 0!important;max-height:92dvh;min-height:auto;overflow-y:auto;animation:slideUp .28s cubic-bezier(.4,0,.2,1)}
     @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
     .bottom-nav{display:flex}
-    .asig-bubble-grid{grid-template-columns:1fr 1fr;gap:14px}
-    .asig-bubble{padding:26px 14px 20px;border-radius:24px}
-    .asig-bubble-ico{width:66px;height:66px;border-radius:17px;margin-bottom:14px}
+    .asig-bubble-grid{grid-template-columns:1fr 1fr;gap:14px;justify-items:stretch}
+    .asig-bubble{padding:26px 14px 20px;border-radius:24px;min-height:160px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .asig-bubble-ico{width:66px;height:66px;border-radius:17px;margin:0 auto 14px}
     .asig-bubble-ico i{font-size:30px}
     .asig-bubble-name{font-size:14px}
+    /* Último elemento solo en su fila → centrado */
+    .asig-bubble:last-child:nth-child(odd){grid-column:span 2;max-width:calc(50% - 7px);justify-self:center}
     .mat-tema-grid{grid-template-columns:1fr 1fr;gap:12px}
     .mat-item-grid{grid-template-columns:1fr 1fr;gap:12px}
     .grid2{grid-template-columns:1fr!important}
@@ -366,6 +368,7 @@
     .kpi-val{font-size:42px}
     .asig-bubble-grid{grid-template-columns:1fr 1fr;gap:12px}
     .asig-bubble-name{font-size:13px}
+    .asig-bubble:last-child:nth-child(odd){max-width:calc(50% - 6px)}
     .tarifa-h{font-size:38px}
   }
 

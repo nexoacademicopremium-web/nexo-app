@@ -2670,6 +2670,12 @@ async function editarTestProf(id) {
   document.getElementById('modal-test-prof').classList.add('open');
 }
 
+function renumberPreguntas() {
+  document.getElementById('tp-preguntas-container')
+    .querySelectorAll('[id^="tp-pw-"]')
+    .forEach((w, i) => { const l = w.querySelector('.tp-num-label'); if (l) l.textContent = 'Pregunta ' + (i + 1); });
+}
+
 function addPreguntaProf(data = null) {
   const i = _tpPregCount++;
   const d = document.createElement('div');
@@ -2677,8 +2683,8 @@ function addPreguntaProf(data = null) {
   d.style.cssText = 'background:var(--dark);border:.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px';
   d.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <span style="color:var(--soft);font-size:12px;font-weight:600">Pregunta ${i + 1}</span>
-      <button type="button" onclick="document.getElementById('tp-pw-${i}').remove()" class="btn-cancel" style="padding:3px 10px;font-size:11px">✕</button>
+      <span class="tp-num-label" style="color:var(--soft);font-size:12px;font-weight:600">Pregunta ${i + 1}</span>
+      <button type="button" onclick="this.closest('[id^=tp-pw-]').remove();renumberPreguntas()" class="btn-cancel" style="padding:3px 10px;font-size:11px">✕</button>
     </div>
     <label class="field-label" style="margin-top:0">Enunciado *</label>
     <textarea class="field-input" id="tp-pe-${i}" rows="2" required style="resize:vertical">${data?.enunciado || ''}</textarea>
