@@ -29,10 +29,11 @@
   body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:calc(20px + env(safe-area-inset-top,0px)) 20px calc(20px + env(safe-area-inset-bottom,0px))}
 
   .login-wrap{width:100%;max-width:420px}
-  .brand{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:40px}
-  .brand-logo{height:72px;width:auto;flex-shrink:0}
-  .brand-txt .t1{color:#fff;font-size:20px;font-weight:700;letter-spacing:2px;display:block;line-height:1}
-  .brand-txt .t2{color:var(--blue);font-size:10px;letter-spacing:3px;text-transform:uppercase;margin-top:4px;display:block}
+  .brand{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;margin-bottom:40px}
+  .brand-logo{height:110px;width:auto;flex-shrink:0}
+  .brand-txt{text-align:center}
+  .brand-txt .t1{color:#fff;font-size:22px;font-weight:700;letter-spacing:2.5px;display:block;line-height:1}
+  .brand-txt .t2{color:var(--blue);font-size:11px;letter-spacing:3px;text-transform:uppercase;margin-top:5px;display:block}
 
   .role-tabs{display:flex;gap:10px;margin-bottom:22px}
   .role-tab{flex:1;padding:13px 12px;border-radius:14px;border:1px solid var(--border);
@@ -92,6 +93,7 @@
       <span class="t2">Académico</span>
     </div>
   </div>
+
 
   <div class="role-tabs">
     <button class="role-tab active" id="tab-alumno" onclick="setRole('alumno')">
