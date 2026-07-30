@@ -259,6 +259,13 @@
   .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:89;backdrop-filter:blur(2px)}
   .refresh-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:21px;padding:7px;border-radius:10px;display:flex;align-items:center;transition:color .15s;-webkit-tap-highlight-color:transparent}
   .refresh-btn:hover{color:var(--blue)}
+  #update-banner{display:none;position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:9000;background:#0f2240;border:.5px solid var(--blue);border-radius:14px;padding:12px 18px;box-shadow:0 8px 32px rgba(0,0,0,.5);align-items:center;gap:14px;min-width:280px;max-width:calc(100vw - 32px);animation:slideUpBanner .3s cubic-bezier(.4,0,.2,1)}
+  #update-banner.show{display:flex}
+  @keyframes slideUpBanner{from{opacity:0;transform:translateX(-50%) translateY(20px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+  .upd-txt{flex:1;color:var(--txt);font-size:13px;line-height:1.4}
+  .upd-txt b{color:var(--blue);display:block;margin-bottom:2px}
+  .upd-btn{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit;-webkit-tap-highlight-color:transparent}
+  .upd-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:4px;flex-shrink:0}
   .refresh-btn.spinning i{animation:spin .7s linear infinite}
   /* ── MOBILE FULL-SCREEN MENU ── */
   .mobile-menu{display:none;position:fixed;inset:0;background:var(--bg);z-index:150;overflow-y:auto}
@@ -2728,6 +2735,37 @@ async function guardarTestProf(e) {
 function cerrarModalTestProf() {
   document.getElementById('modal-test-prof').classList.remove('open');
 }
+</script>
+
+<!-- UPDATE BANNER -->
+<div id="update-banner">
+  <div class="upd-txt"><b>Nueva versión disponible</b>Hay una actualización de la app lista para instalar.</div>
+  <button class="upd-btn" onclick="doUpdate()">Actualizar</button>
+  <button class="upd-close" onclick="document.getElementById('update-banner').classList.remove('show')" title="Cerrar">×</button>
+</div>
+<script>
+(function(){
+  const KEY = 'nexo_app_ver';
+  async function checkUpdate() {
+    try {
+      const r = await fetch('../version.json?t=' + Date.now(), {cache:'no-store'});
+      if (!r.ok) return;
+      const {v} = await r.json();
+      const stored = localStorage.getItem(KEY);
+      if (stored && stored !== v) {
+        document.getElementById('update-banner').classList.add('show');
+      } else {
+        localStorage.setItem(KEY, v);
+      }
+    } catch(_) {}
+  }
+  window.doUpdate = function() {
+    fetch('../version.json?t=' + Date.now(), {cache:'no-store'})
+      .then(r => r.json()).then(({v}) => localStorage.setItem(KEY, v)).catch(()=>{});
+    window.location.href = window.location.pathname + '?v=' + Date.now();
+  };
+  window.addEventListener('load', checkUpdate);
+})();
 </script>
 </body>
 </html>
