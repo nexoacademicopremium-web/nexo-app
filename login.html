@@ -79,6 +79,19 @@
 
   @keyframes spin{to{transform:rotate(360deg)}}
   .spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+
+  /* ── CUSTOM KEYBOARD ── */
+  #ckbd{position:fixed;bottom:0;left:0;right:0;z-index:9999;background:#0c1835;border-top:.5px solid #1a2a4a;padding:10px 4px calc(14px + env(safe-area-inset-bottom,0px));transform:translateY(110%);transition:transform .2s cubic-bezier(.4,0,.2,1);-webkit-user-select:none;user-select:none}
+  #ckbd.ck-open{transform:translateY(0)}
+  .ck-row{display:flex;justify-content:center;gap:5px;margin-bottom:7px}
+  .ck-row:last-child{margin-bottom:0}
+  .ck-key{background:#1c2e52;border:none;border-radius:7px;color:#fff;font-size:18px;font-weight:500;height:46px;flex:1;max-width:36px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'DM Sans',sans-serif;box-shadow:0 2px 0 #07101e;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  .ck-key.ck-pressed{background:#2563eb;transform:scale(.94)}
+  .ck-fn{background:#0f1f35;max-width:48px;font-size:16px}
+  .ck-shift.ck-on{background:#2563eb}
+  .ck-space{max-width:170px;flex:5;font-size:13px;color:#4a6080}
+  .ck-done{background:#154ca9;max-width:62px;font-size:13px;font-weight:700;color:#fff}
+  .brand-logo{height:80px;width:auto;max-width:260px;flex-shrink:0;filter:drop-shadow(0 0 8px rgba(255,255,255,.18))}
 </style>
 </head>
 <body>
@@ -228,14 +241,109 @@ if (_rolParam === 'profesor' || _rolParam === 'alumno') setRole(_rolParam);
   }
 })();
 
-// iOS PWA keyboard fix: readonly trick — único método fiable en standalone
-document.querySelectorAll('input').forEach(inp => {
-  inp.setAttribute('readonly', '');
-  inp.addEventListener('touchstart', function() {
-    this.removeAttribute('readonly');
-    this.focus();
-  }, { passive: true });
-});
+</script>
+
+<!-- CUSTOM IN-APP KEYBOARD -->
+<div id="ckbd"></div>
+<script>
+(function(){
+  const _ck = { tgt: null, caps: true };
+  const rows = [
+    ['1','2','3','4','5','6','7','8','9','0'],
+    ['q','w','e','r','t','y','u','i','o','p'],
+    ['a','s','d','f','g','h','j','k','l'],
+    ['SHIFT','z','x','c','v','b','n','m','BACK'],
+    ['.','@','-','_','SPACE','DONE']
+  ];
+
+  function build() {
+    const kb = document.getElementById('ckbd');
+    rows.forEach(row => {
+      const d = document.createElement('div');
+      d.className = 'ck-row';
+      row.forEach(k => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        const isLtr = k.length === 1 && /[a-z]/i.test(k);
+        let cls = 'ck-key';
+        let txt = k;
+        if (isLtr)      { b.dataset.l = k; txt = _ck.caps ? k.toUpperCase() : k; }
+        if (k==='SHIFT') { cls += ' ck-fn ck-shift' + (_ck.caps ? ' ck-on' : ''); txt = '⇧'; }
+        if (k==='BACK')  { cls += ' ck-fn'; txt = '⌫'; }
+        if (k==='SPACE') { cls += ' ck-space'; txt = 'espacio'; }
+        if (k==='DONE')  { cls += ' ck-done'; txt = 'Listo ✓'; }
+        b.className = cls; b.textContent = txt;
+
+        b.addEventListener('touchstart', e => {
+          e.preventDefault(); e.stopPropagation();
+          b.classList.add('ck-pressed');
+          if (isLtr || (k.length===1 && /[0-9.@\-_]/.test(k))) {
+            type(_ck.caps && isLtr ? k.toUpperCase() : k);
+          } else if (k==='SPACE') { type(' '); }
+          else if (k==='SHIFT')   { toggleCaps(); }
+          else if (k==='BACK')    { del(); }
+          else if (k==='DONE')    { close(); }
+        }, {passive:false});
+        b.addEventListener('touchend', () => b.classList.remove('ck-pressed'));
+        d.appendChild(b);
+      });
+      kb.appendChild(d);
+    });
+  }
+
+  function toggleCaps() {
+    _ck.caps = !_ck.caps;
+    document.querySelectorAll('[data-l]').forEach(b => b.textContent = _ck.caps ? b.dataset.l.toUpperCase() : b.dataset.l);
+    document.querySelectorAll('.ck-shift').forEach(b => b.classList.toggle('ck-on', _ck.caps));
+  }
+
+  function type(ch) {
+    const el = _ck.tgt; if (!el) return;
+    const s = el.selectionStart ?? el.value.length;
+    const e = el.selectionEnd ?? s;
+    el.value = el.value.slice(0,s) + ch + el.value.slice(e);
+    el.selectionStart = el.selectionEnd = s + 1;
+    el.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+
+  function del() {
+    const el = _ck.tgt; if (!el) return;
+    const s = el.selectionStart ?? el.value.length;
+    const e = el.selectionEnd ?? s;
+    if (s !== e) { el.value = el.value.slice(0,s)+el.value.slice(e); el.selectionStart=el.selectionEnd=s; }
+    else if (s>0){ el.value = el.value.slice(0,s-1)+el.value.slice(s); el.selectionStart=el.selectionEnd=s-1; }
+    el.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+
+  function open(inp) {
+    _ck.tgt = inp;
+    document.getElementById('ckbd').classList.add('ck-open');
+    setTimeout(() => {
+      const kb = document.getElementById('ckbd');
+      const r = inp.getBoundingClientRect();
+      const vis = window.innerHeight - kb.offsetHeight;
+      if (r.bottom > vis - 12) window.scrollBy({top: r.bottom - vis + 32, behavior:'smooth'});
+    }, 120);
+  }
+
+  function close() {
+    document.getElementById('ckbd').classList.remove('ck-open');
+    _ck.tgt = null;
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    build();
+    document.querySelectorAll('input').forEach(inp => {
+      // Prevent native keyboard
+      inp.setAttribute('inputmode','none');
+      inp.addEventListener('touchstart', e => { e.stopPropagation(); open(inp); }, {passive:true});
+      inp.addEventListener('click', () => open(inp));
+    });
+    document.addEventListener('touchstart', e => {
+      if (!e.target.closest('#ckbd') && !e.target.matches('input')) close();
+    }, {passive:true});
+  });
+})();
 </script>
 </body>
 </html>
