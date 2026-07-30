@@ -27,7 +27,7 @@
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
-  .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:calc(54px + env(safe-area-inset-top,0px));background:rgba(4,7,27,.97);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0px) 20px 0}
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:calc(62px + env(safe-area-inset-top,0px));background:rgba(4,7,27,.97);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0px) 20px 0}
   .topbar-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
   .topbar-logo-svg{flex-shrink:0;display:block}
   .t1{color:#fff;font-size:14px;font-weight:700;letter-spacing:2px;display:block;line-height:1}
@@ -39,7 +39,7 @@
   .avatar-menu a{display:flex;align-items:center;gap:8px;padding:10px 14px;color:var(--txt);font-size:13px;text-decoration:none;cursor:pointer}
   .avatar-menu a:hover{background:var(--border2)}
   .avatar-menu a i{color:var(--muted);font-size:16px}
-  .sidebar{position:fixed;top:calc(54px + env(safe-area-inset-top,0px));left:0;bottom:0;width:210px;background:var(--dark);border-right:.5px solid var(--border);display:flex;flex-direction:column;padding:18px 0 calc(16px + env(safe-area-inset-bottom,0px))}
+  .sidebar{position:fixed;top:calc(62px + env(safe-area-inset-top,0px));left:0;bottom:0;width:210px;background:var(--dark);border-right:.5px solid var(--border);display:flex;flex-direction:column;padding:18px 0 calc(16px + env(safe-area-inset-bottom,0px))}
   .nav-section{padding:0 16px 8px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:500}
   .nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;color:var(--muted);font-size:13px;border-left:2.5px solid transparent;margin-bottom:1px;cursor:pointer;transition:all .15s;text-decoration:none;position:relative}
   .nav-item:hover{color:var(--soft);background:#0a1530}
@@ -49,7 +49,7 @@
   .nav-bottom{margin-top:auto;padding-top:8px}
   .badge-nav{background:var(--red);color:#fff;font-size:9px;font-weight:600;padding:1px 5px;border-radius:10px;margin-left:auto}
 
-  .main{margin-left:210px;margin-top:calc(54px + env(safe-area-inset-top,0px));padding:24px 26px;min-height:calc(100vh - 54px - env(safe-area-inset-top,0px))}
+  .main{margin-left:210px;margin-top:calc(62px + env(safe-area-inset-top,0px));padding:24px 26px;min-height:calc(100vh - 62px - env(safe-area-inset-top,0px))}
   .page-title{color:#fff;font-size:22px;font-weight:700;margin-bottom:4px;letter-spacing:-.3px}
   .page-sub{color:var(--muted);font-size:13px;margin-bottom:22px}
 
@@ -401,7 +401,7 @@
   <div style="display:flex;align-items:center">
     <button class="hamburger" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
     <div class="topbar-brand">
-      <img src="../assets/logo/logo_nexo_blanco.png?v=3" alt="Nexo" style="height:32px;width:auto;max-width:180px">
+      <img src="../assets/logo/logo_nexo_blanco.png?v=3" alt="Nexo" style="height:44px;width:auto;max-width:220px;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges">
     </div>
   </div>
   <div class="topbar-right">
