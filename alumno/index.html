@@ -29,7 +29,7 @@
   html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
   .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:calc(54px + env(safe-area-inset-top,0px));background:rgba(4,7,27,.97);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0px) 20px 0}
   .topbar-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
-  .topbar-logo{height:28px;filter:brightness(0) invert(1);opacity:.88;flex-shrink:0}
+  .topbar-logo-svg{flex-shrink:0;display:block}
   .t1{color:#fff;font-size:14px;font-weight:700;letter-spacing:2px;display:block;line-height:1}
   .t2{color:var(--blue);font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-top:2px;display:block}
   .topbar-right{display:flex;align-items:center;gap:12px}
@@ -368,6 +368,29 @@
     .asig-bubble-name{font-size:13px}
     .tarifa-h{font-size:38px}
   }
+
+  /* ── REFRESH BUTTON ── */
+  .refresh-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:21px;padding:7px;border-radius:10px;display:flex;align-items:center;transition:color .15s;-webkit-tap-highlight-color:transparent}
+  .refresh-btn:hover{color:var(--blue)}
+  .refresh-btn.spinning i{animation:spin .7s linear infinite}
+
+  /* ── MOBILE FULL-SCREEN MENU ── */
+  .mobile-menu{display:none;position:fixed;inset:0;background:var(--bg);z-index:150;overflow-y:auto}
+  .mobile-menu.open{display:flex;flex-direction:column;animation:menuFadeIn .22s cubic-bezier(.4,0,.2,1)}
+  @keyframes menuFadeIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+  .mobile-menu-inner{display:flex;flex-direction:column;min-height:100%;padding:calc(env(safe-area-inset-top,0px) + 16px) 28px calc(env(safe-area-inset-bottom,0px) + 32px)}
+  .mobile-menu-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:36px}
+  .mobile-menu-brand{display:flex;align-items:center;gap:12px}
+  .mobile-menu-close{background:var(--surface);border:.5px solid var(--border);color:var(--soft);font-size:20px;cursor:pointer;border-radius:12px;display:flex;align-items:center;justify-content:center;width:44px;height:44px;flex-shrink:0;transition:background .15s}
+  .mobile-menu-close:hover{background:var(--border2)}
+  .mobile-menu-nav{flex:1}
+  .mobile-menu-item{display:flex;align-items:center;gap:18px;padding:16px 4px;color:var(--muted);font-size:17px;font-weight:600;cursor:pointer;border-bottom:.5px solid var(--border2);transition:color .15s;-webkit-tap-highlight-color:transparent;position:relative}
+  .mobile-menu-item i{font-size:22px;flex-shrink:0;width:26px}
+  .mobile-menu-item.active{color:#fff}
+  .mobile-menu-item:active{opacity:.7}
+  .mobile-menu-footer{margin-top:24px;border-top:.5px solid var(--border);padding-top:20px}
+  .mobile-menu-user{color:var(--muted);font-size:13px;margin-bottom:8px;padding-left:4px}
+  @media(min-width:769px){.mobile-menu{display:none!important}}
 </style>
 </head>
 <body>
@@ -377,13 +400,14 @@
 <header class="topbar">
   <div style="display:flex;align-items:center">
     <button class="hamburger" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
-    <a href="https://nexoacademico.es" class="topbar-brand">
-      <img src="../assets/logo/logo_n_azul.png" class="topbar-logo" alt="">
+    <div class="topbar-brand">
+      <svg width="30" height="30" viewBox="0 0 30 30" class="topbar-logo-svg" aria-hidden="true"><rect width="30" height="30" rx="8" fill="#154ca9"/><text x="15" y="21.5" text-anchor="middle" fill="#ffffff" font-size="18" font-weight="800" font-family="DM Sans,sans-serif">N</text></svg>
       <div><span class="t1">NEXO</span><span class="t2">Académico</span></div>
-    </a>
+    </div>
   </div>
   <div class="topbar-right">
     <span class="topbar-name" id="topbar-name">—</span>
+    <button class="refresh-btn" id="refresh-btn" onclick="refreshApp()" title="Actualizar"><i class="ti ti-refresh"></i></button>
     <div class="avatar" id="avatar-btn" onclick="toggleAvatarMenu()">
       <span id="avatar-initials">?</span>
       <div class="avatar-menu" id="avatar-menu">
@@ -410,6 +434,36 @@
     <div class="nav-item" onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</div>
   </div>
 </nav>
+
+<!-- MOBILE FULL-SCREEN MENU -->
+<div class="mobile-menu" id="mobile-menu">
+  <div class="mobile-menu-inner">
+    <div class="mobile-menu-top">
+      <div class="mobile-menu-brand">
+        <svg width="38" height="38" viewBox="0 0 38 38" aria-hidden="true"><rect width="38" height="38" rx="10" fill="#154ca9"/><text x="19" y="27" text-anchor="middle" fill="#ffffff" font-size="22" font-weight="800" font-family="DM Sans,sans-serif">N</text></svg>
+        <div>
+          <div style="color:#fff;font-size:18px;font-weight:700;letter-spacing:2px;line-height:1">NEXO</div>
+          <div style="color:var(--blue);font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-top:3px">Académico</div>
+        </div>
+      </div>
+      <button class="mobile-menu-close" onclick="closeSidebar()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="mobile-menu-nav">
+      <div class="mobile-menu-item active" id="mmenu-inicio" onclick="showSection('inicio')"><i class="ti ti-layout-dashboard"></i><span>Inicio</span></div>
+      <div class="mobile-menu-item" id="mmenu-sesiones" onclick="showSection('sesiones')"><i class="ti ti-calendar-check"></i><span>Mis sesiones</span><span class="badge-nav" id="mmenu-badge-sesiones" style="display:none;margin-left:auto;font-size:11px;background:var(--navy);color:var(--blue);padding:2px 7px;border-radius:20px"></span></div>
+      <div class="mobile-menu-item" id="mmenu-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i><span>Mis informes</span></div>
+      <div class="mobile-menu-item" id="mmenu-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i><span>Mi bono</span></div>
+      <div class="mobile-menu-item" id="mmenu-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i><span>Mi profesor</span></div>
+      <div class="mobile-menu-item" id="mmenu-estudiar" onclick="showSection('estudiar')"><i class="ti ti-book"></i><span>Estudiar</span></div>
+      <div class="mobile-menu-item" id="mmenu-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i><span>Tests</span></div>
+      <div class="mobile-menu-item" id="mmenu-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i><span>Mi calendario</span></div>
+    </div>
+    <div class="mobile-menu-footer">
+      <div class="mobile-menu-user" id="mmenu-user"></div>
+      <div class="mobile-menu-item" onclick="logout()" style="color:#f08080;border-bottom:none;padding-top:12px"><i class="ti ti-logout"></i><span>Cerrar sesión</span></div>
+    </div>
+  </div>
+</div>
 
 <!-- BOTTOM NAV (móvil) -->
 <nav class="bottom-nav" id="bottom-nav">
@@ -750,6 +804,8 @@ let editEventoId = null;
   const { usuario, alumnoData } = ctx;
   document.getElementById('topbar-name').textContent = usuario.nombre;
   document.getElementById('avatar-initials').textContent = getInitials(usuario.nombre, usuario.apellidos);
+  const mmUser = document.getElementById('mmenu-user');
+  if (mmUser) mmUser.textContent = (usuario.nombre || '') + (usuario.apellidos ? ' ' + usuario.apellidos : '');
   document.getElementById('greeting').textContent = 'Hola, ' + usuario.nombre;
 
   if (alumnoData) {
@@ -785,12 +841,17 @@ let editEventoId = null;
 // Navigation
 // ============================================================
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sidebar-overlay').classList.toggle('open');
+  if (window.innerWidth <= 768) {
+    document.getElementById('mobile-menu').classList.toggle('open');
+  } else {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('open');
+  }
 }
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
+  document.getElementById('mobile-menu').classList.remove('open');
 }
 
 function showSection(id) {
@@ -803,6 +864,10 @@ function showSection(id) {
   document.querySelectorAll('.bn-item').forEach(b => b.classList.remove('active'));
   const bnEl = document.getElementById('bn-' + id);
   if (bnEl) bnEl.classList.add('active');
+  // mobile menu sync
+  document.querySelectorAll('.mobile-menu-item').forEach(b => b.classList.remove('active'));
+  const mmEl = document.getElementById('mmenu-' + id);
+  if (mmEl) mmEl.classList.add('active');
   window.scrollTo(0, 0);
   sessionStorage.setItem('nexo_alumno_seccion', id);
   closeSidebar();
@@ -943,7 +1008,7 @@ async function loadDashboard() {
     ${hRest <= 3 ? `
     <div style="margin-top:12px;background:#1a0a00;border:.5px solid var(--amber);border-radius:7px;padding:9px 11px;display:flex;align-items:center;justify-content:space-between;gap:8px">
       <div style="color:#e8c080;font-size:11px">Quedan ${hRest.toFixed(1)}h — renueva para no interrumpir</div>
-      <a href="https://wa.me/${WHATSAPP_MANU}?text=Hola%20Manu%2C%20quiero%20renovar%20el%20bono%20de%20${encodeURIComponent(ctx.usuario.nombre)}." target="_blank" style="background:var(--amber);color:#fff;border:none;border-radius:5px;padding:5px 12px;font-size:11px;font-weight:500;text-decoration:none;white-space:nowrap">Renovar ↗</a>
+      <a href="https://wa.me/${WHATSAPP_MANU}?text=Hola%20Manu%2C%20quiero%20renovar%20el%20bono%20de%20${encodeURIComponent(ctx.usuario.nombre)}." target="_blank" style="background:var(--amber);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:5px"><i class="ti ti-brand-whatsapp" style="font-size:14px"></i> Renovar bono</a>
     </div>` : ''}
   `;
 
@@ -990,6 +1055,8 @@ async function checkPendingSessions() {
     document.getElementById('badge-sesiones').textContent = count;
     const bnDot = document.getElementById('bn-dot-sesiones');
     if (bnDot) bnDot.classList.add('show');
+    const mmBadge = document.getElementById('mmenu-badge-sesiones');
+    if (mmBadge) { mmBadge.style.display = 'inline-block'; mmBadge.textContent = count; }
     const a = document.getElementById('alerta-sesiones');
     a.style.display = 'flex';
     document.getElementById('alerta-sesiones-txt').textContent =
@@ -1341,42 +1408,61 @@ async function loadInformes() {
     .eq('visible', true)
     .order('fecha', { ascending: false });
 
-  const mensuales = (informes || []).filter(i => i.tipo === 'mensual');
+  const container = document.getElementById('informes-container');
 
-  const renderItems = items => items.length === 0
-    ? `<div style="padding:16px;color:var(--muted);font-size:12px;text-align:center"><i class="ti ti-file-off" style="font-size:20px;display:block;margin-bottom:6px"></i>Sin informes disponibles</div>`
-    : items.map(inf => `
-        <div class="inf-row" onclick="${inf.archivo_url ? `window.open('${inf.archivo_url}','_blank')` : ''}">
-          <div class="inf-ico ${inf.tipo === 'mensual' ? 'm' : 's'}">
-            <i class="ti ${inf.tipo === 'mensual' ? 'ti-report-analytics' : 'ti-report'}"></i>
-          </div>
-          <div style="flex:1">
-            <div class="inf-name">${inf.titulo}</div>
-            <div class="inf-sub">${formatDate(inf.fecha)}</div>
-          </div>
-          ${inf.archivo_url ? `<div class="dl"><i class="ti ti-download"></i></div>` : '<span style="color:var(--muted);font-size:11px">Sin archivo</span>'}
-        </div>
-      `).join('');
+  if (!informes || informes.length === 0) {
+    container.innerHTML = `<div class="empty-state"><i class="ti ti-file-description"></i><p>Aún no hay informes disponibles.<br>Los informes mensuales aparecen aquí cuando están listos.</p></div>`;
+    return;
+  }
 
-  const renderCat = (id, icon, label, items) => `
-    <div class="mal-bloque" id="inf-cat-${id}">
-      <div class="mal-bloque-hd" onclick="toggleInfCat('${id}')">
-        <i class="ti ti-chevron-right mal-chevron"></i>
-        <i class="ti ${icon}" style="color:var(--blue);font-size:15px"></i>
-        <span class="mal-bloque-name">${label}</span>
-        <span class="mal-count">${items.length} informe${items.length !== 1 ? 's' : ''}</span>
+  const mensuales = informes.filter(i => i.tipo === 'mensual');
+  const otros     = informes.filter(i => i.tipo !== 'mensual');
+
+  const renderCard = inf => `
+    <div class="mat-item-card" style="--cc:#154ca9;${inf.archivo_url ? 'cursor:pointer' : ''}" ${inf.archivo_url ? `onclick="window.open('${inf.archivo_url}','_blank')"` : ''}>
+      <div class="mat-item-ico"><i class="ti ti-file-analytics"></i></div>
+      <div class="mat-item-nom">${inf.titulo}</div>
+      <div class="mat-item-badge" style="background:#0f2240;color:var(--blue)">${formatDate(inf.fecha)}</div>
+      ${inf.archivo_url
+        ? `<button class="mat-item-btn" onclick="event.stopPropagation();window.open('${inf.archivo_url}','_blank')"><i class="ti ti-download" style="font-size:13px"></i> Descargar</button>`
+        : `<div style="color:var(--muted);font-size:11px;text-align:center;padding:4px 0">Sin archivo todavía</div>`
+      }
+    </div>`;
+
+  let html = '';
+  if (mensuales.length > 0) {
+    html += `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <i class="ti ti-report-analytics" style="color:var(--blue);font-size:18px"></i>
+        <span style="color:#fff;font-size:15px;font-weight:700">Informes mensuales</span>
+        <span style="background:var(--border2);color:var(--muted);font-size:11px;padding:2px 9px;border-radius:20px;margin-left:auto">${mensuales.length}</span>
       </div>
-      <div class="mal-bloque-body">${renderItems(items)}</div>
-    </div>`;
-
-  document.getElementById('informes-container').innerHTML = `
-    <div class="card" style="overflow:hidden">
-      ${renderCat('mensual', 'ti-report-analytics', 'Informes mensuales', mensuales)}
-    </div>`;
+      <div class="mat-item-grid" style="margin-bottom:28px">${mensuales.map(renderCard).join('')}</div>`;
+  }
+  if (otros.length > 0) {
+    html += `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <i class="ti ti-file" style="color:var(--blue);font-size:18px"></i>
+        <span style="color:#fff;font-size:15px;font-weight:700">Otros informes</span>
+      </div>
+      <div class="mat-item-grid">${otros.map(renderCard).join('')}</div>`;
+  }
+  container.innerHTML = html;
 }
 
-function toggleInfCat(id) {
-  document.getElementById('inf-cat-' + id)?.classList.toggle('b-open');
+function toggleInfCat(id) { /* legacy no-op */ }
+
+async function refreshApp() {
+  const btn = document.getElementById('refresh-btn');
+  if (btn) { btn.classList.add('spinning'); btn.style.pointerEvents = 'none'; }
+  try {
+    await Promise.all([loadDashboard(), checkPendingSessions()]);
+    const cur = sessionStorage.getItem('nexo_alumno_seccion') || 'inicio';
+    const loaders = { sesiones:loadSesiones, informes:loadInformes, bonos:loadBonosAlumno, profesor:loadProfesor, estudiar:loadEstudiar, tests:loadTests, calendario:loadCalendario };
+    if (loaders[cur]) await loaders[cur]();
+  } finally {
+    if (btn) { btn.classList.remove('spinning'); btn.style.pointerEvents = ''; }
+  }
 }
 
 // ============================================================
@@ -1453,34 +1539,39 @@ async function loadProfesor() {
     const sesCnt   = sesCounts[i]?.count || 0;
 
     html += `
-    <div class="card" style="margin-bottom:12px">
-      <div class="profe-card">
-        <div class="profe-av">${initials}</div>
-        <div style="flex:1">
-          <div class="profe-name">${u.nombre} ${u.apellidos}</div>
-          <div class="profe-det">${prof.estudios || 'Profesor'} · ${prof.zona || 'Valencia'}</div>
-          <div class="profe-tags">
-            ${asigs.map(a => `<span class="tag tag-b">${a}</span>`).join('')}
-            ${prof.nivel_max ? `<span class="tag tag-g">Hasta ${nivelLabel(prof.nivel_max)}</span>` : ''}
-          </div>
+    <div class="card" style="overflow:hidden;margin-bottom:20px">
+      <div style="padding:32px 24px 24px;display:flex;flex-direction:column;align-items:center;text-align:center">
+        <div style="width:90px;height:90px;border-radius:26px;background:linear-gradient(135deg,#0d1e40,#1a3a6e);display:flex;align-items:center;justify-content:center;color:#6eaef0;font-size:34px;font-weight:800;margin-bottom:18px;border:2px solid #1a3a6e;flex-shrink:0;letter-spacing:-1px">
+          ${initials}
+        </div>
+        <div style="color:#fff;font-size:22px;font-weight:700;margin-bottom:5px">${u.nombre} ${u.apellidos}</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:20px">${prof.estudios || 'Profesor'} · ${prof.zona || 'Valencia'}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
+          ${asigs.map(a => `<span class="tag tag-b" style="font-size:13px;padding:6px 16px;border-radius:20px">${a}</span>`).join('')}
+          ${prof.nivel_max ? `<span class="tag tag-g" style="font-size:13px;padding:6px 16px;border-radius:20px">Hasta ${nivelLabel(prof.nivel_max)}</span>` : ''}
         </div>
       </div>
-    </div>
-    <div class="card" style="margin-bottom:16px">
-      <div class="card-head"><div class="card-title"><i class="ti ti-info-circle"></i> Información</div></div>
-      <div class="card-body" style="padding:8px 16px">
-        ${asigs.length ? `<div class="ev-row"><div class="ev-label">Asignatura</div><b style="color:#fff;font-size:12px">${asigs.join(', ')}</b></div>` : ''}
-        <div class="ev-row"><div class="ev-label">Horario habitual</div><b style="color:#fff;font-size:12px">${ctx.alumnoData.horario_habitual || '—'}</b></div>
-        <div class="ev-row"><div class="ev-label">Modalidad</div><b style="color:#fff;font-size:12px">${ctx.alumnoData.modalidad === 'presencial' ? 'Presencial a domicilio' : 'Online'}</b></div>
-        <div class="ev-row"><div class="ev-label">Sesiones juntos</div><b style="color:#fff;font-size:12px">${sesCnt} sesiones confirmadas</b></div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);border-top:.5px solid var(--border)">
+        <div style="padding:20px 10px;text-align:center;border-right:.5px solid var(--border)">
+          <div style="color:#fff;font-size:30px;font-weight:700;margin-bottom:4px;line-height:1">${sesCnt}</div>
+          <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Sesiones</div>
+        </div>
+        <div style="padding:20px 10px;text-align:center;border-right:.5px solid var(--border)">
+          <div style="color:var(--blue);font-size:13px;font-weight:700;margin-bottom:4px;line-height:1.2">${ctx.alumnoData.modalidad === 'presencial' ? 'Presencial' : 'Online'}</div>
+          <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Modalidad</div>
+        </div>
+        <div style="padding:20px 10px;text-align:center">
+          <div style="color:var(--soft);font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.2">${ctx.alumnoData.horario_habitual || '—'}</div>
+          <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Horario</div>
+        </div>
       </div>
     </div>`;
   });
 
   html += `
-  <div style="margin-top:4px;background:#0a1a30;border:.5px solid var(--border);border-left:3px solid var(--blue);border-radius:0 8px 8px 0;padding:12px 16px">
-    <div style="color:var(--muted);font-size:11px;margin-bottom:4px">¿Algún problema o quieres hacer un cambio?</div>
-    <a href="https://wa.me/${WHATSAPP_MANU}?text=Hola%20Manu%2C%20tengo%20una%20consulta%20sobre%20mi%20profesor." target="_blank" style="color:var(--blue);font-size:12px;font-weight:500;text-decoration:none">Contactar con Nexo ↗</a>
+  <div style="background:var(--surface);border:.5px solid var(--border);border-left:3px solid var(--blue);border-radius:0 20px 20px 0;padding:18px 22px">
+    <div style="color:var(--muted);font-size:12px;margin-bottom:14px">¿Algún problema o quieres hacer un cambio?</div>
+    <a href="https://wa.me/${WHATSAPP_MANU}?text=Hola%20Manu%2C%20tengo%20una%20consulta%20sobre%20mi%20profesor." target="_blank" style="display:inline-flex;align-items:center;gap:7px;background:var(--navy);color:#fff;border-radius:12px;padding:11px 20px;font-size:13px;font-weight:600;text-decoration:none"><i class="ti ti-brand-whatsapp" style="font-size:17px"></i> Contactar con Nexo</a>
   </div>`;
 
   document.getElementById('profesor-content').innerHTML = html;
@@ -1578,7 +1669,7 @@ async function loadEstudiar() {
         const ico   = empty ? 'ti-clock' : meta.ico;
         const det   = empty ? 'Próximamente' : `${nMat} recurso${nMat !== 1 ? 's' : ''} · ${nTest} test${nTest !== 1 ? 's' : ''}`;
         return `
-          <div class="asig-bubble${empty ? ' empty' : ''}" style="--cc:${cc}" onclick="_alGoAsig(${JSON.stringify(asig)})">
+          <div class="asig-bubble${empty ? ' empty' : ''}" style="--cc:${cc}" data-asig="${asig.replace(/"/g,'&quot;')}" onclick="_alGoAsig(this.dataset.asig)">
             <div class="asig-bubble-ico"><i class="ti ${ico}"></i></div>
             <div class="asig-bubble-name">${asig}</div>
             <div class="asig-bubble-det">${det}</div>
@@ -1620,7 +1711,7 @@ function _alBcHtml() {
   if (!_alNav) return '';
   const { asig, sec, bloqueId, temaId } = _alNav;
   const sep  = `<i class="ti ti-chevron-right mat-bc-sep"></i>`;
-  const parts = [`<span class="mat-bc-link" onclick="_alGoAsig(${JSON.stringify(asig)})">${asig}</span>`];
+  const parts = [`<span class="mat-bc-link" data-asig="${asig.replace(/"/g,'&quot;')}" onclick="_alGoAsig(this.dataset.asig)">${asig}</span>`];
   if (sec === 'gen')   parts.push(`<span class="mat-bc-link" onclick="_alGoSec('gen')">Genérico</span>`);
   if (sec === 'excl')  parts.push(`<span class="mat-bc-link" onclick="_alGoSec('excl')">Exclusivo</span>`);
   if (sec === 'tests') parts.push(`<span class="mat-bc-cur">Tests</span>`);
