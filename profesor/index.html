@@ -26,7 +26,7 @@
     --red:#c0392b; --red-lt:#2d0d0d;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px;overflow-x:hidden}
+  html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px;overflow-x:hidden;overscroll-behavior-y:none}
 
   .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:calc(62px + env(safe-area-inset-top,0px));background:rgba(4,7,27,.97);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0px) 20px 0}
   .topbar-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
@@ -1115,41 +1115,6 @@ async function loadDashboardProf() {
             <div class="ses-sub">${formatDate(s.fecha)}${s.hora_inicio ? ' · ' + formatTime(s.hora_inicio) + 'h' : ''} · ${(s.duracion_minutos/60).toFixed(1).replace('.0','')}h</div>
           </div>
           <span class="status-pill ${pillCls}">${pillTxt}</span>
-        </div>`;
-    }).join('');
-  }
-
-  // Alumnos lista
-  const alumEl = document.getElementById('alumnos-lista');
-  if (misAlumnos.length === 0) {
-    alumEl.innerHTML = `<div class="empty-state"><i class="ti ti-users"></i><p>Sin alumnos asignados</p></div>`;
-  } else {
-    // Horas por alumno este mes
-    const { data: horasData } = await db
-      .from('sesiones')
-      .select('alumno_id, duracion_minutos')
-      .eq('profesor_id', profId)
-      .gte('fecha', mesIni)
-      .in('estado', ['confirmada', 'pendiente_confirmacion']);
-
-    const horasByAlumno = {};
-    (horasData || []).forEach(s => {
-      horasByAlumno[s.alumno_id] = (horasByAlumno[s.alumno_id] || 0) + s.duracion_minutos / 60;
-    });
-
-    alumEl.innerHTML = misAlumnos.map(a => {
-      const u = a.usuario || {};
-      const ini = getInitials(u.nombre, u.apellidos);
-      const h = (horasByAlumno[a.id] || 0).toFixed(1);
-      const pillCls = a.nivel?.includes('BACH') ? 'pill-bach' : 'pill-eso';
-      return `
-        <div class="alumno-row" onclick="abrirFicha('${a.id}')">
-          <div class="av">${ini}</div>
-          <div>
-            <div class="alumno-name">${u.nombre} ${u.apellidos} <span class="pill ${pillCls}">${nivelLabel(a.nivel)}</span></div>
-            <div class="alumno-det">${(a._asignaturas||[]).join(', ')} · ${a.horario_habitual||'—'}</div>
-          </div>
-          <div class="h-txt">${h}h<span>este mes</span></div>
         </div>`;
     }).join('');
   }
