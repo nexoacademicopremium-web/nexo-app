@@ -91,7 +91,9 @@
   .ck-shift.ck-on{background:#2563eb}
   .ck-space{max-width:170px;flex:5;font-size:13px;color:#4a6080}
   .ck-done{background:#154ca9;max-width:62px;font-size:13px;font-weight:700;color:#fff}
-  .brand-logo{height:80px;width:auto;max-width:260px;flex-shrink:0;filter:drop-shadow(0 0 8px rgba(255,255,255,.18))}
+  .brand-logo{height:80px;width:auto;max-width:260px;flex-shrink:0;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges}
+  .toggle-pass{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;padding:6px;display:flex;align-items:center;font-size:19px;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  .toggle-pass:hover{color:var(--soft)}
 </style>
 </head>
 <body>
@@ -125,6 +127,9 @@
       <div class="input-wrap">
         <i class="ti ti-lock"></i>
         <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+        <button type="button" class="toggle-pass" id="toggle-pass" onmousedown="event.preventDefault()" onclick="togglePass()">
+          <i class="ti ti-eye" id="toggle-pass-icon"></i>
+        </button>
       </div>
 
       <div class="error-msg" id="error-msg"></div>
@@ -226,6 +231,14 @@ async function handleLogin(e) {
   }
 }
 
+function togglePass() {
+  const inp  = document.getElementById('password');
+  const icon = document.getElementById('toggle-pass-icon');
+  const show = inp.type === 'password';
+  inp.type = show ? 'text' : 'password';
+  icon.className = show ? 'ti ti-eye-off' : 'ti ti-eye';
+}
+
 // Pre-select role from URL param (e.g. ?rol=profesor from the web snippet)
 const _rolParam = new URLSearchParams(window.location.search).get('rol');
 if (_rolParam === 'profesor' || _rolParam === 'alumno') setRole(_rolParam);
@@ -247,7 +260,7 @@ if (_rolParam === 'profesor' || _rolParam === 'alumno') setRole(_rolParam);
 <div id="ckbd"></div>
 <script>
 (function(){
-  const _ck = { tgt: null, caps: true };
+  const _ck = { tgt: null, caps: false };
   const rows = [
     ['1','2','3','4','5','6','7','8','9','0'],
     ['q','w','e','r','t','y','u','i','o','p'],
@@ -278,7 +291,7 @@ if (_rolParam === 'profesor' || _rolParam === 'alumno') setRole(_rolParam);
         let cls = 'ck-key';
         let txt = k;
         if (isLtr)       { b.dataset.l = k; txt = _ck.caps ? k.toUpperCase() : k; }
-        if (k==='SHIFT')  { cls += ' ck-fn ck-shift' + (_ck.caps ? ' ck-on' : ''); txt = '⇧'; }
+        if (k==='SHIFT')  { cls += ' ck-fn ck-shift'; txt = '⇧'; }
         if (k==='BACK')   { cls += ' ck-fn'; txt = '⌫'; }
         if (k==='SPACE')  { cls += ' ck-space'; txt = 'espacio'; }
         if (k==='DONE')   { cls += ' ck-done'; txt = 'Listo ✓'; }
@@ -302,13 +315,7 @@ if (_rolParam === 'profesor' || _rolParam === 'alumno') setRole(_rolParam);
     });
   }
 
-  function ckCaps() {
-    _ck.caps = !_ck.caps;
-    document.querySelectorAll('[data-l]').forEach(b => {
-      b.textContent = _ck.caps ? b.dataset.l.toUpperCase() : b.dataset.l;
-    });
-    document.querySelectorAll('.ck-shift').forEach(b => b.classList.toggle('ck-on', _ck.caps));
-  }
+  function ckCaps() { ckSetCaps(!_ck.caps); }
 
   function ckType(ch) {
     const el = _ck.tgt; if (!el) return;
@@ -328,8 +335,16 @@ if (_rolParam === 'profesor' || _rolParam === 'alumno') setRole(_rolParam);
     el.dispatchEvent(new Event('input', {bubbles:true}));
   }
 
+  function ckSetCaps(on) {
+    _ck.caps = on;
+    document.querySelectorAll('[data-l]').forEach(b => { b.textContent = on ? b.dataset.l.toUpperCase() : b.dataset.l; });
+    document.querySelectorAll('.ck-shift').forEach(b => b.classList.toggle('ck-on', on));
+  }
+
   function ckOpen(inp) {
     _ck.tgt = inp;
+    /* Contraseña siempre en minúsculas para no equivocarse */
+    if (inp.type === 'password') ckSetCaps(false);
     inp.focus();
     document.getElementById('ckbd').classList.add('ck-open');
     setTimeout(() => {
@@ -357,9 +372,9 @@ if (_rolParam === 'profesor' || _rolParam === 'alumno') setRole(_rolParam);
       inp.addEventListener('click',      () => ckOpen(inp));
       inp.addEventListener('touchstart', e => { e.stopPropagation(); ckOpen(inp); }, {passive:true});
     });
-    /* Cerrar al tocar fuera del teclado y de un input */
+    /* Cerrar al tocar fuera del teclado, inputs y toggle de contraseña */
     document.addEventListener('touchstart', e => {
-      if (!e.target.closest('#ckbd') && !e.target.matches('input')) ckClose();
+      if (!e.target.closest('#ckbd') && !e.target.matches('input') && !e.target.closest('.toggle-pass')) ckClose();
     }, {passive:true});
   });
 })();
