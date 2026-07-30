@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Panel Profesor — Nexo Académico</title>
 <link rel="manifest" href="../manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="../assets/logo/icon-192.png">
@@ -26,9 +26,9 @@
     --red:#c0392b; --red-lt:#2d0d0d;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+  html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px;overflow-x:hidden}
 
-  .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:calc(54px + env(safe-area-inset-top,0px));background:var(--dark);border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0px) 20px 0}
+  .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:calc(62px + env(safe-area-inset-top,0px));background:rgba(4,7,27,.97);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0px) 20px 0}
   .topbar-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
   .t1{color:#fff;font-size:14px;font-weight:600;letter-spacing:2px;display:block;line-height:1}
   .t2{color:var(--blue);font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-top:2px;display:block}
@@ -38,7 +38,7 @@
   .avatar-menu{position:absolute;top:42px;right:0;background:var(--surface);border:.5px solid var(--border);border-radius:8px;min-width:150px;display:none;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.5)}
   .avatar-menu a{display:flex;align-items:center;gap:8px;padding:10px 14px;color:var(--txt);font-size:13px;text-decoration:none;cursor:pointer}
   .avatar-menu a:hover{background:var(--border2)}
-  .sidebar{position:fixed;top:calc(54px + env(safe-area-inset-top,0px));left:0;bottom:0;width:210px;background:var(--dark);border-right:.5px solid var(--border);display:flex;flex-direction:column;padding:18px 0 calc(16px + env(safe-area-inset-bottom,0px));overflow-y:auto}
+  .sidebar{position:fixed;top:calc(62px + env(safe-area-inset-top,0px));left:0;bottom:0;width:210px;background:var(--dark);border-right:.5px solid var(--border);display:flex;flex-direction:column;padding:18px 0 calc(16px + env(safe-area-inset-bottom,0px));overflow-y:auto}
   .nav-section{padding:0 16px 8px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:500}
   .nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;color:var(--muted);font-size:13px;cursor:pointer;text-decoration:none;border-left:2.5px solid transparent;transition:all .15s;margin-bottom:1px;position:relative}
   .nav-item:hover{color:var(--soft);background:#0a1530}
@@ -48,12 +48,13 @@
   .nav-bottom{margin-top:auto;padding-top:8px}
   .badge-nav{background:var(--red);color:#fff;font-size:9px;font-weight:600;padding:1px 5px;border-radius:10px;margin-left:auto}
 
-  .main{margin-left:210px;margin-top:calc(54px + env(safe-area-inset-top,0px));padding:24px 26px;min-height:calc(100vh - 54px - env(safe-area-inset-top,0px))}
+  .main{margin-left:210px;margin-top:calc(62px + env(safe-area-inset-top,0px));padding:24px 26px;min-height:calc(100vh - 62px - env(safe-area-inset-top,0px))}
   .page-title{color:#fff;font-size:20px;font-weight:600;margin-bottom:3px}
   .page-sub{color:var(--muted);font-size:13px;margin-bottom:20px}
 
   .section{display:none}
-  .section.active{display:block}
+  .section.active{display:block;animation:fadeSlideIn .28s cubic-bezier(.4,0,.2,1)}
+  @keyframes fadeSlideIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 
   .alerta{background:var(--amber-lt);border:.5px solid var(--amber);border-left:3px solid var(--amber);border-radius:0 8px 8px 0;padding:11px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
   .alerta i{color:var(--amber);font-size:18px;flex-shrink:0}
@@ -62,20 +63,21 @@
   .alerta-btn{background:var(--amber);color:#fff;border:none;border-radius:6px;padding:7px 14px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;font-family:inherit;text-decoration:none;display:inline-block;transition:background .15s}
   .alerta-btn:hover{background:#c96010}
 
-  .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
-  .kpi{background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:16px 18px;border-top:3px solid}
-  .kpi.blue{border-top-color:var(--blue)}
-  .kpi.green{border-top-color:var(--green)}
-  .kpi.navy{border-top-color:var(--navy)}
-  .kpi.amber{border-top-color:var(--amber)}
-  .kpi-label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.6px;font-weight:500;margin-bottom:7px}
-  .kpi-val{color:#fff;font-size:26px;font-weight:600;line-height:1}
-  .kpi-sub{color:var(--muted);font-size:11px;margin-top:5px}
+  .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+  .kpi{background:var(--surface);border:.5px solid var(--border);border-radius:24px;padding:22px 20px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+  .kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:24px 24px 0 0}
+  .kpi.blue{box-shadow:0 4px 28px rgba(110,174,240,.1)}.kpi.blue::after{background:linear-gradient(90deg,#2563eb,#6eaef0)}
+  .kpi.green{box-shadow:0 4px 28px rgba(26,127,94,.1)}.kpi.green::after{background:linear-gradient(90deg,#059669,#34d399)}
+  .kpi.navy{box-shadow:0 4px 28px rgba(21,76,169,.1)}.kpi.navy::after{background:linear-gradient(90deg,#154ca9,#2563eb)}
+  .kpi.amber{box-shadow:0 4px 28px rgba(180,83,9,.1)}.kpi.amber::after{background:linear-gradient(90deg,#d97706,#f59e0b)}
+  .kpi-label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:10px;margin-top:4px}
+  .kpi-val{color:#fff;font-size:32px;font-weight:700;line-height:1;letter-spacing:-1px}
+  .kpi-sub{color:var(--muted);font-size:11px;margin-top:7px}
   .kpi-delta{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;margin-top:8px}
   .kpi-delta.up{background:var(--green-lt);color:var(--green)}
   .kpi-delta.warn{background:var(--amber-lt);color:var(--amber)}
-  .prog-bg{background:var(--border2);border-radius:20px;height:5px;overflow:hidden;margin-top:9px}
-  .prog-bar{height:5px;border-radius:20px;transition:width .5s ease}
+  .prog-bg{background:rgba(255,255,255,.07);border-radius:20px;height:8px;overflow:hidden;margin-top:12px}
+  .prog-bar{height:8px;border-radius:20px;transition:width .6s cubic-bezier(.4,0,.2,1)}
 
   .grid-main{display:grid;grid-template-columns:1.1fr 0.9fr;gap:16px}
   .col-stack{display:flex;flex-direction:column;gap:16px}
@@ -182,7 +184,7 @@
   .tabla tr{cursor:pointer;transition:background .1s}
 
   /* FICHA LATERAL */
-  #ficha-alumno{display:none;position:fixed;top:54px;right:0;bottom:0;width:360px;background:var(--dark);border-left:.5px solid var(--border);overflow-y:auto;z-index:60;padding:24px}
+  #ficha-alumno{display:none;position:fixed;top:62px;right:0;bottom:0;width:360px;background:var(--dark);border-left:.5px solid var(--border);overflow-y:auto;z-index:60;padding:24px}
   .ficha-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
   .ficha-title{color:#fff;font-size:15px;font-weight:600}
   .ficha-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:22px;line-height:1}
@@ -253,33 +255,58 @@
 
   /* ── RESPONSIVE MÓVIL ─────────────────────────────────────── */
   .hamburger{display:none;background:none;border:none;cursor:pointer;color:var(--txt);font-size:22px;padding:4px 8px;margin-right:8px}
-  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:89}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:89;backdrop-filter:blur(2px)}
+  .refresh-btn{background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:21px;padding:7px;border-radius:10px;display:flex;align-items:center;transition:color .15s;-webkit-tap-highlight-color:transparent}
+  .refresh-btn:hover{color:var(--blue)}
+  .refresh-btn.spinning i{animation:spin .7s linear infinite}
+  /* ── MOBILE FULL-SCREEN MENU ── */
+  .mobile-menu{display:none;position:fixed;inset:0;background:var(--bg);z-index:150;overflow-y:auto}
+  .mobile-menu.open{display:flex;flex-direction:column;animation:menuFadeIn .22s cubic-bezier(.4,0,.2,1)}
+  @keyframes menuFadeIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+  .mobile-menu-inner{display:flex;flex-direction:column;min-height:100%;padding:calc(env(safe-area-inset-top,0px) + 16px) 28px calc(env(safe-area-inset-bottom,0px) + 32px)}
+  .mobile-menu-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:36px}
+  .mobile-menu-brand{display:flex;align-items:center;gap:12px}
+  .mobile-menu-close{background:var(--surface);border:.5px solid var(--border);color:var(--soft);font-size:20px;cursor:pointer;border-radius:12px;display:flex;align-items:center;justify-content:center;width:44px;height:44px;flex-shrink:0;transition:background .15s}
+  .mobile-menu-close:hover{background:var(--border2)}
+  .mobile-menu-nav{flex:1}
+  .mobile-menu-item{display:flex;align-items:center;gap:18px;padding:16px 4px;color:var(--muted);font-size:17px;font-weight:600;cursor:pointer;border-bottom:.5px solid var(--border2);transition:color .15s;-webkit-tap-highlight-color:transparent;position:relative}
+  .mobile-menu-item i{font-size:22px;flex-shrink:0;width:26px}
+  .mobile-menu-item.active{color:#fff}
+  .mobile-menu-item:active{opacity:.7}
+  .mobile-menu-footer{margin-top:24px;border-top:.5px solid var(--border);padding-top:20px}
+  .mobile-menu-user{color:var(--muted);font-size:13px;margin-bottom:8px;padding-left:4px}
+  @media(min-width:769px){.mobile-menu{display:none!important}}
   @media(max-width:768px){
     .hamburger{display:flex;align-items:center}
-    .sidebar{transform:translateX(-110%);transition:transform .25s;z-index:110;width:240px}
+    .sidebar{transform:translateX(-110%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:110;width:248px}
     .sidebar.open{transform:translateX(0)}
     .sidebar-overlay.open{display:block}
-    .main{margin-left:0!important;padding:12px 12px 16px}
+    .main{margin-left:0!important;padding:16px 14px calc(82px + env(safe-area-inset-bottom,0px))}
     .topbar-name{display:none}
     .ses-form-wrap{max-width:100%!important}
-    .ses-body{padding:12px}
+    .ses-body{padding:14px}
     .card{overflow-x:auto}
     table{min-width:460px}
-    .kpi-grid{grid-template-columns:repeat(2,1fr)!important;gap:8px}
-    .kpi{padding:12px}
-    .kpi-val{font-size:20px}
+    .kpi-grid{grid-template-columns:1fr;gap:14px}
+    .kpi{padding:24px 22px}
+    .kpi-val{font-size:48px;letter-spacing:-2px}
+    .kpi-label{font-size:11px}
+    .prog-bg{height:10px}.prog-bar{height:10px}
+    .card{border-radius:22px}
+    .card-body{padding:14px 16px}
+    .card-head{padding:14px 16px}
     .alerta{flex-wrap:wrap;gap:8px}
     .alerta-btn{width:100%;text-align:center;box-sizing:border-box}
-    .modal-box{width:100%!important;max-width:100%!important;border-radius:0!important;min-height:100dvh;overflow-y:auto}
+    .modal-overlay{align-items:flex-end}
+    .modal-box{width:100%!important;max-width:100%!important;border-radius:24px 24px 0 0!important;max-height:92dvh;overflow-y:auto;animation:slideUp .28s cubic-bezier(.4,0,.2,1)}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
     input[type=range]{width:100%}
     .val-slider-box{padding:12px}
-    .page-title{font-size:18px}
+    .page-title{font-size:21px}
   }
   @media(max-width:480px){
-    .page-title{font-size:16px}
-    .kpi-grid{grid-template-columns:1fr 1fr!important}
-    .kpi-val{font-size:17px}
-    .card{font-size:13px}
+    .kpi-val{font-size:42px}
+    .page-title{font-size:19px}
   }
 
   /* ── SESIONES — CTA Y NUEVA UI ──────────────────────────────────── */
@@ -356,12 +383,13 @@
 <header class="topbar">
   <div style="display:flex;align-items:center">
     <button class="hamburger" onclick="toggleSidebar()"><i class="ti ti-menu-2"></i></button>
-    <a href="https://nexoacademico.es" class="topbar-brand">
-      <div><span class="t1">NEXO</span><span class="t2">Académico</span></div>
-    </a>
+    <div class="topbar-brand">
+      <img src="../assets/logo/logo_nexo_blanco.png?v=3" alt="Nexo" style="height:44px;width:auto;max-width:220px;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges">
+    </div>
   </div>
   <div class="topbar-right">
     <span class="topbar-name" id="topbar-name">—</span>
+    <button class="refresh-btn" id="refresh-btn" onclick="refreshApp()" title="Actualizar"><i class="ti ti-refresh"></i></button>
     <div class="avatar" id="avatar-btn" onclick="toggleAvatarMenu()">
       <span id="avatar-initials">?</span>
       <div class="avatar-menu" id="avatar-menu">
@@ -371,6 +399,31 @@
   </div>
 </header>
 
+<!-- MOBILE FULL-SCREEN MENU -->
+<div class="mobile-menu" id="mobile-menu">
+  <div class="mobile-menu-inner">
+    <div class="mobile-menu-top">
+      <div class="mobile-menu-brand">
+        <img src="../assets/logo/logo_nexo_blanco.png?v=3" alt="Nexo" style="height:48px;width:auto;max-width:220px">
+      </div>
+      <button class="mobile-menu-close" onclick="closeSidebar()"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="mobile-menu-nav">
+      <div class="mobile-menu-item active" id="mmenu-panel" onclick="showSection('panel');closeSidebar()"><i class="ti ti-layout-dashboard"></i><span>Panel</span></div>
+      <div class="mobile-menu-item" id="mmenu-alumnos" onclick="showSection('alumnos');closeSidebar()"><i class="ti ti-users"></i><span>Mis alumnos</span></div>
+      <div class="mobile-menu-item" id="mmenu-calendario" onclick="showSection('calendario');closeSidebar()"><i class="ti ti-calendar"></i><span>Calendario</span></div>
+      <div class="mobile-menu-item" id="mmenu-sesion" onclick="showSection('sesion');closeSidebar()"><i class="ti ti-file-pencil"></i><span>Registrar sesión</span></div>
+      <div class="mobile-menu-item" id="mmenu-actividad" onclick="showSection('actividad');closeSidebar()"><i class="ti ti-chart-bar"></i><span>Mi actividad</span></div>
+      <div class="mobile-menu-item" id="mmenu-tests" onclick="showSection('tests');closeSidebar()"><i class="ti ti-clipboard-list"></i><span>Tests</span></div>
+      <div class="mobile-menu-item" id="mmenu-avisos" onclick="showSection('avisos');closeSidebar()"><i class="ti ti-bell"></i><span>Avisos</span></div>
+    </div>
+    <div class="mobile-menu-footer">
+      <div class="mobile-menu-user" id="mmenu-user"></div>
+      <div class="mobile-menu-item" onclick="logout()" style="color:#f08080;border-bottom:none;padding-top:12px"><i class="ti ti-logout"></i><span>Cerrar sesión</span></div>
+    </div>
+  </div>
+</div>
+
 <!-- SIDEBAR -->
 <nav class="sidebar" id="sidebar">
   <div class="nav-section">Principal</div>
@@ -379,10 +432,10 @@
   <div class="nav-item" id="nav-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i> Calendario</div>
   <div class="nav-item" id="nav-sesion" onclick="showSection('sesion')"><i class="ti ti-file-pencil"></i> Registrar sesión</div>
   <div class="nav-item" id="nav-actividad" onclick="showSection('actividad')"><i class="ti ti-chart-bar"></i> Mi actividad</div>
+  <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-clipboard-list"></i> Tests</div>
   <div class="nav-item" id="nav-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i> Avisos<span class="badge-nav" id="badge-avisos" style="display:none">!</span></div>
   <div class="nav-divider"></div>
   <div class="nav-bottom">
-    <a href="https://nexoacademico.es" class="nav-item"><i class="ti ti-arrow-left"></i> Web principal</a>
     <div class="nav-item" onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</div>
   </div>
 </nav>
@@ -696,7 +749,58 @@
   </div>
 </div>
 
+<!-- ═══ TESTS ═══ -->
+<div class="section" id="section-tests">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 class="page-title" style="margin:0">Tests</h1>
+      <p class="page-sub" style="margin:0;margin-top:4px">Crea y gestiona tests para tus alumnos</p>
+    </div>
+    <button class="btn-primary" onclick="abrirModalTestProf()"><i class="ti ti-plus"></i> Nuevo test</button>
+  </div>
+  <div class="card" id="prof-tests-lista">
+    <div class="loading-section"><div class="spinner"></div></div>
+  </div>
+</div>
+
 </div><!-- end .main -->
+
+<!-- MODAL NUEVO TEST (PROFESOR) -->
+<div class="modal-overlay" id="modal-test-prof">
+  <div class="modal-box" style="max-width:560px;width:95%">
+    <div class="modal-title">
+      <span id="modal-test-prof-titulo">Nuevo test</span>
+      <button class="modal-close" onclick="cerrarModalTestProf()">×</button>
+    </div>
+    <form id="form-test-prof" onsubmit="guardarTestProf(event)">
+      <label class="field-label" style="margin-top:0">Título del test *</label>
+      <input class="field-input" id="tp-titulo" placeholder="Ej: Repaso tema 3 — Álgebra" required>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div>
+          <label class="field-label">Asignatura</label>
+          <select class="field-input" id="tp-asignatura">
+            <option value="">— Seleccionar —</option>
+          </select>
+        </div>
+        <div>
+          <label class="field-label">Alumno</label>
+          <select class="field-input" id="tp-alumno">
+            <option value="">Todos mis alumnos</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:20px;margin-bottom:10px">
+        <span style="color:var(--soft);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.6px">Preguntas</span>
+        <button type="button" class="btn-ghost" onclick="addPreguntaProf()"><i class="ti ti-plus"></i> Añadir pregunta</button>
+      </div>
+      <div id="tp-preguntas-container"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModalTestProf()">Cancelar</button>
+        <button type="submit" class="btn-primary"><i class="ti ti-device-floppy"></i> Guardar test</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- FICHA LATERAL ALUMNO -->
 <div id="ficha-alumno">
@@ -826,6 +930,8 @@ let editClaseId = null;
   const { usuario, profesorData } = ctx;
   document.getElementById('topbar-name').textContent = usuario.nombre;
   document.getElementById('avatar-initials').textContent = getInitials(usuario.nombre, usuario.apellidos);
+  const mmU = document.getElementById('mmenu-user');
+  if (mmU) mmU.textContent = usuario.nombre + ' ' + (usuario.apellidos || '');
   document.getElementById('greeting').textContent = 'Hola, ' + usuario.nombre;
 
   // Load alumnos: via FK profesor_id Y via junction table alumno_profesor
@@ -885,12 +991,17 @@ let editClaseId = null;
 // Navigation
 // ============================================================
 function toggleSidebar() {
-  document.getElementById('sidebar').classList.toggle('open');
-  document.getElementById('sidebar-overlay').classList.toggle('open');
+  if (window.innerWidth <= 768) {
+    document.getElementById('mobile-menu').classList.toggle('open');
+  } else {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebar-overlay').classList.toggle('open');
+  }
 }
 function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
+  document.getElementById('mobile-menu').classList.remove('open');
 }
 
 function showSection(id) {
@@ -899,6 +1010,9 @@ function showSection(id) {
   document.getElementById('section-' + id).classList.add('active');
   const navEl = document.getElementById('nav-' + id);
   if (navEl) navEl.classList.add('active');
+  document.querySelectorAll('.mobile-menu-item').forEach(b => b.classList.remove('active'));
+  const mm = document.getElementById('mmenu-' + id);
+  if (mm) mm.classList.add('active');
   closeSidebar();
   if (id !== 'alumnos') cerrarFicha();
   window.scrollTo(0, 0);
@@ -911,6 +1025,7 @@ function showSection(id) {
     actividad:  loadActividad,
     avisos:     loadAvisos,
     sesion:     nSesInit,
+    tests:      loadTestsProf,
   };
   if (loaders[id]) loaders[id]();
 }
@@ -2470,6 +2585,164 @@ async function nSesVerDetalle(sesId, evt) {
   }
 
   document.getElementById('nses-det-content').innerHTML = html;
+}
+
+// ============================================================
+// REFRESH
+// ============================================================
+async function refreshApp() {
+  const btn = document.getElementById('refresh-btn');
+  if (btn) { btn.classList.add('spinning'); btn.style.pointerEvents = 'none'; }
+  try { await loadDashboardProf(); } finally {
+    if (btn) { btn.classList.remove('spinning'); btn.style.pointerEvents = ''; }
+  }
+}
+
+// ============================================================
+// TESTS (PROFESOR)
+// ============================================================
+let _tpEditId = null, _tpPregCount = 0;
+
+async function loadTestsProf() {
+  const el = document.getElementById('prof-tests-lista');
+  el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+  const { data: tests } = await db.from('tests')
+    .select('id,titulo,asignatura,visible,created_at,preguntas:preguntas_test(id)')
+    .eq('creado_por', ctx.usuario.id)
+    .order('created_at', { ascending: false });
+
+  if (!tests || tests.length === 0) {
+    el.innerHTML = '<div class="empty-state"><i class="ti ti-clipboard-list"></i><p>Aún no has creado ningún test.<br>Pulsa <b>Nuevo test</b> para empezar.</p></div>';
+    return;
+  }
+  el.innerHTML = `<table class="tabla"><thead><tr>
+    <th>Título</th><th>Asignatura</th><th>Preguntas</th><th>Estado</th><th></th>
+  </tr></thead><tbody>
+  ${tests.map(t => `<tr>
+    <td style="color:#fff;font-weight:500">${t.titulo}</td>
+    <td>${t.asignatura || '—'}</td>
+    <td>${t.preguntas?.length || 0}</td>
+    <td><span class="status-pill ${t.visible ? 'st-ok' : 'st-grey'}">${t.visible ? 'Visible' : 'Oculto'}</span></td>
+    <td style="white-space:nowrap">
+      <button class="btn-ghost" style="padding:5px 10px;font-size:11px" onclick="editarTestProf('${t.id}')"><i class="ti ti-pencil"></i></button>
+      <button class="btn-ghost" style="padding:5px 10px;font-size:11px;margin-left:4px" onclick="toggleTestVis('${t.id}',${!t.visible})">${t.visible ? 'Ocultar' : 'Mostrar'}</button>
+    </td>
+  </tr>`).join('')}
+  </tbody></table>`;
+}
+
+async function toggleTestVis(id, vis) {
+  await db.from('tests').update({ visible: vis }).eq('id', id);
+  loadTestsProf();
+}
+
+function abrirModalTestProf() {
+  _tpEditId = null; _tpPregCount = 0;
+  document.getElementById('form-test-prof').reset();
+  document.getElementById('modal-test-prof-titulo').textContent = 'Nuevo test';
+  document.getElementById('tp-preguntas-container').innerHTML = '';
+  _cargarSelectoresProf();
+  addPreguntaProf();
+  document.getElementById('modal-test-prof').classList.add('open');
+}
+
+async function editarTestProf(id) {
+  _tpEditId = id;
+  const { data: t } = await db.from('tests').select('*').eq('id', id).single();
+  const { data: pregs } = await db.from('preguntas_test').select('*').eq('test_id', id).order('orden');
+  document.getElementById('modal-test-prof-titulo').textContent = 'Editar test';
+  document.getElementById('tp-titulo').value = t.titulo || '';
+  _tpPregCount = 0;
+  document.getElementById('tp-preguntas-container').innerHTML = '';
+  await _cargarSelectoresProf(t.asignatura);
+  (pregs || []).forEach(p => addPreguntaProf(p));
+  document.getElementById('modal-test-prof').classList.add('open');
+}
+
+async function _cargarSelectoresProf(asigSel = '') {
+  const { data: alumnos } = await db.from('alumnos')
+    .select('id,nombre,apellidos,asignaturas')
+    .eq('profesor_id', ctx.profesor?.id || '')
+    .eq('activo', true)
+    .order('nombre');
+
+  const selA = document.getElementById('tp-alumno');
+  selA.innerHTML = '<option value="">Todos mis alumnos</option>' +
+    (alumnos || []).map(a => `<option value="${a.id}">${a.nombre} ${a.apellidos}</option>`).join('');
+
+  const asigs = [...new Set((alumnos || []).flatMap(a => a.asignaturas || []))].sort();
+  const selAs = document.getElementById('tp-asignatura');
+  selAs.innerHTML = '<option value="">— Seleccionar —</option>' +
+    asigs.map(a => `<option value="${a}" ${a === asigSel ? 'selected' : ''}>${a}</option>`).join('');
+}
+
+function addPreguntaProf(data = null) {
+  const i = _tpPregCount++;
+  const d = document.createElement('div');
+  d.id = `tp-pw-${i}`;
+  d.style.cssText = 'background:var(--dark);border:.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px';
+  d.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <span style="color:var(--soft);font-size:12px;font-weight:600">Pregunta ${i + 1}</span>
+      <button type="button" onclick="document.getElementById('tp-pw-${i}').remove()" class="btn-cancel" style="padding:3px 10px;font-size:11px">✕</button>
+    </div>
+    <label class="field-label" style="margin-top:0">Enunciado *</label>
+    <textarea class="field-input" id="tp-pe-${i}" rows="2" required style="resize:vertical">${data?.enunciado || ''}</textarea>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+      <div><label class="field-label" style="margin-top:0">Opción A *</label><input class="field-input" id="tp-pa-${i}" value="${data?.opcion_a || ''}" required></div>
+      <div><label class="field-label" style="margin-top:0">Opción B *</label><input class="field-input" id="tp-pb-${i}" value="${data?.opcion_b || ''}" required></div>
+      <div><label class="field-label" style="margin-top:0">Opción C *</label><input class="field-input" id="tp-pc-${i}" value="${data?.opcion_c || ''}" required></div>
+      <div><label class="field-label" style="margin-top:0">Opción D *</label><input class="field-input" id="tp-pd-${i}" value="${data?.opcion_d || ''}" required></div>
+    </div>
+    <label class="field-label">Respuesta correcta *</label>
+    <select class="field-input" id="tp-pr-${i}" required>
+      <option value="a" ${data?.respuesta_correcta==='a'?'selected':''}>A</option>
+      <option value="b" ${data?.respuesta_correcta==='b'?'selected':''}>B</option>
+      <option value="c" ${data?.respuesta_correcta==='c'?'selected':''}>C</option>
+      <option value="d" ${data?.respuesta_correcta==='d'?'selected':''}>D</option>
+    </select>`;
+  document.getElementById('tp-preguntas-container').appendChild(d);
+}
+
+async function guardarTestProf(e) {
+  e.preventDefault();
+  const testData = {
+    titulo:     document.getElementById('tp-titulo').value.trim(),
+    asignatura: document.getElementById('tp-asignatura').value || null,
+    creado_por: ctx.usuario.id,
+    visible:    true,
+  };
+  let testId = _tpEditId;
+  if (!_tpEditId) {
+    const { data: nt, error } = await db.from('tests').insert(testData).select().single();
+    if (error) { alert('Error: ' + error.message); return; }
+    testId = nt.id;
+  } else {
+    await db.from('tests').update(testData).eq('id', testId);
+    await db.from('preguntas_test').delete().eq('test_id', testId);
+  }
+  const container = document.getElementById('tp-preguntas-container');
+  const wraps = container.querySelectorAll('[id^="tp-pw-"]');
+  const pregs = [];
+  wraps.forEach((wrap, idx) => {
+    const n = wrap.id.replace('tp-pw-', '');
+    const enunciado = document.getElementById(`tp-pe-${n}`)?.value;
+    if (!enunciado) return;
+    pregs.push({ test_id: testId, enunciado,
+      opcion_a: document.getElementById(`tp-pa-${n}`)?.value || '',
+      opcion_b: document.getElementById(`tp-pb-${n}`)?.value || '',
+      opcion_c: document.getElementById(`tp-pc-${n}`)?.value || '',
+      opcion_d: document.getElementById(`tp-pd-${n}`)?.value || '',
+      respuesta_correcta: document.getElementById(`tp-pr-${n}`)?.value || 'a',
+      orden: idx });
+  });
+  if (pregs.length > 0) await db.from('preguntas_test').insert(pregs);
+  cerrarModalTestProf();
+  loadTestsProf();
+}
+
+function cerrarModalTestProf() {
+  document.getElementById('modal-test-prof').classList.remove('open');
 }
 </script>
 </body>
