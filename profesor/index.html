@@ -26,7 +26,7 @@
     --red:#c0392b; --red-lt:#2d0d0d;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-  html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px;overflow-x:hidden;overscroll-behavior-y:none}
+  html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px;overflow-x:hidden}
 
   .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:calc(62px + env(safe-area-inset-top,0px));background:rgba(4,7,27,.97);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0px) 20px 0}
   .topbar-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
@@ -2597,14 +2597,17 @@ async function toggleTestVis(id, vis) {
   loadTestsProf();
 }
 
-async function _cargarAlumnosProf() {
-  if (_tpAlumnosData.length > 0) return; // ya cargados
-  const { data } = await db.from('alumnos')
-    .select('id,nombre,apellidos,asignaturas')
-    .eq('profesor_id', ctx.profesor?.id || '')
-    .eq('activo', true)
-    .order('nombre');
-  _tpAlumnosData = data || [];
+function _cargarAlumnosProf() {
+  if (_tpAlumnosData.length > 0) return;
+  // misAlumnos ya está cargado al iniciar — lo mapeamos al formato que necesita el modal
+  _tpAlumnosData = [...misAlumnos]
+    .sort((a,b) => (a.usuario?.nombre||'').localeCompare(b.usuario?.nombre||''))
+    .map(a => ({
+      id:         a.id,
+      nombre:     a.usuario?.nombre    || '',
+      apellidos:  a.usuario?.apellidos || '',
+      asignaturas: a._asignaturas      || []
+    }));
 }
 
 function tpAlumnoChange() {
@@ -2627,7 +2630,7 @@ async function abrirModalTestProf() {
   document.getElementById('form-test-prof').reset();
   document.getElementById('modal-test-prof-titulo').textContent = 'Nuevo test';
   document.getElementById('tp-preguntas-container').innerHTML = '';
-  await _cargarAlumnosProf();
+  _cargarAlumnosProf();
   const selA = document.getElementById('tp-alumno');
   selA.innerHTML = '<option value="">— Seleccionar alumno —</option>' +
     _tpAlumnosData.map(a => `<option value="${a.id}">${a.nombre} ${a.apellidos || ''}</option>`).join('');
@@ -2646,7 +2649,7 @@ async function editarTestProf(id) {
   document.getElementById('tp-titulo').value = t.titulo || '';
   _tpPregCount = 0;
   document.getElementById('tp-preguntas-container').innerHTML = '';
-  await _cargarAlumnosProf();
+  _cargarAlumnosProf();
   // Poblar alumno
   const selA = document.getElementById('tp-alumno');
   selA.innerHTML = '<option value="">— Seleccionar alumno —</option>' +
