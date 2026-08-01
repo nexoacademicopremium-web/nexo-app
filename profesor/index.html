@@ -383,6 +383,41 @@
     .nses-num-grid{grid-template-columns:repeat(2,1fr)}
     .btn-cta-ses{width:100%;justify-content:center}
   }
+  /* ── Material section ── */
+  .btn-edit{background:var(--surface);color:var(--soft);border:.5px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;text-decoration:none;font-family:inherit;transition:background .12s}
+  .btn-edit:hover{background:var(--border2)}
+  .btn-danger{background:transparent;color:var(--red,#f87171);border:.5px solid var(--red,#f87171);border-radius:6px;padding:5px 10px;font-size:11px;cursor:pointer;font-family:inherit;transition:background .12s}
+  .btn-danger:hover{background:rgba(248,113,113,.08)}
+  .mat-asig-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+  .mat-asig-bubble{background:linear-gradient(145deg,#0c1838,#060d20);border:1px solid var(--ab-clr,var(--border));border-radius:22px;padding:26px 16px 20px;cursor:pointer;position:relative;overflow:hidden;text-align:center;transition:transform .25s cubic-bezier(.4,0,.2,1),box-shadow .25s;display:flex;flex-direction:column;align-items:center;gap:8px;user-select:none;-webkit-tap-highlight-color:transparent}
+  .mat-asig-bubble::after{content:'';position:absolute;top:-22px;right:-22px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,var(--ab-clr,var(--blue)) 0%,transparent 70%);opacity:.12;pointer-events:none}
+  .mat-asig-bubble:hover{transform:translateY(-4px);box-shadow:0 14px 32px rgba(0,0,0,.5),0 0 0 1px var(--ab-clr,var(--border))}
+  .mat-asig-ico{width:58px;height:58px;border-radius:15px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--ab-clr,var(--border));background:rgba(255,255,255,.05)}
+  .mat-asig-ico i{font-size:24px;color:var(--ab-clr,var(--blue))}
+  .mat-asig-label{color:#fff;font-size:13px;font-weight:700;line-height:1.3}
+  .mat-asig-count{color:var(--muted);font-size:10px}
+  .mat-nav-bar{display:flex;align-items:center;gap:8px;padding:10px 0 16px;flex-wrap:wrap}
+  .mat-back-btn{display:flex;align-items:center;gap:5px;background:var(--surface);border:.5px solid var(--border);color:var(--muted);border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;font-family:inherit;transition:color .12s,border-color .12s;flex-shrink:0}
+  .mat-back-btn:hover{color:#fff;border-color:var(--blue)}
+  .mat-back-btn i{font-size:14px}
+  .mat-bc{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+  .mat-bc-link{color:var(--muted);font-size:12px;cursor:pointer;transition:color .12s}
+  .mat-bc-link:hover{color:#fff}
+  .mat-bc-cur{color:var(--soft);font-size:12px;font-weight:500}
+  .mat-bc-sep{color:var(--border2);font-size:11px}
+  .mat-pdf-grid{display:flex;flex-direction:column;gap:8px}
+  .mat-pdf-card{display:flex;align-items:center;gap:12px;padding:12px 14px;border:.5px solid var(--ab-clr,var(--border));border-radius:12px;background:#060d20;transition:background .12s;position:relative;overflow:hidden}
+  .mat-pdf-card::after{content:'';position:absolute;top:-10px;right:-10px;width:50px;height:50px;border-radius:50%;background:radial-gradient(circle,var(--ab-clr,var(--blue)) 0%,transparent 70%);opacity:.07;pointer-events:none}
+  .mat-pdf-card:hover{background:#091828}
+  .mat-pdf-card.excl{border-color:#f59e0b;border-left-width:3px;background:rgba(245,158,11,.04)}
+  .mat-pdf-ico{width:44px;height:44px;border-radius:11px;background:rgba(255,255,255,.03);border:1px solid var(--ab-clr,var(--border));display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .mat-pdf-ico i{font-size:20px;color:var(--ab-clr,var(--blue))}
+  .mat-pdf-body{flex:1;min-width:0}
+  .mat-pdf-nom{color:#fff;font-size:13px;font-weight:600;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mat-pdf-tipo{color:var(--muted);font-size:11px}
+  .mat-pdf-actions{display:flex;align-items:center;gap:5px;flex-shrink:0}
+  @media(max-width:768px){.mat-asig-grid{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:480px){.mat-asig-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -424,6 +459,7 @@
       <div class="mobile-menu-item" id="mmenu-sesion" onclick="showSection('sesion');closeSidebar()"><i class="ti ti-file-pencil"></i><span>Registrar sesión</span></div>
       <div class="mobile-menu-item" id="mmenu-actividad" onclick="showSection('actividad');closeSidebar()"><i class="ti ti-chart-bar"></i><span>Mi actividad</span></div>
       <div class="mobile-menu-item" id="mmenu-tests" onclick="showSection('tests');closeSidebar()"><i class="ti ti-clipboard-list"></i><span>Tests</span></div>
+      <div class="mobile-menu-item" id="mmenu-material" onclick="showSection('material');closeSidebar()"><i class="ti ti-files"></i><span>Material</span></div>
       <div class="mobile-menu-item" id="mmenu-avisos" onclick="showSection('avisos');closeSidebar()"><i class="ti ti-bell"></i><span>Avisos</span></div>
     </div>
     <div class="mobile-menu-footer">
@@ -442,6 +478,7 @@
   <div class="nav-item" id="nav-sesion" onclick="showSection('sesion')"><i class="ti ti-file-pencil"></i> Registrar sesión</div>
   <div class="nav-item" id="nav-actividad" onclick="showSection('actividad')"><i class="ti ti-chart-bar"></i> Mi actividad</div>
   <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-clipboard-list"></i> Tests</div>
+  <div class="nav-item" id="nav-material" onclick="showSection('material')"><i class="ti ti-files"></i> Material</div>
   <div class="nav-item" id="nav-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i> Avisos<span class="badge-nav" id="badge-avisos" style="display:none">!</span></div>
   <div class="nav-divider"></div>
   <div class="nav-bottom">
@@ -763,6 +800,19 @@
   </div>
 </div>
 
+<div class="section" id="section-material">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 class="page-title" style="margin:0">Material</h1>
+      <p class="page-sub" style="margin:0;margin-top:4px">Sube y gestiona material para tus alumnos</p>
+    </div>
+    <button class="btn-primary" onclick="pMatAbrirModal()"><i class="ti ti-plus"></i> Añadir material</button>
+  </div>
+  <div id="pmat-list">
+    <div class="loading-section"><div class="spinner"></div></div>
+  </div>
+</div>
+
 </div><!-- end .main -->
 
 <!-- MODAL NUEVO TEST (PROFESOR) -->
@@ -889,6 +939,74 @@
     <div style="color:#fff;font-size:18px;font-weight:600;margin-bottom:8px">Sesión registrada</div>
     <div style="color:var(--muted);font-size:13px;margin-bottom:24px">Clase pendiente de confirmación por el alumno.</div>
     <a href="#" onclick="cerrarModalOk();showSection('panel');return false;" style="display:block;color:var(--blue);font-size:13px;text-decoration:none">Volver al panel</a>
+  </div>
+</div>
+
+<!-- MODAL MATERIAL (PROFESOR) -->
+<div class="modal-overlay" id="pmodal-material">
+  <div class="modal-box" style="max-width:540px;width:95%">
+    <div class="modal-title">
+      <span>Añadir material</span>
+      <button class="modal-close" onclick="document.getElementById('pmodal-material').classList.remove('open')">×</button>
+    </div>
+    <form id="pform-material" onsubmit="pMatGuardar(event)">
+      <label class="field-label" style="margin-top:0">Título *</label>
+      <input class="field-input" id="pmat-titulo" required placeholder="Ej: Tema 3 Resumen">
+
+      <label class="field-label">Asignatura *</label>
+      <select class="field-input" id="pmat-asignatura" required onchange="pMatActualizarBloques()" style="font-size:16px;touch-action:manipulation">
+        <option value="">— Seleccionar —</option>
+      </select>
+
+      <label class="field-label">Curso *</label>
+      <select class="field-input" id="pmat-nivel" required onchange="pMatActualizarBloques()" style="font-size:16px;touch-action:manipulation">
+        <option value="">— Seleccionar —</option>
+        <option value="1ESO">1.º ESO</option>
+        <option value="2ESO">2.º ESO</option>
+        <option value="3ESO">3.º ESO</option>
+        <option value="4ESO">4.º ESO</option>
+        <option value="1BACH">1.º Bach</option>
+        <option value="2BACH">2.º Bach</option>
+        <option value="todos">Todos los cursos</option>
+      </select>
+
+      <label class="field-label">Tipo</label>
+      <select class="field-input" id="pmat-tipo" style="font-size:16px;touch-action:manipulation">
+        <option value="pdf">PDF / Documento</option>
+        <option value="recurso">Enlace / Recurso</option>
+      </select>
+
+      <label class="field-label">Bloque *</label>
+      <select class="field-input" id="pmat-bloque" required onchange="pMatActualizarTemas()" style="font-size:16px;touch-action:manipulation">
+        <option value="">— Elige asignatura y curso primero —</option>
+      </select>
+      <div id="pmat-bloque-nuevo-wrap" style="display:none;margin-top:6px">
+        <input class="field-input" id="pmat-bloque-nuevo" placeholder="Nombre del nuevo bloque" style="margin-bottom:0">
+        <button type="button" class="btn-primary" style="margin-top:6px;padding:7px 14px;font-size:12px" onclick="pMatCrearBloque()">Crear bloque</button>
+      </div>
+
+      <label class="field-label">Tema *</label>
+      <select class="field-input" id="pmat-tema" required style="font-size:16px;touch-action:manipulation">
+        <option value="">— Elige bloque primero —</option>
+      </select>
+      <div id="pmat-tema-nuevo-wrap" style="display:none;margin-top:6px">
+        <input class="field-input" id="pmat-tema-nuevo" placeholder="Nombre del nuevo tema" style="margin-bottom:0">
+        <button type="button" class="btn-primary" style="margin-top:6px;padding:7px 14px;font-size:12px" onclick="pMatCrearTema()">Crear tema</button>
+      </div>
+
+      <label class="field-label">Archivo *</label>
+      <input class="field-input" type="file" id="pmat-archivo" accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.png,.jpg,.jpeg,.gif,.mp4,.zip">
+
+      <label class="field-label">Asignar a alumno específico <span style="color:var(--muted);font-size:11px">(opcional)</span></label>
+      <select class="field-input" id="pmat-alumno-especifico" style="font-size:16px;touch-action:manipulation">
+        <option value="">— Todos mis alumnos —</option>
+      </select>
+
+      <div style="display:flex;gap:10px;margin-top:18px">
+        <button type="button" class="btn-cancel" style="flex:1" onclick="document.getElementById('pmodal-material').classList.remove('open')">Cancelar</button>
+        <button type="submit" class="btn-primary" style="flex:1" id="btn-pmat-guardar">Subir material</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -1023,6 +1141,7 @@ function showSection(id) {
     avisos:     loadAvisos,
     sesion:     nSesInit,
     tests:      loadTestsProf,
+    material:   loadProfMaterial,
   };
   if (loaders[id]) loaders[id]();
 }
@@ -2744,6 +2863,346 @@ async function guardarTestProf(e) {
 
 function cerrarModalTestProf() {
   document.getElementById('modal-test-prof').classList.remove('open');
+}
+
+// ============================================================
+// MATERIAL (PROFESOR)
+// ============================================================
+let pAllAsignaturas = [];
+let pAllBloques     = [];
+let pAllTemas       = [];
+let pAllMaterial    = [];
+let pMatAlumnoMap   = {}; // materialId → [alumnoIds]
+let _pMatNav        = null; // null=root | { asigId, bloqueId, temaId }
+let _pMatData       = null;
+let _pMatCatalogLoaded = false;
+
+const PMAT_NIVEL_ORDER = ['1ESO','2ESO','3ESO','4ESO','1BACH','2BACH','todos'];
+
+async function _pMatLoadCatalog() {
+  if (_pMatCatalogLoaded) return;
+  const [ar, br, tr] = await Promise.all([
+    db.from('asignaturas').select('*').order('nombre'),
+    db.from('bloques').select('*').order('nombre'),
+    db.from('temas').select('*').order('nombre'),
+  ]);
+  pAllAsignaturas = ar.data || [];
+  pAllBloques     = br.data || [];
+  pAllTemas       = tr.data || [];
+  _pMatCatalogLoaded = true;
+}
+
+async function loadProfMaterial() {
+  const c = document.getElementById('pmat-list');
+  c.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+  await _pMatLoadCatalog();
+  const { data: mat, error } = await db.from('material')
+    .select('*')
+    .eq('subido_por', ctx.usuario.id)
+    .order('asignatura_id').order('bloque_id').order('tema_id').order('titulo');
+  if (error) { c.innerHTML = `<div class="empty-state"><p style="color:var(--red)">${error.message}</p></div>`; return; }
+  pAllMaterial = mat || [];
+
+  // Build alumno map
+  if (pAllMaterial.length) {
+    const ids = pAllMaterial.map(m => m.id);
+    const { data: maRows } = await db.from('material_alumno').select('material_id, alumno_id').in('material_id', ids);
+    pMatAlumnoMap = {};
+    (maRows || []).forEach(r => {
+      if (!pMatAlumnoMap[r.material_id]) pMatAlumnoMap[r.material_id] = [];
+      pMatAlumnoMap[r.material_id].push(r.alumno_id);
+    });
+  } else {
+    pMatAlumnoMap = {};
+  }
+
+  _pMatData = pAllMaterial;
+  _pMatNav  = null;
+  _pRenderMat();
+}
+
+// ── Render dispatcher ─────────────────────────────────────────
+function _pRenderMat() {
+  const c = document.getElementById('pmat-list');
+  if (!c || !_pMatData) return;
+  const n = _pMatNav;
+  if (!n) { _pMatRenderAsigs(c); return; }
+  const { asigId, bloqueId, temaId } = n;
+  if (temaId   != null) _pMatRenderPdfs(c);
+  else if (bloqueId != null) _pMatRenderTemas(c);
+  else if (asigId  != null) _pMatRenderBloques(c);
+  else                      _pMatRenderAsigs(c);
+}
+
+// ── Navigation ────────────────────────────────────────────────
+function _pMatGo(asigId, bloqueId, temaId) {
+  _pMatNav = { asigId:asigId??null, bloqueId:bloqueId??null, temaId:temaId??null };
+  _pRenderMat();
+}
+function _pMatGoRoot() { _pMatNav = null; _pRenderMat(); }
+
+function _pMatBack() {
+  if (!_pMatNav) return;
+  const { asigId, bloqueId, temaId } = _pMatNav;
+  if (temaId   != null) { _pMatGo(asigId, bloqueId, null); return; }
+  if (bloqueId != null) { _pMatGo(asigId, null, null);     return; }
+  _pMatGoRoot();
+}
+
+// ── Items filtered by current nav state ──────────────────────
+function _pMatItems() {
+  let items = _pMatData || [];
+  if (!_pMatNav) return items;
+  const { asigId } = _pMatNav;
+  if (asigId != null) items = items.filter(m => m.asignatura_id === asigId);
+  return items;
+}
+
+// ── Breadcrumb ────────────────────────────────────────────────
+function _pMatBc() {
+  if (!_pMatNav) return '';
+  const { asigId, bloqueId, temaId } = _pMatNav;
+  const sep   = `<i class="ti ti-chevron-right mat-bc-sep"></i>`;
+  const parts = [`<span class="mat-bc-link" onclick="_pMatGoRoot()">Material</span>`];
+  if (asigId != null) {
+    const nom = pAllAsignaturas.find(a => a.id === asigId)?.nombre || '—';
+    parts.push(`<span class="mat-bc-link" onclick="_pMatGo(${asigId},null,null)">${nom}</span>`);
+  }
+  if (bloqueId != null) {
+    const nom = bloqueId === 0 ? 'Sin bloque' : (pAllBloques.find(b => b.id === bloqueId)?.nombre || 'Bloque');
+    parts.push(`<span class="mat-bc-link" onclick="_pMatGo(${asigId},${bloqueId},null)">${nom}</span>`);
+  }
+  if (temaId != null) {
+    const nom = temaId === '__sin__' ? 'Sin tema' : (pAllTemas.find(t => t.id === parseInt(temaId))?.nombre || '—');
+    parts.push(`<span class="mat-bc-cur">${nom}</span>`);
+  }
+  return `<div class="mat-nav-bar">
+    <button class="mat-back-btn" onclick="_pMatBack()"><i class="ti ti-arrow-left"></i> Volver</button>
+    <div class="mat-bc">${parts.join(sep)}</div>
+  </div>`;
+}
+
+// ── Nivel 1: Asignaturas ──────────────────────────────────────
+function _pMatRenderAsigs(c) {
+  if (!_pMatData.length) {
+    c.innerHTML = `<div class="empty-state"><i class="ti ti-file-off"></i><p>Sin material todavía. Pulsa "Añadir material" para empezar.</p></div>`;
+    return;
+  }
+  const asigCnt = {};
+  _pMatData.forEach(m => { asigCnt[m.asignatura_id??0] = (asigCnt[m.asignatura_id??0]||0)+1; });
+  const bubbles = Object.keys(asigCnt).map(aid => {
+    const nom  = aid === '0' ? 'Sin asignatura' : (pAllAsignaturas.find(a => a.id === Number(aid))?.nombre || '—');
+    const meta = getSubjectMeta(nom);
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo(${aid},null,null)">
+      <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
+      <span class="mat-asig-label">${nom}</span>
+      <span class="mat-asig-count">${asigCnt[aid]} archivo${asigCnt[aid]!==1?'s':''}</span>
+    </div>`;
+  }).join('');
+  c.innerHTML = `<div class="mat-asig-grid">${bubbles}</div>`;
+}
+
+// ── Nivel 2: Bloques ──────────────────────────────────────────
+function _pMatRenderBloques(c) {
+  const { asigId } = _pMatNav;
+  const items   = _pMatItems();
+  const bloqCnt = {};
+  items.forEach(m => { if (m.bloque_id) bloqCnt[m.bloque_id] = (bloqCnt[m.bloque_id]||0)+1; });
+  const sinBloq = items.filter(m => !m.bloque_id);
+  const bubbles = Object.keys(bloqCnt).map(Number).map(bid => {
+    const blq  = pAllBloques.find(b => b.id === bid) || {};
+    const meta = getTopicMeta(blq.nombre||'');
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo(${asigId},${bid},null)">
+      <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
+      <span class="mat-asig-label">${blq.nombre||'Sin nombre'}</span>
+      <span class="mat-asig-count">${bloqCnt[bid]} archivo${bloqCnt[bid]!==1?'s':''}</span>
+    </div>`;
+  }).join('');
+  const extra = sinBloq.length ? `<div class="mat-asig-bubble" style="--ab-clr:#374151" onclick="_pMatGo(${asigId},0,null)">
+    <div class="mat-asig-ico"><i class="ti ti-folder-x"></i></div>
+    <span class="mat-asig-label">Sin bloque</span>
+    <span class="mat-asig-count">${sinBloq.length} archivo${sinBloq.length!==1?'s':''}</span>
+  </div>` : '';
+  c.innerHTML = _pMatBc() + `<div class="mat-asig-grid">${bubbles+extra||'<p style="color:var(--muted);font-size:12px">Sin bloques</p>'}</div>`;
+}
+
+// ── Nivel 3: Temas ────────────────────────────────────────────
+function _pMatRenderTemas(c) {
+  const { asigId, bloqueId } = _pMatNav;
+  const items = _pMatItems().filter(m => bloqueId === 0 ? !m.bloque_id : m.bloque_id === bloqueId);
+  const temaCnt = {};
+  items.forEach(m => { const k = m.tema_id||'__sin__'; temaCnt[k] = (temaCnt[k]||0)+1; });
+  const bubbles = Object.keys(temaCnt).map(tid => {
+    const nom    = tid === '__sin__' ? 'Sin tema' : (pAllTemas.find(t => t.id === parseInt(tid))?.nombre || '—');
+    const meta   = getTopicMeta(nom);
+    const tidStr = tid === '__sin__' ? `'__sin__'` : tid;
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo(${asigId},${bloqueId},${tidStr})">
+      <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
+      <span class="mat-asig-label">${nom}</span>
+      <span class="mat-asig-count">${temaCnt[tid]} archivo${temaCnt[tid]!==1?'s':''}</span>
+    </div>`;
+  }).join('');
+  c.innerHTML = _pMatBc() + `<div class="mat-asig-grid">${bubbles||'<p style="color:var(--muted);font-size:12px">Sin temas</p>'}</div>`;
+}
+
+// ── Nivel 4: PDFs / Recursos ──────────────────────────────────
+function _pMatRenderPdfs(c) {
+  const { bloqueId, temaId } = _pMatNav;
+  const items = _pMatItems().filter(m => {
+    if (bloqueId === 0) { if (m.bloque_id) return false; }
+    else { if (m.bloque_id !== bloqueId) return false; }
+    if (temaId === '__sin__') return !m.tema_id;
+    return String(m.tema_id) === String(temaId);
+  });
+  const cards = items.map(m => {
+    const alIds   = pMatAlumnoMap[m.id] || [];
+    const isPerso = alIds.length > 0;
+    const nombres = alIds.map(aid => misAlumnos.find(a => a.id === aid)?.usuario?.nombre?.split(' ')[0]||'?').join(', ');
+    const meta    = getTopicMeta(m.titulo);
+    const isPdf   = m.tipo === 'pdf';
+    const ico     = isPerso ? 'ti-crown' : (isPdf ? 'ti-file-text' : (meta.ico !== 'ti-bookmark' ? meta.ico : 'ti-layout-grid'));
+    const cc      = isPerso ? '#f59e0b' : meta.cc;
+    return `<div class="mat-pdf-card${isPerso?' excl':''}" style="--ab-clr:${cc}">
+      <div class="mat-pdf-ico"><i class="ti ${ico}"></i></div>
+      <div class="mat-pdf-body">
+        <div class="mat-pdf-nom">${m.titulo}</div>
+        <div class="mat-pdf-tipo">${isPerso ? `<i class="ti ti-crown" style="font-size:10px"></i> Excl. · ${nombres}` : (isPdf?'PDF':'Recurso')}</div>
+      </div>
+      <div class="mat-pdf-actions">
+        ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" class="btn-edit">Ver</a>` : ''}
+        <button class="btn-danger" onclick="pMatEliminar('${m.id}')"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+  c.innerHTML = _pMatBc() + `<div class="mat-pdf-grid">${cards||'<p style="color:var(--muted);font-size:12px;padding:8px 0">Sin archivos</p>'}</div>`;
+}
+
+// ── Upload modal ──────────────────────────────────────────────
+function pMatAbrirModal() {
+  document.getElementById('pform-material').reset();
+  document.getElementById('pmat-bloque').innerHTML = '<option value="">— Elige asignatura y curso primero —</option>';
+  document.getElementById('pmat-bloque-nuevo-wrap').style.display = 'none';
+  document.getElementById('pmat-tema').innerHTML   = '<option value="">— Elige bloque primero —</option>';
+  document.getElementById('pmat-tema-nuevo-wrap').style.display   = 'none';
+
+  // Populate asignaturas select
+  const asel = document.getElementById('pmat-asignatura');
+  asel.innerHTML = '<option value="">— Seleccionar —</option>' +
+    pAllAsignaturas.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+
+  // Populate alumnos select
+  const almSel = document.getElementById('pmat-alumno-especifico');
+  almSel.innerHTML = '<option value="">— Todos mis alumnos —</option>' +
+    misAlumnos.map(a => `<option value="${a.id}">${(a.usuario?.nombre||'')} ${(a.usuario?.apellidos||'')}</option>`).join('');
+
+  document.getElementById('pmodal-material').classList.add('open');
+}
+
+function pMatActualizarBloques() {
+  const asigId = parseInt(document.getElementById('pmat-asignatura').value);
+  const nivel  = document.getElementById('pmat-nivel').value;
+  const sel    = document.getElementById('pmat-bloque');
+  sel.innerHTML = '<option value="">— Elige bloque —</option>';
+  document.getElementById('pmat-tema').innerHTML = '<option value="">— Elige bloque primero —</option>';
+  document.getElementById('pmat-bloque-nuevo-wrap').style.display = '';
+  document.getElementById('pmat-tema-nuevo-wrap').style.display   = 'none';
+  if (!asigId || !nivel) { sel.innerHTML = '<option value="">— Elige asignatura y curso primero —</option>'; document.getElementById('pmat-bloque-nuevo-wrap').style.display='none'; return; }
+  const filtered = pAllBloques.filter(b => b.asignatura_id === asigId && (b.nivel === nivel || b.nivel === 'todos' || nivel === 'todos'));
+  filtered.forEach(b => { sel.innerHTML += `<option value="${b.id}">${b.nombre}</option>`; });
+}
+
+function pMatActualizarTemas() {
+  const bloqueId = parseInt(document.getElementById('pmat-bloque').value);
+  const sel      = document.getElementById('pmat-tema');
+  sel.innerHTML  = '<option value="">— Elige tema —</option>';
+  document.getElementById('pmat-tema-nuevo-wrap').style.display = bloqueId ? '' : 'none';
+  if (!bloqueId) return;
+  pAllTemas.filter(t => t.bloque_id === bloqueId).forEach(t => { sel.innerHTML += `<option value="${t.id}">${t.nombre}</option>`; });
+}
+
+async function pMatCrearBloque() {
+  const asigId = parseInt(document.getElementById('pmat-asignatura').value);
+  const nivel  = document.getElementById('pmat-nivel').value;
+  const nombre = document.getElementById('pmat-bloque-nuevo').value.trim();
+  if (!nombre || !asigId || !nivel) { showToast('Completa asignatura, curso y nombre', 'error'); return; }
+  const { data, error } = await db.from('bloques').insert({ asignatura_id: asigId, nivel, nombre }).select('id,nombre').single();
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  pAllBloques.push({ ...data, asignatura_id: asigId, nivel });
+  pMatActualizarBloques();
+  document.getElementById('pmat-bloque').value = data.id;
+  pMatActualizarTemas();
+  document.getElementById('pmat-bloque-nuevo').value = '';
+  showToast('Bloque creado');
+}
+
+async function pMatCrearTema() {
+  const bloqueId = parseInt(document.getElementById('pmat-bloque').value);
+  const nombre   = document.getElementById('pmat-tema-nuevo').value.trim();
+  if (!nombre || !bloqueId) { showToast('Elige un bloque y escribe el nombre', 'error'); return; }
+  const { data, error } = await db.from('temas').insert({ bloque_id: bloqueId, nombre }).select('id,nombre').single();
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  pAllTemas.push({ ...data, bloque_id: bloqueId });
+  pMatActualizarTemas();
+  document.getElementById('pmat-tema').value = data.id;
+  document.getElementById('pmat-tema-nuevo').value = '';
+  showToast('Tema creado');
+}
+
+async function pMatGuardar(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-pmat-guardar');
+  btn.disabled = true;
+  try {
+    const file    = document.getElementById('pmat-archivo').files[0];
+    if (!file) throw new Error('Añade un archivo para continuar');
+    const ext  = file.name.split('.').pop();
+    const path = `material/${Date.now()}.${ext}`;
+    const { error: upErr } = await db.storage.from('nexo-files').upload(path, file);
+    if (upErr) throw new Error('Error al subir archivo: ' + upErr.message);
+    const { data: urlData } = db.storage.from('nexo-files').getPublicUrl(path);
+
+    const bloqueId = parseInt(document.getElementById('pmat-bloque').value) || null;
+    const temaId   = parseInt(document.getElementById('pmat-tema').value)   || null;
+    if (!bloqueId) throw new Error('Selecciona o crea un bloque');
+    if (!temaId)   throw new Error('Selecciona o crea un tema');
+
+    const payload = {
+      titulo:        document.getElementById('pmat-titulo').value.trim(),
+      nivel:         document.getElementById('pmat-nivel').value,
+      asignatura_id: parseInt(document.getElementById('pmat-asignatura').value) || null,
+      bloque_id:     bloqueId,
+      tema_id:       temaId,
+      tipo:          document.getElementById('pmat-tipo').value,
+      archivo_url:   urlData.publicUrl,
+      visible:       true,
+      subido_por:    ctx.usuario.id,
+    };
+
+    const { data: mat, error: matErr } = await db.from('material').insert(payload).select('id').single();
+    if (matErr) throw new Error('Error al guardar material: ' + matErr.message);
+
+    const alumnoEsp = document.getElementById('pmat-alumno-especifico').value;
+    if (alumnoEsp && mat?.id) {
+      await db.from('material_alumno').insert({ material_id: mat.id, alumno_id: alumnoEsp, asignado_por: ctx.usuario.id });
+    }
+
+    showToast('Material subido correctamente');
+    document.getElementById('pmodal-material').classList.remove('open');
+    await loadProfMaterial();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function pMatEliminar(id) {
+  if (!confirm('¿Eliminar este material?')) return;
+  await db.from('material_alumno').delete().eq('material_id', id);
+  const { error } = await db.from('material').delete().eq('id', id);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast('Material eliminado');
+  await loadProfMaterial();
 }
 </script>
 

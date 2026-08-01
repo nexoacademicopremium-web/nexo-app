@@ -2996,7 +2996,7 @@ async function _refreshMatKeepNav() {
 
 // ── Admin Material — drill-down navegación ──────────────────
 let _matData = null;  // { exclItems, genItems }
-let _matNav  = null;  // null=root | { sec, nivel, bloqueId, temaId }
+let _matNav = null; // null=root | { sec, nivel, asigId, bloqueId, temaId }
 
 async function loadTablaMaterial() {
   const { data: material, error } = await db.from('material').select('*')
@@ -3018,89 +3018,56 @@ function _renderMat() {
   if (!c || !_matData) return;
   const n = _matNav;
   if (!n) { _matRenderRoot(c); return; }
-  const { sec, alumnoId, asigId, nivel, bloqueId, temaId } = n;
-  if (sec === 'excl') {
-    if (temaId   != null) _matRenderPdfs(c);
-    else if (bloqueId != null) _matRenderTemas(c);
-    else if (asigId  != null) _matRenderBloques(c);
-    else if (alumnoId!= null) _matRenderAsigs(c);
-    else                      _matRenderAlumnos(c);
-  } else {
-    if (temaId   != null) _matRenderPdfs(c);
-    else if (bloqueId != null) _matRenderTemas(c);
-    else if (nivel   != null) _matRenderBloques(c);
-    else                      _matRenderNiveles(c);
-  }
+  const { nivel, asigId, bloqueId, temaId } = n;
+  if (temaId   != null) _matRenderPdfs(c);
+  else if (bloqueId != null) _matRenderTemas(c);
+  else if (asigId  != null) _matRenderBloques(c);
+  else if (nivel   != null) _matRenderAsigs(c);
+  else                      _matRenderNiveles(c);
 }
 
 // ── Helper: items filtrados por estado actual ────────────────
 function _matItems() {
   if (!_matNav) return [];
-  const { sec, alumnoId, asigId } = _matNav;
+  const { sec, nivel, asigId } = _matNav;
   let items = sec === 'excl' ? _matData.exclItems : _matData.genItems;
-  if (sec === 'excl') {
-    if (alumnoId) items = items.filter(m => (materialAlumnoMap[m.id]||[]).includes(alumnoId));
-    if (asigId != null) items = items.filter(m => m.asignatura_id === asigId);
-  }
+  if (nivel  != null) items = items.filter(m => (m.nivel||'todos') === nivel);
+  if (asigId != null) items = items.filter(m => m.asignatura_id === asigId);
   return items;
 }
 
-// ── Funciones de navegación ───────────────────────────────────
-// Exclusivo:  _eGo(alumnoId, asigId, bloqueId, temaId)
-// Genérico:   _gGo(nivel, bloqueId, temaId)
-// Raíz:       _matGoRoot()
-function _eGo(alumnoId, asigId, bloqueId, temaId) {
-  _matNav = { sec:'excl', alumnoId:alumnoId??null, asigId:asigId??null, nivel:null, bloqueId:bloqueId??null, temaId:temaId??null };
-  _renderMat();
-}
-function _gGo(nivel, bloqueId, temaId) {
-  _matNav = { sec:'gen', nivel:nivel??null, bloqueId:bloqueId??null, temaId:temaId??null, alumnoId:null, asigId:null };
+// ── Navegación unificada (Excl y Gen comparten la misma jerarquía) ─
+function _matGo(sec, nivel, asigId, bloqueId, temaId) {
+  _matNav = { sec, nivel:nivel??null, asigId:asigId??null, bloqueId:bloqueId??null, temaId:temaId??null };
   _renderMat();
 }
 function _matGoRoot() { _matNav = null; _renderMat(); }
 
 function _matBack() {
   if (!_matNav) return;
-  const { sec, alumnoId, asigId, nivel, bloqueId, temaId } = _matNav;
-  if (sec === 'excl') {
-    if (temaId    != null) { _eGo(alumnoId, asigId, bloqueId, null); return; }
-    if (bloqueId  != null) { _eGo(alumnoId, asigId, null, null);     return; }
-    if (asigId    != null) { _eGo(alumnoId, null, null, null);       return; }
-    if (alumnoId  != null) { _eGo(null, null, null, null);           return; }
-  } else {
-    if (temaId    != null) { _gGo(nivel, bloqueId, null);  return; }
-    if (bloqueId  != null) { _gGo(nivel, null, null);       return; }
-    if (nivel     != null) { _gGo(null, null, null);        return; }
-  }
+  const { sec, nivel, asigId, bloqueId, temaId } = _matNav;
+  if (temaId   != null) { _matGo(sec, nivel, asigId, bloqueId, null); return; }
+  if (bloqueId != null) { _matGo(sec, nivel, asigId, null, null);     return; }
+  if (asigId   != null) { _matGo(sec, nivel, null, null, null);       return; }
+  if (nivel    != null) { _matGo(sec, null, null, null, null);        return; }
   _matGoRoot();
 }
 
 // ── Breadcrumb ────────────────────────────────────────────────
 function _matBc() {
   if (!_matNav) return '';
-  const { sec, alumnoId, asigId, nivel, bloqueId, temaId } = _matNav;
-  const sep = `<i class="ti ti-chevron-right mat-bc-sep"></i>`;
-  const parts = [`<span class="mat-bc-link" onclick="_matGoRoot()">Material</span>`];
-
-  if (sec === 'excl') {
-    parts.push(`<span class="mat-bc-link" onclick="_eGo(null,null,null,null)">Exclusivo</span>`);
-    if (alumnoId != null) {
-      const u = allAlumnos.find(a => a.id === alumnoId)?.usuario || {};
-      const nom = `${u.nombre||'?'} ${u.apellidos||''}`.trim();
-      parts.push(`<span class="mat-bc-link" onclick="_eGo('${alumnoId}',null,null,null)">${nom}</span>`);
-    }
-    if (asigId != null) {
-      parts.push(`<span class="mat-bc-link" onclick="_eGo('${alumnoId}',${asigId},null,null)">${asigNombre(asigId)}</span>`);
-    }
-  } else {
-    parts.push(`<span class="mat-bc-link" onclick="_gGo(null,null,null)">Genérico</span>`);
-    if (nivel != null) parts.push(`<span class="mat-bc-link" onclick="_gGo('${nivel}',null,null)">${nivelLabel(nivel)}</span>`);
-  }
-
+  const { sec, nivel, asigId, bloqueId, temaId } = _matNav;
+  const sep    = `<i class="ti ti-chevron-right mat-bc-sep"></i>`;
+  const secLbl = sec === 'excl' ? 'Exclusivo' : 'Genérico';
+  const parts  = [
+    `<span class="mat-bc-link" onclick="_matGoRoot()">Material</span>`,
+    `<span class="mat-bc-link" onclick="_matGo('${sec}',null,null,null,null)">${secLbl}</span>`,
+  ];
+  if (nivel   != null) parts.push(`<span class="mat-bc-link" onclick="_matGo('${sec}','${nivel}',null,null,null)">${nivelLabel(nivel)}</span>`);
+  if (asigId  != null) parts.push(`<span class="mat-bc-link" onclick="_matGo('${sec}','${nivel}',${asigId},null,null)">${asigNombre(asigId)}</span>`);
   if (bloqueId != null) {
     const nom = bloqueId === 0 ? 'Sin bloque' : (allBloques.find(b => b.id === bloqueId)?.nombre || 'Bloque');
-    const bk  = sec === 'excl' ? `_eGo('${alumnoId}',${asigId},${bloqueId},null)` : `_gGo('${nivel}',${bloqueId},null)`;
-    parts.push(`<span class="mat-bc-link" onclick="${bk}">${nom}</span>`);
+    parts.push(`<span class="mat-bc-link" onclick="_matGo('${sec}','${nivel}',${asigId},${bloqueId},null)">${nom}</span>`);
   }
   if (temaId != null) {
     const nom = temaId === '__sin__' ? 'Sin tema' : temaNombre(parseInt(temaId));
@@ -3117,12 +3084,12 @@ function _matRenderRoot(c) {
   const excl = _matData.exclItems.length;
   const gen  = _matData.genItems.length;
   c.innerHTML = `<div class="mat-asig-grid" style="max-width:400px">
-    <div class="mat-asig-bubble" style="--ab-clr:#f59e0b" onclick="_eGo(null,null,null,null)">
+    <div class="mat-asig-bubble" style="--ab-clr:#f59e0b" onclick="_matGo('excl',null,null,null,null)">
       <div class="mat-asig-ico"><i class="ti ti-crown"></i></div>
       <span class="mat-asig-label">Exclusivo</span>
       <span class="mat-asig-count">${excl} archivo${excl!==1?'s':''}</span>
     </div>
-    <div class="mat-asig-bubble" style="--ab-clr:#2563eb" onclick="_gGo(null,null,null)">
+    <div class="mat-asig-bubble" style="--ab-clr:#2563eb" onclick="_matGo('gen',null,null,null,null)">
       <div class="mat-asig-ico"><i class="ti ti-files"></i></div>
       <span class="mat-asig-label">Genérico</span>
       <span class="mat-asig-count">${gen} archivo${gen!==1?'s':''}</span>
@@ -3130,60 +3097,16 @@ function _matRenderRoot(c) {
   </div>`;
 }
 
-// ── Excl Nivel 1: Alumnos ─────────────────────────────────────
-function _matRenderAlumnos(c) {
-  const alumnoCnt = {};
-  _matData.exclItems.forEach(m => {
-    (materialAlumnoMap[m.id]||[]).forEach(aid => {
-      alumnoCnt[aid] = (alumnoCnt[aid]||0) + 1;
-    });
-  });
-  const alumnoColors = ['#2563eb','#0891b2','#7c3aed','#059669','#b45309','#9d174d','#dc2626','#0d9488'];
-  const bubbles = Object.keys(alumnoCnt).map((aid, i) => {
-    const al  = allAlumnos.find(a => a.id === aid);
-    const u   = al?.usuario || {};
-    const nom = `${u.nombre||'?'} ${u.apellidos||''}`.trim();
-    const ini = ((u.nombre||'?')[0]+(u.apellidos||'')[0]||'').toUpperCase();
-    const cc  = alumnoColors[i % alumnoColors.length];
-    return `<div class="mat-asig-bubble" style="--ab-clr:${cc}" onclick="_eGo('${aid}',null,null,null)">
-      <div class="mat-asig-ico" style="font-size:16px;font-weight:700;color:${cc}">${ini}</div>
-      <span class="mat-asig-label">${nom}</span>
-      <span class="mat-asig-count">${alumnoCnt[aid]} archivo${alumnoCnt[aid]!==1?'s':''}</span>
-    </div>`;
-  }).join('');
-  c.innerHTML = _matBc() + `<div class="mat-asig-grid">${bubbles||'<p style="color:var(--muted);font-size:12px">Sin material exclusivo</p>'}</div>`;
-}
-
-// ── Excl Nivel 2: Asignaturas del alumno ──────────────────────
-function _matRenderAsigs(c) {
-  const { alumnoId } = _matNav;
-  const items = _matData.exclItems.filter(m => (materialAlumnoMap[m.id]||[]).includes(alumnoId));
-  const asigCnt = {};
-  items.forEach(m => { asigCnt[m.asignatura_id??0] = (asigCnt[m.asignatura_id??0]||0) + 1; });
-  const bubbles = Object.keys(asigCnt).map(aid => {
-    const nom  = aid === '0' ? 'Sin asignatura' : asigNombre(Number(aid));
-    const meta = getSubjectMeta(nom);
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_eGo('${alumnoId}',${aid},null,null)">
-      <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
-      <span class="mat-asig-label">${nom}</span>
-      <span class="mat-asig-count">${asigCnt[aid]} archivo${asigCnt[aid]!==1?'s':''}</span>
-    </div>`;
-  }).join('');
-  c.innerHTML = _matBc() + `<div class="mat-asig-grid">${bubbles||'<p style="color:var(--muted);font-size:12px">Sin asignaturas</p>'}</div>`;
-}
-
-// ── Gen Nivel 1: Cursos ────────────────────────────────────────
+// ── Nivel 1: Curso ────────────────────────────────────────────
 function _matRenderNiveles(c) {
-  const items    = _matData.genItems;
-  const bloqSet  = new Set(items.filter(m => m.bloque_id).map(m => m.bloque_id));
+  const sec   = _matNav.sec;
+  const items = sec === 'excl' ? _matData.exclItems : _matData.genItems;
   const nivelCnt = {};
-  allBloques.filter(b => bloqSet.has(b.id)).forEach(b => {
-    nivelCnt[b.nivel] = (nivelCnt[b.nivel]||0) + items.filter(m => m.bloque_id === b.id).length;
-  });
+  items.forEach(m => { const n = m.nivel||'todos'; nivelCnt[n] = (nivelCnt[n]||0)+1; });
   const colores = { '1ESO':'#2563eb','2ESO':'#0891b2','3ESO':'#7c3aed','4ESO':'#059669','1BACH':'#b45309','2BACH':'#9d174d','todos':'#374151' };
   const bubbles = MAT_NIVEL_ORDER.filter(n => nivelCnt[n]).map(n => {
     const cc = colores[n]||'#2563eb';
-    return `<div class="mat-asig-bubble" style="--ab-clr:${cc}" onclick="_gGo('${n}',null,null)">
+    return `<div class="mat-asig-bubble" style="--ab-clr:${cc}" onclick="_matGo('${sec}','${n}',null,null,null)">
       <div class="mat-asig-ico"><i class="ti ti-school"></i></div>
       <span class="mat-asig-label">${nivelLabel(n)}</span>
       <span class="mat-asig-count">${nivelCnt[n]} archivo${nivelCnt[n]!==1?'s':''}</span>
@@ -3192,57 +3115,59 @@ function _matRenderNiveles(c) {
   c.innerHTML = _matBc() + `<div class="mat-asig-grid">${bubbles||'<p style="color:var(--muted);font-size:12px">Sin datos</p>'}</div>`;
 }
 
-// ── Nivel 2/3: Bloques ────────────────────────────────────────
+// ── Nivel 2: Asignatura ───────────────────────────────────────
+function _matRenderAsigs(c) {
+  const { sec, nivel } = _matNav;
+  const items = _matItems();
+  const asigCnt = {};
+  items.forEach(m => { asigCnt[m.asignatura_id??0] = (asigCnt[m.asignatura_id??0]||0)+1; });
+  const bubbles = Object.keys(asigCnt).map(aid => {
+    const nom  = aid === '0' ? 'Sin asignatura' : asigNombre(Number(aid));
+    const meta = getSubjectMeta(nom);
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_matGo('${sec}','${nivel}',${aid},null,null)">
+      <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
+      <span class="mat-asig-label">${nom}</span>
+      <span class="mat-asig-count">${asigCnt[aid]} archivo${asigCnt[aid]!==1?'s':''}</span>
+    </div>`;
+  }).join('');
+  c.innerHTML = _matBc() + `<div class="mat-asig-grid">${bubbles||'<p style="color:var(--muted);font-size:12px">Sin asignaturas</p>'}</div>`;
+}
+
+// ── Nivel 3: Bloques ──────────────────────────────────────────
 function _matRenderBloques(c) {
-  const { sec, nivel, alumnoId, asigId } = _matNav;
-  const items  = _matItems();
+  const { sec, nivel, asigId } = _matNav;
+  const items   = _matItems();
   const bloqCnt = {};
-  items.forEach(m => {
-    if (!m.bloque_id) return;
-    const blq = allBloques.find(b => b.id === m.bloque_id);
-    if (!blq) return;
-    if (sec === 'gen' && nivel && blq.nivel !== nivel) return;
-    bloqCnt[m.bloque_id] = (bloqCnt[m.bloque_id]||0) + 1;
-  });
-  const sinBloqItems = items.filter(m => {
-    if (m.bloque_id) return false;
-    if (sec === 'gen' && nivel) return (m.nivel||'todos') === nivel;
-    return true;
-  });
-  const bloqIds = Object.keys(bloqCnt).map(Number);
-  const bubbles = bloqIds.map(bid => {
+  items.forEach(m => { if (m.bloque_id) bloqCnt[m.bloque_id] = (bloqCnt[m.bloque_id]||0)+1; });
+  const sinBloq = items.filter(m => !m.bloque_id);
+  const bubbles = Object.keys(bloqCnt).map(Number).map(bid => {
     const blq  = allBloques.find(b => b.id === bid) || {};
     const meta = getTopicMeta(blq.nombre||'');
-    const sub  = sec === 'gen' ? asigNombre(blq.asignatura_id) : '';
-    const nav  = sec === 'excl' ? `_eGo('${alumnoId}',${asigId},${bid},null)` : `_gGo('${nivel}',${bid},null)`;
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="${nav}">
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_matGo('${sec}','${nivel}',${asigId},${bid},null)">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
       <span class="mat-asig-label">${blq.nombre||'Sin nombre'}</span>
-      ${sub ? `<span class="mat-asig-sub">${sub}</span>` : ''}
       <span class="mat-asig-count">${bloqCnt[bid]} archivo${bloqCnt[bid]!==1?'s':''}</span>
     </div>`;
   }).join('');
-  const navSin = sec === 'excl' ? `_eGo('${alumnoId}',${asigId},0,null)` : `_gGo('${nivel}',0,null)`;
-  const extra  = sinBloqItems.length ? `<div class="mat-asig-bubble" style="--ab-clr:#374151" onclick="${navSin}">
+  const extra = sinBloq.length ? `<div class="mat-asig-bubble" style="--ab-clr:#374151" onclick="_matGo('${sec}','${nivel}',${asigId},0,null)">
     <div class="mat-asig-ico"><i class="ti ti-folder-x"></i></div>
     <span class="mat-asig-label">Sin bloque</span>
-    <span class="mat-asig-count">${sinBloqItems.length} archivo${sinBloqItems.length!==1?'s':''}</span>
+    <span class="mat-asig-count">${sinBloq.length} archivo${sinBloq.length!==1?'s':''}</span>
   </div>` : '';
   c.innerHTML = _matBc() + `<div class="mat-asig-grid">${bubbles+extra||'<p style="color:var(--muted);font-size:12px">Sin bloques</p>'}</div>`;
 }
 
-// ── Nivel 3/4: Temas ──────────────────────────────────────────
+// ── Nivel 4: Temas ────────────────────────────────────────────
 function _matRenderTemas(c) {
-  const { sec, nivel, alumnoId, asigId, bloqueId } = _matNav;
-  const items  = _matItems().filter(m => bloqueId === 0 ? !m.bloque_id : m.bloque_id === bloqueId);
+  const { sec, nivel, asigId, bloqueId } = _matNav;
+  const items = _matItems().filter(m => bloqueId === 0 ? !m.bloque_id : m.bloque_id === bloqueId);
   const temaCnt = {};
   items.forEach(m => { const k = m.tema_id||'__sin__'; temaCnt[k] = (temaCnt[k]||0)+1; });
   const bubbles = Object.keys(temaCnt).map(tid => {
     const nom    = tid === '__sin__' ? 'Sin tema' : temaNombre(parseInt(tid));
     const meta   = getTopicMeta(nom);
     const tidStr = tid === '__sin__' ? `'__sin__'` : tid;
-    const nav    = sec === 'excl' ? `_eGo('${alumnoId}',${asigId},${bloqueId},${tidStr})` : `_gGo('${nivel}',${bloqueId},${tidStr})`;
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="${nav}">
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_matGo('${sec}','${nivel}',${asigId},${bloqueId},${tidStr})">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
       <span class="mat-asig-label">${nom}</span>
       <span class="mat-asig-count">${temaCnt[tid]} archivo${temaCnt[tid]!==1?'s':''}</span>
@@ -3251,7 +3176,7 @@ function _matRenderTemas(c) {
   c.innerHTML = _matBc() + `<div class="mat-asig-grid">${bubbles||'<p style="color:var(--muted);font-size:12px">Sin temas</p>'}</div>`;
 }
 
-// ── Nivel 4/5: PDFs / Recursos ────────────────────────────────
+// ── Nivel 5: PDFs / Recursos ──────────────────────────────────
 function _matRenderPdfs(c) {
   const { bloqueId, temaId } = _matNav;
   const items = _matItems().filter(m => {
