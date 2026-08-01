@@ -46,15 +46,16 @@
   .card-sub{color:var(--muted);font-size:12px;margin-bottom:24px;line-height:1.5}
 
   label{display:block;color:var(--soft);font-size:11px;font-weight:600;margin-bottom:6px;margin-top:16px}
-  .input-wrap{position:relative}
-  .input-wrap i{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:17px}
+  .input-wrap{position:relative;display:flex;align-items:stretch;background:var(--dark);border:.5px solid var(--border);border-radius:12px;transition:border-color .18s,box-shadow .18s}
+  .input-wrap:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px rgba(110,174,240,.12)}
+  .input-wrap > i{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:17px;pointer-events:none}
   input{
-    width:100%;background:var(--dark);border:.5px solid var(--border);
+    flex:1;min-width:0;background:transparent;border:none;
     border-radius:12px;padding:13px 14px 13px 42px;color:var(--txt);
-    font-size:16px;font-family:inherit;outline:none;transition:border-color .18s,box-shadow .18s;
+    font-size:16px;font-family:inherit;outline:none;
     -webkit-appearance:none;touch-action:manipulation
   }
-  input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(110,174,240,.12)}
+  input:focus{border-color:transparent;box-shadow:none}
   input::placeholder{color:var(--muted)}
 
   .btn{
@@ -92,9 +93,8 @@
   .ck-space{max-width:170px;flex:5;font-size:13px;color:#4a6080}
   .ck-done{background:#154ca9;max-width:62px;font-size:13px;font-weight:700;color:#fff}
   .brand-logo{height:80px;width:auto;max-width:260px;flex-shrink:0;image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges}
-  .toggle-pass{position:absolute;right:0;top:0;bottom:0;display:flex;align-items:center;padding:0 14px;background:none;border:none;border-radius:0 12px 12px 0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+  .toggle-pass{display:flex;align-items:center;padding:0 14px;background:none;border:none;border-radius:0 12px 12px 0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;flex-shrink:0;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
   .toggle-pass:hover{color:var(--soft)}
-  #password{padding-right:50px}
 </style>
 </head>
 <body>
