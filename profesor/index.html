@@ -2652,12 +2652,12 @@ async function nSesVerDetalle(sesId, evt) {
 // ============================================================
 // REFRESH
 // ============================================================
-async function refreshApp() {
-  const btn = document.getElementById('refresh-btn');
-  if (btn) { btn.classList.add('spinning'); btn.style.pointerEvents = 'none'; }
-  try { await loadDashboardProf(); } finally {
-    if (btn) { btn.classList.remove('spinning'); btn.style.pointerEvents = ''; }
-  }
+function refreshApp() {
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px';
+  ov.innerHTML = '<div style="width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite"></div><span style="color:var(--muted);font-size:13px">Actualizando...</span>';
+  document.body.appendChild(ov);
+  setTimeout(() => location.reload(), 100);
 }
 
 // ============================================================
@@ -3221,6 +3221,7 @@ async function pMatEliminar(id) {
 (function(){
   const KEY = 'nexo_app_ver';
   const banner = () => document.getElementById('update-banner');
+  let _pendingVer = null;
   async function checkUpdate() {
     try {
       const r = await fetch('../version.json?t=' + Date.now(), {cache:'no-store'});
@@ -3228,8 +3229,10 @@ async function pMatEliminar(id) {
       const {v} = await r.json();
       const stored = localStorage.getItem(KEY);
       if (stored && stored !== v) {
+        _pendingVer = v;
         banner().classList.add('show');
       } else {
+        _pendingVer = null;
         localStorage.setItem(KEY, v);
         banner().classList.remove('show');
       }
@@ -3237,9 +3240,8 @@ async function pMatEliminar(id) {
   }
   window.doUpdate = function() {
     banner().classList.remove('show');
-    fetch('../version.json?t=' + Date.now(), {cache:'no-store'})
-      .then(r => r.json()).then(({v}) => localStorage.setItem(KEY, v)).catch(()=>{});
-    window.location.href = window.location.pathname + '?v=' + Date.now();
+    if (_pendingVer) localStorage.setItem(KEY, _pendingVer);
+    refreshApp();
   };
   window.addEventListener('load', checkUpdate);
   window.addEventListener('pageshow', e => { if (e.persisted) checkUpdate(); });

@@ -1459,17 +1459,12 @@ async function loadInformes() {
 
 function toggleInfCat(id) { /* legacy no-op */ }
 
-async function refreshApp() {
-  const btn = document.getElementById('refresh-btn');
-  if (btn) { btn.classList.add('spinning'); btn.style.pointerEvents = 'none'; }
-  try {
-    await Promise.all([loadDashboard(), checkPendingSessions()]);
-    const cur = sessionStorage.getItem('nexo_alumno_seccion') || 'inicio';
-    const loaders = { sesiones:loadSesiones, informes:loadInformes, bonos:loadBonosAlumno, profesor:loadProfesor, estudiar:loadEstudiar, tests:loadTests, calendario:loadCalendario };
-    if (loaders[cur]) await loaders[cur]();
-  } finally {
-    if (btn) { btn.classList.remove('spinning'); btn.style.pointerEvents = ''; }
-  }
+function refreshApp() {
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px';
+  ov.innerHTML = '<div style="width:48px;height:48px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite"></div><span style="color:var(--muted);font-size:13px">Actualizando...</span>';
+  document.body.appendChild(ov);
+  setTimeout(() => location.reload(), 100);
 }
 
 // ============================================================
@@ -2398,6 +2393,7 @@ async function eliminarEvento(id) {
 (function(){
   const KEY = 'nexo_app_ver';
   const banner = () => document.getElementById('update-banner');
+  let _pendingVer = null;
   async function checkUpdate() {
     try {
       const r = await fetch('../version.json?t=' + Date.now(), {cache:'no-store'});
@@ -2405,21 +2401,22 @@ async function eliminarEvento(id) {
       const {v} = await r.json();
       const stored = localStorage.getItem(KEY);
       if (stored && stored !== v) {
+        _pendingVer = v; // guardar versión nueva para uso síncrono en doUpdate
         banner().classList.add('show');
       } else {
+        _pendingVer = null;
         localStorage.setItem(KEY, v);
-        banner().classList.remove('show'); // ocultar si ya está actualizado (ej. tras BFCache)
+        banner().classList.remove('show');
       }
     } catch(_) {}
   }
   window.doUpdate = function() {
     banner().classList.remove('show');
-    fetch('../version.json?t=' + Date.now(), {cache:'no-store'})
-      .then(r => r.json()).then(({v}) => localStorage.setItem(KEY, v)).catch(()=>{});
-    window.location.href = window.location.pathname + '?v=' + Date.now();
+    // Guardar la versión nueva SÍNCRONAMENTE antes de recargar (evita race condition)
+    if (_pendingVer) localStorage.setItem(KEY, _pendingVer);
+    refreshApp(); // recarga completa con spinner
   };
   window.addEventListener('load', checkUpdate);
-  // BFCache: cuando el móvil restaura la pestaña desde memoria, re-verificar
   window.addEventListener('pageshow', e => { if (e.persisted) checkUpdate(); });
 })();
 </script>
