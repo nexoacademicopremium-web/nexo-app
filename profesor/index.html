@@ -3220,6 +3220,7 @@ async function pMatEliminar(id) {
 <script>
 (function(){
   const KEY = 'nexo_app_ver';
+  const banner = () => document.getElementById('update-banner');
   async function checkUpdate() {
     try {
       const r = await fetch('../version.json?t=' + Date.now(), {cache:'no-store'});
@@ -3227,18 +3228,21 @@ async function pMatEliminar(id) {
       const {v} = await r.json();
       const stored = localStorage.getItem(KEY);
       if (stored && stored !== v) {
-        document.getElementById('update-banner').classList.add('show');
+        banner().classList.add('show');
       } else {
         localStorage.setItem(KEY, v);
+        banner().classList.remove('show');
       }
     } catch(_) {}
   }
   window.doUpdate = function() {
+    banner().classList.remove('show');
     fetch('../version.json?t=' + Date.now(), {cache:'no-store'})
       .then(r => r.json()).then(({v}) => localStorage.setItem(KEY, v)).catch(()=>{});
     window.location.href = window.location.pathname + '?v=' + Date.now();
   };
   window.addEventListener('load', checkUpdate);
+  window.addEventListener('pageshow', e => { if (e.persisted) checkUpdate(); });
 })();
 </script>
 </body>

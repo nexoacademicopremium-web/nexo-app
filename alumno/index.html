@@ -2397,6 +2397,7 @@ async function eliminarEvento(id) {
 <script>
 (function(){
   const KEY = 'nexo_app_ver';
+  const banner = () => document.getElementById('update-banner');
   async function checkUpdate() {
     try {
       const r = await fetch('../version.json?t=' + Date.now(), {cache:'no-store'});
@@ -2404,18 +2405,22 @@ async function eliminarEvento(id) {
       const {v} = await r.json();
       const stored = localStorage.getItem(KEY);
       if (stored && stored !== v) {
-        document.getElementById('update-banner').classList.add('show');
+        banner().classList.add('show');
       } else {
         localStorage.setItem(KEY, v);
+        banner().classList.remove('show'); // ocultar si ya está actualizado (ej. tras BFCache)
       }
     } catch(_) {}
   }
   window.doUpdate = function() {
-    const r = fetch('../version.json?t=' + Date.now(), {cache:'no-store'})
+    banner().classList.remove('show');
+    fetch('../version.json?t=' + Date.now(), {cache:'no-store'})
       .then(r => r.json()).then(({v}) => localStorage.setItem(KEY, v)).catch(()=>{});
     window.location.href = window.location.pathname + '?v=' + Date.now();
   };
   window.addEventListener('load', checkUpdate);
+  // BFCache: cuando el móvil restaura la pestaña desde memoria, re-verificar
+  window.addEventListener('pageshow', e => { if (e.persisted) checkUpdate(); });
 })();
 </script>
 </body>
