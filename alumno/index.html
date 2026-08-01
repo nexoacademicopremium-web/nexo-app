@@ -363,6 +363,7 @@
     .tarifa-card{padding:24px 16px;border-radius:20px}
     .tarifa-h{font-size:42px}
     .page-title{font-size:21px}
+    .refresh-btn{display:none}
   }
   @media(max-width:480px){
     .kpi-val{font-size:42px}
@@ -2339,6 +2340,45 @@ async function eliminarEvento(id) {
   cerrarModalEvento();
   await renderCalendario();
 }
+
+// ── Pull-to-refresh (solo móvil) ──────────────────────────────
+(function () {
+  if (window.matchMedia('(pointer:fine)').matches) return; // solo táctil
+  let startY = 0, pulling = false, triggered = false;
+  const THRESHOLD = 70;
+  let ind = null;
+  function getInd() {
+    if (!ind) {
+      ind = document.createElement('div');
+      ind.style.cssText = 'position:fixed;top:0;left:50%;transform:translateX(-50%) translateY(-110%);z-index:9999;background:var(--surface);border:.5px solid var(--border);border-bottom-left-radius:16px;border-bottom-right-radius:16px;padding:10px 22px 12px;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--soft);transition:transform .18s ease;box-shadow:0 6px 24px rgba(0,0,0,.5);pointer-events:none';
+      ind.innerHTML = '<i class="ti ti-refresh" id="ptr-ico"></i><span id="ptr-txt">Tira para actualizar</span>';
+      document.body.appendChild(ind);
+    }
+    return ind;
+  }
+  document.addEventListener('touchstart', e => {
+    if (window.scrollY > 4) return;
+    startY = e.touches[0].pageY; pulling = true; triggered = false;
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    const delta = e.touches[0].pageY - startY;
+    if (delta <= 0) { pulling = false; return; }
+    const pct = Math.min(delta / THRESHOLD, 1);
+    const i = getInd();
+    i.style.transform = `translateX(-50%) translateY(${(pct - 1) * 110}%)`;
+    triggered = delta >= THRESHOLD;
+    document.getElementById('ptr-txt').textContent = triggered ? 'Suelta para actualizar' : 'Tira para actualizar';
+    const ico = document.getElementById('ptr-ico');
+    ico.style.transform = `rotate(${pct * 360}deg)`;
+  }, { passive: true });
+  document.addEventListener('touchend', () => {
+    if (!pulling) return;
+    pulling = false;
+    if (ind) ind.style.transform = 'translateX(-50%) translateY(-110%)';
+    if (triggered) { triggered = false; refreshApp(); }
+  }, { passive: true });
+})();
 </script>
 <style>
 .status-pill{font-size:10px;padding:2px 9px;border-radius:20px;font-weight:500}
