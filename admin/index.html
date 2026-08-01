@@ -915,7 +915,7 @@
     <form id="form-material" onsubmit="guardarMaterial(event)">
       <label class="fl">Título *</label><input class="fi" id="mat-titulo" required>
       <label class="fl">Curso (nivel) *</label>
-      <select class="fi" id="mat-nivel" required onchange="actualizarSelectBloques()">
+      <select class="fi" id="mat-nivel" required onchange="actualizarSelectTemas()">
         <option value="">— Selecciona —</option>
         <option value="todos">Todos</option>
         <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
@@ -923,23 +923,12 @@
         <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
       </select>
       <label class="fl">Asignatura *</label>
-      <select class="fi" id="mat-asignatura" required onchange="actualizarSelectBloques()">
+      <select class="fi" id="mat-asignatura" required onchange="actualizarSelectTemas()">
         <option value="">— Selecciona asignatura —</option>
       </select>
-      <label class="fl">Bloque *</label>
-      <select class="fi" id="mat-bloque-id" onchange="onBloqueSelChange(this.value)">
-        <option value="">— Elige asignatura y curso primero —</option>
-      </select>
-      <div id="mat-bloque-nuevo-wrap" style="display:none;margin-top:6px">
-        <div style="display:flex;gap:8px">
-          <input class="fi" id="mat-bloque-nuevo-txt" placeholder="Nombre del nuevo bloque" style="flex:1;margin:0">
-          <button type="button" class="btn-primary" style="padding:8px 12px" onclick="crearNuevoBloque()"><i class="ti ti-check"></i> Crear</button>
-          <button type="button" class="btn-cancel" style="padding:8px 10px" onclick="cancelarNuevoBloque()">✕</button>
-        </div>
-      </div>
       <label class="fl">Tema *</label>
       <select class="fi" id="mat-tema-id" onchange="onTemaSelChange(this.value)">
-        <option value="">— Elige bloque primero —</option>
+        <option value="">— Elige asignatura y curso primero —</option>
       </select>
       <div id="mat-tema-nuevo-wrap" style="display:none;margin-top:6px">
         <div style="display:flex;gap:8px">
@@ -3007,12 +2996,11 @@ function _renderMat() {
   if (!c || !_matData) return;
   const n = _matNav;
   if (!n) { _matRenderRoot(c); return; }
-  const { nivel, asigId, bloqueId, temaId } = n;
-  if (temaId   != null) _matRenderPdfs(c);
-  else if (bloqueId != null) _matRenderTemas(c);
-  else if (asigId  != null) _matRenderBloques(c);
-  else if (nivel   != null) _matRenderAsigs(c);
-  else                      _matRenderNiveles(c);
+  const { nivel, asigId, temaId } = n;
+  if (temaId  != null) _matRenderPdfs(c);
+  else if (asigId != null) _matRenderTemas(c);
+  else if (nivel  != null) _matRenderAsigs(c);
+  else                     _matRenderNiveles(c);
 }
 
 // ── Helper: items filtrados por estado actual ────────────────
@@ -3026,38 +3014,33 @@ function _matItems() {
 }
 
 // ── Navegación unificada (Excl y Gen comparten la misma jerarquía) ─
-function _matGo(sec, nivel, asigId, bloqueId, temaId) {
-  _matNav = { sec, nivel:nivel??null, asigId:asigId??null, bloqueId:bloqueId??null, temaId:temaId??null };
+function _matGo(sec, nivel, asigId, temaId) {
+  _matNav = { sec, nivel:nivel??null, asigId:asigId??null, temaId:temaId??null };
   _renderMat();
 }
 function _matGoRoot() { _matNav = null; _renderMat(); }
 
 function _matBack() {
   if (!_matNav) return;
-  const { sec, nivel, asigId, bloqueId, temaId } = _matNav;
-  if (temaId   != null) { _matGo(sec, nivel, asigId, bloqueId, null); return; }
-  if (bloqueId != null) { _matGo(sec, nivel, asigId, null, null);     return; }
-  if (asigId   != null) { _matGo(sec, nivel, null, null, null);       return; }
-  if (nivel    != null) { _matGo(sec, null, null, null, null);        return; }
+  const { sec, nivel, asigId, temaId } = _matNav;
+  if (temaId  != null) { _matGo(sec, nivel, asigId, null); return; }
+  if (asigId  != null) { _matGo(sec, nivel, null, null);   return; }
+  if (nivel   != null) { _matGo(sec, null, null, null);    return; }
   _matGoRoot();
 }
 
 // ── Breadcrumb ────────────────────────────────────────────────
 function _matBc() {
   if (!_matNav) return '';
-  const { sec, nivel, asigId, bloqueId, temaId } = _matNav;
+  const { sec, nivel, asigId, temaId } = _matNav;
   const sep    = `<i class="ti ti-chevron-right mat-bc-sep"></i>`;
   const secLbl = sec === 'excl' ? 'Exclusivo' : 'Genérico';
   const parts  = [
     `<span class="mat-bc-link" onclick="_matGoRoot()">Material</span>`,
-    `<span class="mat-bc-link" onclick="_matGo('${sec}',null,null,null,null)">${secLbl}</span>`,
+    `<span class="mat-bc-link" onclick="_matGo('${sec}',null,null,null)">${secLbl}</span>`,
   ];
-  if (nivel   != null) parts.push(`<span class="mat-bc-link" onclick="_matGo('${sec}','${nivel}',null,null,null)">${nivelLabel(nivel)}</span>`);
-  if (asigId  != null) parts.push(`<span class="mat-bc-link" onclick="_matGo('${sec}','${nivel}',${asigId},null,null)">${asigNombre(asigId)}</span>`);
-  if (bloqueId != null) {
-    const nom = bloqueId === 0 ? 'Sin bloque' : (allBloques.find(b => b.id === bloqueId)?.nombre || 'Bloque');
-    parts.push(`<span class="mat-bc-link" onclick="_matGo('${sec}','${nivel}',${asigId},${bloqueId},null)">${nom}</span>`);
-  }
+  if (nivel  != null) parts.push(`<span class="mat-bc-link" onclick="_matGo('${sec}','${nivel}',null,null)">${nivelLabel(nivel)}</span>`);
+  if (asigId != null) parts.push(`<span class="mat-bc-link" onclick="_matGo('${sec}','${nivel}',${asigId},null)">${asigNombre(asigId)}</span>`);
   if (temaId != null) {
     const nom = temaId === '__sin__' ? 'Sin tema' : temaNombre(parseInt(temaId));
     parts.push(`<span class="mat-bc-cur">${nom}</span>`);
@@ -3073,12 +3056,12 @@ function _matRenderRoot(c) {
   const excl = _matData.exclItems.length;
   const gen  = _matData.genItems.length;
   c.innerHTML = `<div class="mat-asig-grid" style="max-width:400px">
-    <div class="mat-asig-bubble" style="--ab-clr:#f59e0b" onclick="_matGo('excl',null,null,null,null)">
+    <div class="mat-asig-bubble" style="--ab-clr:#f59e0b" onclick="_matGo('excl',null,null,null)">
       <div class="mat-asig-ico"><i class="ti ti-crown"></i></div>
       <span class="mat-asig-label">Exclusivo</span>
       <span class="mat-asig-count">${excl} archivo${excl!==1?'s':''}</span>
     </div>
-    <div class="mat-asig-bubble" style="--ab-clr:#2563eb" onclick="_matGo('gen',null,null,null,null)">
+    <div class="mat-asig-bubble" style="--ab-clr:#2563eb" onclick="_matGo('gen',null,null,null)">
       <div class="mat-asig-ico"><i class="ti ti-files"></i></div>
       <span class="mat-asig-label">Genérico</span>
       <span class="mat-asig-count">${gen} archivo${gen!==1?'s':''}</span>
@@ -3095,7 +3078,7 @@ function _matRenderNiveles(c) {
   const colores = { '1ESO':'#2563eb','2ESO':'#0891b2','3ESO':'#7c3aed','4ESO':'#059669','1BACH':'#b45309','2BACH':'#9d174d','todos':'#374151' };
   const bubbles = MAT_NIVEL_ORDER.filter(n => nivelCnt[n]).map(n => {
     const cc = colores[n]||'#2563eb';
-    return `<div class="mat-asig-bubble" style="--ab-clr:${cc}" onclick="_matGo('${sec}','${n}',null,null,null)">
+    return `<div class="mat-asig-bubble" style="--ab-clr:${cc}" onclick="_matGo('${sec}','${n}',null,null)">
       <div class="mat-asig-ico"><i class="ti ti-school"></i></div>
       <span class="mat-asig-label">${nivelLabel(n)}</span>
       <span class="mat-asig-count">${nivelCnt[n]} archivo${nivelCnt[n]!==1?'s':''}</span>
@@ -3113,7 +3096,7 @@ function _matRenderAsigs(c) {
   const bubbles = Object.keys(asigCnt).map(aid => {
     const nom  = aid === '0' ? 'Sin asignatura' : asigNombre(Number(aid));
     const meta = getSubjectMeta(nom);
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_matGo('${sec}','${nivel}',${aid},null,null)">
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_matGo('${sec}','${nivel}',${aid},null)">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
       <span class="mat-asig-label">${nom}</span>
       <span class="mat-asig-count">${asigCnt[aid]} archivo${asigCnt[aid]!==1?'s':''}</span>
@@ -3122,41 +3105,17 @@ function _matRenderAsigs(c) {
   c.innerHTML = _matBc() + `<div class="mat-asig-grid">${bubbles||'<p style="color:var(--muted);font-size:12px">Sin asignaturas</p>'}</div>`;
 }
 
-// ── Nivel 3: Bloques ──────────────────────────────────────────
-function _matRenderBloques(c) {
-  const { sec, nivel, asigId } = _matNav;
-  const items   = _matItems();
-  const bloqCnt = {};
-  items.forEach(m => { if (m.bloque_id) bloqCnt[m.bloque_id] = (bloqCnt[m.bloque_id]||0)+1; });
-  const sinBloq = items.filter(m => !m.bloque_id);
-  const bubbles = Object.keys(bloqCnt).map(Number).map(bid => {
-    const blq  = allBloques.find(b => b.id === bid) || {};
-    const meta = getTopicMeta(blq.nombre||'');
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_matGo('${sec}','${nivel}',${asigId},${bid},null)">
-      <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
-      <span class="mat-asig-label">${blq.nombre||'Sin nombre'}</span>
-      <span class="mat-asig-count">${bloqCnt[bid]} archivo${bloqCnt[bid]!==1?'s':''}</span>
-    </div>`;
-  }).join('');
-  const extra = sinBloq.length ? `<div class="mat-asig-bubble" style="--ab-clr:#374151" onclick="_matGo('${sec}','${nivel}',${asigId},0,null)">
-    <div class="mat-asig-ico"><i class="ti ti-folder-x"></i></div>
-    <span class="mat-asig-label">Sin bloque</span>
-    <span class="mat-asig-count">${sinBloq.length} archivo${sinBloq.length!==1?'s':''}</span>
-  </div>` : '';
-  c.innerHTML = _matBc() + `<div class="mat-asig-grid">${bubbles+extra||'<p style="color:var(--muted);font-size:12px">Sin bloques</p>'}</div>`;
-}
-
-// ── Nivel 4: Temas ────────────────────────────────────────────
+// ── Nivel 3: Temas ────────────────────────────────────────────
 function _matRenderTemas(c) {
-  const { sec, nivel, asigId, bloqueId } = _matNav;
-  const items = _matItems().filter(m => bloqueId === 0 ? !m.bloque_id : m.bloque_id === bloqueId);
+  const { sec, nivel, asigId } = _matNav;
+  const items = _matItems();
   const temaCnt = {};
   items.forEach(m => { const k = m.tema_id||'__sin__'; temaCnt[k] = (temaCnt[k]||0)+1; });
   const bubbles = Object.keys(temaCnt).map(tid => {
     const nom    = tid === '__sin__' ? 'Sin tema' : temaNombre(parseInt(tid));
     const meta   = getTopicMeta(nom);
     const tidStr = tid === '__sin__' ? `'__sin__'` : tid;
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_matGo('${sec}','${nivel}',${asigId},${bloqueId},${tidStr})">
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_matGo('${sec}','${nivel}',${asigId},${tidStr})">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
       <span class="mat-asig-label">${nom}</span>
       <span class="mat-asig-count">${temaCnt[tid]} archivo${temaCnt[tid]!==1?'s':''}</span>
@@ -3165,12 +3124,10 @@ function _matRenderTemas(c) {
   c.innerHTML = _matBc() + `<div class="mat-asig-grid">${bubbles||'<p style="color:var(--muted);font-size:12px">Sin temas</p>'}</div>`;
 }
 
-// ── Nivel 5: PDFs / Recursos ──────────────────────────────────
+// ── Nivel 4: PDFs / Recursos ──────────────────────────────────
 function _matRenderPdfs(c) {
-  const { bloqueId, temaId } = _matNav;
+  const { temaId } = _matNav;
   const items = _matItems().filter(m => {
-    if (bloqueId === 0) { if (m.bloque_id) return false; }
-    else { if (m.bloque_id !== bloqueId) return false; }
     if (temaId === '__sin__') return !m.tema_id;
     return String(m.tema_id) === String(temaId);
   });
@@ -3207,10 +3164,8 @@ function abrirModalMaterial() {
   document.getElementById('mat-archivo-actual').style.display = 'none';
   document.getElementById('mat-archivo-label-hint').textContent = '*';
   document.getElementById('mat-alumno-container').style.display = '';
-  document.getElementById('mat-bloque-id').innerHTML = '<option value="">— Elige asignatura y curso primero —</option>';
-  document.getElementById('mat-tema-id').innerHTML   = '<option value="">— Elige bloque primero —</option>';
-  document.getElementById('mat-bloque-nuevo-wrap').style.display = 'none';
-  document.getElementById('mat-tema-nuevo-wrap').style.display   = 'none';
+  document.getElementById('mat-tema-id').innerHTML = '<option value="">— Elige asignatura y curso primero —</option>';
+  document.getElementById('mat-tema-nuevo-wrap').style.display = 'none';
   document.getElementById('modal-material').classList.add('open');
 }
 
@@ -3223,14 +3178,9 @@ function abrirEditarMaterial(id) {
   document.getElementById('mat-titulo').value     = m.titulo || '';
   document.getElementById('mat-nivel').value      = m.nivel || '';
   document.getElementById('mat-asignatura').value = m.asignatura_id || '';
-  document.getElementById('mat-bloque-nuevo-wrap').style.display = 'none';
-  document.getElementById('mat-tema-nuevo-wrap').style.display   = 'none';
-  actualizarSelectBloques();
-  if (m.bloque_id) {
-    document.getElementById('mat-bloque-id').value = m.bloque_id;
-    actualizarSelectTemas(m.bloque_id);
-    if (m.tema_id) document.getElementById('mat-tema-id').value = m.tema_id;
-  }
+  document.getElementById('mat-tema-nuevo-wrap').style.display = 'none';
+  actualizarSelectTemas();
+  if (m.tema_id) document.getElementById('mat-tema-id').value = m.tema_id;
   const infoEl = document.getElementById('mat-archivo-actual');
   if (m.archivo_url) {
     infoEl.innerHTML = `Archivo actual: <a href="${m.archivo_url}" target="_blank" style="color:var(--blue)">Ver archivo</a> · Sube uno nuevo solo si quieres reemplazarlo`;
@@ -3263,10 +3213,9 @@ async function guardarMaterial(e) {
 
     if (!editMaterialId && !newUrl) throw new Error('Añade un archivo para continuar');
 
-    const bloqueId = parseInt(document.getElementById('mat-bloque-id').value) || null;
-    const temaId   = parseInt(document.getElementById('mat-tema-id').value)   || null;
-    if (!bloqueId) throw new Error('Selecciona o crea un bloque');
+    const temaId   = parseInt(document.getElementById('mat-tema-id').value) || null;
     if (!temaId)   throw new Error('Selecciona o crea un tema');
+    const bloqueId = allTemas.find(t => t.id === temaId)?.bloque_id || null;
 
     const payload = {
       titulo:        document.getElementById('mat-titulo').value.trim(),
@@ -3906,51 +3855,21 @@ function populateFichaAddAsig() {
 function bloqueNombre(id) { return allBloques.find(b => b.id === id)?.nombre || '—'; }
 function temaNombre(id)   { return allTemas.find(t => t.id === id)?.nombre   || '—'; }
 
-function actualizarSelectBloques() {
+function actualizarSelectTemas() {
   const asigId = parseInt(document.getElementById('mat-asignatura').value);
   const nivel  = document.getElementById('mat-nivel').value;
-  const sel    = document.getElementById('mat-bloque-id');
-  document.getElementById('mat-tema-id').innerHTML = '<option value="">— Elige bloque primero —</option>';
-  document.getElementById('mat-bloque-nuevo-wrap').style.display = 'none';
+  const sel    = document.getElementById('mat-tema-id');
   document.getElementById('mat-tema-nuevo-wrap').style.display = 'none';
-  if (!asigId || !nivel) {
-    sel.innerHTML = '<option value="">— Elige asignatura y curso primero —</option>';
-    return;
-  }
-  const filtrados = allBloques.filter(b => b.asignatura_id === asigId && b.nivel === nivel);
-  sel.innerHTML = '<option value="">— Selecciona bloque —</option>' +
-    filtrados.map(b => `<option value="${b.id}">${b.nombre}</option>`).join('') +
-    '<option value="__nuevo__">+ Crear nuevo bloque...</option>';
-}
-
-function actualizarSelectTemas(bloqueId) {
-  const sel = document.getElementById('mat-tema-id');
-  if (!bloqueId) { sel.innerHTML = '<option value="">— Elige bloque primero —</option>'; return; }
-  const filtrados = allTemas.filter(t => t.bloque_id === bloqueId);
+  if (!asigId || !nivel) { sel.innerHTML = '<option value="">— Elige asignatura y curso primero —</option>'; return; }
+  const bloqIds  = allBloques.filter(b => b.asignatura_id === asigId && (b.nivel === nivel || b.nivel === 'todos' || nivel === 'todos')).map(b => b.id);
+  const filtrados = allTemas.filter(t => bloqIds.includes(t.bloque_id));
   sel.innerHTML = '<option value="">— Selecciona tema —</option>' +
     filtrados.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('') +
     '<option value="__nuevo__">+ Crear nuevo tema...</option>';
 }
 
-function onBloqueSelChange(val) {
-  document.getElementById('mat-tema-nuevo-wrap').style.display = 'none';
-  if (val === '__nuevo__') {
-    document.getElementById('mat-bloque-nuevo-wrap').style.display = '';
-    document.getElementById('mat-tema-id').innerHTML = '<option value="">— Crea el bloque primero —</option>';
-  } else {
-    document.getElementById('mat-bloque-nuevo-wrap').style.display = 'none';
-    actualizarSelectTemas(parseInt(val));
-  }
-}
-
 function onTemaSelChange(val) {
   document.getElementById('mat-tema-nuevo-wrap').style.display = val === '__nuevo__' ? '' : 'none';
-}
-
-function cancelarNuevoBloque() {
-  document.getElementById('mat-bloque-nuevo-wrap').style.display = 'none';
-  document.getElementById('mat-bloque-nuevo-txt').value = '';
-  document.getElementById('mat-bloque-id').value = '';
 }
 
 function cancelarNuevoTema() {
@@ -3959,36 +3878,26 @@ function cancelarNuevoTema() {
   document.getElementById('mat-tema-id').value = '';
 }
 
-async function crearNuevoBloque() {
-  const nombre = document.getElementById('mat-bloque-nuevo-txt').value.trim();
-  const asigId = parseInt(document.getElementById('mat-asignatura').value);
-  const nivel  = document.getElementById('mat-nivel').value;
-  if (!nombre || !asigId || !nivel) { showToast('Completa asignatura, curso y nombre', 'error'); return; }
-  const { data, error } = await db.from('bloques')
-    .insert({ asignatura_id: asigId, nivel, nombre })
-    .select('id, asignatura_id, nivel, nombre').single();
-  if (error) { showToast('Error: ' + error.message, 'error'); return; }
-  allBloques.push(data);
-  actualizarSelectBloques();
-  document.getElementById('mat-bloque-id').value = data.id;
-  document.getElementById('mat-bloque-nuevo-wrap').style.display = 'none';
-  document.getElementById('mat-bloque-nuevo-txt').value = '';
-  actualizarSelectTemas(data.id);
-}
-
 async function crearNuevoTema() {
-  const nombre   = document.getElementById('mat-tema-nuevo-txt').value.trim();
-  const bloqueId = parseInt(document.getElementById('mat-bloque-id').value);
-  if (!nombre || !bloqueId) { showToast('Elige un bloque y escribe el nombre del tema', 'error'); return; }
-  const { data, error } = await db.from('temas')
-    .insert({ bloque_id: bloqueId, nombre })
-    .select('id, bloque_id, nombre').single();
+  const nombre = document.getElementById('mat-tema-nuevo-txt').value.trim();
+  const asigId = parseInt(document.getElementById('mat-asignatura').value);
+  const nivel  = document.getElementById('mat-nivel').value || 'todos';
+  if (!nombre) { showToast('Escribe el nombre del tema', 'error'); return; }
+  let bloque = allBloques.find(b => b.asignatura_id === asigId && (b.nivel === nivel || b.nivel === 'todos'));
+  if (!bloque) {
+    const asig = allAsignaturas.find(a => a.id === asigId);
+    const { data: nb, error: be } = await db.from('bloques').insert({ asignatura_id: asigId, nivel, nombre: asig?.nombre || 'General' }).select('*').single();
+    if (be) { showToast('Error: ' + be.message, 'error'); return; }
+    bloque = nb; allBloques.push(bloque);
+  }
+  const { data, error } = await db.from('temas').insert({ bloque_id: bloque.id, nombre }).select('id, bloque_id, nombre').single();
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
   allTemas.push(data);
-  actualizarSelectTemas(bloqueId);
+  actualizarSelectTemas();
   document.getElementById('mat-tema-id').value = data.id;
   document.getElementById('mat-tema-nuevo-wrap').style.display = 'none';
   document.getElementById('mat-tema-nuevo-txt').value = '';
+  showToast('Tema creado');
 }
 
 async function eliminarMaterial(id) {

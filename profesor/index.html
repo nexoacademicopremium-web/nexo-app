@@ -959,22 +959,13 @@
       </select>
 
       <label class="field-label">Asignatura *</label>
-      <select class="field-input" id="pmat-asignatura" required onchange="pMatActualizarBloques()" style="font-size:16px;touch-action:manipulation" disabled>
+      <select class="field-input" id="pmat-asignatura" required onchange="pMatActualizarTemas()" style="font-size:16px;touch-action:manipulation" disabled>
         <option value="">— Selecciona alumno primero —</option>
       </select>
 
-      <label class="field-label">Bloque *</label>
-      <select class="field-input" id="pmat-bloque" required onchange="pMatActualizarTemas()" style="font-size:16px;touch-action:manipulation">
-        <option value="">— Elige asignatura primero —</option>
-      </select>
-      <div id="pmat-bloque-nuevo-wrap" style="display:none;margin-top:6px">
-        <input class="field-input" id="pmat-bloque-nuevo" placeholder="Nombre del nuevo bloque" style="margin-bottom:0">
-        <button type="button" class="btn-primary" style="margin-top:6px;padding:7px 14px;font-size:12px" onclick="pMatCrearBloque()">Crear bloque</button>
-      </div>
-
       <label class="field-label">Tema *</label>
-      <select class="field-input" id="pmat-tema" required style="font-size:16px;touch-action:manipulation">
-        <option value="">— Elige bloque primero —</option>
+      <select class="field-input" id="pmat-tema" required onchange="document.getElementById('pmat-tema-nuevo-wrap').style.display=this.value==='__nuevo__'?'':'none'" style="font-size:16px;touch-action:manipulation">
+        <option value="">— Elige asignatura primero —</option>
       </select>
       <div id="pmat-tema-nuevo-wrap" style="display:none;margin-top:6px">
         <input class="field-input" id="pmat-tema-nuevo" placeholder="Nombre del nuevo tema" style="margin-bottom:0">
@@ -2917,24 +2908,22 @@ function _pRenderMat() {
   const n = _pMatNav;
   if (!n) { _pMatRenderAsigs(c); return; }
   const { asigId, bloqueId, temaId } = n;
-  if (temaId   != null) _pMatRenderPdfs(c);
-  else if (bloqueId != null) _pMatRenderTemas(c);
-  else if (asigId  != null) _pMatRenderBloques(c);
-  else                      _pMatRenderAsigs(c);
+  if (temaId  != null) _pMatRenderPdfs(c);
+  else if (asigId != null) _pMatRenderTemas(c);
+  else                     _pMatRenderAsigs(c);
 }
 
 // ── Navigation ────────────────────────────────────────────────
-function _pMatGo(asigId, bloqueId, temaId) {
-  _pMatNav = { asigId:asigId??null, bloqueId:bloqueId??null, temaId:temaId??null };
+function _pMatGo(asigId, temaId) {
+  _pMatNav = { asigId:asigId??null, temaId:temaId??null };
   _pRenderMat();
 }
 function _pMatGoRoot() { _pMatNav = null; _pRenderMat(); }
 
 function _pMatBack() {
   if (!_pMatNav) return;
-  const { asigId, bloqueId, temaId } = _pMatNav;
-  if (temaId   != null) { _pMatGo(asigId, bloqueId, null); return; }
-  if (bloqueId != null) { _pMatGo(asigId, null, null);     return; }
+  const { asigId, temaId } = _pMatNav;
+  if (temaId  != null) { _pMatGo(asigId, null); return; }
   _pMatGoRoot();
 }
 
@@ -2950,16 +2939,12 @@ function _pMatItems() {
 // ── Breadcrumb ────────────────────────────────────────────────
 function _pMatBc() {
   if (!_pMatNav) return '';
-  const { asigId, bloqueId, temaId } = _pMatNav;
+  const { asigId, temaId } = _pMatNav;
   const sep   = `<i class="ti ti-chevron-right mat-bc-sep"></i>`;
   const parts = [`<span class="mat-bc-link" onclick="_pMatGoRoot()">Material</span>`];
   if (asigId != null) {
     const nom = pAllAsignaturas.find(a => a.id === asigId)?.nombre || '—';
-    parts.push(`<span class="mat-bc-link" onclick="_pMatGo(${asigId},null,null)">${nom}</span>`);
-  }
-  if (bloqueId != null) {
-    const nom = bloqueId === 0 ? 'Sin bloque' : (pAllBloques.find(b => b.id === bloqueId)?.nombre || 'Bloque');
-    parts.push(`<span class="mat-bc-link" onclick="_pMatGo(${asigId},${bloqueId},null)">${nom}</span>`);
+    parts.push(`<span class="mat-bc-link" onclick="_pMatGo(${asigId},null)">${nom}</span>`);
   }
   if (temaId != null) {
     const nom = temaId === '__sin__' ? 'Sin tema' : (pAllTemas.find(t => t.id === parseInt(temaId))?.nombre || '—');
@@ -2982,7 +2967,7 @@ function _pMatRenderAsigs(c) {
   const bubbles = Object.keys(asigCnt).map(aid => {
     const nom  = aid === '0' ? 'Sin asignatura' : (pAllAsignaturas.find(a => a.id === Number(aid))?.nombre || '—');
     const meta = getSubjectMeta(nom);
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo(${aid},null,null)">
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo(${aid},null)">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
       <span class="mat-asig-label">${nom}</span>
       <span class="mat-asig-count">${asigCnt[aid]} archivo${asigCnt[aid]!==1?'s':''}</span>
@@ -2991,41 +2976,17 @@ function _pMatRenderAsigs(c) {
   c.innerHTML = `<div class="mat-asig-grid">${bubbles}</div>`;
 }
 
-// ── Nivel 2: Bloques ──────────────────────────────────────────
-function _pMatRenderBloques(c) {
-  const { asigId } = _pMatNav;
-  const items   = _pMatItems();
-  const bloqCnt = {};
-  items.forEach(m => { if (m.bloque_id) bloqCnt[m.bloque_id] = (bloqCnt[m.bloque_id]||0)+1; });
-  const sinBloq = items.filter(m => !m.bloque_id);
-  const bubbles = Object.keys(bloqCnt).map(Number).map(bid => {
-    const blq  = pAllBloques.find(b => b.id === bid) || {};
-    const meta = getTopicMeta(blq.nombre||'');
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo(${asigId},${bid},null)">
-      <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
-      <span class="mat-asig-label">${blq.nombre||'Sin nombre'}</span>
-      <span class="mat-asig-count">${bloqCnt[bid]} archivo${bloqCnt[bid]!==1?'s':''}</span>
-    </div>`;
-  }).join('');
-  const extra = sinBloq.length ? `<div class="mat-asig-bubble" style="--ab-clr:#374151" onclick="_pMatGo(${asigId},0,null)">
-    <div class="mat-asig-ico"><i class="ti ti-folder-x"></i></div>
-    <span class="mat-asig-label">Sin bloque</span>
-    <span class="mat-asig-count">${sinBloq.length} archivo${sinBloq.length!==1?'s':''}</span>
-  </div>` : '';
-  c.innerHTML = _pMatBc() + `<div class="mat-asig-grid">${bubbles+extra||'<p style="color:var(--muted);font-size:12px">Sin bloques</p>'}</div>`;
-}
-
-// ── Nivel 3: Temas ────────────────────────────────────────────
+// ── Nivel 2: Temas ────────────────────────────────────────────
 function _pMatRenderTemas(c) {
-  const { asigId, bloqueId } = _pMatNav;
-  const items = _pMatItems().filter(m => bloqueId === 0 ? !m.bloque_id : m.bloque_id === bloqueId);
+  const { asigId } = _pMatNav;
+  const items = _pMatItems();
   const temaCnt = {};
   items.forEach(m => { const k = m.tema_id||'__sin__'; temaCnt[k] = (temaCnt[k]||0)+1; });
   const bubbles = Object.keys(temaCnt).map(tid => {
     const nom    = tid === '__sin__' ? 'Sin tema' : (pAllTemas.find(t => t.id === parseInt(tid))?.nombre || '—');
     const meta   = getTopicMeta(nom);
     const tidStr = tid === '__sin__' ? `'__sin__'` : tid;
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo(${asigId},${bloqueId},${tidStr})">
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo(${asigId},${tidStr})">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
       <span class="mat-asig-label">${nom}</span>
       <span class="mat-asig-count">${temaCnt[tid]} archivo${temaCnt[tid]!==1?'s':''}</span>
@@ -3034,12 +2995,10 @@ function _pMatRenderTemas(c) {
   c.innerHTML = _pMatBc() + `<div class="mat-asig-grid">${bubbles||'<p style="color:var(--muted);font-size:12px">Sin temas</p>'}</div>`;
 }
 
-// ── Nivel 4: PDFs / Recursos ──────────────────────────────────
+// ── Nivel 3: PDFs / Recursos ──────────────────────────────────
 function _pMatRenderPdfs(c) {
-  const { bloqueId, temaId } = _pMatNav;
+  const { temaId } = _pMatNav;
   const items = _pMatItems().filter(m => {
-    if (bloqueId === 0) { if (m.bloque_id) return false; }
-    else { if (m.bloque_id !== bloqueId) return false; }
     if (temaId === '__sin__') return !m.tema_id;
     return String(m.tema_id) === String(temaId);
   });
@@ -3072,10 +3031,8 @@ function pMatAbrirModal() {
   const asel = document.getElementById('pmat-asignatura');
   asel.innerHTML = '<option value="">— Selecciona alumno primero —</option>';
   asel.disabled = true;
-  document.getElementById('pmat-bloque').innerHTML = '<option value="">— Elige asignatura primero —</option>';
-  document.getElementById('pmat-bloque-nuevo-wrap').style.display = 'none';
-  document.getElementById('pmat-tema').innerHTML   = '<option value="">— Elige bloque primero —</option>';
-  document.getElementById('pmat-tema-nuevo-wrap').style.display   = 'none';
+  document.getElementById('pmat-tema').innerHTML = '<option value="">— Elige asignatura primero —</option>';
+  document.getElementById('pmat-tema-nuevo-wrap').style.display = 'none';
   const almSel = document.getElementById('pmat-alumno');
   almSel.innerHTML = '<option value="">— Seleccionar alumno —</option>' +
     misAlumnos.map(a => `<option value="${a.id}">${(a.usuario?.nombre||'')} ${(a.usuario?.apellidos||'')}</option>`).join('');
@@ -3085,10 +3042,8 @@ function pMatAbrirModal() {
 function pMatAlumnoChange() {
   const alumnoId = document.getElementById('pmat-alumno').value;
   const asel = document.getElementById('pmat-asignatura');
-  document.getElementById('pmat-bloque').innerHTML = '<option value="">— Elige asignatura primero —</option>';
-  document.getElementById('pmat-bloque-nuevo-wrap').style.display = 'none';
-  document.getElementById('pmat-tema').innerHTML   = '<option value="">— Elige bloque primero —</option>';
-  document.getElementById('pmat-tema-nuevo-wrap').style.display   = 'none';
+  document.getElementById('pmat-tema').innerHTML = '<option value="">— Elige asignatura primero —</option>';
+  document.getElementById('pmat-tema-nuevo-wrap').style.display = 'none';
   if (!alumnoId) { asel.innerHTML = '<option value="">— Selecciona alumno primero —</option>'; asel.disabled = true; return; }
   const alumno  = misAlumnos.find(a => a.id === alumnoId);
   const asigIds = alumno?._asignaturasIds || [];
@@ -3099,55 +3054,36 @@ function pMatAlumnoChange() {
   asel.disabled = false;
 }
 
-function pMatActualizarBloques() {
-  const asigId = parseInt(document.getElementById('pmat-asignatura').value);
-  const sel    = document.getElementById('pmat-bloque');
-  sel.innerHTML = '<option value="">— Elige bloque —</option>';
-  document.getElementById('pmat-tema').innerHTML = '<option value="">— Elige bloque primero —</option>';
-  document.getElementById('pmat-bloque-nuevo-wrap').style.display = 'none';
-  document.getElementById('pmat-tema-nuevo-wrap').style.display   = 'none';
-  if (!asigId) { sel.innerHTML = '<option value="">— Elige asignatura primero —</option>'; return; }
-  const filtered = pAllBloques.filter(b => b.asignatura_id === asigId);
-  filtered.forEach(b => {
-    const lbl = b.nombre + (b.nivel && b.nivel !== 'todos' ? ` (${b.nivel})` : '');
-    sel.innerHTML += `<option value="${b.id}">${lbl}</option>`;
-  });
-  document.getElementById('pmat-bloque-nuevo-wrap').style.display = '';
-}
-
 function pMatActualizarTemas() {
-  const bloqueId = parseInt(document.getElementById('pmat-bloque').value);
-  const sel      = document.getElementById('pmat-tema');
-  sel.innerHTML  = '<option value="">— Elige tema —</option>';
-  document.getElementById('pmat-tema-nuevo-wrap').style.display = bloqueId ? '' : 'none';
-  if (!bloqueId) return;
-  pAllTemas.filter(t => t.bloque_id === bloqueId).forEach(t => { sel.innerHTML += `<option value="${t.id}">${t.nombre}</option>`; });
-}
-
-async function pMatCrearBloque() {
   const asigId = parseInt(document.getElementById('pmat-asignatura').value);
-  const nombre = document.getElementById('pmat-bloque-nuevo').value.trim();
-  if (!nombre || !asigId) { showToast('Completa asignatura y nombre del bloque', 'error'); return; }
-  const { data, error } = await db.from('bloques').insert({ asignatura_id: asigId, nivel: 'todos', nombre }).select('id,nombre').single();
-  if (error) { showToast('Error: ' + error.message, 'error'); return; }
-  pAllBloques.push({ ...data, asignatura_id: asigId, nivel: 'todos' });
-  pMatActualizarBloques();
-  document.getElementById('pmat-bloque').value = data.id;
-  pMatActualizarTemas();
-  document.getElementById('pmat-bloque-nuevo').value = '';
-  showToast('Bloque creado');
+  const sel    = document.getElementById('pmat-tema');
+  document.getElementById('pmat-tema-nuevo-wrap').style.display = 'none';
+  if (!asigId) { sel.innerHTML = '<option value="">— Elige asignatura primero —</option>'; return; }
+  const bloqIds  = pAllBloques.filter(b => b.asignatura_id === asigId).map(b => b.id);
+  const filtrados = pAllTemas.filter(t => bloqIds.includes(t.bloque_id));
+  sel.innerHTML = '<option value="">— Selecciona tema —</option>' +
+    filtrados.map(t => `<option value="${t.id}">${t.nombre}</option>`).join('') +
+    '<option value="__nuevo__">+ Crear nuevo tema...</option>';
 }
 
 async function pMatCrearTema() {
-  const bloqueId = parseInt(document.getElementById('pmat-bloque').value);
-  const nombre   = document.getElementById('pmat-tema-nuevo').value.trim();
-  if (!nombre || !bloqueId) { showToast('Elige un bloque y escribe el nombre', 'error'); return; }
-  const { data, error } = await db.from('temas').insert({ bloque_id: bloqueId, nombre }).select('id,nombre').single();
+  const nombre = document.getElementById('pmat-tema-nuevo').value.trim();
+  const asigId = parseInt(document.getElementById('pmat-asignatura').value);
+  if (!nombre) { showToast('Escribe el nombre del tema', 'error'); return; }
+  let bloque = pAllBloques.find(b => b.asignatura_id === asigId);
+  if (!bloque) {
+    const asig = pAllAsignaturas.find(a => a.id === asigId);
+    const { data: nb, error: be } = await db.from('bloques').insert({ asignatura_id: asigId, nivel: 'todos', nombre: asig?.nombre || 'General' }).select('*').single();
+    if (be) { showToast('Error: ' + be.message, 'error'); return; }
+    bloque = nb; pAllBloques.push(bloque);
+  }
+  const { data, error } = await db.from('temas').insert({ bloque_id: bloque.id, nombre }).select('id,nombre,bloque_id').single();
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
-  pAllTemas.push({ ...data, bloque_id: bloqueId });
+  pAllTemas.push(data);
   pMatActualizarTemas();
   document.getElementById('pmat-tema').value = data.id;
   document.getElementById('pmat-tema-nuevo').value = '';
+  document.getElementById('pmat-tema-nuevo-wrap').style.display = 'none';
   showToast('Tema creado');
 }
 
@@ -3167,10 +3103,9 @@ async function pMatGuardar(e) {
     if (upErr) throw new Error('Error al subir archivo: ' + upErr.message);
     const { data: urlData } = db.storage.from('nexo-files').getPublicUrl(path);
 
-    const bloqueId = parseInt(document.getElementById('pmat-bloque').value) || null;
-    const temaId   = parseInt(document.getElementById('pmat-tema').value)   || null;
-    if (!bloqueId) throw new Error('Selecciona o crea un bloque');
+    const temaId   = parseInt(document.getElementById('pmat-tema').value) || null;
     if (!temaId)   throw new Error('Selecciona o crea un tema');
+    const bloqueId = pAllTemas.find(t => t.id === temaId)?.bloque_id || null;
 
     const payload = {
       titulo:        document.getElementById('pmat-titulo').value.trim(),
