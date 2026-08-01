@@ -2853,7 +2853,7 @@ let pAllBloques     = [];
 let pAllTemas       = [];
 let pAllMaterial    = [];
 let pMatAlumnoMap   = {}; // materialId → [alumnoIds]
-let _pMatNav        = null; // null=root | { asigId, bloqueId, temaId }
+let _pMatNav        = null; // null=root | { alumnoId, asigId, temaId }
 let _pMatData       = null;
 let _pMatCatalogLoaded = false;
 
@@ -2906,24 +2906,26 @@ function _pRenderMat() {
   const c = document.getElementById('pmat-list');
   if (!c || !_pMatData) return;
   const n = _pMatNav;
-  if (!n) { _pMatRenderAsigs(c); return; }
-  const { asigId, bloqueId, temaId } = n;
-  if (temaId  != null) _pMatRenderPdfs(c);
-  else if (asigId != null) _pMatRenderTemas(c);
-  else                     _pMatRenderAsigs(c);
+  if (!n) { _pMatRenderAlumnos(c); return; }
+  const { alumnoId, asigId, temaId } = n;
+  if (temaId   != null) _pMatRenderPdfs(c);
+  else if (asigId  != null) _pMatRenderTemas(c);
+  else if (alumnoId != null) _pMatRenderAsigs(c);
+  else                       _pMatRenderAlumnos(c);
 }
 
 // ── Navigation ────────────────────────────────────────────────
-function _pMatGo(asigId, temaId) {
-  _pMatNav = { asigId:asigId??null, temaId:temaId??null };
+function _pMatGo(alumnoId, asigId, temaId) {
+  _pMatNav = { alumnoId:alumnoId??null, asigId:asigId??null, temaId:temaId??null };
   _pRenderMat();
 }
 function _pMatGoRoot() { _pMatNav = null; _pRenderMat(); }
 
 function _pMatBack() {
   if (!_pMatNav) return;
-  const { asigId, temaId } = _pMatNav;
-  if (temaId  != null) { _pMatGo(asigId, null); return; }
+  const { alumnoId, asigId, temaId } = _pMatNav;
+  if (temaId  != null) { _pMatGo(alumnoId, asigId, null); return; }
+  if (asigId  != null) { _pMatGo(alumnoId, null, null);   return; }
   _pMatGoRoot();
 }
 
@@ -2931,20 +2933,26 @@ function _pMatBack() {
 function _pMatItems() {
   let items = _pMatData || [];
   if (!_pMatNav) return items;
-  const { asigId } = _pMatNav;
-  if (asigId != null) items = items.filter(m => m.asignatura_id === asigId);
+  const { alumnoId, asigId } = _pMatNav;
+  if (alumnoId != null) items = items.filter(m => (pMatAlumnoMap[m.id] || []).includes(alumnoId));
+  if (asigId   != null) items = items.filter(m => m.asignatura_id === asigId);
   return items;
 }
 
 // ── Breadcrumb ────────────────────────────────────────────────
 function _pMatBc() {
   if (!_pMatNav) return '';
-  const { asigId, temaId } = _pMatNav;
+  const { alumnoId, asigId, temaId } = _pMatNav;
   const sep   = `<i class="ti ti-chevron-right mat-bc-sep"></i>`;
   const parts = [`<span class="mat-bc-link" onclick="_pMatGoRoot()">Material</span>`];
+  if (alumnoId != null) {
+    const al  = misAlumnos.find(a => a.id === alumnoId);
+    const nom = al ? `${al.usuario?.nombre||''} ${al.usuario?.apellidos||''}`.trim() : '—';
+    parts.push(`<span class="mat-bc-link" onclick="_pMatGo('${alumnoId}',null,null)">${nom}</span>`);
+  }
   if (asigId != null) {
     const nom = pAllAsignaturas.find(a => a.id === asigId)?.nombre || '—';
-    parts.push(`<span class="mat-bc-link" onclick="_pMatGo(${asigId},null)">${nom}</span>`);
+    parts.push(`<span class="mat-bc-link" onclick="_pMatGo('${alumnoId}',${asigId},null)">${nom}</span>`);
   }
   if (temaId != null) {
     const nom = temaId === '__sin__' ? 'Sin tema' : (pAllTemas.find(t => t.id === parseInt(temaId))?.nombre || '—');
@@ -2956,29 +2964,48 @@ function _pMatBc() {
   </div>`;
 }
 
-// ── Nivel 1: Asignaturas ──────────────────────────────────────
-function _pMatRenderAsigs(c) {
-  if (!_pMatData.length) {
+// ── Nivel 0: Alumnos ──────────────────────────────────────────
+function _pMatRenderAlumnos(c) {
+  const alumnoIds = new Set();
+  Object.values(pMatAlumnoMap).forEach(ids => ids.forEach(id => alumnoIds.add(id)));
+  if (!alumnoIds.size) {
     c.innerHTML = `<div class="empty-state"><i class="ti ti-file-off"></i><p>Sin material todavía. Pulsa "Añadir material" para empezar.</p></div>`;
     return;
   }
-  const asigCnt = {};
-  _pMatData.forEach(m => { asigCnt[m.asignatura_id??0] = (asigCnt[m.asignatura_id??0]||0)+1; });
-  const bubbles = Object.keys(asigCnt).map(aid => {
-    const nom  = aid === '0' ? 'Sin asignatura' : (pAllAsignaturas.find(a => a.id === Number(aid))?.nombre || '—');
-    const meta = getSubjectMeta(nom);
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo(${aid},null)">
-      <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
+  const bubbles = [...alumnoIds].map(aid => {
+    const al  = misAlumnos.find(a => a.id === aid);
+    const nom = al ? `${al.usuario?.nombre||''} ${al.usuario?.apellidos||''}`.trim() : '—';
+    const cnt = Object.entries(pMatAlumnoMap).filter(([,ids]) => ids.includes(aid)).length;
+    return `<div class="mat-asig-bubble" style="--ab-clr:#2563eb" onclick="_pMatGo('${aid}',null,null)">
+      <div class="mat-asig-ico"><i class="ti ti-user-circle"></i></div>
       <span class="mat-asig-label">${nom}</span>
-      <span class="mat-asig-count">${asigCnt[aid]} archivo${asigCnt[aid]!==1?'s':''}</span>
+      <span class="mat-asig-count">${cnt} archivo${cnt!==1?'s':''}</span>
     </div>`;
   }).join('');
   c.innerHTML = `<div class="mat-asig-grid">${bubbles}</div>`;
 }
 
+// ── Nivel 1: Asignaturas ──────────────────────────────────────
+function _pMatRenderAsigs(c) {
+  const { alumnoId } = _pMatNav;
+  const items = _pMatItems();
+  const asigCnt = {};
+  items.forEach(m => { asigCnt[m.asignatura_id??0] = (asigCnt[m.asignatura_id??0]||0)+1; });
+  const bubbles = Object.keys(asigCnt).map(aid => {
+    const nom  = aid === '0' ? 'Sin asignatura' : (pAllAsignaturas.find(a => a.id === Number(aid))?.nombre || '—');
+    const meta = getSubjectMeta(nom);
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo('${alumnoId}',${aid},null)">
+      <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
+      <span class="mat-asig-label">${nom}</span>
+      <span class="mat-asig-count">${asigCnt[aid]} archivo${asigCnt[aid]!==1?'s':''}</span>
+    </div>`;
+  }).join('');
+  c.innerHTML = _pMatBc() + `<div class="mat-asig-grid">${bubbles||'<p style="color:var(--muted);font-size:12px">Sin asignaturas</p>'}</div>`;
+}
+
 // ── Nivel 2: Temas ────────────────────────────────────────────
 function _pMatRenderTemas(c) {
-  const { asigId } = _pMatNav;
+  const { alumnoId, asigId } = _pMatNav;
   const items = _pMatItems();
   const temaCnt = {};
   items.forEach(m => { const k = m.tema_id||'__sin__'; temaCnt[k] = (temaCnt[k]||0)+1; });
@@ -2986,7 +3013,7 @@ function _pMatRenderTemas(c) {
     const nom    = tid === '__sin__' ? 'Sin tema' : (pAllTemas.find(t => t.id === parseInt(tid))?.nombre || '—');
     const meta   = getTopicMeta(nom);
     const tidStr = tid === '__sin__' ? `'__sin__'` : tid;
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo(${asigId},${tidStr})">
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo('${alumnoId}',${asigId},${tidStr})">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
       <span class="mat-asig-label">${nom}</span>
       <span class="mat-asig-count">${temaCnt[tid]} archivo${temaCnt[tid]!==1?'s':''}</span>
