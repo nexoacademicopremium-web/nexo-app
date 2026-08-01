@@ -914,25 +914,14 @@
     <div class="modal-title"><span id="modal-mat-titulo">Añadir material</span><button class="modal-close" onclick="cerrarModal('modal-material')">×</button></div>
     <form id="form-material" onsubmit="guardarMaterial(event)">
       <label class="fl">Título *</label><input class="fi" id="mat-titulo" required>
-      <div class="fi-grid2">
-        <div>
-          <label class="fl">Curso (nivel) *</label>
-          <select class="fi" id="mat-nivel" required onchange="actualizarSelectBloques()">
-            <option value="">— Selecciona —</option>
-            <option value="todos">Todos</option>
-            <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
-            <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
-            <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
-          </select>
-        </div>
-        <div>
-          <label class="fl">Tipo</label>
-          <select class="fi" id="mat-tipo">
-            <option value="pdf">PDF</option>
-            <option value="recurso">Recurso</option>
-          </select>
-        </div>
-      </div>
+      <label class="fl">Curso (nivel) *</label>
+      <select class="fi" id="mat-nivel" required onchange="actualizarSelectBloques()">
+        <option value="">— Selecciona —</option>
+        <option value="todos">Todos</option>
+        <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
+        <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
+        <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
+      </select>
       <label class="fl">Asignatura *</label>
       <select class="fi" id="mat-asignatura" required onchange="actualizarSelectBloques()">
         <option value="">— Selecciona asignatura —</option>
@@ -3233,7 +3222,6 @@ function abrirEditarMaterial(id) {
   document.getElementById('modal-mat-titulo').textContent = 'Editar material';
   document.getElementById('mat-titulo').value     = m.titulo || '';
   document.getElementById('mat-nivel').value      = m.nivel || '';
-  document.getElementById('mat-tipo').value       = m.tipo || 'pdf';
   document.getElementById('mat-asignatura').value = m.asignatura_id || '';
   document.getElementById('mat-bloque-nuevo-wrap').style.display = 'none';
   document.getElementById('mat-tema-nuevo-wrap').style.display   = 'none';
@@ -3286,7 +3274,7 @@ async function guardarMaterial(e) {
       asignatura_id: parseInt(document.getElementById('mat-asignatura').value) || null,
       bloque_id:     bloqueId,
       tema_id:       temaId,
-      tipo:          document.getElementById('mat-tipo').value,
+      tipo:          'pdf',
     };
     if (newUrl) payload.archivo_url = newUrl;
 
