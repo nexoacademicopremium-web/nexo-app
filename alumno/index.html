@@ -2105,12 +2105,13 @@ async function enviarTest() {
 
   const content = document.getElementById('test-content');
   const resultDiv = document.createElement('div');
-  resultDiv.style.cssText = 'background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:24px;text-align:center;margin-top:16px';
+  resultDiv.style.cssText = 'background:var(--surface);border:.5px solid var(--border);border-radius:16px;padding:32px 24px 24px;text-align:center;margin-top:20px';
   resultDiv.innerHTML = `
-    <div style="font-size:40px;font-weight:700;color:${nota >= 5 ? 'var(--green)' : 'var(--red)'};margin-bottom:8px">${nota}</div>
-    <div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:4px">${nota >= 9 ? '¡Excelente!' : nota >= 7 ? '¡Muy bien!' : nota >= 5 ? 'Aprobado' : 'Sigue practicando'}</div>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:${isIA ? '8px' : '20px'}">${correctas} de ${preguntas.length} respuestas correctas</div>
-    ${isIA ? `<div style="color:var(--muted);font-size:11px;padding:8px 12px;background:var(--dark);border-radius:8px;margin-bottom:20px">Revisa las respuestas correctas marcadas en verde debajo</div>` : ''}
+    <div style="font-size:64px;font-weight:800;color:${nota >= 5 ? '#34d399' : '#f87171'};line-height:1;letter-spacing:-2px">${nota}</div>
+    <div style="color:var(--muted);font-size:12px;margin-top:6px;margin-bottom:22px">sobre 10</div>
+    <div style="color:#fff;font-size:18px;font-weight:700;margin-bottom:6px">${nota >= 9 ? '¡Excelente!' : nota >= 7 ? '¡Muy bien!' : nota >= 5 ? 'Aprobado' : 'Sigue practicando'}</div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:20px">${correctas} de ${preguntas.length} respuestas correctas</div>
+    ${isIA ? `<div style="color:var(--muted);font-size:11px;padding:10px 14px;background:var(--dark);border-radius:10px;margin-bottom:22px;line-height:1.6">Las respuestas correctas están marcadas en verde debajo.</div>` : ''}
     <button class="btn-primary" onclick="showSection(_testOriginSection||'estudiar')">← Volver</button>
   `;
   content.prepend(resultDiv);
@@ -2438,32 +2439,37 @@ function mostrarDetalleTests(asigEnc) {
   document.getElementById('tests-lista-contenido').innerHTML = temasAMostrar.map(tema => {
     const testsEnTema = byTema[tema] || [];
     if (testsEnTema.length === 0) {
-      return `<div class="card" style="margin-bottom:10px">
-        <div class="card-head">
-          <div class="card-title"><i class="ti ti-bookmark"></i> ${tema}</div>
-          <span class="status-pill st-pend" style="font-size:10px">Próximamente</span>
+      return `<div style="margin-bottom:22px">
+        <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:5px">
+          <i class="ti ti-bookmark" style="font-size:11px"></i>${tema}
+        </div>
+        <div style="background:linear-gradient(145deg,#0c1838,#060d20);border:1px dashed var(--border);border-radius:20px;padding:24px;text-align:center">
+          <i class="ti ti-clock" style="font-size:26px;color:var(--muted);display:block;margin-bottom:8px"></i>
+          <span style="color:var(--muted);font-size:12px">Próximamente</span>
         </div>
       </div>`;
     }
-    return `<div class="card" style="margin-bottom:10px">
-      <div class="card-head"><div class="card-title"><i class="ti ti-bookmark"></i> ${tema}</div></div>
-      <div style="padding:4px 16px 8px">
-        ${testsEnTema.map(t => {
-          const nota = resultMap?.[t.id];
-          const notaColor = nota != null ? (nota >= 5 ? 'var(--green)' : 'var(--red)') : null;
-          return `<div class="recurso-row" onclick="iniciarTest('${t.id}','${encodeURIComponent(t.titulo)}','tests')" style="cursor:pointer">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-              <div style="display:flex;align-items:center;gap:8px">
-                <i class="ti ti-list-check" style="color:var(--green);font-size:14px;flex-shrink:0"></i>
-                <span style="color:var(--txt);font-size:13px">${t.titulo}</span>
-              </div>
-              ${nota != null
-                ? `<span style="color:${notaColor};font-size:12px;font-weight:600;flex-shrink:0">${nota}/10</span>`
-                : '<span style="color:var(--muted);font-size:11px;flex-shrink:0">Sin hacer</span>'}
-            </div>
-          </div>`;
-        }).join('')}
+    const cards = testsEnTema.map(t => {
+      const nota      = resultMap?.[t.id];
+      const done      = nota != null;
+      const cc        = done ? '#1a7f5e' : '#154ca9';
+      const ico       = done ? 'ti-check' : 'ti-player-play';
+      const badgeBg   = done ? 'var(--green-lt)' : '#0f2240';
+      const badgeClr  = done ? 'var(--green)' : 'var(--blue)';
+      const badgeTxt  = done ? `${nota}/10` : 'Sin hacer';
+      const btnTxt    = done ? 'Repetir' : 'Iniciar';
+      return `<div class="mat-item-card" style="--cc:${cc}" onclick="iniciarTest('${t.id}','${encodeURIComponent(t.titulo)}','tests')">
+        <div class="mat-item-ico"><i class="ti ${ico}"></i></div>
+        <div class="mat-item-nom">${t.titulo}</div>
+        <span class="mat-item-badge" style="background:${badgeBg};color:${badgeClr}">${badgeTxt}</span>
+        <button class="mat-item-btn">${btnTxt}</button>
+      </div>`;
+    }).join('');
+    return `<div style="margin-bottom:26px">
+      <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:5px">
+        <i class="ti ti-bookmark" style="font-size:11px"></i>${tema}
       </div>
+      <div class="mat-item-grid">${cards}</div>
     </div>`;
   }).join('');
 }
