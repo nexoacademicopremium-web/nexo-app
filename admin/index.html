@@ -638,6 +638,18 @@
       <textarea class="fi" id="fich-prof-observaciones" rows="3" placeholder="Notas internas sobre el profesor..."></textarea>
     </div>
 
+    <!-- 5. PERMISOS -->
+    <div class="ficha-section" id="ficha-prof-section-permisos" style="display:none">
+      <div class="ficha-sec-title"><i class="ti ti-shield-check"></i> Permisos</div>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:4px 0">
+        <input type="checkbox" id="fich-prof-pdf-test" style="width:16px;height:16px;accent-color:#5b21b6;cursor:pointer">
+        <span style="font-size:13px">
+          Puede generar <strong>tests desde PDF con IA</strong>
+          <span style="display:block;color:var(--muted);font-size:11px;margin-top:1px">Consume créditos de la API de IA. Habilitar solo cuando sea necesario.</span>
+        </span>
+      </label>
+    </div>
+
     <div class="modal-footer">
       <button class="btn-cancel" onclick="cerrarModal('modal-ficha-profesor')">Cerrar</button>
       <button class="btn-primary" id="btn-guardar-ficha-prof" onclick="guardarFichaProfesor()"><i class="ti ti-device-floppy"></i> Guardar cambios</button>
@@ -1959,6 +1971,8 @@ async function abrirFichaProfesor(profId) {
   document.getElementById('fich-prof-fecha-inicio').value     = p.fecha_inicio || '';
   document.getElementById('fich-prof-password').value         = '';
   document.getElementById('fich-prof-observaciones').value    = p.observaciones || '';
+  document.getElementById('fich-prof-pdf-test').checked       = !!p.puede_generar_test_pdf;
+  document.getElementById('ficha-prof-section-permisos').style.display = '';
 
   fichaProfModoEdicion(p);
   document.getElementById('modal-ficha-profesor').classList.add('open');
@@ -1976,7 +1990,8 @@ async function guardarFichaProfesor() {
   const estudios      = document.getElementById('fich-prof-estudios').value.trim();
   const nivel_max     = document.getElementById('fich-prof-nivel-max').value;
   const fecha_inicio  = document.getElementById('fich-prof-fecha-inicio').value;
-  const observaciones = document.getElementById('fich-prof-observaciones').value.trim();
+  const observaciones        = document.getElementById('fich-prof-observaciones').value.trim();
+  const puede_generar_test_pdf = document.getElementById('fich-prof-pdf-test')?.checked ?? false;
 
   // ── MODO CREACIÓN ──
   if (fichaProfesorId === null) {
@@ -2041,11 +2056,12 @@ async function guardarFichaProfesor() {
       ? db.from('usuarios').update({ nombre, apellidos, email }).eq('id', p.usuario_id)
       : Promise.resolve({ error: null }),
     db.from('profesores').update({
-      zona:          zona || null,
-      estudios:      estudios || null,
-      nivel_max:     nivel_max || null,
-      fecha_inicio:  fecha_inicio || null,
-      observaciones: observaciones || null,
+      zona:                   zona || null,
+      estudios:               estudios || null,
+      nivel_max:              nivel_max || null,
+      fecha_inicio:           fecha_inicio || null,
+      observaciones:          observaciones || null,
+      puede_generar_test_pdf: puede_generar_test_pdf,
     }).eq('id', fichaProfesorId),
   ]);
 
@@ -2064,11 +2080,12 @@ async function guardarFichaProfesor() {
       allProfesores[idx].usuario.apellidos = apellidos;
       allProfesores[idx].usuario.email     = email;
     }
-    allProfesores[idx].zona          = zona;
-    allProfesores[idx].estudios      = estudios;
-    allProfesores[idx].nivel_max     = nivel_max;
-    allProfesores[idx].fecha_inicio  = fecha_inicio;
-    allProfesores[idx].observaciones = observaciones;
+    allProfesores[idx].zona                   = zona;
+    allProfesores[idx].estudios               = estudios;
+    allProfesores[idx].nivel_max              = nivel_max;
+    allProfesores[idx].fecha_inicio           = fecha_inicio;
+    allProfesores[idx].observaciones          = observaciones;
+    allProfesores[idx].puede_generar_test_pdf = puede_generar_test_pdf;
   }
   document.getElementById('ficha-prof-titulo').textContent = `${nombre} ${apellidos}`;
 

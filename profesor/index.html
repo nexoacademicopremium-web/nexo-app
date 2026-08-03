@@ -800,7 +800,7 @@
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn-primary" onclick="abrirModalTestProf()"><i class="ti ti-plus"></i> Nuevo test</button>
-      <button class="btn-primary" style="background:linear-gradient(135deg,#312e81,#5b21b6)" onclick="abrirModalTestPdf()"><i class="ti ti-brain"></i> Test desde PDF</button>
+      <button class="btn-primary" id="btn-test-pdf" style="background:linear-gradient(135deg,#312e81,#5b21b6);display:none" onclick="abrirModalTestPdf()"><i class="ti ti-brain"></i> Test desde PDF</button>
     </div>
   </div>
   <div class="card" id="prof-tests-lista">
@@ -995,6 +995,17 @@
         </button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- MODAL VER TEST (preguntas con respuestas correctas) -->
+<div class="modal-overlay" id="modal-ver-test">
+  <div class="modal-box" style="max-width:600px;width:95%;max-height:85vh;overflow:hidden;display:flex;flex-direction:column">
+    <div class="modal-title" style="flex-shrink:0">
+      <span><i class="ti ti-eye" style="margin-right:6px;color:var(--blue)"></i><span id="ver-test-titulo">Test</span></span>
+      <button class="modal-close" onclick="document.getElementById('modal-ver-test').classList.remove('open')">×</button>
+    </div>
+    <div id="ver-test-contenido" style="overflow-y:auto;padding:4px 2px 12px;flex:1"></div>
   </div>
 </div>
 
@@ -1218,6 +1229,11 @@ let editClaseId = null;
   // Cargar batería de preguntas (67 filas, pequeño dataset)
   const { data: pregData } = await db.from('preguntas_asignatura').select('*').order('id');
   pAllPreguntas = pregData || [];
+
+  // Mostrar botón Test desde PDF solo si el admin lo ha habilitado
+  if (profesorData?.puede_generar_test_pdf) {
+    document.getElementById('btn-test-pdf').style.display = '';
+  }
 
   await Promise.all([
     loadDashboardProf(),
@@ -2916,7 +2932,8 @@ async function loadTestsProf() {
       <td>${resultadoHtml}</td>
       <td><span class="status-pill ${t.visible ? 'st-ok' : 'st-grey'}">${t.visible ? 'Visible' : 'Oculto'}</span></td>
       <td style="white-space:nowrap">
-        ${!t.generado_ia ? `<button class="btn-ghost" style="padding:5px 10px;font-size:11px" onclick="editarTestProf('${t.id}')"><i class="ti ti-pencil"></i></button>` : ''}
+        <button class="btn-ghost" style="padding:5px 10px;font-size:11px" onclick="verTestProf('${t.id}')"><i class="ti ti-eye"></i> Ver</button>
+        ${!t.generado_ia ? `<button class="btn-ghost" style="padding:5px 10px;font-size:11px;margin-left:4px" onclick="editarTestProf('${t.id}')"><i class="ti ti-pencil"></i></button>` : ''}
         <button class="btn-ghost" style="padding:5px 10px;font-size:11px;margin-left:4px" onclick="toggleTestVis('${t.id}',${!t.visible})">${t.visible ? 'Ocultar' : 'Mostrar'}</button>
         ${showRepetir ? `<button class="btn-ghost" style="padding:5px 10px;font-size:11px;margin-left:4px;color:#a78bfa;border-color:rgba(139,92,246,.4)" onclick="permitirRepetir('${t.id}')">↺ Repetir</button>` : ''}
         ${showYaRepetir ? `<span style="color:var(--muted);font-size:10px;margin-left:4px">Repetir activo</span>` : ''}
@@ -3208,6 +3225,43 @@ async function permitirRepetir(testId) {
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
   showToast('El alumno podrá volver a hacer el test');
   loadTestsProf();
+}
+
+async function verTestProf(testId) {
+  document.getElementById('modal-ver-test').classList.add('open');
+  const el = document.getElementById('ver-test-contenido');
+  el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+
+  const { data: test } = await db.from('tests').select('titulo,asignatura').eq('id', testId).single();
+  const { data: pregs } = await db.from('preguntas_test')
+    .select('enunciado,opcion_a,opcion_b,opcion_c,opcion_d,respuesta_correcta,orden')
+    .eq('test_id', testId)
+    .order('orden', { ascending: true });
+
+  if (!pregs || pregs.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px">No se encontraron preguntas.</p>';
+    return;
+  }
+
+  const letras = { a: 'A', b: 'B', c: 'C', d: 'd' };
+  document.getElementById('ver-test-titulo').textContent = test?.titulo || 'Test';
+  el.innerHTML = pregs.map((q, i) => `
+    <div style="margin-bottom:20px;padding:14px;background:rgba(255,255,255,.04);border-radius:10px;border:.5px solid rgba(255,255,255,.08)">
+      <p style="font-weight:600;margin:0 0 10px;font-size:13px;color:#e2e8f0">${i + 1}. ${q.enunciado}</p>
+      ${['a','b','c','d'].map(l => {
+        const isCorrect = q.respuesta_correcta === l;
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;margin:4px 0;border-radius:7px;font-size:12px;
+          ${isCorrect ? 'background:rgba(34,197,94,.18);border:.5px solid rgba(34,197,94,.4);color:#86efac;font-weight:600' : 'color:var(--muted)'}">
+          <span style="width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;
+            ${isCorrect ? 'background:#16a34a;color:#fff' : 'background:rgba(255,255,255,.08);color:var(--muted)'}">
+            ${l.toUpperCase()}
+          </span>
+          ${q['opcion_' + l]}
+          ${isCorrect ? '<i class="ti ti-check" style="margin-left:auto;color:#4ade80"></i>' : ''}
+        </div>`;
+      }).join('')}
+    </div>
+  `).join('');
 }
 
 // ============================================================
