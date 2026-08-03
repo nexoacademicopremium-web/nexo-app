@@ -73,7 +73,7 @@ Reglas:
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-5',
+        model: 'claude-opus-4-5',
         max_tokens: 4096,
         messages: [
           {
@@ -98,12 +98,16 @@ Reglas:
     const claudeData = await claudeRes.json()
     const rawText = (claudeData.content?.[0]?.text || '').trim()
 
-    // Parse JSON — strip any accidental markdown fences
-    const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+    // Parse JSON — strip markdown fences, then extract the first [...] array found
+    let cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+    // If there's extra text before/after the JSON array, extract just the array
+    const arrMatch = cleaned.match(/\[[\s\S]*\]/)
+    if (arrMatch) cleaned = arrMatch[0]
     let questions: any[]
     try {
       questions = JSON.parse(cleaned)
     } catch {
+      console.error('Raw Claude response:', rawText.slice(0, 500))
       throw new Error('La IA no devolvió un formato JSON válido. Inténtalo de nuevo.')
     }
 

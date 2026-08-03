@@ -429,7 +429,7 @@
     <div><h1 class="page-title" style="margin:0">Tests</h1><p class="page-sub" style="margin:0">Gestión de tests y preguntas</p></div>
     <button class="btn-primary" onclick="abrirModalTest()"><i class="ti ti-plus"></i> Nuevo test</button>
   </div>
-  <div class="card" id="tests-lista">
+  <div id="tests-lista">
     <div class="loading-section"><div class="spinner"></div></div>
   </div>
 </div>
@@ -3957,41 +3957,168 @@ async function toggleVisible(tabla, id, estado) {
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
   showToast('Visibilidad actualizada');
   if (tabla === 'material') _refreshMatKeepNav();
-  else if (tabla === 'tests') loadListaTests();
+  else if (tabla === 'tests') {
+    const t = _testsData?.find(x => x.id === id);
+    if (t) { t.visible = estado; _renderTests(); } else loadListaTests();
+  }
 }
 
 // ============================================================
-// TESTS
+// TESTS — drill-down navegación por alumnos → asignaturas
 // ============================================================
+let _testsData = null; // array de tests
+let _testsNav  = null; // null=root | { alumnoId } | { alumnoId, asig }
+
 async function loadListaTests() {
-  const { data: tests, error } = await db.from('tests')
-    .select('*, preguntas:preguntas_test(id)')
-    .order('created_at', { ascending: false });
   const el = document.getElementById('tests-lista');
+  el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+  const { data: tests, error } = await db.from('tests')
+    .select('*, preguntas:preguntas_test(id), alumno:alumnos(usuario:usuarios(nombre,apellidos))')
+    .order('created_at', { ascending: false });
   if (error) {
     el.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error: ${error.message}</p></div>`;
     return;
   }
-  if (!tests || tests.length === 0) {
-    el.innerHTML = `<div class="empty-state"><i class="ti ti-list-check"></i><p>Sin tests creados todavía</p></div>`;
+  _testsData = tests || [];
+  _testsNav  = null;
+  _renderTests();
+}
+
+function _renderTests() {
+  const c = document.getElementById('tests-lista');
+  if (!c || !_testsData) return;
+  if (!_testsNav)                { _testsRenderAlumnos(c); return; }
+  if (_testsNav.asig == null)    { _testsRenderAsigs(c);   return; }
+  _testsRenderCards(c);
+}
+
+function _testsGo(alumnoId, asig) {
+  _testsNav = { alumnoId: alumnoId ?? null, asig: asig ?? null };
+  _renderTests();
+}
+function _testsGoRoot() { _testsNav = null; _renderTests(); }
+function _testsBack() {
+  if (!_testsNav) return;
+  if (_testsNav.asig != null) { _testsGo(_testsNav.alumnoId, null); return; }
+  _testsGoRoot();
+}
+
+function _testsAlumnoNombre(alumnoId) {
+  const t = _testsData.find(x => x.alumno_id === alumnoId);
+  if (!t?.alumno?.usuario) return 'Alumno';
+  const u = t.alumno.usuario;
+  return `${u.nombre} ${u.apellidos||''}`.trim();
+}
+
+function _testsBc() {
+  if (!_testsNav) return '';
+  const { alumnoId, asig } = _testsNav;
+  const sep = `<i class="ti ti-chevron-right mat-bc-sep"></i>`;
+  const alumnoLbl = alumnoId ? _testsAlumnoNombre(alumnoId) : 'General';
+  const alumnoIdJs = alumnoId ? `'${alumnoId}'` : 'null';
+  const parts = [
+    `<button class="mat-back-btn" onclick="_testsBack()"><i class="ti ti-arrow-left"></i></button>`,
+    `<div class="mat-bc">`,
+    `<span class="mat-bc-link" onclick="_testsGoRoot()">Tests</span>`,
+    sep,
+  ];
+  if (asig != null) {
+    parts.push(`<span class="mat-bc-link" onclick="_testsGo(${alumnoIdJs},null)">${alumnoLbl}</span>`);
+    parts.push(sep);
+    parts.push(`<span class="mat-bc-cur">${asig}</span>`);
+  } else {
+    parts.push(`<span class="mat-bc-cur">${alumnoLbl}</span>`);
+  }
+  parts.push('</div>');
+  return `<div class="mat-nav-bar">${parts.join('')}</div>`;
+}
+
+function _testsRenderAlumnos(c) {
+  if (!_testsData.length) {
+    c.innerHTML = `<div class="empty-state"><i class="ti ti-list-check"></i><p>Sin tests creados todavía</p></div>`;
     return;
   }
-  el.innerHTML = `<table class="tabla">
-    <thead><tr><th>Título</th><th>Nivel</th><th>Asignatura</th><th>Preguntas</th><th>Visible</th><th>Acciones</th></tr></thead>
-    <tbody>
-      ${tests.map(t => `<tr>
-        <td style="color:#fff">${t.titulo}</td>
-        <td>${nivelLabel(t.nivel)}</td>
-        <td>${t.asignatura || '—'}</td>
-        <td>${t.preguntas?.length || 0}</td>
-        <td><span class="pill ${t.visible ? 'pill-ok' : 'pill-grey'}">${t.visible ? 'Visible' : 'Oculto'}</span></td>
-        <td style="white-space:nowrap">
-          <button class="btn-edit" onclick="editarTest('${t.id}')">Editar</button>
-          <button class="btn-danger" style="margin-left:4px" onclick="toggleVisible('tests','${t.id}',${!t.visible})">${t.visible ? 'Ocultar' : 'Mostrar'}</button>
-        </td>
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
+  const buckets = {};
+  _testsData.forEach(t => {
+    const key = t.alumno_id || '__gen__';
+    if (!buckets[key]) buckets[key] = { alumnoId: t.alumno_id || null, nombre: null, cnt: 0 };
+    if (t.alumno?.usuario && !buckets[key].nombre) {
+      const u = t.alumno.usuario;
+      buckets[key].nombre = `${u.nombre} ${u.apellidos||''}`.trim();
+    }
+    buckets[key].cnt++;
+  });
+  const sorted = Object.values(buckets).sort((a, b) => {
+    if (!a.alumnoId) return 1;
+    if (!b.alumnoId) return -1;
+    return (a.nombre||'').localeCompare(b.nombre||'', 'es');
+  });
+  const bubbles = sorted.map(b => {
+    const nombre = b.alumnoId ? (b.nombre || 'Alumno') : 'General';
+    const ico    = b.alumnoId ? 'ti-user' : 'ti-world';
+    const cc     = b.alumnoId ? '#5b21b6' : '#374151';
+    const cnt    = b.cnt;
+    const idJs   = b.alumnoId ? `'${b.alumnoId}'` : 'null';
+    return `<div class="mat-asig-bubble" style="--ab-clr:${cc}" onclick="_testsGo(${idJs},null)">
+      <div class="mat-asig-ico"><i class="ti ${ico}"></i></div>
+      <span class="mat-asig-label">${nombre}</span>
+      <span class="mat-asig-count">${cnt} test${cnt!==1?'s':''}</span>
+    </div>`;
+  }).join('');
+  c.innerHTML = `<div class="mat-asig-grid">${bubbles}</div>`;
+}
+
+function _testsRenderAsigs(c) {
+  const { alumnoId } = _testsNav;
+  const items = _testsData.filter(t => alumnoId ? t.alumno_id === alumnoId : !t.alumno_id);
+  const asigCnt = {};
+  items.forEach(t => { const a = t.asignatura || '—'; asigCnt[a] = (asigCnt[a]||0)+1; });
+  const idJs = alumnoId ? `'${alumnoId}'` : 'null';
+  const bubbles = Object.keys(asigCnt).sort((a,b) => a.localeCompare(b,'es')).map(asig => {
+    const meta = getSubjectMeta(asig);
+    const cnt  = asigCnt[asig];
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_testsGo(${idJs},${JSON.stringify(asig)})">
+      <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
+      <span class="mat-asig-label">${asig}</span>
+      <span class="mat-asig-count">${cnt} test${cnt!==1?'s':''}</span>
+    </div>`;
+  }).join('');
+  c.innerHTML = _testsBc() + `<div class="mat-asig-grid">${bubbles || '<p style="color:var(--muted);font-size:12px">Sin asignaturas</p>'}</div>`;
+}
+
+function _testsRenderCards(c) {
+  const { alumnoId, asig } = _testsNav;
+  const items = _testsData.filter(t =>
+    (alumnoId ? t.alumno_id === alumnoId : !t.alumno_id) &&
+    (t.asignatura || '—') === asig
+  );
+  const cards = items.map(t => {
+    const meta  = getSubjectMeta(t.asignatura || '');
+    const nPreg = t.preguntas?.length || 0;
+    return `<div class="mat-pdf-card" style="--ab-clr:${meta.cc}">
+      <div class="mat-pdf-ico"><i class="ti ${meta.ico}"></i></div>
+      <div class="mat-pdf-body">
+        <div class="mat-pdf-nom">${t.titulo}</div>
+        <div class="mat-pdf-tipo">${nPreg} pregunta${nPreg!==1?'s':''}</div>
+      </div>
+      <span class="mat-pdf-vis ${t.visible?'ok':'off'}">${t.visible?'Visible':'Oculto'}</span>
+      <div class="mat-pdf-actions">
+        <button class="btn-edit" onclick="editarTest('${t.id}')"><i class="ti ti-pencil"></i> Editar</button>
+        <button class="btn-danger" onclick="toggleVisible('tests','${t.id}',${!t.visible})">${t.visible?'Ocultar':'Mostrar'}</button>
+        <button class="btn-danger" onclick="eliminarTest('${t.id}')"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+  c.innerHTML = _testsBc() + `<div class="mat-pdf-grid">${cards || '<p style="color:var(--muted);font-size:12px;padding:8px 0">Sin tests</p>'}</div>`;
+}
+
+async function eliminarTest(testId) {
+  if (!confirm('¿Eliminar este test? Se eliminarán también sus preguntas y resultados.')) return;
+  const { error } = await db.from('tests').delete().eq('id', testId);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast('Test eliminado');
+  _testsData = _testsData.filter(t => t.id !== testId);
+  _renderTests();
 }
 
 let preguntasEdit = [];
