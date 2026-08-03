@@ -4077,7 +4077,7 @@ function _testsRenderAsigs(c) {
   const bubbles = Object.keys(asigCnt).sort((a,b) => a.localeCompare(b,'es')).map(asig => {
     const meta = getSubjectMeta(asig);
     const cnt  = asigCnt[asig];
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_testsGo(${idJs},${JSON.stringify(asig)})">
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_testsGo(${idJs},'${asig.replace(/'/g,"\\'")}')">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
       <span class="mat-asig-label">${asig}</span>
       <span class="mat-asig-count">${cnt} test${cnt!==1?'s':''}</span>
