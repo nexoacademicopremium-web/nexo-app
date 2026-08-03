@@ -367,6 +367,9 @@
   .nses-radio-group input,.nses-check-group input{accent-color:var(--blue);flex-shrink:0;margin-top:2px}
   .nses-p-label{color:var(--soft);font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;margin-top:12px;flex-wrap:wrap;gap:4px}
   .nses-p-err{color:var(--red);font-size:10px;font-style:italic}
+  .nses-bat-tag{color:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin:12px 0 4px;display:flex;align-items:center;gap:6px}
+  .nses-bat-tag i{color:var(--blue);font-size:12px}
+  .nses-bat-cat{background:var(--dark);border:.5px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px}
   .field-err{color:var(--red);font-size:11px;display:block;margin-top:3px}
   .nses-hist-row{display:flex;align-items:center;gap:11px;padding:10px 16px;border-bottom:.5px solid var(--border2)}
   .nses-hist-row:last-child{border-bottom:none}
@@ -461,6 +464,7 @@
       <div class="mobile-menu-item" id="mmenu-actividad" onclick="showSection('actividad');closeSidebar()"><i class="ti ti-chart-bar"></i><span>Mi actividad</span></div>
       <div class="mobile-menu-item" id="mmenu-tests" onclick="showSection('tests');closeSidebar()"><i class="ti ti-clipboard-list"></i><span>Tests</span></div>
       <div class="mobile-menu-item" id="mmenu-material" onclick="showSection('material');closeSidebar()"><i class="ti ti-files"></i><span>Material</span></div>
+      <div class="mobile-menu-item" id="mmenu-tareas" onclick="showSection('tareas');closeSidebar()"><i class="ti ti-clipboard-check"></i><span>Tareas</span></div>
       <div class="mobile-menu-item" id="mmenu-avisos" onclick="showSection('avisos');closeSidebar()"><i class="ti ti-bell"></i><span>Avisos</span></div>
     </div>
     <div class="mobile-menu-footer">
@@ -480,6 +484,7 @@
   <div class="nav-item" id="nav-actividad" onclick="showSection('actividad')"><i class="ti ti-chart-bar"></i> Mi actividad</div>
   <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-clipboard-list"></i> Tests</div>
   <div class="nav-item" id="nav-material" onclick="showSection('material')"><i class="ti ti-files"></i> Material</div>
+  <div class="nav-item" id="nav-tareas" onclick="showSection('tareas')"><i class="ti ti-clipboard-check"></i> Tareas</div>
   <div class="nav-item" id="nav-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i> Avisos<span class="badge-nav" id="badge-avisos" style="display:none">!</span></div>
   <div class="nav-divider"></div>
   <div class="nav-bottom">
@@ -814,7 +819,99 @@
   </div>
 </div>
 
+<!-- ═══ TAREAS ═══ -->
+<div class="section" id="section-tareas">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h1 class="page-title" style="margin:0">Tareas</h1>
+      <p class="page-sub" style="margin:0;margin-top:4px">Asigna y corrige tareas para tus alumnos</p>
+    </div>
+    <button class="btn-primary" onclick="openNuevaTarea()"><i class="ti ti-plus"></i> Nueva tarea</button>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+    <select class="field-input" id="tf-estado" onchange="_renderTareasProf()"
+      style="flex:1;min-width:130px;max-width:180px;font-size:12px;padding:7px 10px;height:auto">
+      <option value="">Todos los estados</option>
+      <option value="pendiente">Pendiente</option>
+      <option value="entregada">Entregada</option>
+      <option value="corregida">Corregida</option>
+    </select>
+    <select class="field-input" id="tf-alumno" onchange="_renderTareasProf()"
+      style="flex:1;min-width:150px;max-width:220px;font-size:12px;padding:7px 10px;height:auto">
+      <option value="">Todos los alumnos</option>
+    </select>
+  </div>
+  <div class="card" style="padding:0">
+    <div id="tareas-prof-lista">
+      <div class="loading-section"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
 </div><!-- end .main -->
+
+<!-- MODAL NUEVA TAREA (PROFESOR) -->
+<div class="modal-overlay" id="modal-nueva-tarea">
+  <div class="modal-box" style="max-width:520px;width:95%">
+    <div class="modal-title">
+      <span>Nueva tarea</span>
+      <button class="modal-close" onclick="cerrarModalNuevaTarea()">×</button>
+    </div>
+    <form id="form-nueva-tarea" onsubmit="guardarTarea(event)">
+      <label class="field-label" style="margin-top:0">Alumno *</label>
+      <select class="field-input" id="nt-alumno" required onchange="ntAlumnoChange()">
+        <option value="">— Seleccionar alumno —</option>
+      </select>
+
+      <label class="field-label">Asignatura</label>
+      <select class="field-input" id="nt-asignatura" disabled>
+        <option value="">— Primero selecciona un alumno —</option>
+      </select>
+
+      <label class="field-label">Título *</label>
+      <input class="field-input" id="nt-titulo" placeholder="Ej: Ejercicios tema 5 — Ecuaciones" required>
+
+      <label class="field-label">Instrucciones</label>
+      <textarea class="field-input" id="nt-descripcion" rows="3"
+        placeholder="Describe qué tiene que hacer el alumno…" style="resize:vertical"></textarea>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:140px">
+          <label class="field-label" style="margin-top:0">Fecha límite</label>
+          <input class="field-input" id="nt-fecha-limite" type="date">
+        </div>
+      </div>
+
+      <label class="field-label">Adjunto enunciado (PDF / imagen)</label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+        <input type="file" id="nt-archivo" accept="image/*,.pdf,.doc,.docx" style="display:none"
+          onchange="document.getElementById('nt-archivo-name').textContent=this.files[0]?.name||''">
+        <button type="button" class="btn-ghost" style="font-size:12px;padding:6px 12px;flex-shrink:0"
+          onclick="document.getElementById('nt-archivo').click()">
+          <i class="ti ti-upload" style="font-size:12px"></i> Subir archivo
+        </button>
+        <span id="nt-archivo-name" style="color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      </label>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModalNuevaTarea()">Cancelar</button>
+        <button type="submit" class="btn-primary" id="btn-guardar-tarea">Crear tarea</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL VER / CORREGIR TAREA (PROFESOR) -->
+<div class="modal-overlay" id="modal-tarea-prof">
+  <div class="modal-box" style="max-width:520px;width:95%;max-height:90vh;display:flex;flex-direction:column">
+    <div class="modal-title" style="flex-shrink:0">
+      <span>Detalle de tarea</span>
+      <button class="modal-close" onclick="cerrarModalTareaProf()">×</button>
+    </div>
+    <div id="tarea-prof-content" style="overflow-y:auto;flex:1;padding:0 0 4px"></div>
+    <div id="tarea-prof-footer" class="modal-footer" style="flex-shrink:0;margin-top:12px"></div>
+  </div>
+</div>
 
 <!-- MODAL NUEVO TEST (PROFESOR) -->
 <div class="modal-overlay" id="modal-test-prof">
@@ -1071,6 +1168,10 @@ let editClaseId = null;
   document.getElementById('greeting-sub').textContent =
     `${now.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long',year:'numeric'})} · ${misAlumnos.length} alumnos activos`;
 
+  // Cargar batería de preguntas (67 filas, pequeño dataset)
+  const { data: pregData } = await db.from('preguntas_asignatura').select('*').order('id');
+  pAllPreguntas = pregData || [];
+
   await Promise.all([
     loadDashboardProf(),
     checkAvisos()
@@ -1123,6 +1224,7 @@ function showSection(id) {
     sesion:     nSesInit,
     tests:      loadTestsProf,
     material:   loadProfMaterial,
+    tareas:     loadTareasProf,
   };
   if (loaders[id]) loaders[id]();
 }
@@ -1961,7 +2063,8 @@ async function loadAvisos() {
 // ============================================================
 // SESIONES — historial + nuevo formulario
 // ============================================================
-let _nSesDatos = null;
+let _nSesDatos    = null;
+let pAllPreguntas = [];  // cargado en el init principal
 
 function nSesInit() {
   nSesHideForm();
@@ -2113,7 +2216,7 @@ async function nSesLoadAlumno() {
 }
 
 function _nSesRenderAsig(asig, ai, prevTemasMap) {
-  const isMath = /matem|calculo|algebra|aritm/i.test(asig.nombre);
+  const asigKey = _asigKey(asig.nombre);
   const prevSet = prevTemasMap?.[asig.nombre] || new Set();
   const chips = prevSet.size > 0
     ? `<div style="padding:8px 16px 2px">
@@ -2122,7 +2225,7 @@ function _nSesRenderAsig(asig, ai, prevTemasMap) {
          </div>
          <div class="nses-chips-row" style="padding:0">
            ${[...prevSet].map(t => `
-             <button type="button" class="nses-chip" onclick="nSesAddTema(${ai},${isMath},'${t.replace(/'/g,"\\'")}')">
+             <button type="button" class="nses-chip" onclick="nSesAddTema(${ai},'${asigKey}','${t.replace(/'/g,"\\'")}')">
                <i class="ti ti-history"></i>${t}
              </button>`).join('')}
          </div>
@@ -2150,7 +2253,7 @@ function _nSesRenderAsig(asig, ai, prevTemasMap) {
         <div id="nses-temas-list-${ai}" style="margin-top:4px"></div>
         <div style="padding:8px 16px 12px;border-top:.5px solid var(--border2)">
           <button type="button" class="btn-ghost" style="font-size:11px;padding:5px 12px"
-            onclick="nSesAddTema(${ai},${isMath})">
+            onclick="nSesAddTema(${ai},'${asigKey}')">
             <i class="ti ti-plus" style="font-size:12px"></i> Añadir tema
           </button>
         </div>
@@ -2160,110 +2263,157 @@ function _nSesRenderAsig(asig, ai, prevTemasMap) {
 
 function _nSesRenderNota(pid) {
   return `
-    <div style="padding:4px 0">
+    <div style="padding:4px 0;margin-top:10px">
       <label style="color:var(--muted);font-size:11px;font-style:italic;display:block;margin-bottom:6px">Nota del profesor (opcional, máx. 200 caracteres)</label>
       <textarea class="field-input" id="nses-nota-${pid}" maxlength="200" rows="2"
         placeholder="Solo si hay algo relevante…" style="font-size:12px;min-height:60px"></textarea>
     </div>`;
 }
 
-function _nSesRenderMath(pid) {
-  return `
-  <div style="margin-bottom:10px">
-    <div class="nses-test-toggle">
-      <label><i class="ti ti-chart-dots" style="font-size:13px"></i> Test de inicio — tema sesión anterior <span style="color:var(--muted)">(opcional)</span></label>
-      <button type="button" class="nses-test-btn" onclick="nSesToggleTest(this,'nsti-${pid}')">Añadir</button>
-    </div>
-    <div class="nses-test-body" id="nsti-${pid}">
-      <div class="nses-num-grid">
-        <div class="nses-num-col"><label>Propuestos</label><input type="number" min="0" value="0" id="nsti-prop-${pid}" oninput="nSesValNum('nsti','${pid}')"></div>
-        <div class="nses-num-col"><label>Solo y bien</label><input type="number" min="0" value="0" id="nsti-solo-${pid}" oninput="nSesValNum('nsti','${pid}')"></div>
-        <div class="nses-num-col"><label>Con ayuda</label><input type="number" min="0" value="0" id="nsti-ayud-${pid}" oninput="nSesValNum('nsti','${pid}')"></div>
-        <div class="nses-num-col"><label>Sin resolver</label><input type="number" min="0" value="0" id="nsti-sinr-${pid}" oninput="nSesValNum('nsti','${pid}')"></div>
-      </div>
-      <span class="field-err" id="nsti-err-${pid}"></span>
-    </div>
-  </div>
+// ============================================================
+// BATERÍA DE PREGUNTAS — helpers
+// ============================================================
 
-  <div>
-    <div class="nses-p-label">P1 — ¿Qué tipo de ejercicios? * <span class="nses-p-err" id="err-p1-${pid}"></span></div>
-    <div class="nses-check-group">
-      <label><input type="checkbox" name="p1-${pid}" value="mecanicos"> Ejercicios mecánicos / operatoria</label>
-      <label><input type="checkbox" name="p1-${pid}" value="aplicacion"> Problemas de aplicación directa</label>
-      <label><input type="checkbox" name="p1-${pid}" value="razonamiento"> Problemas de razonamiento / varios pasos</label>
-      <label><input type="checkbox" name="p1-${pid}" value="demostracion"> Demostración / comprensión conceptual</label>
-    </div>
-  </div>
+// Mapeo: nombre real de asignatura → clave de batería
+// Claves simples → batería directa en preguntas_asignatura
+// Claves especiales → selector de categoría
+const _CAT_META = {
+  'Lengua Castellana': { cats: [
+    { val: 'gramatica',   label: 'Gramática / Norma',             dbKey: 'Lengua Castellana' },
+    { val: 'comprension', label: 'Comprensión y Expresión',       dbKey: 'Lengua Castellana' },
+  ]},
+  'Valenciano': { cats: [
+    { val: 'gramatica',   label: 'Gramática / Norma',             dbKey: 'Valenciano' },
+    { val: 'comprension', label: 'Comprensión y Expresión',       dbKey: 'Valenciano' },
+  ]},
+  'Inglés': { cats: [
+    { val: 'gramatica',   label: 'Gramática / Vocabulario',       dbKey: 'Inglés' },
+    { val: 'comprension', label: 'Comprensión y Expresión escrita', dbKey: 'Inglés' },
+  ]},
+  'Francés': { cats: [
+    { val: 'gramatica',   label: 'Gramática / Vocabulario',       dbKey: 'Francés' },
+    { val: 'comprension', label: 'Comprensión y Expresión escrita', dbKey: 'Francés' },
+  ]},
+  'FísicaQuímica': { cats: [
+    { val: 'fisica',      label: 'Física',                        dbKey: 'Física' },
+    { val: 'quimica',     label: 'Química',                       dbKey: 'Química' },
+  ]},
+  'GeografíaHistoria': { cats: [
+    { val: 'historia',    label: 'Historia',                      dbKey: 'Historia' },
+    { val: 'geografia',   label: 'Geografía',                     dbKey: 'Geografía' },
+  ]},
+};
 
-  <div>
-    <div class="nses-p-label">P2 — Ejercicios durante la sesión * <span class="nses-p-err" id="nsp2-err-${pid}"></span></div>
-    <div class="nses-num-grid">
-      <div class="nses-num-col"><label>Propuestos *</label><input type="number" min="0" value="0" id="nsp2-prop-${pid}" oninput="nSesValNum('nsp2','${pid}')"></div>
-      <div class="nses-num-col"><label>Solo y bien *</label><input type="number" min="0" value="0" id="nsp2-solo-${pid}" oninput="nSesValNum('nsp2','${pid}')"></div>
-      <div class="nses-num-col"><label>Con ayuda *</label><input type="number" min="0" value="0" id="nsp2-ayud-${pid}" oninput="nSesValNum('nsp2','${pid}')"></div>
-      <div class="nses-num-col"><label>Sin resolver *</label><input type="number" min="0" value="0" id="nsp2-sinr-${pid}" oninput="nSesValNum('nsp2','${pid}')"></div>
-    </div>
-  </div>
-
-  <div>
-    <div class="nses-p-label">P3 — ¿Dónde fallaba? * <span class="nses-p-err" id="err-p3-${pid}"></span></div>
-    <div class="nses-radio-group">
-      <label><input type="radio" name="p3-${pid}" value="planteamiento"> En el planteamiento — no sabe por dónde empezar</label>
-      <label><input type="radio" name="p3-${pid}" value="procedimiento"> En el procedimiento — sabe qué hacer pero falla en la ejecución</label>
-      <label><input type="radio" name="p3-${pid}" value="operatoria"> En la operatoria básica — errores de cálculo</label>
-      <label><input type="radio" name="p3-${pid}" value="no_errores"> No cometía errores relevantes</label>
-    </div>
-  </div>
-
-  <div>
-    <div class="nses-p-label">P4 — ¿Detectaba sus errores solo? * <span class="nses-p-err" id="err-p4-${pid}"></span></div>
-    <div class="nses-radio-group">
-      <label><input type="radio" name="p4-${pid}" value="si"> Sí, los detectaba y corregía sin ayuda</label>
-      <label><input type="radio" name="p4-${pid}" value="pregunta"> Solo cuando le preguntabas si estaba seguro</label>
-      <label><input type="radio" name="p4-${pid}" value="no"> No los detectaba, necesitaba que se los señalaras</label>
-    </div>
-  </div>
-
-  <div>
-    <div class="nses-p-label">P5 — Ante la dificultad * <span class="nses-p-err" id="err-p5-${pid}"></span></div>
-    <div class="nses-radio-group">
-      <label><input type="radio" name="p5-${pid}" value="bloqueo"> Se bloqueaba</label>
-      <label><input type="radio" name="p5-${pid}" value="intenta"> Lo intentaba solo antes de pedir ayuda</label>
-      <label><input type="radio" name="p5-${pid}" value="pide_adelanta"> Pedía ayuda y seguía adelante</label>
-    </div>
-  </div>
-
-  <div>
-    <div class="nses-p-label">P6 — Ritmo de trabajo * <span class="nses-p-err" id="err-p6-${pid}"></span></div>
-    <div class="nses-radio-group">
-      <label><input type="radio" name="p6-${pid}" value="lento"> Disperso y lento</label>
-      <label><input type="radio" name="p6-${pid}" value="normal"> Normal</label>
-      <label><input type="radio" name="p6-${pid}" value="constante"> Concentrado y constante</label>
-    </div>
-  </div>
-
-  <div style="margin-top:12px">
-    <div class="nses-test-toggle">
-      <label><i class="ti ti-clipboard-check" style="font-size:13px"></i> Test de cierre — lo trabajado hoy <span style="color:var(--muted)">(opcional)</span></label>
-      <button type="button" class="nses-test-btn" onclick="nSesToggleTest(this,'nstc-${pid}')">Añadir</button>
-    </div>
-    <div class="nses-test-body" id="nstc-${pid}">
-      <div class="nses-num-grid">
-        <div class="nses-num-col"><label>Propuestos</label><input type="number" min="0" value="0" id="nstc-prop-${pid}" oninput="nSesValNum('nstc','${pid}')"></div>
-        <div class="nses-num-col"><label>Solo y bien</label><input type="number" min="0" value="0" id="nstc-solo-${pid}" oninput="nSesValNum('nstc','${pid}')"></div>
-        <div class="nses-num-col"><label>Con ayuda</label><input type="number" min="0" value="0" id="nstc-ayud-${pid}" oninput="nSesValNum('nstc','${pid}')"></div>
-        <div class="nses-num-col"><label>Sin resolver</label><input type="number" min="0" value="0" id="nstc-sinr-${pid}" oninput="nSesValNum('nstc','${pid}')"></div>
-      </div>
-      <span class="field-err" id="nstc-err-${pid}"></span>
-    </div>
-  </div>
-
-  <div style="margin-top:12px">
-    <label style="color:var(--muted);font-size:11px;font-style:italic;display:block;margin-bottom:6px">Nota del profesor (opcional, máx. 200 caracteres)</label>
-    <textarea class="field-input" id="nses-nota-${pid}" maxlength="200" rows="2"
-      placeholder="Observaciones que no recogen las preguntas anteriores…" style="font-size:12px;min-height:60px"></textarea>
-  </div>`;
+function _asigKey(nombre) {
+  const n = nombre || '';
+  if (/matem|álgebra|aritmét|calculo/i.test(n))              return 'Matemáticas';
+  if (/física\s*y\s*quím|física.*quím|quím.*física/i.test(n)) return 'FísicaQuímica';
+  if (/física/i.test(n))                                      return 'Física';
+  if (/quím/i.test(n))                                        return 'Química';
+  if (/biolog/i.test(n))                                      return 'Biología';
+  if (/geograf.*hist|hist.*geograf/i.test(n))                 return 'GeografíaHistoria';
+  if (/historia.*filosofía|filosofía.*hist/i.test(n))         return 'Filosofía';
+  if (/historia/i.test(n))                                    return 'Historia';
+  if (/econom/i.test(n))                                      return 'Economía';
+  if (/filosof/i.test(n))                                     return 'Filosofía';
+  if (/geograf/i.test(n))                                     return 'Geografía';
+  if (/lengua.*castell|castellan/i.test(n))                   return 'Lengua Castellana';
+  if (/valenci/i.test(n))                                     return 'Valenciano';
+  if (/ingl[eé]/i.test(n))                                    return 'Inglés';
+  if (/franc[eé]/i.test(n))                                   return 'Francés';
+  return null;
 }
+
+// Obtiene preguntas filtradas para un asigKey + catVal dados
+// Devuelve { univ: [], asig: [] } o null si catVal no está seleccionado aún
+function _getBateriaPregs(asigKey, catVal) {
+  const catMeta = _CAT_META[asigKey];
+  let dbKey, dbCat;
+
+  if (!catMeta) {
+    dbKey = asigKey;
+    dbCat = null;
+  } else {
+    const found = catMeta.cats.find(c => c.val === catVal);
+    if (!found) return null;
+    dbKey = found.dbKey;
+    // Para FísicaQuímica/GeografíaHistoria las filas en DB tienen categoria=NULL
+    dbCat = (asigKey === 'FísicaQuímica' || asigKey === 'GeografíaHistoria') ? null : catVal;
+  }
+
+  const univ = pAllPreguntas
+    .filter(p => p.es_universal)
+    .sort((a, b) => a.orden - b.orden);
+
+  const asig = pAllPreguntas
+    .filter(p => p.asignatura === dbKey && !p.es_universal && p.categoria === dbCat)
+    .sort((a, b) => a.orden - b.orden);
+
+  return { univ, asig };
+}
+
+// Renderiza el HTML de las preguntas dada una estructura { univ, asig }
+function _renderBateriaPregs(pid, pregs) {
+  function renderQ(q) {
+    return `<div>
+      <div class="nses-p-label">${q.codigo} — ${q.pregunta} *
+        <span class="nses-p-err" id="err-${q.codigo}-${pid}"></span>
+      </div>
+      <div class="nses-radio-group">
+        ${q.opciones.map(op => `<label><input type="radio" name="${q.codigo}-${pid}" value="${op.replace(/"/g,'&quot;')}"> ${op}</label>`).join('')}
+      </div>
+    </div>`;
+  }
+  let html = '';
+  if (pregs.univ.length) {
+    html += `<div class="nses-bat-tag"><i class="ti ti-circle-dot"></i> Preguntas universales</div>`;
+    html += pregs.univ.map(renderQ).join('');
+  }
+  if (pregs.asig.length) {
+    html += `<div class="nses-bat-tag"><i class="ti ti-chart-bar"></i> Rendimiento específico</div>`;
+    html += pregs.asig.map(renderQ).join('');
+  }
+  return html;
+}
+
+// Renderiza el bloque completo de batería para un tema (con o sin selector de categoría)
+function _nSesRenderBateria(pid, asigKey) {
+  if (!asigKey || !pAllPreguntas.length) return '';
+
+  const catMeta = _CAT_META[asigKey];
+  if (catMeta) {
+    return `<div class="nses-bat-cat">
+      <div class="nses-p-label" style="margin-top:0">Categoría del contenido trabajado *
+        <span class="nses-p-err" id="err-cat-${pid}"></span>
+      </div>
+      <div class="nses-radio-group">
+        ${catMeta.cats.map(c =>
+          `<label><input type="radio" name="cat-${pid}" value="${c.val}"
+            onchange="nSesCatChange('${pid}','${asigKey}','${c.val}')"> ${c.label}</label>`
+        ).join('')}
+      </div>
+    </div>
+    <div id="bat-pregs-${pid}"></div>`;
+  }
+
+  const pregs = _getBateriaPregs(asigKey, null);
+  if (!pregs || (!pregs.univ.length && !pregs.asig.length)) return '';
+  return _renderBateriaPregs(pid, pregs);
+}
+
+// Llamada cuando el profesor elige categoría (idiomas, FísicaQuímica, GeografíaHistoria)
+function nSesCatChange(pid, asigKey, catVal) {
+  const container = document.getElementById(`bat-pregs-${pid}`);
+  if (!container) return;
+  const errEl = document.getElementById(`err-cat-${pid}`);
+  if (errEl) errEl.textContent = '';
+  const pregs = _getBateriaPregs(asigKey, catVal);
+  container.innerHTML = pregs ? _renderBateriaPregs(pid, pregs) : '';
+  // Guardar catVal en el bloque para poder recogerlo en submit
+  const block = container.closest('.nses-tema-block');
+  if (block) block.dataset.catval = catVal;
+}
+
 
 // Muestra cuántos minutos suman los temas de una asig, sin tocar el campo de la asig
 function nSesCheckTemaTotals(ai) {
@@ -2331,7 +2481,7 @@ async function nSesSubmit(e) {
   document.querySelectorAll('#nses-asig-container .nses-tema-block').forEach(block => {
     const pid    = block.dataset.pid;
     const ai     = parseInt(block.dataset.ai);
-    const isMath = block.dataset.ismath === '1';
+    const asigKey = block.dataset.asigkey || null;
 
     // Asignatura: de la lista cargada o del input custom
     const asigNom = _nSesDatos.asigs[ai]?.nombre
@@ -2347,52 +2497,38 @@ async function nSesSubmit(e) {
       nota_profesor: document.getElementById(`nses-nota-${pid}`)?.value?.trim() || null,
     };
 
-    if (isMath) {
-      // P1
-      const p1Vals = [...document.querySelectorAll(`input[name="p1-${pid}"]:checked`)].map(c => c.value);
-      const p1Err = document.getElementById(`err-p1-${pid}`);
-      if (p1Vals.length === 0) { if (p1Err) p1Err.textContent = 'Obligatorio'; valid = false; }
-      else { if (p1Err) p1Err.textContent = ''; }
-      rec.tipo_ejercicios = p1Vals;
+    if (asigKey && pAllPreguntas.length) {
+      const catMeta = _CAT_META[asigKey] || null;
+      let catVal = null;
 
-      // P2
-      if (!nSesValNum('nsp2', pid)) valid = false;
-      rec.ejercicios_propuestos   = parseInt(document.getElementById(`nsp2-prop-${pid}`)?.value) || 0;
-      rec.ejercicios_solo         = parseInt(document.getElementById(`nsp2-solo-${pid}`)?.value) || 0;
-      rec.ejercicios_ayuda        = parseInt(document.getElementById(`nsp2-ayud-${pid}`)?.value) || 0;
-      rec.ejercicios_sin_resolver = parseInt(document.getElementById(`nsp2-sinr-${pid}`)?.value) || 0;
-
-      // P3–P6
-      ['p3','p4','p5','p6'].forEach(pn => {
-        const val = document.querySelector(`input[name="${pn}-${pid}"]:checked`)?.value || null;
-        const err = document.getElementById(`err-${pn}-${pid}`);
-        if (!val) { if (err) err.textContent = 'Obligatorio'; valid = false; }
-        else { if (err) err.textContent = ''; }
-        if (pn === 'p3') rec.donde_falla        = val;
-        if (pn === 'p4') rec.detecta_errores    = val;
-        if (pn === 'p5') rec.actitud_dificultad = val;
-        if (pn === 'p6') rec.actitud_ritmo      = val;
-      });
-
-      // Test inicio (opcional)
-      const tstiBody = document.getElementById(`nsti-${pid}`);
-      if (tstiBody?.style.display === 'block') {
-        nSesValNum('nsti', pid);
-        rec.test_inicio_propuestos   = parseInt(document.getElementById(`nsti-prop-${pid}`)?.value) || 0;
-        rec.test_inicio_solo         = parseInt(document.getElementById(`nsti-solo-${pid}`)?.value) || 0;
-        rec.test_inicio_ayuda        = parseInt(document.getElementById(`nsti-ayud-${pid}`)?.value) || 0;
-        rec.test_inicio_sin_resolver = parseInt(document.getElementById(`nsti-sinr-${pid}`)?.value) || 0;
+      if (catMeta) {
+        catVal = document.querySelector(`input[name="cat-${pid}"]:checked`)?.value || null;
+        const catErr = document.getElementById(`err-cat-${pid}`);
+        if (!catVal) {
+          if (catErr) catErr.textContent = 'Obligatorio';
+          valid = false;
+        } else {
+          if (catErr) catErr.textContent = '';
+          rec.categoria_idioma = catVal;
+        }
       }
 
-      // Test cierre (opcional)
-      const tstcBody = document.getElementById(`nstc-${pid}`);
-      if (tstcBody?.style.display === 'block') {
-        nSesValNum('nstc', pid);
-        rec.test_cierre_propuestos   = parseInt(document.getElementById(`nstc-prop-${pid}`)?.value) || 0;
-        rec.test_cierre_solo         = parseInt(document.getElementById(`nstc-solo-${pid}`)?.value) || 0;
-        rec.test_cierre_ayuda        = parseInt(document.getElementById(`nstc-ayud-${pid}`)?.value) || 0;
-        rec.test_cierre_sin_resolver = parseInt(document.getElementById(`nstc-sinr-${pid}`)?.value) || 0;
+      const pregs = _getBateriaPregs(asigKey, catVal);
+      const bateriaAnswers = {};
+      if (pregs) {
+        [...pregs.univ, ...pregs.asig].forEach(q => {
+          const val = document.querySelector(`input[name="${q.codigo}-${pid}"]:checked`)?.value || null;
+          const errEl = document.getElementById(`err-${q.codigo}-${pid}`);
+          if (!val) {
+            if (errEl) errEl.textContent = 'Obligatorio';
+            valid = false;
+          } else {
+            if (errEl) errEl.textContent = '';
+            bateriaAnswers[q.codigo] = val;
+          }
+        });
       }
+      if (Object.keys(bateriaAnswers).length > 0) rec.respuestas_bateria = bateriaAnswers;
     }
 
     temasInsert.push(rec);
@@ -2504,7 +2640,7 @@ function nSesToggleAsigBody(ai) {
 
 let _nSesCustomTemaCount = 0;
 
-function nSesAddTema(ai, isMath, prefill) {
+function nSesAddTema(ai, asigKey, prefill) {
   const listEl = document.getElementById(`nses-temas-list-${ai}`);
   if (!listEl) return;
 
@@ -2519,9 +2655,9 @@ function nSesAddTema(ai, isMath, prefill) {
   const pid = `${ai}-t${_nSesCustomTemaCount++}`;
   const div = document.createElement('div');
   div.className = 'nses-tema-block';
-  div.dataset.pid = pid;
-  div.dataset.ai = ai;
-  div.dataset.ismath = isMath ? '1' : '0';
+  div.dataset.pid    = pid;
+  div.dataset.ai     = ai;
+  div.dataset.asigkey = asigKey || '';
   div.innerHTML = `
     <div class="nses-tema-block-hdr">
       <input type="text" id="nses-tnm-${pid}" placeholder="Nombre del tema…"
@@ -2534,7 +2670,8 @@ function nSesAddTema(ai, isMath, prefill) {
         onclick="this.closest('.nses-tema-block').remove()">×</button>
     </div>
     <div class="nses-tema-detail">
-      ${isMath ? _nSesRenderMath(pid) : _nSesRenderNota(pid)}
+      ${_nSesRenderBateria(pid, asigKey)}
+      ${_nSesRenderNota(pid)}
     </div>`;
   listEl.appendChild(div);
   if (!prefill) div.querySelector(`#nses-tnm-${pid}`)?.focus();
@@ -2546,7 +2683,6 @@ function nSesAddAsig() {
   const container = document.getElementById('nses-asig-container');
   if (!container) return;
   const ai = (_nSesDatos?.nextAi ?? 0) + _nSesCustomAsigCount++;
-  const isMath = false;
   const div = document.createElement('div');
   div.className = 'nses-asig-block';
   div.id = `nses-asig-block-${ai}`;
@@ -2574,7 +2710,7 @@ function nSesAddAsig() {
       </div>
       <div style="padding:8px 16px 12px;border-top:.5px solid var(--border2)">
         <button type="button" class="btn-ghost" style="font-size:11px;padding:5px 12px"
-          onclick="nSesAddTema(${ai},${isMath})">
+          onclick="nSesAddTema(${ai},null)">
           <i class="ti ti-plus" style="font-size:12px"></i> Añadir otro tema
         </button>
       </div>
@@ -2584,7 +2720,7 @@ function nSesAddAsig() {
 
   if (_nSesDatos) {
     if (!_nSesDatos._customAsigs) _nSesDatos._customAsigs = [];
-    _nSesDatos._customAsigs.push({ ai, isMath });
+    _nSesDatos._customAsigs.push({ ai });
   }
 }
 
@@ -2629,10 +2765,20 @@ async function nSesVerDetalle(sesId, evt) {
   } else if (!temas || temas.length === 0) {
     html += `<p style="color:var(--muted);font-size:12px;padding:8px 0">Sin desglose de temas para esta sesión.</p>`;
   } else {
+    const _catLabels = { gramatica:'Gramática/Norma', comprension:'Comprensión y Expresión', fisica:'Física', quimica:'Química', historia:'Historia', geografia:'Geografía' };
     temas.forEach(t => {
+      let batHtml = '';
+      if (t.respuestas_bateria && Object.keys(t.respuestas_bateria).length) {
+        const rows = Object.entries(t.respuestas_bateria).map(([cod, val]) =>
+          `<div class="nses-det-row" style="gap:4px"><span style="min-width:32px;flex-shrink:0">${cod}</span><b style="flex:1">${val}</b></div>`
+        ).join('');
+        batHtml = `<div style="margin:6px 0 2px"><div class="nses-bat-tag" style="margin-bottom:6px"><i class="ti ti-chart-bar"></i> Batería respondida</div>${rows}</div>`;
+      }
       html += `<div class="nses-det-section" style="margin-top:14px;padding-top:12px;border-top:.5px solid var(--border)">
         <div class="nses-det-title">${t.asignatura} — ${t.tema}</div>
         ${t.tiempo_minutos ? `<div class="nses-det-row"><span>Tiempo</span><b>${t.tiempo_minutos} min</b></div>` : ''}
+        ${t.categoria_idioma ? `<div class="nses-det-row"><span>Categoría</span><b>${_catLabels[t.categoria_idioma] || t.categoria_idioma}</b></div>` : ''}
+        ${batHtml}
         ${t.ejercicios_propuestos > 0 ? `<div class="nses-det-row"><span>Ejercicios</span><b>${t.ejercicios_propuestos} prop · ${t.ejercicios_solo} solo · ${t.ejercicios_ayuda} ayuda · ${t.ejercicios_sin_resolver} sin</b></div>` : ''}
         ${t.tipo_ejercicios?.length ? `<div class="nses-det-row"><span>Tipo</span><b>${t.tipo_ejercicios.join(', ')}</b></div>` : ''}
         ${t.donde_falla ? `<div class="nses-det-row"><span>Errores</span><b>${mapaLabel[t.donde_falla] || t.donde_falla}</b></div>` : ''}
@@ -2847,6 +2993,323 @@ function cerrarModalTestProf() {
 }
 
 // ============================================================
+// ============================================================
+// TAREAS (PROFESOR)
+// ============================================================
+
+let _tareasData = [];
+let _tareaActualId = null;
+let _correccionItems = [];
+
+async function loadTareasProf() {
+  const el = document.getElementById('tareas-prof-lista');
+  if (!el) return;
+  el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+
+  const { data } = await db
+    .from('tareas')
+    .select('*, alumno:alumnos(usuario:usuarios(nombre,apellidos))')
+    .eq('profesor_id', ctx.profesorData.id)
+    .order('fecha_creacion', { ascending: false });
+
+  _tareasData = data || [];
+
+  // Poblar filtro de alumnos (solo los que tienen tareas)
+  const selAlumno = document.getElementById('tf-alumno');
+  if (selAlumno) {
+    const seen = new Set();
+    let opts = '<option value="">Todos los alumnos</option>';
+    _tareasData.forEach(t => {
+      if (!seen.has(t.alumno_id)) {
+        seen.add(t.alumno_id);
+        const nom = t.alumno?.usuario ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos}` : t.alumno_id;
+        opts += `<option value="${t.alumno_id}">${nom}</option>`;
+      }
+    });
+    selAlumno.innerHTML = opts;
+  }
+
+  _renderTareasProf();
+}
+
+function _renderTareasProf() {
+  const el = document.getElementById('tareas-prof-lista');
+  if (!el) return;
+  const filtEst  = document.getElementById('tf-estado')?.value  || '';
+  const filtAlum = document.getElementById('tf-alumno')?.value  || '';
+
+  let lista = _tareasData;
+  if (filtEst)  lista = lista.filter(t => t.estado === filtEst);
+  if (filtAlum) lista = lista.filter(t => t.alumno_id === filtAlum);
+
+  if (!lista.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:32px 16px"><i class="ti ti-clipboard-x" style="font-size:32px;color:var(--muted)"></i><p style="color:var(--muted);font-size:13px;margin-top:12px">No hay tareas que mostrar.</p></div>';
+    return;
+  }
+
+  el.innerHTML = lista.map(t => {
+    const nom = t.alumno?.usuario ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos}` : '—';
+    const pillMap = { pendiente:'st-grey Pendiente', entregada:'st-pend Entregada', corregida:'st-ok Corregida' };
+    const [pc, pt] = (pillMap[t.estado] || 'st-grey —').split(' ');
+    const limStr = t.fecha_limite ? ` · Límite: ${formatDate(t.fecha_limite)}` : '';
+    const novedad = t.estado === 'entregada'
+      ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);margin-right:5px;vertical-align:middle;flex-shrink:0"></span>'
+      : '';
+    return `<div class="recurso-row" onclick="openTareaProf('${t.id}')">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
+          ${novedad}
+          <span class="status-pill ${pc}" style="font-size:10px">${pt}</span>
+          <span style="color:var(--muted);font-size:11px">${nom} — ${t.asignatura || '—'}${limStr}</span>
+        </div>
+        <div style="color:#fff;font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.titulo}</div>
+      </div>
+      <i class="ti ti-chevron-right" style="color:var(--muted);flex-shrink:0;margin-left:8px"></i>
+    </div>`;
+  }).join('');
+}
+
+// ── Nueva tarea ────────────────────────────────────────────
+function openNuevaTarea() {
+  document.getElementById('modal-nueva-tarea').classList.add('open');
+  document.getElementById('form-nueva-tarea').reset();
+  document.getElementById('nt-archivo-name').textContent = '';
+
+  const sel = document.getElementById('nt-alumno');
+  sel.innerHTML = '<option value="">— Seleccionar alumno —</option>';
+  misAlumnos.forEach(a => {
+    const nom = a.usuario ? `${a.usuario.nombre} ${a.usuario.apellidos}` : a.id;
+    sel.innerHTML += `<option value="${a.id}">${nom}</option>`;
+  });
+  const asgSel = document.getElementById('nt-asignatura');
+  asgSel.innerHTML = '<option value="">— Primero selecciona un alumno —</option>';
+  asgSel.disabled = true;
+}
+
+function cerrarModalNuevaTarea() {
+  document.getElementById('modal-nueva-tarea').classList.remove('open');
+}
+
+function ntAlumnoChange() {
+  const alumnoId = document.getElementById('nt-alumno').value;
+  const asgSel   = document.getElementById('nt-asignatura');
+  if (!alumnoId) {
+    asgSel.innerHTML = '<option value="">— Primero selecciona un alumno —</option>';
+    asgSel.disabled = true;
+    return;
+  }
+  const alumno = misAlumnos.find(a => a.id === alumnoId);
+  asgSel.innerHTML = '<option value="">— Sin asignatura —</option>';
+  (alumno?._asignaturas || []).forEach(nombre => {
+    asgSel.innerHTML += `<option value="${nombre}">${nombre}</option>`;
+  });
+  asgSel.disabled = false;
+}
+
+async function guardarTarea(e) {
+  e.preventDefault();
+  const btn = document.getElementById('btn-guardar-tarea');
+  btn.disabled = true; btn.textContent = 'Guardando…';
+
+  try {
+    let archivoUrl = null;
+    const fileInput = document.getElementById('nt-archivo');
+    if (fileInput?.files[0]) {
+      const file = fileInput.files[0];
+      const ext  = file.name.split('.').pop();
+      const path = `tareas/enunciados/${Date.now()}.${ext}`;
+      const { error: upErr } = await db.storage.from('nexo-files').upload(path, file);
+      if (upErr) throw new Error('Error al subir archivo: ' + upErr.message);
+      const { data: urlData } = db.storage.from('nexo-files').getPublicUrl(path);
+      archivoUrl = urlData.publicUrl;
+    }
+
+    const { error } = await db.from('tareas').insert({
+      profesor_id:          ctx.profesorData.id,
+      alumno_id:            document.getElementById('nt-alumno').value,
+      asignatura:           document.getElementById('nt-asignatura').value || null,
+      titulo:               document.getElementById('nt-titulo').value.trim(),
+      descripcion:          document.getElementById('nt-descripcion').value.trim() || null,
+      archivo_enunciado_url: archivoUrl,
+      fecha_limite:         document.getElementById('nt-fecha-limite').value || null,
+    });
+
+    if (error) throw error;
+    showToast('Tarea creada correctamente');
+    cerrarModalNuevaTarea();
+    loadTareasProf();
+  } catch(err) {
+    showToast(err.message || 'Error al crear la tarea', 'error');
+  } finally {
+    btn.disabled = false; btn.textContent = 'Crear tarea';
+  }
+}
+
+// ── Ver / Corregir tarea ───────────────────────────────────
+function openTareaProf(tareaId) {
+  _tareaActualId  = tareaId;
+  _correccionItems = [];
+  document.getElementById('modal-tarea-prof').classList.add('open');
+
+  const t = _tareasData.find(x => x.id === tareaId);
+  if (!t) { document.getElementById('modal-tarea-prof').classList.remove('open'); return; }
+  _renderTareaProfModal(t);
+}
+
+function cerrarModalTareaProf() {
+  document.getElementById('modal-tarea-prof').classList.remove('open');
+  _tareaActualId  = null;
+  _correccionItems = [];
+}
+
+function _renderTareaProfModal(t) {
+  const nom = t.alumno?.usuario ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos}` : '—';
+  const pillMap = { pendiente:'st-grey Pendiente', entregada:'st-pend Entregada', corregida:'st-ok Corregida' };
+  const [pc, pt] = (pillMap[t.estado] || 'st-grey —').split(' ');
+
+  let html = `<div style="padding:16px 20px 12px;border-bottom:.5px solid var(--border2)">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
+      <span class="status-pill ${pc}" style="font-size:10px">${pt}</span>
+      <span style="color:var(--muted);font-size:12px">${nom} · ${t.asignatura || '—'}</span>
+    </div>
+    <h3 style="color:#fff;font-size:15px;font-weight:600;margin:0 0 4px">${t.titulo}</h3>
+    ${t.fecha_limite ? `<div style="color:var(--muted);font-size:11px"><i class="ti ti-clock" style="font-size:11px"></i> Límite: ${formatDate(t.fecha_limite)}</div>` : ''}
+  </div>`;
+
+  const S = s => `<div style="padding:12px 20px;border-bottom:.5px solid var(--border2)">${s}</div>`;
+  const label = s => `<div style="color:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${s}</div>`;
+
+  if (t.descripcion) {
+    html += S(label('Instrucciones') + `<p style="color:#ddd;font-size:13px;margin:0;white-space:pre-line">${t.descripcion}</p>`);
+  }
+
+  if (t.archivo_enunciado_url) {
+    html += S(`<a href="${t.archivo_enunciado_url}" target="_blank" class="btn-ghost" style="display:inline-flex;align-items:center;gap:6px;font-size:12px"><i class="ti ti-file-download"></i> Ver enunciado adjunto</a>`);
+  }
+
+  if (t.estado === 'entregada' || t.estado === 'corregida') {
+    const fechaStr = t.fecha_entrega
+      ? new Date(t.fecha_entrega).toLocaleString('es-ES',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})
+      : '';
+    html += S(label('Entrega del alumno')
+      + (fechaStr ? `<div style="color:var(--muted);font-size:11px;margin-bottom:6px"><i class="ti ti-clock-check" style="font-size:11px"></i> ${fechaStr}</div>` : '')
+      + (t.archivo_entrega_url
+          ? `<a href="${t.archivo_entrega_url}" target="_blank" class="btn-ghost" style="display:inline-flex;align-items:center;gap:6px;font-size:12px"><i class="ti ti-file-download"></i> Ver entrega</a>`
+          : `<span style="color:var(--muted);font-size:12px">Sin archivo adjunto</span>`));
+  }
+
+  if (t.estado === 'entregada') {
+    html += `<div style="padding:12px 20px">
+      ${label('Corrección')}
+      <label class="field-label" style="margin-top:0">Nota (0–10)</label>
+      <input class="field-input" id="corr-nota" type="number" min="0" max="10" step="0.1" style="max-width:120px" placeholder="Opcional">
+      <label class="field-label">Comentario general</label>
+      <textarea class="field-input" id="corr-comentario" rows="3" placeholder="Opcional…" style="resize:vertical"></textarea>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0 8px">
+        <div style="color:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Puntos de corrección</div>
+        <button type="button" class="btn-ghost" style="font-size:11px;padding:5px 10px" onclick="addCorrItem()">
+          <i class="ti ti-plus" style="font-size:11px"></i> Añadir punto
+        </button>
+      </div>
+      <div id="corr-items-list"></div>
+    </div>`;
+  }
+
+  if (t.estado === 'corregida') {
+    const items = t.correccion_detallada || [];
+    html += `<div style="padding:12px 20px">
+      ${label('Corrección')}
+      ${t.nota != null ? `<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:10px"><span style="color:var(--muted);font-size:12px">Nota:</span><span style="color:#fff;font-size:22px;font-weight:700">${t.nota}<span style="color:var(--muted);font-size:13px">/10</span></span></div>` : ''}
+      ${t.comentario_general ? `<div style="margin-bottom:10px"><div style="color:var(--muted);font-size:11px;margin-bottom:4px">Comentario general</div><p style="color:#ddd;font-size:13px;margin:0;white-space:pre-line">${t.comentario_general}</p></div>` : ''}
+      ${items.length ? items.map(item => `
+        <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:.5px solid var(--border2)">
+          <i class="ti ${item.correcto ? 'ti-circle-check' : 'ti-circle-x'}" style="color:${item.correcto ? 'var(--green)' : '#f08080'};font-size:16px;flex-shrink:0;margin-top:1px"></i>
+          <span style="color:#ddd;font-size:13px">${item.texto}</span>
+        </div>`).join('') : ''}
+    </div>`;
+  }
+
+  document.getElementById('tarea-prof-content').innerHTML = html;
+
+  const footer = document.getElementById('tarea-prof-footer');
+  if (t.estado === 'entregada') {
+    footer.innerHTML = `
+      <button type="button" class="btn-cancel" onclick="cerrarModalTareaProf()">Cancelar</button>
+      <button type="button" class="btn-primary" onclick="guardarCorreccion()"><i class="ti ti-send"></i> Guardar corrección</button>`;
+  } else {
+    footer.innerHTML = `<button type="button" class="btn-primary" onclick="cerrarModalTareaProf()">Cerrar</button>`;
+  }
+}
+
+function addCorrItem() {
+  const idx = _correccionItems.length;
+  _correccionItems.push({ texto: '', correcto: true });
+  const list = document.getElementById('corr-items-list');
+  const div  = document.createElement('div');
+  div.id = `ci-${idx}`;
+  div.style.cssText = 'display:flex;align-items:center;gap:8px;margin-bottom:6px';
+  div.innerHTML = `
+    <button type="button" id="ci-btn-${idx}" onclick="toggleCorrItem(${idx})"
+      style="background:transparent;border:none;cursor:pointer;font-size:18px;flex-shrink:0;padding:0;color:var(--green)" title="Acierto">
+      <i class="ti ti-circle-check"></i>
+    </button>
+    <input class="field-input" style="flex:1;margin:0;padding:7px 10px" placeholder="Describe el punto…"
+      oninput="_correccionItems[${idx}].texto=this.value">
+    <button type="button" onclick="removeCorrItem(${idx})"
+      style="background:transparent;border:none;cursor:pointer;color:var(--muted);font-size:16px;flex-shrink:0;padding:0">
+      <i class="ti ti-trash"></i>
+    </button>`;
+  list.appendChild(div);
+}
+
+function toggleCorrItem(idx) {
+  _correccionItems[idx].correcto = !_correccionItems[idx].correcto;
+  const btn = document.getElementById(`ci-btn-${idx}`);
+  if (_correccionItems[idx].correcto) {
+    btn.style.color = 'var(--green)';
+    btn.innerHTML   = '<i class="ti ti-circle-check"></i>';
+    btn.title       = 'Acierto';
+  } else {
+    btn.style.color = '#f08080';
+    btn.innerHTML   = '<i class="ti ti-circle-x"></i>';
+    btn.title       = 'Fallo';
+  }
+}
+
+function removeCorrItem(idx) {
+  _correccionItems[idx] = null;
+  document.getElementById(`ci-${idx}`)?.remove();
+}
+
+async function guardarCorreccion() {
+  const footer = document.getElementById('tarea-prof-footer');
+  const btn    = footer?.querySelector('.btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = 'Guardando…'; }
+
+  try {
+    const nota       = document.getElementById('corr-nota')?.value;
+    const comentario = document.getElementById('corr-comentario')?.value?.trim() || null;
+    const correccion = _correccionItems.filter(Boolean).filter(i => i.texto.trim());
+
+    const { data, error } = await db.rpc('corregir_tarea', {
+      p_tarea_id:   _tareaActualId,
+      p_nota:       nota ? parseFloat(nota) : null,
+      p_comentario: comentario,
+      p_correccion: correccion,
+    });
+
+    if (error) throw error;
+    if (data && !data.success) throw new Error(data.error || 'Error al corregir');
+
+    showToast('Corrección guardada');
+    cerrarModalTareaProf();
+    loadTareasProf();
+  } catch(err) {
+    showToast(err.message || 'Error al guardar la corrección', 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ti ti-send"></i> Guardar corrección'; }
+  }
+}
+
 // MATERIAL (PROFESOR)
 // ============================================================
 let pAllAsignaturas = [];
