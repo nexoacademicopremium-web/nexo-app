@@ -1908,9 +1908,9 @@ function _alRenderTests() {
     const nota       = t.resultado?.[0]?.nota;
     const done       = nota != null;
     const isIA       = t.generado_ia;
-    const isAssigned = t.alumno_id === alumnoId;
-    const locked     = done && isIA && !t.puede_repetir;
-    const pending    = !done && isIA && isAssigned;
+    const isAssigned = !!t.alumno_id;
+    const locked     = done && isAssigned && !t.puede_repetir;
+    const pending    = !done && isAssigned && t.alumno_id === alumnoId;
 
     const cc       = locked ? '#374151' : (done ? '#1a7f5e' : (pending ? '#5b21b6' : '#154ca9'));
     const ico      = locked ? 'ti-lock' : (done ? 'ti-check' : (pending ? 'ti-bell-ringing' : 'ti-player-play'));
@@ -2000,23 +2000,19 @@ async function iniciarTest(testId, tituloEnc, from) {
     return;
   }
 
-  // Retrieve metadata from cached tests list
-  const testInfo    = (window._estudiarData?.allTests || []).find(t => t.id === testId);
-  const puedeRep    = testInfo?.puede_repetir || false;
-  const isIA        = testInfo?.generado_ia   || false;
-  const creadoPor   = testInfo?.creado_por    || null;
+  // Fetch fresh test metadata from DB (avoids stale cache across sections)
+  const [{ data: testRecord }, { data: resultado }] = await Promise.all([
+    db.from('tests').select('puede_repetir,generado_ia,alumno_id,creado_por').eq('id', testId).single(),
+    db.from('resultados_test').select('*').eq('test_id', testId).eq('alumno_id', ctx.alumnoData.id).maybeSingle(),
+  ]);
 
-  // Check if already completed
-  const { data: resultado } = await db
-    .from('resultados_test')
-    .select('*')
-    .eq('test_id', testId)
-    .eq('alumno_id', ctx.alumnoData.id)
-    .maybeSingle();
+  const puedeRep   = testRecord?.puede_repetir || false;
+  const isAssigned = !!testRecord?.alumno_id;
+  const creadoPor  = testRecord?.creado_por    || null;
 
-  if (resultado && isIA && !puedeRep) {
+  if (resultado && isAssigned && !puedeRep) {
     // View-only: show completed test with answers highlighted
-    testState = { testId, preguntas, respuestas: resultado.respuestas || {}, enviado: true, viewOnly: true, isIA, creadoPor };
+    testState = { testId, preguntas, respuestas: resultado.respuestas || {}, enviado: true, viewOnly: true, isAssigned, creadoPor };
     renderTest();
     const nota      = resultado.nota;
     const correctas = preguntas.filter(p => (resultado.respuestas || {})[p.id] === p.respuesta_correcta).length;
@@ -2036,7 +2032,7 @@ async function iniciarTest(testId, tituloEnc, from) {
     return;
   }
 
-  testState = { testId, preguntas, respuestas: {}, enviado: false, viewOnly: false, isIA, creadoPor };
+  testState = { testId, preguntas, respuestas: {}, enviado: false, viewOnly: false, isAssigned, creadoPor };
   renderTest();
 }
 
@@ -2074,7 +2070,7 @@ function seleccionarRespuesta(pregId, opcion) {
 }
 
 async function enviarTest() {
-  const { testId, preguntas, respuestas, isIA, creadoPor } = testState;
+  const { testId, preguntas, respuestas, isAssigned, creadoPor } = testState;
   let correctas = 0;
   preguntas.forEach(p => { if (respuestas[p.id] === p.respuesta_correcta) correctas++; });
   const nota = parseFloat((correctas / preguntas.length * 10).toFixed(2));
@@ -2088,8 +2084,8 @@ async function enviarTest() {
     completado_at: new Date().toISOString(),
   }, { onConflict: 'test_id,alumno_id' });
 
-  // For AI tests: notify profesor (non-critical, fire and forget)
-  if (isIA && creadoPor) {
+  // Notify profesor for assigned tests (IA or manual) — non-critical, fire and forget
+  if (isAssigned && creadoPor) {
     const nombre   = `${ctx.usuario?.nombre || ''} ${ctx.usuario?.apellidos || ''}`.trim() || 'El alumno';
     const testInfo = (window._estudiarData?.allTests || []).find(t => t.id === testId);
     db.rpc('notificar_test_completado', {
@@ -2355,7 +2351,7 @@ async function loadTests() {
   const [{ data: misAsigs }, { data: catalogo }, { data: tests }, { data: testsAllNiv }, { data: misResultados }] = await Promise.all([
     db.from('alumno_asignaturas').select('asignatura_id').eq('alumno_id', alumno.id),
     db.from('asignaturas').select('id,nombre').order('nombre'),
-    db.from('tests').select('id,titulo,asignatura,bloque_tema').eq('visible', true).eq('nivel', alumno.nivel),
+    db.from('tests').select('id,titulo,asignatura,bloque_tema,alumno_id,generado_ia,puede_repetir').eq('visible', true).eq('nivel', alumno.nivel),
     db.from('tests').select('asignatura,bloque_tema').eq('visible', true),
     db.from('resultados_test').select('test_id,nota').eq('alumno_id', alumno.id),
   ]);
@@ -2449,14 +2445,16 @@ function mostrarDetalleTests(asigEnc) {
       </div>`;
     }
     const cards = testsEnTema.map(t => {
-      const nota      = resultMap?.[t.id];
-      const done      = nota != null;
-      const cc        = done ? '#1a7f5e' : '#154ca9';
-      const ico       = done ? 'ti-check' : 'ti-player-play';
-      const badgeBg   = done ? 'var(--green-lt)' : '#0f2240';
-      const badgeClr  = done ? 'var(--green)' : 'var(--blue)';
-      const badgeTxt  = done ? `${nota}/10` : 'Sin hacer';
-      const btnTxt    = done ? 'Repetir' : 'Iniciar';
+      const nota       = resultMap?.[t.id];
+      const done       = nota != null;
+      const isAssigned = !!t.alumno_id;
+      const locked     = done && isAssigned && !t.puede_repetir;
+      const cc         = locked ? '#374151' : (done ? '#1a7f5e' : '#154ca9');
+      const ico        = locked ? 'ti-lock' : (done ? 'ti-check' : 'ti-player-play');
+      const badgeBg    = done ? 'var(--green-lt)' : '#0f2240';
+      const badgeClr   = done ? 'var(--green)' : 'var(--blue)';
+      const badgeTxt   = done ? `${nota}/10` : 'Sin hacer';
+      const btnTxt     = locked ? 'Ver respuestas' : (done ? 'Repetir' : 'Iniciar');
       return `<div class="mat-item-card" style="--cc:${cc}" onclick="iniciarTest('${t.id}','${encodeURIComponent(t.titulo)}','tests')">
         <div class="mat-item-ico"><i class="ti ${ico}"></i></div>
         <div class="mat-item-nom">${t.titulo}</div>

@@ -2919,10 +2919,16 @@ let _tpEditId = null, _tpPregCount = 0, _tpAlumnosData = [];
 async function loadTestsProf() {
   const el = document.getElementById('prof-tests-lista');
   el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
-  const { data: tests } = await db.from('tests')
+  const { data: rawTests } = await db.from('tests')
     .select('id,titulo,asignatura,visible,created_at,generado_ia,puede_repetir,alumno_id,preguntas:preguntas_test(id),alumno:alumnos(usuario:usuarios(nombre,apellidos)),resultados:resultados_test(nota,completado_at)')
-    .eq('creado_por', ctx.usuario.id)
-    .order('created_at', { ascending: false });
+    .eq('creado_por', ctx.usuario.id);
+
+  const tests = (rawTests || []).sort((a, b) => {
+    const aNom = a.alumno?.usuario ? `${a.alumno.usuario.nombre} ${a.alumno.usuario.apellidos||''}`.trim() : '￿';
+    const bNom = b.alumno?.usuario ? `${b.alumno.usuario.nombre} ${b.alumno.usuario.apellidos||''}`.trim() : '￿';
+    const cmp  = aNom.localeCompare(bNom, 'es');
+    return cmp !== 0 ? cmp : (a.asignatura||'').localeCompare(b.asignatura||'', 'es');
+  });
 
   if (!tests || tests.length === 0) {
     el.innerHTML = '<div class="empty-state"><i class="ti ti-clipboard-list"></i><p>Aún no has creado ningún test.<br>Pulsa <b>Nuevo test</b> para empezar.</p></div>';
@@ -2950,8 +2956,8 @@ async function loadTestsProf() {
       resBg = 'rgba(255,255,255,.07)'; resClr = 'var(--muted)'; resTxt = `${numPreg} preguntas`;
     }
 
-    const showRepetir   = t.generado_ia && resultado && !t.puede_repetir;
-    const showYaRepetir = t.generado_ia && t.puede_repetir;
+    const showRepetir   = t.alumno_id && resultado && !t.puede_repetir;
+    const showYaRepetir = t.alumno_id && t.puede_repetir;
 
     return `<div class="test-prof-card" style="--cc:${meta.cc}">
       ${t.generado_ia ? `<div class="test-ia-badge"><i class="ti ti-brain" style="font-size:9px;margin-right:3px"></i>IA</div>` : ''}
@@ -3059,13 +3065,15 @@ function renumberPreguntas() {
 }
 
 function addPreguntaProf(data = null) {
+  const container = document.getElementById('tp-preguntas-container');
+  const numActual = container ? container.querySelectorAll('[id^="tp-pw-"]').length : 0;
   const i = _tpPregCount++;
   const d = document.createElement('div');
   d.id = `tp-pw-${i}`;
   d.style.cssText = 'background:var(--dark);border:.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px';
   d.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-      <span class="tp-num-label" style="color:var(--soft);font-size:12px;font-weight:600">Pregunta ${i + 1}</span>
+      <span class="tp-num-label" style="color:var(--soft);font-size:12px;font-weight:600">Pregunta ${numActual + 1}</span>
       <button type="button" onclick="this.closest('[id^=tp-pw-]').remove();renumberPreguntas()" class="btn-cancel" style="padding:3px 10px;font-size:11px">✕</button>
     </div>
     <label class="field-label" style="margin-top:0">Enunciado *</label>
@@ -3088,12 +3096,14 @@ function addPreguntaProf(data = null) {
 
 async function guardarTestProf(e) {
   e.preventDefault();
+  const alumno_id = document.getElementById('tp-alumno').value || null;
   const testData = {
-    titulo:     document.getElementById('tp-titulo').value.trim(),
-    asignatura: document.getElementById('tp-asignatura').value || null,
-    alumno_id:  document.getElementById('tp-alumno').value || null,
-    creado_por: ctx.usuario.id,
-    visible:    true,
+    titulo:        document.getElementById('tp-titulo').value.trim(),
+    asignatura:    document.getElementById('tp-asignatura').value || null,
+    alumno_id,
+    creado_por:    ctx.usuario.id,
+    visible:       true,
+    ...(alumno_id && !_tpEditId ? { puede_repetir: false } : {}),
   };
   let testId = _tpEditId;
   if (!_tpEditId) {
