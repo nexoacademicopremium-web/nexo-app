@@ -3417,7 +3417,7 @@ function _pMatItems() {
   if (!_pMatNav) return items;
   const { alumnoId, asigId } = _pMatNav;
   if (alumnoId != null) items = items.filter(m => (pMatAlumnoMap[m.id] || []).includes(alumnoId));
-  if (asigId   != null) items = items.filter(m => m.asignatura_id === asigId);
+  if (asigId   != null) items = items.filter(m => m.asignatura_id == asigId);
   return items;
 }
 
@@ -3494,7 +3494,7 @@ function _pMatRenderTemas(c) {
   const bubbles = Object.keys(temaCnt).map(nom => {
     const label = nom === '__sin__' ? 'Sin tema' : nom;
     const meta  = getTopicMeta(label);
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo('${alumnoId}',${asigId},${JSON.stringify(nom)})">
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo('${alumnoId}',${asigId},${JSON.stringify(nom).replace(/"/g,'&quot;')})">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
       <span class="mat-asig-label">${label}</span>
       <span class="mat-asig-count">${temaCnt[nom]} archivo${temaCnt[nom]!==1?'s':''}</span>

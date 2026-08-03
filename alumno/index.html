@@ -194,6 +194,28 @@
   .mat-tema-cnt{color:var(--muted);font-size:11px}
   /* grid de archivos */
   .mat-item-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:4px}
+  /* lista de archivos (filas) */
+  .mat-item-list{display:flex;flex-direction:column;gap:9px;margin-top:4px}
+  /* grid de asignaturas (reutilizado en alumno) */
+  .mat-asig-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+  .mat-asig-bubble{background:linear-gradient(145deg,#0c1838,#060d20);border:1px solid var(--ab-clr,var(--border));border-radius:22px;padding:26px 16px 20px;cursor:pointer;position:relative;overflow:hidden;text-align:center;transition:transform .25s cubic-bezier(.4,0,.2,1),box-shadow .25s;display:flex;flex-direction:column;align-items:center;gap:8px;user-select:none;-webkit-tap-highlight-color:transparent}
+  .mat-asig-bubble::after{content:'';position:absolute;top:-22px;right:-22px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,var(--ab-clr,var(--blue)) 0%,transparent 70%);opacity:.12;pointer-events:none}
+  .mat-asig-bubble:hover{transform:translateY(-4px);box-shadow:0 14px 32px rgba(0,0,0,.5),0 0 0 1px var(--ab-clr,var(--border))}
+  .mat-asig-ico{width:58px;height:58px;border-radius:15px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--ab-clr,var(--border));background:rgba(255,255,255,.05)}
+  .mat-asig-ico i{font-size:24px;color:var(--ab-clr,var(--blue))}
+  .mat-asig-label{color:#fff;font-size:13px;font-weight:700;line-height:1.3}
+  .mat-asig-count{color:var(--muted);font-size:10px}
+  .mat-item-row{display:flex;align-items:center;gap:12px;background:var(--dark);border:1px solid var(--border);border-radius:14px;padding:11px 14px;cursor:pointer;transition:border-color .15s;-webkit-tap-highlight-color:transparent}
+  .mat-item-row:hover{border-color:var(--blue)}
+  .mat-item-row:active{opacity:.82}
+  .mat-item-row.mat-excl-row{border-color:rgba(245,158,11,.35)}
+  .mat-row-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06);border:1px solid var(--cc,var(--border));flex-shrink:0}
+  .mat-row-ico i{font-size:18px;color:var(--cc,var(--blue))}
+  .mat-row-body{flex:1;min-width:0}
+  .mat-row-nom{color:#fff;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mat-row-sub{color:var(--muted);font-size:11px;margin-top:2px;display:flex;align-items:center;gap:5px}
+  .mat-row-btn{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-family:inherit;cursor:pointer;flex-shrink:0;white-space:nowrap}
+  .mat-row-excl-badge{font-size:10px;color:#f59e0b}
   .mat-item-card{background:linear-gradient(145deg,#0c1838,#060d20);border:1px solid var(--cc,var(--border));border-radius:22px;padding:26px 18px 20px;cursor:pointer;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;text-align:center;transition:transform .25s cubic-bezier(.4,0,.2,1),box-shadow .25s;-webkit-tap-highlight-color:transparent}
   .mat-item-card::after{content:'';position:absolute;top:-18px;right:-18px;width:95px;height:95px;border-radius:50%;background:radial-gradient(circle,var(--cc,var(--blue)) 0%,transparent 70%);opacity:.13;pointer-events:none}
   .mat-item-card:hover{transform:translateY(-5px);box-shadow:0 16px 40px rgba(0,0,0,.55),0 0 0 1px var(--cc,var(--border))}
@@ -1679,64 +1701,35 @@ async function loadEstudiar() {
     byAsigTests[k].push(t);
   });
 
-  const colors = ['#154ca9','#1a7f5e','#7c3aed','#b45309','#0891b2','#9d174d'];
-  const icons  = ['ti-math-function','ti-atom','ti-shape','ti-chart-bar','ti-trending-up','ti-microscope','ti-language','ti-globe'];
-
-  // Siempre mostrar todas las asignaturas del alumno, aunque no tengan material aún
-  const asigOrdenadas = asigFiltros.map(id => asigMap[id]).filter(Boolean).sort();
-  const extraAsigs    = [...new Set([...Object.keys(byAsig), ...Object.keys(byAsigTests)])]
-    .filter(k => !asigOrdenadas.includes(k));
-  const allAsigs = [...asigOrdenadas, ...extraAsigs];
-
+  const allMat = Object.values(byAsig).flat();
+  const nGen   = allMat.filter(m => !matIds.includes(m.id)).length;
+  const nExcl  = allMat.filter(m =>  matIds.includes(m.id)).length;
+  const nTest  = Object.values(byAsigTests).flat().length;
   document.getElementById('estudiar-sub').textContent =
-    `Material y tests · ${allAsigs.length} asignatura${allAsigs.length !== 1 ? 's' : ''}`;
+    `${nGen + nExcl} recurso${nGen+nExcl!==1?'s':''} · ${nTest} test${nTest!==1?'s':''}`;
 
-  if (allAsigs.length === 0) {
-    document.getElementById('estudiar-asignaturas').innerHTML =
-      `<div class="empty-state"><i class="ti ti-book-off"></i><p>Sin asignaturas asignadas todavía</p></div>`;
-    return;
-  }
-
-  document.getElementById('estudiar-asignaturas').innerHTML = `
-    <div class="asig-bubble-grid">
-      ${allAsigs.map((asig, i) => {
-        const nMat  = (byAsig[asig]      || []).length;
-        const nTest = (byAsigTests[asig] || []).length;
-        const empty = nMat === 0 && nTest === 0;
-        const meta  = getSubjectMeta(asig);
-        const cc    = empty ? '#1a2a4a' : meta.cc;
-        const ico   = empty ? 'ti-clock' : meta.ico;
-        const det   = empty ? 'Próximamente' : `${nMat} recurso${nMat !== 1 ? 's' : ''} · ${nTest} test${nTest !== 1 ? 's' : ''}`;
-        return `
-          <div class="asig-bubble${empty ? ' empty' : ''}" style="--cc:${cc}" data-asig="${asig.replace(/"/g,'&quot;')}" onclick="_alGoAsig(this.dataset.asig)">
-            <div class="asig-bubble-ico"><i class="ti ${ico}"></i></div>
-            <div class="asig-bubble-name">${asig}</div>
-            <div class="asig-bubble-det">${det}</div>
-          </div>`;
-      }).join('')}
-    </div>
-  `;
-
-  window._estudiarData = { byAsig, byAsigTests, bloqueMap, temaMap, matIds };
+  window._estudiarData = { byAsig, byAsigTests, temaMap, matIds };
+  _alNav = null;
+  _alRender();
 }
 
 // ── Alumno Material — drill-down ─────────────────────────────
-let _alNav = null; // null | { asig, sec, bloqueId, temaId }
+// Flujo: root(gen/excl/tests) → asig → tema → archivos en filas
+let _alNav = null; // null | { sec, asig, temaId }
 
-function _alGoRoot()       { _alNav = null; _alRender(); }
-function _alGoAsig(asig)   { _alNav = { asig, sec:null, bloqueId:null, temaId:null }; _alRender(); }
-function _alGoSec(sec)     { _alNav = { ..._alNav, sec, bloqueId:null, temaId:null }; _alRender(); }
-function _alGoBlq(bid)     { _alNav = { ..._alNav, bloqueId:bid, temaId:null }; _alRender(); }
-function _alGoTema(tid)    { _alNav = { ..._alNav, temaId:tid }; _alRender(); }
+function _alGoRoot()    { _alNav = null; _alRender(); }
+function _alGoSec(sec)  { _alNav = { sec, asig:null, temaId:null }; _alRender(); }
+function _alGoAsig(asig){ _alNav = { ..._alNav, asig, temaId:null }; _alRender(); }
+function _alGoTema(tid) { _alNav = { ..._alNav, temaId:tid }; _alRender(); }
 function _alBack() {
   if (!_alNav) return;
-  const { sec, bloqueId, temaId } = _alNav;
-  if (temaId   != null) { _alNav = { ..._alNav, temaId:null };                 _alRender(); return; }
-  if (bloqueId != null) { _alNav = { ..._alNav, bloqueId:null, temaId:null };  _alRender(); return; }
-  if (sec      != null) { _alNav = { ..._alNav, sec:null, bloqueId:null };     _alRender(); return; }
+  const { sec, asig, temaId } = _alNav;
+  if (temaId != null) { _alNav = { ..._alNav, temaId:null }; _alRender(); return; }
+  if (asig   != null) { _alNav = { ..._alNav, asig:null, temaId:null }; _alRender(); return; }
   _alGoRoot();
 }
 
+// Items de la asig actual filtrados por sec
 function _alItems() {
   const { asig, sec } = _alNav || {};
   const all    = window._estudiarData?.byAsig?.[asig] || [];
@@ -1746,20 +1739,34 @@ function _alItems() {
   return all;
 }
 
+// Todos los items del sec actual sin filtro de asig (para nivel asig)
+function _alItemsSec() {
+  const { sec }  = _alNav || {};
+  const matIds   = window._estudiarData?.matIds || [];
+  const all      = Object.values(window._estudiarData?.byAsig || {}).flat();
+  if (sec === 'excl') return all.filter(m =>  matIds.includes(m.id));
+  if (sec === 'gen')  return all.filter(m => !matIds.includes(m.id));
+  return all;
+}
+
 function _alBcHtml() {
   if (!_alNav) return '';
-  const { asig, sec, bloqueId, temaId } = _alNav;
-  const sep  = `<i class="ti ti-chevron-right mat-bc-sep"></i>`;
-  const parts = [`<span class="mat-bc-link" data-asig="${asig.replace(/"/g,'&quot;')}" onclick="_alGoAsig(this.dataset.asig)">${asig}</span>`];
-  if (sec === 'gen')   parts.push(`<span class="mat-bc-link" onclick="_alGoSec('gen')">Genérico</span>`);
-  if (sec === 'excl')  parts.push(`<span class="mat-bc-link" onclick="_alGoSec('excl')">Exclusivo</span>`);
-  if (sec === 'tests') parts.push(`<span class="mat-bc-cur">Tests</span>`);
-  if (bloqueId != null) {
-    const nom = bloqueId === 0 ? 'Sin bloque' : (window._estudiarData?.bloqueMap?.[bloqueId]?.nombre || 'Bloque');
-    parts.push(`<span class="mat-bc-link" onclick="_alGoBlq(${bloqueId})">${nom}</span>`);
+  const { sec, asig, temaId } = _alNav;
+  const sep   = `<i class="ti ti-chevron-right mat-bc-sep"></i>`;
+  const parts = [];
+  const secLabel = sec === 'gen' ? 'Genérico' : sec === 'excl' ? 'Exclusivo' : 'Tests';
+  const secLink  = asig || temaId != null
+    ? `<span class="mat-bc-link" onclick="_alGoSec('${sec}')">${secLabel}</span>`
+    : `<span class="mat-bc-cur">${secLabel}</span>`;
+  parts.push(secLink);
+  if (asig) {
+    const asigSpan = temaId != null
+      ? `<span class="mat-bc-link" data-asig="${asig.replace(/"/g,'&quot;')}" onclick="_alGoAsig(this.dataset.asig)">${asig}</span>`
+      : `<span class="mat-bc-cur">${asig}</span>`;
+    parts.push(asigSpan);
   }
   if (temaId != null) {
-    const nom = temaId === '__sin__' ? 'Sin tema' : (window._estudiarData?.temaMap?.[parseInt(temaId)] || 'Tema');
+    const nom = temaId === '__sin__' ? 'Sin tema' : temaId;
     parts.push(`<span class="mat-bc-cur">${nom}</span>`);
   }
   return `<div class="mat-nav-bar">
@@ -1769,41 +1776,35 @@ function _alBcHtml() {
 }
 
 function _alRender() {
-  const asigDiv    = document.getElementById('estudiar-asignaturas');
+  document.getElementById('estudiar-asignaturas').style.display = 'none';
   const detalleDiv = document.getElementById('estudiar-detalle');
-  if (!_alNav) {
-    asigDiv.style.display    = '';
-    detalleDiv.style.display = 'none';
-    return;
-  }
-  asigDiv.style.display    = 'none';
   detalleDiv.style.display = 'block';
   document.getElementById('detalle-nav').innerHTML = _alBcHtml();
-  const { sec, bloqueId, temaId } = _alNav;
-  if (!sec)             _alRenderSec();
-  else if (sec==='tests') _alRenderTests();
-  else if (bloqueId==null) _alRenderBloques();
-  else if (temaId==null)   _alRenderTemas();
-  else                     _alRenderPdfs();
+  if (!_alNav)                  { _alRenderSecs();  return; }
+  const { sec, asig, temaId } = _alNav;
+  if (sec === 'tests')           { _alRenderTests(); return; }
+  if (!asig)                     { _alRenderAsigs(); return; }
+  if (temaId == null)            { _alRenderTemas(); return; }
+  _alRenderPdfs();
 }
 
-function _alRenderSec() {
-  const { asig } = _alNav;
-  const all      = window._estudiarData?.byAsig?.[asig] || [];
-  const matIds   = window._estudiarData?.matIds || [];
-  const tests    = window._estudiarData?.byAsigTests?.[asig] || [];
-  const genItems  = all.filter(m => !matIds.includes(m.id));
-  const exclItems = all.filter(m =>  matIds.includes(m.id));
-  let b = `<div class="mat-tema-bubble" style="--cc:#2563eb" onclick="_alGoSec('gen')">
+function _alRenderSecs() {
+  const matIds  = window._estudiarData?.matIds || [];
+  const all     = Object.values(window._estudiarData?.byAsig || {}).flat();
+  const genCnt  = all.filter(m => !matIds.includes(m.id)).length;
+  const exclCnt = all.filter(m =>  matIds.includes(m.id)).length;
+  const tests   = Object.values(window._estudiarData?.byAsigTests || {}).flat();
+  let b = '';
+  b += `<div class="mat-tema-bubble" style="--cc:#2563eb" onclick="_alGoSec('gen')">
     <div class="mat-tema-ico"><i class="ti ti-files"></i></div>
     <div class="mat-tema-nom">Genérico</div>
-    <div class="mat-tema-cnt">${genItems.length} archivo${genItems.length!==1?'s':''}</div>
+    <div class="mat-tema-cnt">${genCnt} archivo${genCnt!==1?'s':''}</div>
   </div>`;
-  if (exclItems.length > 0) {
+  if (exclCnt > 0) {
     b += `<div class="mat-tema-bubble" style="--cc:#f59e0b" onclick="_alGoSec('excl')">
       <div class="mat-tema-ico"><i class="ti ti-crown"></i></div>
       <div class="mat-tema-nom">Exclusivo</div>
-      <div class="mat-tema-cnt">${exclItems.length} solo para ti</div>
+      <div class="mat-tema-cnt">${exclCnt} solo para ti</div>
     </div>`;
   }
   if (tests.length > 0) {
@@ -1815,45 +1816,50 @@ function _alRenderSec() {
   }
   if (!all.length && !tests.length) {
     b = `<div class="empty-state"><i class="ti ti-clock"></i><p>Sin contenido disponible todavía</p></div>`;
+    document.getElementById('detalle-material').innerHTML = b;
+    return;
   }
   document.getElementById('detalle-material').innerHTML = `<div class="mat-tema-grid">${b}</div>`;
 }
 
-function _alRenderBloques() {
-  const items   = _alItems();
-  const bloqCnt = {};
-  items.forEach(m => { if (m.bloque_id) bloqCnt[m.bloque_id] = (bloqCnt[m.bloque_id]||0)+1; });
-  const sinBloq = items.filter(m => !m.bloque_id);
-  const bubbles = Object.keys(bloqCnt).map(bid => {
-    const blq  = window._estudiarData?.bloqueMap?.[Number(bid)] || {};
-    const meta = getTopicMeta(blq.nombre||'');
-    return `<div class="mat-tema-bubble" style="--cc:${meta.cc}" onclick="_alGoBlq(${bid})">
-      <div class="mat-tema-ico"><i class="ti ${meta.ico}"></i></div>
-      <div class="mat-tema-nom">${blq.nombre||'Bloque'}</div>
-      <div class="mat-tema-cnt">${bloqCnt[bid]} archivo${bloqCnt[bid]!==1?'s':''}</div>
+function _alRenderAsigs() {
+  const items = _alItemsSec();
+  const byAsig = window._estudiarData?.byAsig || {};
+  const asigCnt = {};
+  items.forEach(m => {
+    const k = Object.keys(byAsig).find(a => byAsig[a].includes(m)) || 'General';
+    asigCnt[k] = (asigCnt[k]||0)+1;
+  });
+  if (!Object.keys(asigCnt).length) {
+    document.getElementById('detalle-material').innerHTML =
+      `<div class="empty-state"><i class="ti ti-clock"></i><p>Sin archivos en esta sección</p></div>`;
+    return;
+  }
+  const bubbles = Object.keys(asigCnt).sort().map(asig => {
+    const meta = getSubjectMeta(asig);
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" data-asig="${asig.replace(/"/g,'&quot;')}" onclick="_alGoAsig(this.dataset.asig)">
+      <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
+      <span class="mat-asig-label">${asig}</span>
+      <span class="mat-asig-count">${asigCnt[asig]} archivo${asigCnt[asig]!==1?'s':''}</span>
     </div>`;
   }).join('');
-  const extra = sinBloq.length ? `<div class="mat-tema-bubble" style="--cc:#374151" onclick="_alGoBlq(0)">
-    <div class="mat-tema-ico"><i class="ti ti-folder-x"></i></div>
-    <div class="mat-tema-nom">Sin bloque</div>
-    <div class="mat-tema-cnt">${sinBloq.length} archivo${sinBloq.length!==1?'s':''}</div>
-  </div>` : '';
-  document.getElementById('detalle-material').innerHTML =
-    `<div class="mat-tema-grid">${bubbles+extra||'<p style="color:var(--muted);font-size:12px">Sin bloques</p>'}</div>`;
+  document.getElementById('detalle-material').innerHTML = `<div class="mat-asig-grid">${bubbles}</div>`;
 }
 
 function _alRenderTemas() {
-  const { bloqueId } = _alNav;
-  const items   = _alItems().filter(m => bloqueId===0 ? !m.bloque_id : m.bloque_id===bloqueId);
+  const items   = _alItems();
+  const temaMap = window._estudiarData?.temaMap || {};
   const temaCnt = {};
-  items.forEach(m => { const k = m.tema_id||'__sin__'; temaCnt[k] = (temaCnt[k]||0)+1; });
+  items.forEach(m => {
+    const k = m.bloque_tema || (m.tema_id && temaMap[m.tema_id]) || '__sin__';
+    temaCnt[k] = (temaCnt[k]||0)+1;
+  });
   const bubbles = Object.keys(temaCnt).map(tid => {
-    const nom    = tid==='__sin__' ? 'Sin tema' : (window._estudiarData?.temaMap?.[parseInt(tid)]||'Tema');
-    const meta   = getTopicMeta(nom);
-    const tidArg = tid==='__sin__' ? `'__sin__'` : tid;
-    return `<div class="mat-tema-bubble" style="--cc:${meta.cc}" onclick="_alGoTema(${tidArg})">
+    const label = tid === '__sin__' ? 'Sin tema' : tid;
+    const meta  = getTopicMeta(label);
+    return `<div class="mat-tema-bubble" style="--cc:${meta.cc}" data-tid="${tid.replace(/"/g,'&quot;')}" onclick="_alGoTema(this.dataset.tid)">
       <div class="mat-tema-ico"><i class="ti ${meta.ico}"></i></div>
-      <div class="mat-tema-nom">${nom}</div>
+      <div class="mat-tema-nom">${label}</div>
       <div class="mat-tema-cnt">${temaCnt[tid]} archivo${temaCnt[tid]!==1?'s':''}</div>
     </div>`;
   }).join('');
@@ -1862,20 +1868,19 @@ function _alRenderTemas() {
 }
 
 function _alRenderPdfs() {
-  const { bloqueId, temaId } = _alNav;
+  const { temaId } = _alNav;
+  const temaMap    = window._estudiarData?.temaMap || {};
   const items = _alItems().filter(m => {
-    if (bloqueId===0) { if (m.bloque_id) return false; }
-    else { if (m.bloque_id!==bloqueId) return false; }
-    if (temaId==='__sin__') return !m.tema_id;
-    return String(m.tema_id)===String(temaId);
+    const mTema = m.bloque_tema || (m.tema_id && temaMap[m.tema_id]) || '__sin__';
+    return mTema === temaId;
   });
-  document.getElementById('detalle-material').innerHTML = items.length===0
+  document.getElementById('detalle-material').innerHTML = items.length === 0
     ? `<div class="empty-state"><i class="ti ti-clock"></i><p>Sin archivos en este tema</p></div>`
-    : `<div class="mat-item-grid">${items.map((m,i) => renderMatItem(m,i)).join('')}</div>`;
+    : `<div class="mat-item-list">${items.map(renderMatRow).join('')}</div>`;
 }
 
 function _alRenderTests() {
-  const tests = window._estudiarData?.byAsigTests?.[_alNav.asig] || [];
+  const tests = Object.values(window._estudiarData?.byAsigTests || {}).flat();
   const cards = tests.map(t => {
     const nota = t.resultado?.[0]?.nota;
     const cc   = nota!=null ? '#1a7f5e' : '#154ca9';
@@ -1909,6 +1914,27 @@ function renderMatItem(m, i) {
       ${isExclusive ? `<span class="mat-item-badge" style="background:#2a1800;color:#f59e0b"><i class="ti ti-crown" style="font-size:9px"></i> Solo para ti</span>` : `<span class="mat-item-badge" style="background:${tipBg};color:${tipCl}">${tipTxt}</span>`}
       ${m.archivo_url ? `<button class="mat-item-btn" onclick="event.stopPropagation();window.open('${m.archivo_url}','_blank')">Abrir</button>` : '<button class="mat-item-btn" style="opacity:.4" disabled>Sin enlace</button>'}
     </div>`;
+}
+
+function renderMatRow(m) {
+  const temaMap     = window._estudiarData?.temaMap || {};
+  const topicMeta   = getTopicMeta(m.titulo);
+  const isPdf       = m.tipo === 'pdf';
+  const ico         = isPdf ? 'ti-file-text' : (topicMeta.ico !== 'ti-bookmark' ? topicMeta.ico : 'ti-layout-grid');
+  const cc          = topicMeta.cc;
+  const tipTxt      = isPdf ? 'PDF' : 'Recurso';
+  const isExcl      = (window._estudiarData?.matIds || []).includes(m.id);
+  const openFn      = m.archivo_url ? `window.open('${m.archivo_url}','_blank')` : '';
+  return `<div class="mat-item-row${isExcl?' mat-excl-row':''}" style="--cc:${isExcl?'#f59e0b':cc}" onclick="${openFn}">
+    <div class="mat-row-ico"><i class="ti ${ico}"></i></div>
+    <div class="mat-row-body">
+      <div class="mat-row-nom">${m.titulo}</div>
+      <div class="mat-row-sub">
+        ${isExcl ? `<i class="ti ti-crown mat-row-excl-badge"></i><span style="color:#f59e0b;font-size:10px">Exclusivo</span>` : `<span>${tipTxt}</span>`}
+      </div>
+    </div>
+    ${m.archivo_url ? `<button class="mat-row-btn" onclick="event.stopPropagation();window.open('${m.archivo_url}','_blank')">Abrir</button>` : '<button class="mat-row-btn" style="opacity:.4" disabled>Sin enlace</button>'}
+  </div>`;
 }
 
 function volverAsignaturas() { _alGoRoot(); }
