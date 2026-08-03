@@ -449,23 +449,58 @@
 
 <!-- ═══ INFORMES ═══ -->
 <div class="section" id="section-informes">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-    <div><h1 class="page-title" style="margin:0">Informes</h1><p class="page-sub" style="margin:0">Informes de seguimiento por alumno</p></div>
-    <button class="btn-primary" onclick="abrirModalInformeAdmin()"><i class="ti ti-plus"></i> Nuevo informe</button>
-  </div>
-  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
-    <select class="fi" id="fil-inf-alumno" onchange="loadInformesAdmin()" style="width:auto;padding:8px 12px">
-      <option value="">Todos los alumnos</option>
-    </select>
-    <select class="fi" id="fil-inf-tipo" onchange="loadInformesAdmin()" style="width:auto;padding:8px 12px">
-      <option value="">Todos los tipos</option>
-      <option value="mensual">Mensual</option>
-    </select>
-  </div>
-  <div class="card">
-    <div id="informes-admin-tabla">
-      <div class="loading-section"><div class="spinner"></div></div>
+  <!-- Pantalla A: Lista (burbujas) -->
+  <div id="inf-view-lista">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <div><h1 class="page-title" style="margin:0">Informes</h1><p class="page-sub" style="margin:0">Seguimiento por alumno generado con IA</p></div>
+      <button class="btn-primary" onclick="_infAbrirGenerar(null)"><i class="ti ti-sparkles"></i> Generar informe</button>
     </div>
+    <div id="informes-admin-tabla"><div class="loading-section"><div class="spinner"></div></div></div>
+  </div>
+  <!-- Pantalla B: Generar con IA -->
+  <div id="inf-view-generar" style="display:none">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:28px">
+      <button class="mat-back-btn" onclick="_infViewLista()"><i class="ti ti-arrow-left"></i></button>
+      <div><h1 class="page-title" style="margin:0">Generar informe con IA</h1></div>
+    </div>
+    <div class="card" style="max-width:540px">
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div>
+          <label class="fl">Alumno *</label>
+          <select class="fi" id="gen-inf-alumno"></select>
+        </div>
+        <div>
+          <label class="fl">Tipo</label>
+          <select class="fi" id="gen-inf-tipo" onchange="_infTipoChange()">
+            <option value="mensual">Mensual</option>
+            <option value="personalizado">Personalizado</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div><label class="fl">Fecha inicio *</label><input class="fi" id="gen-inf-inicio" type="date"></div>
+          <div><label class="fl">Fecha fin *</label><input class="fi" id="gen-inf-fin" type="date"></div>
+        </div>
+        <div id="gen-inf-error" style="display:none;color:#f87171;font-size:13px;padding:10px 14px;background:rgba(248,113,113,.08);border-radius:8px;border:.5px solid rgba(248,113,113,.25)"></div>
+        <button class="btn-primary" id="btn-generar-inf" onclick="generarInformeIA()" style="width:100%;justify-content:center;padding:13px">
+          <i class="ti ti-sparkles"></i> Generar con IA
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- Pantalla C: Revisión editable -->
+  <div id="inf-view-revision" style="display:none">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap">
+      <button class="mat-back-btn" onclick="_infViewLista()"><i class="ti ti-arrow-left"></i></button>
+      <div style="flex:1;min-width:180px">
+        <h1 class="page-title" style="margin:0" id="inf-rev-titulo">Revisión del informe</h1>
+        <p class="page-sub" style="margin:0" id="inf-rev-sub"></p>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button class="btn-cancel" onclick="guardarCambiosInforme()"><i class="ti ti-device-floppy"></i> Guardar</button>
+        <button class="btn-primary" onclick="publicarInformeIA()" id="btn-publicar-inf"><i class="ti ti-send"></i> Publicar</button>
+      </div>
+    </div>
+    <div id="inf-revision-body"></div>
   </div>
 </div>
 
@@ -506,39 +541,6 @@
 
 <!-- ═══════════════════════════════ MODALES ═══════════════════════════════ -->
 
-
-<!-- MODAL INFORME -->
-<div class="modal-overlay" id="modal-informe">
-  <div class="modal-box" style="max-width:480px">
-    <div class="modal-title"><span id="modal-informe-titulo">Subir informe</span><button class="modal-close" onclick="cerrarModal('modal-informe')">×</button></div>
-    <form id="form-informe" onsubmit="subirInforme(event)">
-      <input type="hidden" id="inf-edit-id">
-      <input type="hidden" id="inf-archivo-url-actual">
-      <label class="fl">Alumno *</label>
-      <select class="fi" id="inf-alumno-sel" required></select>
-      <label class="fl">Título *</label>
-      <input class="fi" id="inf-titulo" required placeholder="Informe mensual — Junio 2025">
-      <label class="fl">Tipo</label>
-      <select class="fi" id="inf-tipo">
-        <option value="mensual">Mensual</option>
-      </select>
-      <label class="fl">Fecha *</label>
-      <input class="fi" id="inf-fecha" type="date" required>
-      <label class="fl">Visible para el alumno</label>
-      <select class="fi" id="inf-visible">
-        <option value="true">Sí</option>
-        <option value="false">No (oculto)</option>
-      </select>
-      <label class="fl">Archivo PDF</label>
-      <div id="inf-archivo-actual" style="display:none;padding:6px 0;font-size:12px;color:var(--muted)"></div>
-      <input class="fi" id="inf-archivo" type="file" accept=".pdf,.doc,.docx">
-      <div class="modal-footer">
-        <button type="button" class="btn-cancel" onclick="cerrarModal('modal-informe')">Cancelar</button>
-        <button type="submit" class="btn-primary" id="btn-subir-informe">Subir</button>
-      </div>
-    </form>
-  </div>
-</div>
 
 
 <!-- MODAL FICHA PROFESOR (unificada) -->
@@ -1565,7 +1567,7 @@ function renderTablaAlumnos(lista, horasByAlumno = {}) {
       <td><span class="pill ${a.activo ? 'pill-ok' : 'pill-grey'}">${a.activo ? 'Activo' : 'Inactivo'}</span></td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <button class="btn-ficha" onclick="abrirFicha('${a.id}')"><i class="ti ti-id-badge"></i> Ficha</button>
-        <button class="btn-edit" style="margin-left:4px" onclick="abrirModalInforme('${a.id}','${(u.nombre||'') + ' ' + (u.apellidos||'')}')">Informe</button>
+        <button class="btn-edit" style="margin-left:4px" onclick="abrirModalInforme('${a.id}')">Informe</button>
         <button class="btn-danger" style="margin-left:4px" onclick="toggleActivo('alumno','${a.id}',${!a.activo})">${a.activo ? 'Desactivar' : 'Activar'}</button>
       </td>
     </tr>`;
@@ -1639,241 +1641,426 @@ function abrirModalAlumno() {
 }
 
 // ============================================================
-// INFORMES
+// INFORMES — navegación por burbujas + generación con IA
 // ============================================================
-function _poblarAlumnoSelInforme(seleccionadoId, disabled) {
-  const sel = document.getElementById('inf-alumno-sel');
-  sel.disabled = disabled;
-  sel.innerHTML = '<option value="">— Selecciona alumno —</option>' +
-    allAlumnos.map(a => {
-      const u = a.usuario || {};
-      const nombre = `${u.nombre || ''} ${u.apellidos || ''}`.trim();
-      return `<option value="${a.id}" ${a.id === seleccionadoId ? 'selected' : ''}>${nombre}</option>`;
-    }).join('');
-}
+let _infData = null;      // array de informes
+let _infNav  = null;      // null=root | { alumnoId } | { alumnoId, mes }
+let _infRevisionId = null;
 
-function _resetModalInforme() {
-  document.getElementById('inf-edit-id').value         = '';
-  document.getElementById('inf-archivo-url-actual').value = '';
-  document.getElementById('inf-archivo-actual').style.display = 'none';
-  document.getElementById('inf-archivo-actual').innerHTML = '';
-  document.getElementById('inf-titulo').value          = '';
-  document.getElementById('inf-tipo').value            = 'mensual';
-  document.getElementById('inf-visible').value         = 'true';
-  document.getElementById('inf-fecha').value           = new Date().toISOString().split('T')[0];
-  document.getElementById('inf-archivo').value         = '';
-}
-
-// Llamada desde la ficha del alumno — alumno fijo
-function abrirModalInforme(alumnoId, alumnoNombre) {
-  _resetModalInforme();
-  _poblarAlumnoSelInforme(alumnoId, true);
-  document.getElementById('modal-informe-titulo').textContent = 'Subir informe';
-  document.getElementById('btn-subir-informe').textContent    = 'Subir';
-  document.getElementById('modal-informe').classList.add('open');
-}
-
-// Llamada desde sección Informes — alumno libre
-function abrirModalInformeAdmin() {
-  _resetModalInforme();
-  _poblarAlumnoSelInforme('', false);
-  document.getElementById('modal-informe-titulo').textContent = 'Nuevo informe';
-  document.getElementById('btn-subir-informe').textContent    = 'Subir';
-  document.getElementById('modal-informe').classList.add('open');
-}
-
-// Llamada desde el botón Editar en la tabla de informes
-function editarInformeAdmin(infId, alumnoId, titulo, tipo, fecha, archivoUrl, visible) {
-  _resetModalInforme();
-  _poblarAlumnoSelInforme(alumnoId, false);
-  document.getElementById('inf-edit-id').value          = infId;
-  document.getElementById('inf-titulo').value           = titulo;
-  document.getElementById('inf-tipo').value             = tipo;
-  document.getElementById('inf-fecha').value            = fecha;
-  document.getElementById('inf-visible').value          = String(visible);
-  if (archivoUrl) {
-    document.getElementById('inf-archivo-url-actual').value = archivoUrl;
-    const d = document.getElementById('inf-archivo-actual');
-    d.style.display = 'block';
-    d.innerHTML = `<i class="ti ti-paperclip"></i> Archivo actual: <a href="${archivoUrl}" target="_blank" style="color:var(--blue)">Ver / descargar</a><br><span style="font-size:11px">Sube un nuevo archivo solo si quieres reemplazarlo.</span>`;
-  }
-  document.getElementById('modal-informe-titulo').textContent = 'Editar informe';
-  document.getElementById('btn-subir-informe').textContent    = 'Guardar cambios';
-  document.getElementById('modal-informe').classList.add('open');
-}
-
-async function subirInforme(e) {
-  e.preventDefault();
-  const btn = document.getElementById('btn-subir-informe');
-  btn.disabled = true;
-
-  try {
-    const file     = document.getElementById('inf-archivo').files[0];
-    const alumnoId = document.getElementById('inf-alumno-sel').value;
-    const editId   = document.getElementById('inf-edit-id').value;
-    if (!alumnoId) throw new Error('Selecciona un alumno.');
-
-    let archivo_url = document.getElementById('inf-archivo-url-actual').value || null;
-
-    if (file) {
-      const ext  = file.name.split('.').pop();
-      const path = `informes/${alumnoId}/${Date.now()}.${ext}`;
-      const { error: upErr } = await db.storage.from('nexo-files').upload(path, file);
-      if (upErr) throw new Error('Error al subir archivo: ' + upErr.message);
-      const { data: url } = db.storage.from('nexo-files').getPublicUrl(path);
-      archivo_url = url.publicUrl;
-    }
-
-    const payload = {
-      alumno_id:  alumnoId,
-      tipo:       document.getElementById('inf-tipo').value,
-      titulo:     document.getElementById('inf-titulo').value,
-      fecha:      document.getElementById('inf-fecha').value,
-      visible:    document.getElementById('inf-visible').value === 'true',
-      archivo_url,
-    };
-
-    if (editId) {
-      const { error } = await db.from('informes').update(payload).eq('id', editId);
-      if (error) throw new Error('Error al guardar: ' + error.message);
-      showToast('Informe actualizado');
-    } else {
-      payload.subido_por = ctx.usuario.id;
-      const { error } = await db.from('informes').insert(payload);
-      if (error) throw new Error('Error al guardar informe: ' + error.message);
-      showToast('Informe subido correctamente');
-    }
-
-    cerrarModal('modal-informe');
-    if (fichaAlumnoId === alumnoId) refreshFichaInformes();
-    if (document.getElementById('section-informes').classList.contains('active')) loadInformesAdmin();
-  } catch (err) {
-    showToast(err.message, 'error');
-  } finally {
-    btn.disabled = false;
-  }
-}
-
-function editarInformeFromBtn(btn) {
-  const d = btn.dataset;
-  editarInformeAdmin(
-    d.infId, d.alumnoId,
-    decodeURIComponent(d.titulo),
-    d.tipo, d.fecha,
-    decodeURIComponent(d.archivoUrl),
-    d.visible === 'true'
-  );
-}
-
-function eliminarInformeFromBtn(btn) {
-  eliminarInformeAdmin(
-    btn.dataset.infId,
-    decodeURIComponent(btn.dataset.titulo),
-    decodeURIComponent(btn.dataset.archivoUrl)
-  );
-}
-
-async function eliminarInformeAdmin(infId, titulo, archivoUrl) {
-  if (!confirm(`¿Eliminar el informe "${titulo}"? Esta acción no se puede deshacer.`)) return;
-  try {
-    const { error } = await db.from('informes').delete().eq('id', infId);
-    if (error) throw new Error('Error al eliminar: ' + error.message);
-    if (archivoUrl) {
-      const marker = '/nexo-files/';
-      const idx = archivoUrl.indexOf(marker);
-      if (idx !== -1) {
-        const path = decodeURIComponent(archivoUrl.slice(idx + marker.length));
-        await db.storage.from('nexo-files').remove([path]);
-      }
-    }
-    showToast('Informe eliminado');
-    loadInformesAdmin();
-  } catch (err) {
-    showToast(err.message, 'error');
-  }
-}
+const _INF_MESES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
 async function loadInformesAdmin() {
   const el = document.getElementById('informes-admin-tabla');
   el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
-
-  const alumnoFil = document.getElementById('fil-inf-alumno').value;
-  const tipoFil   = document.getElementById('fil-inf-tipo').value;
-
-  const filSel = document.getElementById('fil-inf-alumno');
-  if (filSel.options.length <= 1) {
-    allAlumnos.forEach(a => {
-      const u = a.usuario || {};
-      const opt = document.createElement('option');
-      opt.value = a.id;
-      opt.textContent = `${u.nombre || ''} ${u.apellidos || ''}`.trim();
-      filSel.appendChild(opt);
-    });
-    filSel.value = alumnoFil;
-  }
-
-  let query = db.from('informes').select('*').order('fecha', { ascending: false });
-  if (alumnoFil) query = query.eq('alumno_id', alumnoFil);
-  if (tipoFil)   query = query.eq('tipo', tipoFil);
-
-  const { data: informes, error } = await query.limit(200);
-
+  const { data, error } = await db.from('informes')
+    .select('id,alumno_id,tipo,titulo,fecha,fecha_inicio,fecha_fin,estado,contenido,pdf_url,archivo_url,published_at,eliminado,created_at')
+    .eq('eliminado', false)
+    .order('created_at', { ascending: false });
   if (error) {
     el.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error: ${error.message}</p></div>`;
     return;
   }
-  if (!informes || informes.length === 0) {
-    el.innerHTML = `<div class="empty-state"><i class="ti ti-report-off"></i><p>Sin informes subidos todavía</p></div>`;
+  _infData = (data || []).map(inf => ({
+    ...inf,
+    _fechaRef: inf.fecha_inicio || inf.fecha || (inf.created_at || '').split('T')[0],
+  }));
+  _infNav = null;
+  _renderInformes();
+}
+
+function _renderInformes() {
+  const c = document.getElementById('informes-admin-tabla');
+  if (!c || !_infData) return;
+  if (!_infNav)             { _infRenderAlumnos(c); return; }
+  if (_infNav.mes == null)  { _infRenderMeses(c);   return; }
+  _infRenderCards(c);
+}
+
+function _infGo(alumnoId, mes) {
+  _infNav = { alumnoId: alumnoId ?? null, mes: mes ?? null };
+  _renderInformes();
+}
+function _infGoRoot() { _infNav = null; _renderInformes(); }
+function _infBack() {
+  if (!_infNav) return;
+  if (_infNav.mes != null) { _infGo(_infNav.alumnoId, null); return; }
+  _infGoRoot();
+}
+
+function _infAlumnoNombre(alumnoId) {
+  const a = allAlumnos.find(x => x.id === alumnoId);
+  if (!a?.usuario) return 'Alumno';
+  return `${a.usuario.nombre || ''} ${a.usuario.apellidos || ''}`.trim();
+}
+
+function _infBc() {
+  if (!_infNav) return '';
+  const { alumnoId, mes } = _infNav;
+  const sep = `<i class="ti ti-chevron-right mat-bc-sep"></i>`;
+  const alumnoLbl = alumnoId ? _infAlumnoNombre(alumnoId) : 'General';
+  const idJs = alumnoId ? `'${alumnoId}'` : 'null';
+  const parts = [
+    `<button class="mat-back-btn" onclick="_infBack()"><i class="ti ti-arrow-left"></i></button>`,
+    `<div class="mat-bc">`,
+    `<span class="mat-bc-link" onclick="_infGoRoot()">Informes</span>`,
+    sep,
+  ];
+  if (mes != null) {
+    parts.push(`<span class="mat-bc-link" onclick="_infGo(${idJs},null)">${alumnoLbl}</span>`);
+    parts.push(sep);
+    parts.push(`<span class="mat-bc-cur">${mes}</span>`);
+  } else {
+    parts.push(`<span class="mat-bc-cur">${alumnoLbl}</span>`);
+  }
+  parts.push('</div>');
+  return `<div class="mat-nav-bar">${parts.join('')}</div>`;
+}
+
+function _infRenderAlumnos(c) {
+  if (!_infData.length) {
+    c.innerHTML = `<div class="empty-state"><i class="ti ti-report-off"></i><p>Sin informes generados todavía</p></div>`;
     return;
   }
+  const buckets = {};
+  _infData.forEach(inf => {
+    const key = inf.alumno_id || '__gen__';
+    if (!buckets[key]) buckets[key] = { alumnoId: inf.alumno_id || null, cnt: 0 };
+    buckets[key].cnt++;
+  });
+  const sorted = Object.values(buckets).sort((a, b) => {
+    if (!a.alumnoId) return 1;
+    if (!b.alumnoId) return -1;
+    return _infAlumnoNombre(a.alumnoId).localeCompare(_infAlumnoNombre(b.alumnoId), 'es');
+  });
+  const bubbles = sorted.map(b => {
+    const nombre = b.alumnoId ? _infAlumnoNombre(b.alumnoId) : 'General';
+    const idJs   = b.alumnoId ? `'${b.alumnoId}'` : 'null';
+    const cnt    = b.cnt;
+    return `<div class="mat-asig-bubble" style="--ab-clr:#0f4c8a" onclick="_infGo(${idJs},null)">
+      <div class="mat-asig-ico"><i class="ti ti-user"></i></div>
+      <span class="mat-asig-label">${nombre}</span>
+      <span class="mat-asig-count">${cnt} informe${cnt !== 1 ? 's' : ''}</span>
+    </div>`;
+  }).join('');
+  c.innerHTML = `<div class="mat-asig-grid">${bubbles}</div>`;
+}
 
-  const alumnoMap = {};
-  allAlumnos.forEach(a => { alumnoMap[a.id] = a; });
+function _infRenderMeses(c) {
+  const { alumnoId } = _infNav;
+  const items = _infData.filter(inf => alumnoId ? inf.alumno_id === alumnoId : !inf.alumno_id);
+  const mesCnt = {};
+  const mesOrder = [];
+  items.forEach(inf => {
+    const d = new Date(inf._fechaRef || inf.created_at);
+    const k = `${_INF_MESES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+    if (!mesCnt[k]) mesOrder.push(k);
+    mesCnt[k] = (mesCnt[k] || 0) + 1;
+  });
+  const idJs = alumnoId ? `'${alumnoId}'` : 'null';
+  const clrs = ['#0f4c8a','#065f46','#7c3aed','#b45309','#9d174d','#1e40af'];
+  const bubbles = mesOrder.map((mes, i) => {
+    const cnt = mesCnt[mes];
+    return `<div class="mat-asig-bubble" style="--ab-clr:${clrs[i % clrs.length]}" onclick="_infGo(${idJs},'${mes}')">
+      <div class="mat-asig-ico"><i class="ti ti-calendar-month"></i></div>
+      <span class="mat-asig-label">${mes}</span>
+      <span class="mat-asig-count">${cnt} informe${cnt !== 1 ? 's' : ''}</span>
+    </div>`;
+  }).join('');
+  c.innerHTML = _infBc() + `<div class="mat-asig-grid">${bubbles || '<p style="color:var(--muted);font-size:12px">Sin informes</p>'}</div>`;
+}
 
-  el.innerHTML = `<table class="tabla">
-    <thead><tr><th>Alumno</th><th>Título</th><th>Tipo</th><th>Fecha</th><th>Visible</th><th>Archivo</th><th>Acciones</th></tr></thead>
-    <tbody>
-      ${informes.map(inf => {
-        const a  = alumnoMap[inf.alumno_id];
-        const u  = a?.usuario || {};
-        const nb = `${u.nombre || ''} ${u.apellidos || ''}`.trim() || '—';
-        const tipoPill = inf.tipo === 'mensual'
-          ? `<span class="pill pill-eso">Mensual</span>`
-          : `<span class="pill pill-ok">Semanal</span>`;
-        const visPill = inf.visible
-          ? `<span class="pill pill-ok">Sí</span>`
-          : `<span class="pill pill-grey">No</span>`;
-        const archLink = inf.archivo_url
-          ? `<a href="${inf.archivo_url}" target="_blank" style="color:var(--blue);font-size:12px"><i class="ti ti-download"></i> Ver</a>`
-          : `<span style="color:var(--muted);font-size:11px">Sin archivo</span>`;
-        const fechaEsc = inf.fecha ? inf.fecha.split('T')[0] : '';
-        return `<tr>
-          <td><b style="color:#fff;font-size:12px">${nb}</b></td>
-          <td style="max-width:200px;white-space:normal;font-size:12px">${inf.titulo}</td>
-          <td>${tipoPill}</td>
-          <td style="font-size:12px">${formatDate(inf.fecha)}</td>
-          <td>${visPill}</td>
-          <td>${archLink}</td>
-          <td style="white-space:nowrap">
-            <button class="btn-edit"
-              data-inf-id="${inf.id}"
-              data-alumno-id="${inf.alumno_id}"
-              data-titulo="${encodeURIComponent(inf.titulo)}"
-              data-tipo="${inf.tipo}"
-              data-fecha="${fechaEsc}"
-              data-archivo-url="${encodeURIComponent(inf.archivo_url||'')}"
-              data-visible="${inf.visible}"
-              onclick="editarInformeFromBtn(this)"><i class="ti ti-pencil"></i> Editar</button>
-            <button class="btn-danger" style="margin-left:4px"
-              data-inf-id="${inf.id}"
-              data-titulo="${encodeURIComponent(inf.titulo)}"
-              data-archivo-url="${encodeURIComponent(inf.archivo_url||'')}"
-              onclick="eliminarInformeFromBtn(this)"><i class="ti ti-trash"></i></button>
-          </td>
-        </tr>`;
-      }).join('')}
-    </tbody>
-  </table>`;
+function _infRenderCards(c) {
+  const { alumnoId, mes } = _infNav;
+  const items = _infData.filter(inf => {
+    const d = new Date(inf._fechaRef || inf.created_at);
+    const k = `${_INF_MESES[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+    return (alumnoId ? inf.alumno_id === alumnoId : !inf.alumno_id) && k === mes;
+  });
+  const cards = items.map(inf => {
+    const isVisible   = inf.estado === 'visible';
+    const hasContenido = !!(inf.contenido?.ia);
+    const url         = inf.pdf_url || inf.archivo_url;
+    const tipoLabel   = inf.tipo === 'mensual' ? 'Mensual' : inf.tipo === 'personalizado' ? 'Personalizado' : inf.tipo;
+    const fi          = inf.fecha_inicio || inf.fecha;
+    const ff          = inf.fecha_fin    || inf.fecha;
+    const rango       = fi && ff && fi !== ff ? `${formatShortDate(fi)} – ${formatShortDate(ff)}` : formatShortDate(fi || '');
+    return `<div class="mat-pdf-card" style="--ab-clr:#0f4c8a">
+      <div class="mat-pdf-ico"><i class="ti ti-report-analytics"></i></div>
+      <div class="mat-pdf-body">
+        <div class="mat-pdf-nom">${inf.titulo || tipoLabel}</div>
+        <div class="mat-pdf-tipo">${tipoLabel} · ${rango}</div>
+      </div>
+      <span class="mat-pdf-vis ${isVisible ? 'ok' : 'off'}">${isVisible ? 'Visible' : 'Oculto'}</span>
+      <div class="mat-pdf-actions">
+        ${url ? `<a href="${url}" target="_blank" class="btn-edit"><i class="ti ti-external-link"></i> Ver</a>` : ''}
+        ${hasContenido ? `<button class="btn-edit" onclick="verRevisionInforme('${inf.id}')"><i class="ti ti-pencil"></i> Revisar</button>` : ''}
+        <button class="btn-danger" onclick="toggleEstadoInforme('${inf.id}',${isVisible})">${isVisible ? 'Ocultar' : 'Publicar'}</button>
+        <button class="btn-danger" onclick="eliminarInformeAdmin('${inf.id}')"><i class="ti ti-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+  c.innerHTML = _infBc() + `<div class="mat-pdf-grid">${cards || '<p style="color:var(--muted);font-size:12px;padding:8px 0">Sin informes en este periodo</p>'}</div>`;
+}
+
+// ── Vistas ────────────────────────────────────────────────────
+function _infViewLista() {
+  document.getElementById('inf-view-lista').style.display   = '';
+  document.getElementById('inf-view-generar').style.display = 'none';
+  document.getElementById('inf-view-revision').style.display = 'none';
+  loadInformesAdmin();
+}
+
+function _infAbrirGenerar(alumnoId) {
+  const sel = document.getElementById('gen-inf-alumno');
+  sel.innerHTML = '<option value="">— Selecciona alumno —</option>' +
+    allAlumnos.filter(a => a.activo).map(a => {
+      const u = a.usuario || {};
+      return `<option value="${a.id}" ${a.id === alumnoId ? 'selected' : ''}>${u.nombre || ''} ${u.apellidos || ''}</option>`;
+    }).join('');
+  _infTipoChange();
+  document.getElementById('gen-inf-error').style.display = 'none';
+  document.getElementById('btn-generar-inf').disabled = false;
+  document.getElementById('btn-generar-inf').innerHTML = '<i class="ti ti-sparkles"></i> Generar con IA';
+  document.getElementById('inf-view-lista').style.display    = 'none';
+  document.getElementById('inf-view-generar').style.display  = '';
+  document.getElementById('inf-view-revision').style.display = 'none';
+}
+
+function _infTipoChange() {
+  const tipo = document.getElementById('gen-inf-tipo').value;
+  if (tipo === 'mensual') {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const lastDay = new Date(y, now.getMonth() + 1, 0).getDate();
+    document.getElementById('gen-inf-inicio').value = `${y}-${m}-01`;
+    document.getElementById('gen-inf-fin').value    = `${y}-${m}-${String(lastDay).padStart(2,'0')}`;
+  }
+}
+
+async function generarInformeIA() {
+  const alumnoId = document.getElementById('gen-inf-alumno').value;
+  const tipo     = document.getElementById('gen-inf-tipo').value;
+  const inicio   = document.getElementById('gen-inf-inicio').value;
+  const fin      = document.getElementById('gen-inf-fin').value;
+  const errEl    = document.getElementById('gen-inf-error');
+  const btn      = document.getElementById('btn-generar-inf');
+
+  errEl.style.display = 'none';
+  if (!alumnoId) { errEl.textContent = 'Selecciona un alumno.'; errEl.style.display = ''; return; }
+  if (!inicio || !fin) { errEl.textContent = 'Indica las fechas de inicio y fin.'; errEl.style.display = ''; return; }
+  if (fin < inicio) { errEl.textContent = 'La fecha de fin debe ser posterior a la de inicio.'; errEl.style.display = ''; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Generando… (puede tardar hasta 30 s)';
+
+  try {
+    const session = (await db.auth.getSession()).data.session;
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/generar-informe`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token}`,
+        'apikey': SUPABASE_KEY,
+      },
+      body: JSON.stringify({ alumno_id: alumnoId, tipo, fecha_inicio: inicio, fecha_fin: fin }),
+    });
+    const result = await res.json();
+    if (!res.ok || result.error) throw new Error(result.error || 'Error desconocido');
+    showToast('Informe generado. Revisa el contenido antes de publicar.');
+    await verRevisionInforme(result.informe_id);
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.style.display = '';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-sparkles"></i> Generar con IA';
+  }
+}
+
+async function verRevisionInforme(informeId) {
+  _infRevisionId = informeId;
+  const { data: inf, error } = await db.from('informes')
+    .select('*, alumno:alumnos(usuario:usuarios(nombre,apellidos))')
+    .eq('id', informeId).single();
+  if (error || !inf) { showToast('No se pudo cargar el informe', 'error'); return; }
+
+  const ia   = inf.contenido?.ia   || {};
+  const kpis = inf.contenido?.kpis || {};
+  const u    = inf.alumno?.usuario || {};
+  const alumnoNombre = `${u.nombre || ''} ${u.apellidos || ''}`.trim() || 'Alumno';
+  const tipoLabel    = inf.tipo === 'mensual' ? 'Mensual' : 'Personalizado';
+  const fi = inf.fecha_inicio || inf.fecha;
+  const ff = inf.fecha_fin    || inf.fecha;
+  const rango = fi && ff && fi !== ff ? `${formatShortDate(fi)} – ${formatShortDate(ff)}` : formatShortDate(fi || '');
+
+  document.getElementById('inf-rev-titulo').textContent = `Revisión — ${alumnoNombre}`;
+  document.getElementById('inf-rev-sub').textContent    = `${tipoLabel} · ${rango} · ${inf.estado}`;
+  document.getElementById('btn-publicar-inf').style.display = inf.estado === 'visible' ? 'none' : '';
+  document.getElementById('btn-publicar-inf').disabled = false;
+  document.getElementById('btn-publicar-inf').innerHTML = '<i class="ti ti-send"></i> Publicar';
+
+  const global = kpis.global || {};
+  const kpiBar = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(115px,1fr));gap:10px;margin-bottom:20px">
+    ${[['Sesiones',global.total_sesiones],['Horas',global.total_horas],['Asignaturas',global.asignaturas_distintas],['Profesores',(global.profesores_distintos||[]).length]].map(([l,v]) =>
+      `<div style="background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:22px;font-weight:700;color:var(--blue)">${v ?? '—'}</div>
+        <div style="color:var(--muted);font-size:10px;margin-top:4px;text-transform:uppercase;letter-spacing:.4px">${l}</div>
+      </div>`).join('')}
+  </div>`;
+
+  const bloque = (id, label, val) => `
+    <div style="margin-bottom:18px">
+      <label class="fl">${label}</label>
+      <textarea class="fi" id="inf-edit-${id}" rows="4" style="min-height:80px;resize:vertical">${(val||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+    </div>`;
+
+  const lista = (id, label, arr) => `
+    <div style="margin-bottom:18px">
+      <label class="fl">${label} <span style="color:var(--muted);font-size:11px">(una por línea)</span></label>
+      <textarea class="fi" id="inf-edit-${id}" rows="4" style="min-height:80px;resize:vertical">${(Array.isArray(arr)?arr.join('\n'):'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+    </div>`;
+
+  const asigHtml = (ia.asignaturas||[]).map((asig,idx) => {
+    const kA = (kpis.asignaturas||[]).find(a=>a.nombre===asig.nombre)||{};
+    const v  = kA.valoraciones||{};
+    const chip = (f,lbl) => v[f]!=null ? `<span style="background:var(--dark);padding:4px 10px;border-radius:14px;font-size:11px;color:var(--soft)">${lbl}: <b style="color:#fff">${v[f]}/10</b></span>` : '';
+    return `<div style="background:var(--surface);border:.5px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px">
+      <div style="font-weight:700;color:#fff;font-size:15px;margin-bottom:3px">${asig.nombre}</div>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:12px">Prof. ${asig.profesor||'—'} · ${kA.num_sesiones||'—'} ses. · ${kA.horas_totales||'—'} h${kA.nota_media!=null?` · nota est. ${kA.nota_media}/10`:''}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+        ${chip('comprension','Comprensión')}${chip('aplicacion','Aplicación')}${chip('concentracion','Concentración')}${chip('motivacion','Motivación')}${chip('autonomia','Autonomía')}
+        ${kA.tendencia_autonomia?`<span style="background:var(--dark);padding:4px 10px;border-radius:14px;font-size:11px;color:var(--soft)">tendencia: <b style="color:#fff">${kA.tendencia_autonomia}</b></span>`:''}
+      </div>
+      <label class="fl">Análisis</label>
+      <textarea class="fi" id="inf-edit-asig-${idx}" rows="5" style="min-height:100px;resize:vertical">${(asig.analisis||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
+        <select class="fi" id="inf-edit-asig-rec-${idx}" style="width:auto;padding:8px 12px;flex-shrink:0">
+          <option value="aumentar" ${asig.horas_recomendacion?.direccion==='aumentar'?'selected':''}>Aumentar horas</option>
+          <option value="mantener" ${(asig.horas_recomendacion?.direccion==='mantener'||!asig.horas_recomendacion?.direccion)?'selected':''}>Mantener horas</option>
+          <option value="reducir"  ${asig.horas_recomendacion?.direccion==='reducir'?'selected':''}>Reducir horas</option>
+        </select>
+        <input class="fi" id="inf-edit-asig-recmot-${idx}" value="${(asig.horas_recomendacion?.motivo||'').replace(/"/g,'&quot;')}" placeholder="Motivo de la recomendación">
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('inf-revision-body').innerHTML = `
+    <div class="card" style="margin-bottom:18px">
+      <div style="font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">KPIs del periodo (solo lectura)</div>
+      ${kpiBar}
+    </div>
+    <div class="card" style="margin-bottom:18px">
+      ${bloque('resumen','Resumen ejecutivo',ia.resumen_ejecutivo)}
+      ${bloque('patron','Patrón de trabajo',ia.patron_trabajo)}
+      ${bloque('planificacion','Análisis de planificación',ia.analisis_planificacion)}
+    </div>
+    <div class="card" style="margin-bottom:18px">
+      <div style="font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px">Análisis por asignatura</div>
+      ${asigHtml || '<p style="color:var(--muted);font-size:12px">Sin asignaturas</p>'}
+    </div>
+    <div class="card">
+      ${lista('fuertes','Puntos fuertes',ia.puntos_fuertes)}
+      ${lista('logros','Logros del periodo',ia.logros)}
+      ${lista('objetivos','Objetivos del siguiente periodo',ia.objetivos_siguiente_periodo)}
+    </div>`;
+
+  document.getElementById('inf-view-lista').style.display    = 'none';
+  document.getElementById('inf-view-generar').style.display  = 'none';
+  document.getElementById('inf-view-revision').style.display = '';
+}
+
+async function guardarCambiosInforme() {
+  if (!_infRevisionId) return;
+  const { data: inf } = await db.from('informes').select('contenido').eq('id', _infRevisionId).single();
+  const ia   = inf?.contenido?.ia   || {};
+  const kpis = inf?.contenido?.kpis || {};
+  const get  = id => (document.getElementById(id)?.value || '');
+  const lines = id => get(id).split('\n').map(l=>l.trim()).filter(Boolean);
+
+  const asignaturas = (ia.asignaturas||[]).map((asig,idx) => ({
+    ...asig,
+    analisis: get(`inf-edit-asig-${idx}`),
+    horas_recomendacion: {
+      direccion: document.getElementById(`inf-edit-asig-rec-${idx}`)?.value || 'mantener',
+      motivo:    get(`inf-edit-asig-recmot-${idx}`),
+    },
+  }));
+
+  const newIa = {
+    ...ia,
+    resumen_ejecutivo:        get('inf-edit-resumen'),
+    patron_trabajo:           get('inf-edit-patron'),
+    analisis_planificacion:   get('inf-edit-planificacion'),
+    puntos_fuertes:           lines('inf-edit-fuertes'),
+    logros:                   lines('inf-edit-logros'),
+    objetivos_siguiente_periodo: lines('inf-edit-objetivos'),
+    asignaturas,
+  };
+
+  const { error } = await db.from('informes').update({
+    contenido:  { ia: newIa, kpis },
+    updated_at: new Date().toISOString(),
+  }).eq('id', _infRevisionId);
+
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast('Cambios guardados');
+}
+
+async function publicarInformeIA() {
+  if (!_infRevisionId) return;
+  await guardarCambiosInforme();
+  const btn = document.getElementById('btn-publicar-inf');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Publicando…';
+
+  try {
+    const session = (await db.auth.getSession()).data.session;
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/publicar-informe`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session?.access_token}`,
+        'apikey': SUPABASE_KEY,
+      },
+      body: JSON.stringify({ informe_id: _infRevisionId }),
+    });
+    const result = await res.json();
+    if (!res.ok || result.error) throw new Error(result.error || 'Error desconocido');
+    showToast('Informe publicado y visible para el alumno');
+    btn.style.display = 'none';
+    document.getElementById('inf-rev-sub').textContent =
+      document.getElementById('inf-rev-sub').textContent.replace('oculto', 'visible');
+  } catch (err) {
+    showToast(err.message, 'error');
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-send"></i> Publicar';
+  }
+}
+
+async function toggleEstadoInforme(informeId, esVisible) {
+  const nuevoEstado = esVisible ? 'oculto' : 'visible';
+  const { error } = await db.from('informes').update({
+    estado: nuevoEstado, visible: !esVisible, updated_at: new Date().toISOString(),
+  }).eq('id', informeId);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast(esVisible ? 'Informe ocultado' : 'Informe visible para el alumno');
+  const inf = _infData?.find(x => x.id === informeId);
+  if (inf) { inf.estado = nuevoEstado; _renderInformes(); }
+}
+
+async function eliminarInformeAdmin(informeId) {
+  if (!confirm('Esto ocultará el informe permanentemente de todas las vistas, incluida esta. ¿Continuar?')) return;
+  const { error } = await db.from('informes').update({ eliminado: true, updated_at: new Date().toISOString() }).eq('id', informeId);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast('Informe eliminado');
+  _infData = _infData.filter(x => x.id !== informeId);
+  _renderInformes();
+}
+
+// Llamada desde botón "Informe" en la tabla de alumnos
+function abrirModalInforme(alumnoId) {
+  showSection('informes');
+  setTimeout(() => _infAbrirGenerar(alumnoId), 150);
 }
 
 // ============================================================
@@ -2665,36 +2852,38 @@ async function refreshFichaInformes() {
   el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
 
   const { data, error } = await db.from('informes')
-    .select('id, titulo, tipo, fecha, archivo_url')
+    .select('id, titulo, tipo, fecha, fecha_inicio, pdf_url, archivo_url, estado')
     .eq('alumno_id', fichaAlumnoId)
-    .order('fecha', { ascending: false })
+    .eq('eliminado', false)
+    .order('created_at', { ascending: false })
     .limit(5);
 
   if (error || !data || data.length === 0) {
-    el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:4px 0">Sin informes subidos todavía.</p>';
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:4px 0">Sin informes todavía.</p>';
     return;
   }
 
-  el.innerHTML = data.map(inf => `
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid var(--border2)">
-      <div style="width:32px;height:32px;border-radius:7px;background:${inf.tipo === 'mensual' ? '#0f2240' : '#0d2d1e'};display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <i class="ti ${inf.tipo === 'mensual' ? 'ti-report-analytics' : 'ti-report'}" style="color:${inf.tipo === 'mensual' ? 'var(--blue)' : 'var(--green)'};font-size:15px"></i>
+  el.innerHTML = data.map(inf => {
+    const url     = inf.pdf_url || inf.archivo_url;
+    const fecha   = inf.fecha_inicio || inf.fecha;
+    const tipoPill = inf.tipo === 'mensual' ? 'Mensual' : inf.tipo === 'personalizado' ? 'Personalizado' : inf.tipo;
+    const estadoClr = inf.estado === 'visible' ? 'var(--green)' : 'var(--muted)';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:.5px solid var(--border2)">
+      <div style="width:32px;height:32px;border-radius:7px;background:#0f2240;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="ti ti-report-analytics" style="color:var(--blue);font-size:15px"></i>
       </div>
       <div style="flex:1;min-width:0">
-        <div style="color:#fff;font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${inf.titulo}</div>
-        <div style="color:var(--muted);font-size:10px">${formatShortDate(inf.fecha)} · <span class="pill ${inf.tipo === 'mensual' ? 'pill-eso' : 'pill-grey'}" style="padding:1px 5px;font-size:9px">${inf.tipo === 'mensual' ? 'Mensual' : 'Semanal'}</span></div>
+        <div style="color:#fff;font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${inf.titulo || tipoPill}</div>
+        <div style="color:var(--muted);font-size:10px">${formatShortDate(fecha)} · ${tipoPill} · <span style="color:${estadoClr}">${inf.estado}</span></div>
       </div>
-      ${inf.archivo_url ? `<a href="${inf.archivo_url}" target="_blank" title="Descargar" style="color:var(--blue);font-size:17px;flex-shrink:0"><i class="ti ti-download"></i></a>` : '<span style="color:var(--muted);font-size:10px">Sin archivo</span>'}
-    </div>
-  `).join('');
+      ${url ? `<a href="${url}" target="_blank" title="Ver informe" style="color:var(--blue);font-size:17px;flex-shrink:0"><i class="ti ti-external-link"></i></a>` : ''}
+    </div>`;
+  }).join('');
 }
 
 function abrirInformeParaFicha() {
-  const a = allAlumnos.find(x => x.id === fichaAlumnoId);
-  if (!a) return;
-  const u = a.usuario || {};
   cerrarModal('modal-ficha');
-  abrirModalInforme(fichaAlumnoId, `${u.nombre || ''} ${u.apellidos || ''}`);
+  abrirModalInforme(fichaAlumnoId);
 }
 
 function renderFichaAsigCheckboxes(el, asignadas) {
