@@ -2014,7 +2014,7 @@ async function iniciarTest(testId, tituloEnc, from) {
     .eq('alumno_id', ctx.alumnoData.id)
     .maybeSingle();
 
-  if (resultado && !puedeRep) {
+  if (resultado && isIA && !puedeRep) {
     // View-only: show completed test with answers highlighted
     testState = { testId, preguntas, respuestas: resultado.respuestas || {}, enviado: true, viewOnly: true, isIA, creadoPor };
     renderTest();
