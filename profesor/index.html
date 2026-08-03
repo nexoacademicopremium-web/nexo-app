@@ -798,7 +798,10 @@
       <h1 class="page-title" style="margin:0">Tests</h1>
       <p class="page-sub" style="margin:0;margin-top:4px">Crea y gestiona tests para tus alumnos</p>
     </div>
-    <button class="btn-primary" onclick="abrirModalTestProf()"><i class="ti ti-plus"></i> Nuevo test</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn-primary" onclick="abrirModalTestProf()"><i class="ti ti-plus"></i> Nuevo test</button>
+      <button class="btn-primary" style="background:linear-gradient(135deg,#312e81,#5b21b6)" onclick="abrirModalTestPdf()"><i class="ti ti-brain"></i> Test desde PDF</button>
+    </div>
   </div>
   <div class="card" id="prof-tests-lista">
     <div class="loading-section"><div class="spinner"></div></div>
@@ -941,6 +944,55 @@
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModalTestProf()">Cancelar</button>
         <button type="submit" class="btn-primary"><i class="ti ti-device-floppy"></i> Guardar test</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- MODAL TEST DESDE PDF (IA) -->
+<div class="modal-overlay" id="modal-test-pdf">
+  <div class="modal-box" style="max-width:520px;width:95%">
+    <div class="modal-title">
+      <span><i class="ti ti-brain" style="margin-right:6px;color:#a78bfa"></i>Test desde PDF con IA</span>
+      <button class="modal-close" onclick="cerrarModalTestPdf()">×</button>
+    </div>
+    <form id="form-test-pdf" onsubmit="guardarTestPdf(event)">
+      <label class="field-label" style="margin-top:0">Alumno *</label>
+      <select class="field-input" id="tpdf-alumno" required onchange="tpdfAlumnoChange()">
+        <option value="">— Seleccionar alumno —</option>
+      </select>
+
+      <label class="field-label">Asignatura *</label>
+      <select class="field-input" id="tpdf-asignatura" required disabled onchange="tpdfAsigChange()">
+        <option value="">— Primero selecciona un alumno —</option>
+      </select>
+
+      <label class="field-label">Tema</label>
+      <select class="field-input" id="tpdf-tema" disabled>
+        <option value="">— Primero selecciona asignatura —</option>
+      </select>
+
+      <label class="field-label">Título del test *</label>
+      <input class="field-input" id="tpdf-titulo" placeholder="Ej: Test Funciones — Matemáticas" required>
+
+      <label class="field-label">PDF de teoría o test *</label>
+      <label id="tpdf-upload-area" style="display:flex;flex-direction:column;align-items:center;justify-content:center;border:1.5px dashed var(--border);border-radius:10px;padding:24px;cursor:pointer;transition:border-color .18s;margin-top:4px">
+        <i class="ti ti-file-upload" style="font-size:28px;color:var(--muted)"></i>
+        <span style="color:var(--muted);font-size:12px;margin-top:8px">Arrastra un PDF o pulsa para seleccionar</span>
+        <input type="file" id="tpdf-archivo" accept=".pdf" required style="display:none" onchange="tpdfArchivoChange(this)">
+      </label>
+      <div id="tpdf-archivo-nombre" style="display:none;color:var(--soft);font-size:12px;margin-top:8px;padding:6px 10px;background:var(--dark);border-radius:6px"></div>
+
+      <div id="tpdf-progress" style="display:none;align-items:center;justify-content:center;gap:12px;padding:16px;color:var(--muted);font-size:13px;margin-top:12px;background:var(--dark);border-radius:8px">
+        <div class="spinner" style="width:16px;height:16px;border-width:2px"></div>
+        Generando test con IA... puede tardar unos segundos
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-cancel" onclick="cerrarModalTestPdf()">Cancelar</button>
+        <button type="submit" class="btn-primary" id="btn-generar-test-pdf" style="background:linear-gradient(135deg,#312e81,#5b21b6)">
+          <i class="ti ti-brain"></i> Generar test
+        </button>
       </div>
     </form>
   </div>
@@ -2833,7 +2885,7 @@ async function loadTestsProf() {
   const el = document.getElementById('prof-tests-lista');
   el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
   const { data: tests } = await db.from('tests')
-    .select('id,titulo,asignatura,visible,created_at,preguntas:preguntas_test(id)')
+    .select('id,titulo,asignatura,visible,created_at,generado_ia,puede_repetir,alumno_id,preguntas:preguntas_test(id),alumno:alumnos(usuario:usuarios(nombre,apellidos)),resultados:resultados_test(nota,completado_at)')
     .eq('creado_por', ctx.usuario.id)
     .order('created_at', { ascending: false });
 
@@ -2842,18 +2894,35 @@ async function loadTestsProf() {
     return;
   }
   el.innerHTML = `<table class="tabla"><thead><tr>
-    <th>Título</th><th>Asignatura</th><th>Preguntas</th><th>Estado</th><th></th>
+    <th>Título</th><th>Alumno</th><th>Preg.</th><th>Resultado</th><th>Estado</th><th></th>
   </tr></thead><tbody>
-  ${tests.map(t => `<tr>
-    <td style="color:#fff;font-weight:500">${t.titulo}</td>
-    <td>${t.asignatura || '—'}</td>
-    <td>${t.preguntas?.length || 0}</td>
-    <td><span class="status-pill ${t.visible ? 'st-ok' : 'st-grey'}">${t.visible ? 'Visible' : 'Oculto'}</span></td>
-    <td style="white-space:nowrap">
-      <button class="btn-ghost" style="padding:5px 10px;font-size:11px" onclick="editarTestProf('${t.id}')"><i class="ti ti-pencil"></i></button>
-      <button class="btn-ghost" style="padding:5px 10px;font-size:11px;margin-left:4px" onclick="toggleTestVis('${t.id}',${!t.visible})">${t.visible ? 'Ocultar' : 'Mostrar'}</button>
-    </td>
-  </tr>`).join('')}
+  ${tests.map(t => {
+    const alumNom = t.alumno?.usuario
+      ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos || ''}`.trim()
+      : (t.alumno_id ? '—' : '<span style="color:var(--muted);font-size:11px">Todos</span>');
+    const resultado = t.resultados?.[0];
+    const iaBadge = t.generado_ia
+      ? `<span style="background:rgba(91,33,182,.25);border:.5px solid rgba(139,92,246,.5);border-radius:5px;padding:1px 6px;font-size:10px;color:#a78bfa;font-weight:600;margin-left:6px;vertical-align:middle">IA</span>`
+      : '';
+    const resultadoHtml = resultado
+      ? `<span style="color:${resultado.nota >= 5 ? 'var(--green)' : 'var(--red)'};font-weight:600">${resultado.nota}/10</span>`
+      : (t.alumno_id ? `<span style="color:var(--muted);font-size:11px">Pendiente</span>` : '—');
+    const showRepetir = t.generado_ia && resultado && !t.puede_repetir;
+    const showYaRepetir = t.generado_ia && t.puede_repetir;
+    return `<tr>
+      <td style="color:#fff;font-weight:500">${t.titulo}${iaBadge}</td>
+      <td style="font-size:12px">${alumNom}</td>
+      <td>${t.preguntas?.length || 0}</td>
+      <td>${resultadoHtml}</td>
+      <td><span class="status-pill ${t.visible ? 'st-ok' : 'st-grey'}">${t.visible ? 'Visible' : 'Oculto'}</span></td>
+      <td style="white-space:nowrap">
+        ${!t.generado_ia ? `<button class="btn-ghost" style="padding:5px 10px;font-size:11px" onclick="editarTestProf('${t.id}')"><i class="ti ti-pencil"></i></button>` : ''}
+        <button class="btn-ghost" style="padding:5px 10px;font-size:11px;margin-left:4px" onclick="toggleTestVis('${t.id}',${!t.visible})">${t.visible ? 'Ocultar' : 'Mostrar'}</button>
+        ${showRepetir ? `<button class="btn-ghost" style="padding:5px 10px;font-size:11px;margin-left:4px;color:#a78bfa;border-color:rgba(139,92,246,.4)" onclick="permitirRepetir('${t.id}')">↺ Repetir</button>` : ''}
+        ${showYaRepetir ? `<span style="color:var(--muted);font-size:10px;margin-left:4px">Repetir activo</span>` : ''}
+      </td>
+    </tr>`;
+  }).join('')}
   </tbody></table>`;
 }
 
@@ -3008,6 +3077,137 @@ async function guardarTestProf(e) {
 
 function cerrarModalTestProf() {
   document.getElementById('modal-test-prof').classList.remove('open');
+}
+
+// ── Test desde PDF con IA ──────────────────────────────────
+
+async function abrirModalTestPdf() {
+  document.getElementById('form-test-pdf').reset();
+  document.getElementById('tpdf-archivo-nombre').style.display = 'none';
+  document.getElementById('tpdf-progress').style.display = 'none';
+  document.getElementById('btn-generar-test-pdf').disabled = false;
+  document.getElementById('tpdf-upload-area').style.borderColor = 'var(--border)';
+  _cargarAlumnosProf();
+  const selA = document.getElementById('tpdf-alumno');
+  selA.innerHTML = '<option value="">— Seleccionar alumno —</option>' +
+    _tpAlumnosData.map(a => `<option value="${a.id}">${a.nombre} ${a.apellidos || ''}</option>`).join('');
+  document.getElementById('tpdf-asignatura').innerHTML = '<option value="">— Primero selecciona un alumno —</option>';
+  document.getElementById('tpdf-asignatura').disabled = true;
+  document.getElementById('tpdf-tema').innerHTML = '<option value="">— Primero selecciona asignatura —</option>';
+  document.getElementById('tpdf-tema').disabled = true;
+  document.getElementById('modal-test-pdf').classList.add('open');
+}
+
+function cerrarModalTestPdf() {
+  document.getElementById('modal-test-pdf').classList.remove('open');
+}
+
+function tpdfAlumnoChange() {
+  const alumnoId = document.getElementById('tpdf-alumno').value;
+  const selAs = document.getElementById('tpdf-asignatura');
+  const selT  = document.getElementById('tpdf-tema');
+  selT.innerHTML = '<option value="">— Primero selecciona asignatura —</option>';
+  selT.disabled = true;
+  if (!alumnoId) {
+    selAs.innerHTML = '<option value="">— Primero selecciona un alumno —</option>';
+    selAs.disabled = true;
+    return;
+  }
+  const alumno = _tpAlumnosData.find(a => a.id === alumnoId);
+  const asigs  = (alumno?.asignaturas || []).slice().sort();
+  selAs.disabled = false;
+  selAs.innerHTML = '<option value="">— Seleccionar asignatura —</option>' +
+    asigs.map(a => `<option value="${a}">${a}</option>`).join('');
+}
+
+function tpdfAsigChange() {
+  const alumnoId   = document.getElementById('tpdf-alumno').value;
+  const asigNombre = document.getElementById('tpdf-asignatura').value;
+  const sel = document.getElementById('tpdf-tema');
+  if (!asigNombre) {
+    sel.innerHTML = '<option value="">— Primero selecciona asignatura —</option>';
+    sel.disabled = true;
+    return;
+  }
+  const alumnoFull = misAlumnos.find(a => a.id === alumnoId);
+  const nivel      = alumnoFull?.nivel || null;
+  const temas      = _curriculoTemas(nivel, asigNombre);
+  if (!temas || !temas.length) {
+    sel.innerHTML = '<option value="">— Sin temas definidos para este curso —</option>';
+    sel.disabled = true;
+    return;
+  }
+  sel.disabled = false;
+  sel.innerHTML = '<option value="">— Selecciona tema (opcional) —</option>' +
+    temas.map(t => `<option value="${t}">${t}</option>`).join('');
+}
+
+function tpdfArchivoChange(input) {
+  const file = input.files[0];
+  const nom  = document.getElementById('tpdf-archivo-nombre');
+  if (file) {
+    nom.textContent = `📄 ${file.name} (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+    nom.style.display = '';
+    document.getElementById('tpdf-upload-area').style.borderColor = 'var(--blue)';
+  }
+}
+
+async function guardarTestPdf(e) {
+  e.preventDefault();
+  const alumnoId   = document.getElementById('tpdf-alumno').value;
+  const asigNombre = document.getElementById('tpdf-asignatura').value;
+  const tema       = document.getElementById('tpdf-tema').value;
+  const titulo     = document.getElementById('tpdf-titulo').value.trim();
+  const file       = document.getElementById('tpdf-archivo').files[0];
+
+  if (!alumnoId || !asigNombre || !titulo || !file) {
+    showToast('Rellena todos los campos obligatorios', 'error'); return;
+  }
+
+  const btn = document.getElementById('btn-generar-test-pdf');
+  btn.disabled = true;
+  document.getElementById('tpdf-progress').style.display = 'flex';
+
+  try {
+    const alumnoFull = misAlumnos.find(a => a.id === alumnoId);
+    const nivel             = alumnoFull?.nivel || 'ESO';
+    const alumnoUsuarioId   = alumnoFull?.usuario_id || '';
+
+    const fd = new FormData();
+    fd.append('pdf', file);
+    fd.append('titulo', titulo);
+    fd.append('asignatura', asigNombre);
+    fd.append('nivel', nivel);
+    fd.append('bloque_tema', tema || '');
+    fd.append('alumno_id', alumnoId);
+    fd.append('alumno_usuario_id', alumnoUsuarioId);
+    fd.append('profesor_usuario_id', ctx.usuario.id);
+
+    const resp = await fetch(`${SUPABASE_URL}/functions/v1/generate-test-from-pdf`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${SUPABASE_KEY}` },
+      body: fd,
+    });
+
+    const result = await resp.json();
+    if (!resp.ok) throw new Error(result.error || 'Error al generar el test');
+
+    showToast(`¡Test generado con ${result.questionCount} preguntas! El alumno ha sido notificado.`);
+    cerrarModalTestPdf();
+    loadTestsProf();
+  } catch (err) {
+    showToast(err.message || 'Error al generar el test', 'error');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('tpdf-progress').style.display = 'none';
+  }
+}
+
+async function permitirRepetir(testId) {
+  const { error } = await db.from('tests').update({ puede_repetir: true }).eq('id', testId);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast('El alumno podrá volver a hacer el test');
+  loadTestsProf();
 }
 
 // ============================================================

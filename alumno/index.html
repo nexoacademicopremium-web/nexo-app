@@ -1687,15 +1687,18 @@ async function loadEstudiar() {
     byAsig[k].push(m);
   });
 
-  // Also fetch tests
-  const { data: tests } = await db
+  // Also fetch tests: by nivel + by alumno_id assignment (AI tests)
+  const { data: rawTests } = await db
     .from('tests')
-    .select('*, resultado:resultados_test(nota)')
+    .select('id,titulo,asignatura,nivel,bloque_tema,alumno_id,generado_ia,puede_repetir,creado_por,visible,resultado:resultados_test(nota,respuestas)')
     .eq('visible', true)
-    .eq('nivel', alumno.nivel);
+    .or(`nivel.eq.${alumno.nivel},alumno_id.eq.${alumno.id}`);
+
+  // Deduplicate (a test might satisfy both conditions)
+  const tests = (rawTests || []).filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
 
   const byAsigTests = {};
-  (tests || []).forEach(t => {
+  tests.forEach(t => {
     const k = t.asignatura || 'General';
     if (!byAsigTests[k]) byAsigTests[k] = [];
     byAsigTests[k].push(t);
@@ -1704,11 +1707,11 @@ async function loadEstudiar() {
   const allMat = Object.values(byAsig).flat();
   const nGen   = allMat.filter(m => !matIds.includes(m.id)).length;
   const nExcl  = allMat.filter(m =>  matIds.includes(m.id)).length;
-  const nTest  = Object.values(byAsigTests).flat().length;
+  const nTest  = tests.length;
   document.getElementById('estudiar-sub').textContent =
     `${nGen + nExcl} recurso${nGen+nExcl!==1?'s':''} · ${nTest} test${nTest!==1?'s':''}`;
 
-  window._estudiarData = { byAsig, byAsigTests, temaMap, matIds };
+  window._estudiarData = { byAsig, byAsigTests, temaMap, matIds, allTests: tests };
   _alNav = null;
   _alRender();
 }
@@ -1794,6 +1797,24 @@ function _alRenderSecs() {
   const genCnt  = all.filter(m => !matIds.includes(m.id)).length;
   const exclCnt = all.filter(m =>  matIds.includes(m.id)).length;
   const tests   = Object.values(window._estudiarData?.byAsigTests || {}).flat();
+
+  // Pending AI tests assigned specifically to this alumno
+  const alumnoId  = ctx.alumnoData?.id;
+  const pendingIA = (window._estudiarData?.allTests || [])
+    .filter(t => t.generado_ia && t.alumno_id === alumnoId && !(t.resultado?.length));
+  let banner = '';
+  if (pendingIA.length > 0) {
+    const pl = pendingIA.length > 1;
+    banner = `<div style="background:rgba(91,33,182,.15);border:.5px solid rgba(139,92,246,.5);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+      <i class="ti ti-bell-ringing" style="font-size:22px;color:#a78bfa;flex-shrink:0"></i>
+      <div style="flex:1;min-width:0">
+        <div style="color:#fff;font-size:13px;font-weight:600">${pl ? `${pendingIA.length} tests asignados` : 'Test asignado por tu profesor'}</div>
+        <div style="color:var(--muted);font-size:11px;margin-top:2px">Tienes ${pl ? 'tests' : 'un test'} pendiente${pl ? 's' : ''} de realizar</div>
+      </div>
+      <button onclick="_alGoSec('tests')" style="background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0">Hacer${pl ? 'los' : 'lo'}</button>
+    </div>`;
+  }
+
   let b = '';
   b += `<div class="mat-tema-bubble" style="--cc:#2563eb" onclick="_alGoSec('gen')">
     <div class="mat-tema-ico"><i class="ti ti-files"></i></div>
@@ -1808,18 +1829,19 @@ function _alRenderSecs() {
     </div>`;
   }
   if (tests.length > 0) {
-    b += `<div class="mat-tema-bubble" style="--cc:#1a7f5e" onclick="_alGoSec('tests')">
-      <div class="mat-tema-ico"><i class="ti ti-list-check"></i></div>
+    const pendCnt = pendingIA.length;
+    b += `<div class="mat-tema-bubble" style="--cc:${pendCnt > 0 ? '#5b21b6' : '#1a7f5e'}" onclick="_alGoSec('tests')">
+      <div class="mat-tema-ico"><i class="ti ${pendCnt > 0 ? 'ti-bell-ringing' : 'ti-list-check'}"></i></div>
       <div class="mat-tema-nom">Tests</div>
-      <div class="mat-tema-cnt">${tests.length} test${tests.length!==1?'s':''}</div>
+      <div class="mat-tema-cnt">${pendCnt > 0 ? `${pendCnt} pendiente${pendCnt!==1?'s':''}` : `${tests.length} test${tests.length!==1?'s':''}`}</div>
     </div>`;
   }
   if (!all.length && !tests.length) {
     b = `<div class="empty-state"><i class="ti ti-clock"></i><p>Sin contenido disponible todavía</p></div>`;
-    document.getElementById('detalle-material').innerHTML = b;
+    document.getElementById('detalle-material').innerHTML = banner + b;
     return;
   }
-  document.getElementById('detalle-material').innerHTML = `<div class="mat-tema-grid">${b}</div>`;
+  document.getElementById('detalle-material').innerHTML = `${banner}<div class="mat-tema-grid">${b}</div>`;
 }
 
 function _alRenderAsigs() {
@@ -1880,17 +1902,32 @@ function _alRenderPdfs() {
 }
 
 function _alRenderTests() {
-  const tests = Object.values(window._estudiarData?.byAsigTests || {}).flat();
+  const tests    = Object.values(window._estudiarData?.byAsigTests || {}).flat();
+  const alumnoId = ctx.alumnoData?.id;
   const cards = tests.map(t => {
-    const nota = t.resultado?.[0]?.nota;
-    const cc   = nota!=null ? '#1a7f5e' : '#154ca9';
-    return `<div class="mat-item-card" style="--cc:${cc}" onclick="iniciarTest('${t.id}','${encodeURIComponent(t.titulo)}')">
-      <div class="mat-item-ico"><i class="ti ${nota!=null?'ti-check':'ti-player-play'}"></i></div>
+    const nota       = t.resultado?.[0]?.nota;
+    const done       = nota != null;
+    const isIA       = t.generado_ia;
+    const isAssigned = t.alumno_id === alumnoId;
+    const locked     = done && isIA && !t.puede_repetir;
+    const pending    = !done && isIA && isAssigned;
+
+    const cc       = locked ? '#374151' : (done ? '#1a7f5e' : (pending ? '#5b21b6' : '#154ca9'));
+    const ico      = locked ? 'ti-lock' : (done ? 'ti-check' : (pending ? 'ti-bell-ringing' : 'ti-player-play'));
+    const badge    = done ? `Nota: ${nota}` : (pending ? 'Pendiente' : 'Nuevo');
+    const badgeBg  = done ? 'var(--green-lt)' : (pending ? 'rgba(91,33,182,.2)' : '#0f2240');
+    const badgeClr = done ? 'var(--green)' : (pending ? '#a78bfa' : 'var(--blue)');
+    const btnTxt   = locked ? 'Ver respuestas' : (done ? 'Repetir' : 'Iniciar test');
+    const iaBadge  = isIA
+      ? `<span style="position:absolute;top:8px;right:8px;background:rgba(91,33,182,.3);border:.5px solid rgba(139,92,246,.5);border-radius:5px;padding:1px 6px;font-size:10px;color:#a78bfa;font-weight:700">IA</span>`
+      : '';
+
+    return `<div class="mat-item-card" style="--cc:${cc};position:relative" onclick="iniciarTest('${t.id}','${encodeURIComponent(t.titulo)}')">
+      ${iaBadge}
+      <div class="mat-item-ico"><i class="ti ${ico}"></i></div>
       <div class="mat-item-nom">${t.titulo}</div>
-      <span class="mat-item-badge" style="background:${nota!=null?'var(--green-lt)':'#0f2240'};color:${nota!=null?'var(--green)':'var(--blue)'}">
-        ${nota!=null?`Nota: ${nota}`:'Nuevo'}
-      </span>
-      <button class="mat-item-btn">${nota!=null?'Repetir test':'Iniciar test'}</button>
+      <span class="mat-item-badge" style="background:${badgeBg};color:${badgeClr}">${badge}</span>
+      <button class="mat-item-btn">${btnTxt}</button>
     </div>`;
   }).join('');
   document.getElementById('detalle-material').innerHTML = `<div class="mat-item-grid">${cards}</div>`;
@@ -1963,7 +2000,42 @@ async function iniciarTest(testId, tituloEnc, from) {
     return;
   }
 
-  testState = { testId, preguntas, respuestas: {}, enviado: false };
+  // Retrieve metadata from cached tests list
+  const testInfo    = (window._estudiarData?.allTests || []).find(t => t.id === testId);
+  const puedeRep    = testInfo?.puede_repetir || false;
+  const isIA        = testInfo?.generado_ia   || false;
+  const creadoPor   = testInfo?.creado_por    || null;
+
+  // Check if already completed
+  const { data: resultado } = await db
+    .from('resultados_test')
+    .select('*')
+    .eq('test_id', testId)
+    .eq('alumno_id', ctx.alumnoData.id)
+    .maybeSingle();
+
+  if (resultado && !puedeRep) {
+    // View-only: show completed test with answers highlighted
+    testState = { testId, preguntas, respuestas: resultado.respuestas || {}, enviado: true, viewOnly: true, isIA, creadoPor };
+    renderTest();
+    const nota      = resultado.nota;
+    const correctas = preguntas.filter(p => (resultado.respuestas || {})[p.id] === p.respuesta_correcta).length;
+    const content   = document.getElementById('test-content');
+    const resultDiv = document.createElement('div');
+    resultDiv.style.cssText = 'background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:24px;text-align:center;margin-bottom:16px';
+    resultDiv.innerHTML = `
+      <div style="font-size:40px;font-weight:700;color:${nota >= 5 ? 'var(--green)' : 'var(--red)'};margin-bottom:8px">${nota}</div>
+      <div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:4px">${nota >= 9 ? '¡Excelente!' : nota >= 7 ? '¡Muy bien!' : nota >= 5 ? 'Aprobado' : 'Sigue practicando'}</div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:14px">${correctas} de ${preguntas.length} respuestas correctas</div>
+      <div style="color:var(--muted);font-size:11px;padding:8px 12px;background:var(--dark);border-radius:8px;margin-bottom:20px">Respuestas correctas marcadas en verde · Tu profesor debe habilitarte para repetirlo</div>
+      <button class="btn-primary" onclick="showSection(_testOriginSection||'estudiar')">← Volver</button>
+    `;
+    content.prepend(resultDiv);
+    window.scrollTo(0, 0);
+    return;
+  }
+
+  testState = { testId, preguntas, respuestas: {}, enviado: false, viewOnly: false, isIA, creadoPor };
   renderTest();
 }
 
@@ -2001,7 +2073,7 @@ function seleccionarRespuesta(pregId, opcion) {
 }
 
 async function enviarTest() {
-  const { testId, preguntas, respuestas } = testState;
+  const { testId, preguntas, respuestas, isIA, creadoPor } = testState;
   let correctas = 0;
   preguntas.forEach(p => { if (respuestas[p.id] === p.respuesta_correcta) correctas++; });
   const nota = parseFloat((correctas / preguntas.length * 10).toFixed(2));
@@ -2011,19 +2083,33 @@ async function enviarTest() {
     test_id: testId,
     alumno_id: ctx.alumnoData.id,
     respuestas: respuestas,
-    nota: nota
+    nota: nota,
+    completado_at: new Date().toISOString(),
   }, { onConflict: 'test_id,alumno_id' });
+
+  // For AI tests: notify profesor + reset puede_repetir (non-critical, fire and forget)
+  if (isIA && creadoPor) {
+    const nombre    = `${ctx.usuario?.nombre || ''} ${ctx.usuario?.apellidos || ''}`.trim() || 'El alumno';
+    const testInfo  = (window._estudiarData?.allTests || []).find(t => t.id === testId);
+    db.rpc('notificar_test_completado', {
+      p_profesor_usuario_id: creadoPor,
+      p_alumno_nombre:       nombre,
+      p_test_titulo:         testInfo?.titulo || 'Test',
+      p_nota:                nota,
+    }).catch(() => {});
+    db.rpc('reset_puede_repetir', { p_test_id: testId }).catch(() => {});
+  }
 
   renderTest();
 
-  // Append result summary
   const content = document.getElementById('test-content');
   const resultDiv = document.createElement('div');
   resultDiv.style.cssText = 'background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:24px;text-align:center;margin-top:16px';
   resultDiv.innerHTML = `
     <div style="font-size:40px;font-weight:700;color:${nota >= 5 ? 'var(--green)' : 'var(--red)'};margin-bottom:8px">${nota}</div>
     <div style="color:#fff;font-size:16px;font-weight:600;margin-bottom:4px">${nota >= 9 ? '¡Excelente!' : nota >= 7 ? '¡Muy bien!' : nota >= 5 ? 'Aprobado' : 'Sigue practicando'}</div>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:20px">${correctas} de ${preguntas.length} respuestas correctas</div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:${isIA ? '8px' : '20px'}">${correctas} de ${preguntas.length} respuestas correctas</div>
+    ${isIA ? `<div style="color:var(--muted);font-size:11px;padding:8px 12px;background:var(--dark);border-radius:8px;margin-bottom:20px">Revisa las respuestas correctas marcadas en verde debajo</div>` : ''}
     <button class="btn-primary" onclick="showSection(_testOriginSection||'estudiar')">← Volver</button>
   `;
   content.prepend(resultDiv);
