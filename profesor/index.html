@@ -327,32 +327,31 @@
   .nses-bloque-title{padding:12px 18px;color:var(--soft);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;background:var(--dark);border-bottom:.5px solid var(--border);display:flex;align-items:center;gap:8px}
   .nses-bloque-title i{color:var(--blue);font-size:14px}
   .nses-bloque-body{padding:18px}
-  .nses-asig-block{border:.5px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden}
+  .nses-asig-block{border:1.5px solid var(--border);border-radius:16px;margin-bottom:14px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.18);transition:border-color .2s,box-shadow .2s}
+  .nses-asig-block.open{border-color:rgba(55,130,255,.35);box-shadow:0 4px 24px rgba(55,130,255,.08)}
   .nses-asig-hdr{padding:13px 16px;background:var(--dark);display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;transition:background .15s}
-  .nses-asig-hdr:hover{background:#0d1530}
-  .nses-asig-nom{color:#fff;font-size:13px;font-weight:500;flex:1}
+  .nses-asig-hdr:hover{background:#0c1526}
+  .nses-asig-nom{color:#fff;font-size:13px;font-weight:600;flex:1}
   .nses-asig-chevron{color:var(--muted);font-size:14px;transition:transform .2s;flex-shrink:0}
   .nses-asig-chevron.open{transform:rotate(90deg);color:var(--blue)}
-  .nses-asig-body{display:none;border-top:.5px solid var(--border)}
-  .nses-asig-time-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--surface);border-bottom:.5px solid var(--border2);gap:10px}
-  .nses-asig-time-label{color:var(--muted);font-size:11px}
-  .nses-asig-time{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px}
-  .nses-asig-time input{width:64px;background:var(--dark);border:.5px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--txt);font-size:12px;font-family:inherit;text-align:center;outline:none}
-  .nses-asig-time input:focus{border-color:var(--blue)}
+  .nses-asig-body{display:none;border-top:1px solid rgba(255,255,255,.06)}
+  .nses-asig-time-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--surface);border-bottom:.5px solid var(--border2);gap:10px;flex-wrap:wrap}
+  .nses-asig-time-label{color:var(--muted);font-size:11px;display:flex;align-items:center;gap:5px;flex-shrink:0}
+  .nses-time-bubble{display:inline-flex;align-items:center;gap:3px;background:var(--dark);border:1px solid var(--border);border-radius:20px;padding:4px 10px;transition:border-color .15s}
+  .nses-time-bubble:focus-within{border-color:var(--blue)}
+  .nses-time-sel{background:transparent;border:none;color:var(--txt);font-size:12px;font-family:inherit;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;padding:1px 2px;text-align:center}
+  .nses-time-sep{color:var(--muted);font-size:11px;pointer-events:none;padding:0 1px}
   .nses-chips-row{display:flex;flex-wrap:wrap;gap:6px;padding:10px 16px 6px}
-  .nses-chip{display:inline-flex;align-items:center;gap:5px;background:var(--dark);border:.5px solid var(--border);border-radius:20px;padding:4px 11px;color:var(--soft);font-size:11px;cursor:pointer;transition:all .15s;font-family:inherit}
-  .nses-chip:hover{border-color:var(--blue);color:var(--blue);background:#0a1a30}
+  .nses-chip{display:inline-flex;align-items:center;gap:5px;background:var(--dark);border:.5px solid var(--border);border-radius:20px;padding:5px 12px;color:var(--soft);font-size:11px;cursor:pointer;transition:all .15s;font-family:inherit}
+  .nses-chip:hover{border-color:var(--blue);color:var(--blue);background:#0a1530}
   .nses-chip i{font-size:11px}
-  .nses-tema-block{border-top:.5px solid var(--border2);padding:12px 16px}
-  .nses-tema-block-hdr{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-  .nses-tema-block-hdr input[type=text]{flex:1;font-size:12px;font-weight:500;background:var(--dark);border:.5px solid var(--border);border-radius:7px;padding:6px 10px;color:var(--txt);font-family:inherit;outline:none}
+  .nses-tema-block{margin:8px 12px;background:rgba(255,255,255,.025);border:1px solid var(--border2);border-radius:12px;overflow:hidden}
+  .nses-tema-block-hdr{display:flex;align-items:center;gap:8px;padding:9px 12px}
+  .nses-tema-block-hdr input[type=text]{flex:1;font-size:12px;font-weight:500;background:transparent;border:.5px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--txt);font-family:inherit;outline:none}
   .nses-tema-block-hdr input[type=text]:focus{border-color:var(--blue)}
-  .nses-tema-time{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:11px;flex-shrink:0}
-  .nses-tema-time input{width:52px;background:var(--dark);border:.5px solid var(--border);border-radius:5px;padding:4px 7px;color:var(--txt);font-size:11px;font-family:inherit;text-align:center;outline:none}
-  .nses-tema-time input:focus{border-color:var(--blue)}
-  .nses-tema-del{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:4px;font-size:15px;line-height:1;flex-shrink:0;transition:color .15s}
-  .nses-tema-del:hover{color:var(--red)}
-  .nses-tema-detail{padding:4px 0 2px;background:transparent}
+  .nses-tema-del{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:0;font-size:16px;line-height:1;flex-shrink:0;transition:color .15s;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+  .nses-tema-del:hover{color:var(--red);background:rgba(255,80,80,.1)}
+  .nses-tema-detail{padding:8px 12px 6px;border-top:.5px solid rgba(255,255,255,.06)}
   .nses-test-toggle{display:flex;align-items:center;justify-content:space-between;padding:6px 0;margin-bottom:4px}
   .nses-test-toggle label{color:var(--muted);font-size:11px;display:flex;align-items:center;gap:6px}
   .nses-test-btn{background:transparent;border:.5px solid var(--border);border-radius:6px;padding:4px 10px;color:var(--muted);font-size:11px;cursor:pointer;font-family:inherit;transition:all .15s}
@@ -2215,6 +2214,22 @@ async function nSesLoadAlumno() {
   ).join('');
 }
 
+function _nSesGetMin(prefix, id) {
+  const h = parseInt(document.getElementById(`${prefix}-h-${id}`)?.value) || 0;
+  const m = parseInt(document.getElementById(`${prefix}-m-${id}`)?.value) || 0;
+  return h * 60 + m;
+}
+
+function _nSesTimeHtml(hId, mId, onchange, maxH) {
+  maxH = maxH || 4;
+  const hOpts = Array.from({length: maxH + 1}, (_, i) => `<option value="${i}">${i}h</option>`).join('');
+  const mOpts = Array.from({length: 12}, (_, i) => {
+    const v = i * 5;
+    return `<option value="${v}">${String(v).padStart(2, '0')}m</option>`;
+  }).join('');
+  return `<div class="nses-time-bubble"><select class="nses-time-sel" id="${hId}" onchange="${onchange}">${hOpts}</select><span class="nses-time-sep">:</span><select class="nses-time-sel" id="${mId}" onchange="${onchange}">${mOpts}</select></div>`;
+}
+
 function _nSesRenderAsig(asig, ai, prevTemasMap) {
   const asigKey = _asigKey(asig.nombre);
   const prevSet = prevTemasMap?.[asig.nombre] || new Set();
@@ -2244,10 +2259,7 @@ function _nSesRenderAsig(asig, ai, prevTemasMap) {
             <i class="ti ti-clock" style="font-size:12px;margin-right:4px"></i>Tiempo dedicado
             <span id="nses-tema-sum-${ai}" style="color:var(--muted);font-size:10px;margin-left:6px"></span>
           </span>
-          <div class="nses-asig-time">
-            <input type="number" min="0" step="0.5" value="0" id="nses-atm-${ai}"
-              oninput="this.value=Math.max(0,parseFloat(this.value)||0);nSesCheckTotals()"> h
-          </div>
+          ${_nSesTimeHtml(`nses-atm-h-${ai}`, `nses-atm-m-${ai}`, 'nSesCheckTotals()')}
         </div>
         ${chips}
         <div id="nses-temas-list-${ai}" style="margin-top:4px"></div>
@@ -2419,31 +2431,42 @@ function nSesCatChange(pid, asigKey, catVal) {
 function nSesCheckTemaTotals(ai) {
   let totalMin = 0;
   document.getElementById(`nses-temas-list-${ai}`)
-    ?.querySelectorAll('[id^="nses-ttm-"]')
-    .forEach(inp => { totalMin += parseInt(inp.value) || 0; });
+    ?.querySelectorAll('[id^="nses-ttm-h-"]')
+    .forEach(sel => {
+      const pid = sel.id.replace('nses-ttm-h-', '');
+      totalMin += _nSesGetMin('nses-ttm', pid);
+    });
+  const asigMin = _nSesGetMin('nses-atm', ai);
   const el = document.getElementById(`nses-tema-sum-${ai}`);
-  if (el) el.textContent = totalMin > 0 ? `Temas: ${totalMin} min` : '';
+  if (el) {
+    if (totalMin === 0) { el.textContent = ''; }
+    else if (asigMin > 0 && totalMin > asigMin) {
+      el.innerHTML = `<span style="color:var(--red)">${totalMin} min (excede)</span>`;
+    } else if (asigMin > 0 && totalMin === asigMin) {
+      el.innerHTML = `<span style="color:var(--green)">✓ ${totalMin} min</span>`;
+    } else {
+      el.textContent = `${totalMin} min`;
+    }
+  }
   nSesCheckTotals();
 }
 
 function nSesCheckTotals() {
   const sesMin = parseInt(document.getElementById('nses-duracion')?.value) || 0;
-  const sesHoras = sesMin / 60;
-  let totalAsig = 0;
-  document.querySelectorAll('#nses-asig-container [id^="nses-atm-"]').forEach(inp => {
-    totalAsig += parseFloat(inp.value) || 0;
+  let totalAsigMin = 0;
+  document.querySelectorAll('#nses-asig-container [id^="nses-atm-h-"]').forEach(sel => {
+    const ai = sel.id.replace('nses-atm-h-', '');
+    totalAsigMin += _nSesGetMin('nses-atm', ai);
   });
   const el = document.getElementById('nses-dur-check');
   if (!el) return;
-  if (totalAsig === 0) { el.innerHTML = ''; return; }
-  totalAsig = Math.round(totalAsig * 100) / 100;
-  const diff = Math.abs(sesHoras - totalAsig);
-  if (diff < 0.01) {
-    el.innerHTML = `<span style="color:var(--green)"><i class="ti ti-check" style="font-size:11px"></i> ${totalAsig}h — cuadra con la duración total</span>`;
-  } else if (totalAsig > sesHoras) {
-    el.innerHTML = `<span style="color:var(--red)"><i class="ti ti-alert-triangle" style="font-size:11px"></i> ${totalAsig}h asignadas superan la duración total (${sesHoras}h)</span>`;
+  if (totalAsigMin === 0) { el.innerHTML = ''; return; }
+  if (totalAsigMin === sesMin) {
+    el.innerHTML = `<span style="color:var(--green)"><i class="ti ti-check" style="font-size:11px"></i> ${totalAsigMin} min — cuadra con la duración total</span>`;
+  } else if (totalAsigMin > sesMin) {
+    el.innerHTML = `<span style="color:var(--red)"><i class="ti ti-alert-triangle" style="font-size:11px"></i> ${totalAsigMin} min asignados superan la duración (${sesMin} min)</span>`;
   } else {
-    el.innerHTML = `<span style="color:var(--amber)"><i class="ti ti-info-circle" style="font-size:11px"></i> ${totalAsig}h asignadas de ${sesHoras}h totales — faltan ${Math.round((sesHoras - totalAsig)*60)} min</span>`;
+    el.innerHTML = `<span style="color:var(--amber)"><i class="ti ti-info-circle" style="font-size:11px"></i> ${totalAsigMin} min asignados de ${sesMin} min — faltan ${sesMin - totalAsigMin} min</span>`;
   }
 }
 
@@ -2493,7 +2516,7 @@ async function nSesSubmit(e) {
     const rec = {
       asignatura: asigNom,
       tema: temaNom,
-      tiempo_minutos: parseInt(document.getElementById(`nses-ttm-${pid}`)?.value) || 0,
+      tiempo_minutos: _nSesGetMin('nses-ttm', pid),
       nota_profesor: document.getElementById(`nses-nota-${pid}`)?.value?.trim() || null,
     };
 
@@ -2550,13 +2573,13 @@ async function nSesSubmit(e) {
 
   for (const block of asigBlocks) {
     const ai = block.id.replace('nses-asig-block-', '');
-    const asigMin = Math.round((parseFloat(document.getElementById(`nses-atm-${ai}`)?.value) || 0) * 60);
+    const asigMin = _nSesGetMin('nses-atm', ai);
     totalAsigMin += asigMin;
 
     // Suma de temas de esta asignatura
     let temasTotalMin = 0;
-    block.querySelectorAll('[id^="nses-ttm-"]').forEach(inp => {
-      temasTotalMin += parseInt(inp.value) || 0;
+    block.querySelectorAll('[id^="nses-ttm-h-"]').forEach(sel => {
+      temasTotalMin += _nSesGetMin('nses-ttm', sel.id.replace('nses-ttm-h-', ''));
     });
     if (temasTotalMin > asigMin && asigMin > 0) {
       const asigNom = block.querySelector('.nses-asig-nom')?.textContent?.trim() || `asig ${ai}`;
@@ -2632,10 +2655,12 @@ async function nSesSubmit(e) {
 function nSesToggleAsigBody(ai) {
   const body = document.getElementById(`nses-asig-body-${ai}`);
   const chev = document.getElementById(`nses-asig-chev-${ai}`);
+  const block = document.getElementById(`nses-asig-block-${ai}`);
   if (!body) return;
   const open = body.style.display === 'block';
   body.style.display = open ? 'none' : 'block';
   chev?.classList.toggle('open', !open);
+  block?.classList.toggle('open', !open);
 }
 
 let _nSesCustomTemaCount = 0;
@@ -2662,10 +2687,7 @@ function nSesAddTema(ai, asigKey, prefill) {
     <div class="nses-tema-block-hdr">
       <input type="text" id="nses-tnm-${pid}" placeholder="Nombre del tema…"
         value="${prefill ? prefill.replace(/"/g,'&quot;') : ''}">
-      <div class="nses-tema-time">
-        <input type="number" min="0" value="0" id="nses-ttm-${pid}"
-          oninput="this.value=Math.max(0,parseInt(this.value)||0);nSesCheckTemaTotals(${ai})"> min
-      </div>
+      ${_nSesTimeHtml(`nses-ttm-h-${pid}`, `nses-ttm-m-${pid}`, `nSesCheckTemaTotals(${ai})`)}
       <button type="button" class="nses-tema-del" title="Eliminar tema"
         onclick="this.closest('.nses-tema-block').remove()">×</button>
     </div>
@@ -2684,7 +2706,7 @@ function nSesAddAsig() {
   if (!container) return;
   const ai = (_nSesDatos?.nextAi ?? 0) + _nSesCustomAsigCount++;
   const div = document.createElement('div');
-  div.className = 'nses-asig-block';
+  div.className = 'nses-asig-block open';
   div.id = `nses-asig-block-${ai}`;
   div.innerHTML = `
     <div class="nses-asig-hdr" onclick="nSesToggleAsigBody(${ai})">
@@ -2697,11 +2719,11 @@ function nSesAddAsig() {
     </div>
     <div class="nses-asig-body" id="nses-asig-body-${ai}" style="display:block">
       <div class="nses-asig-time-row">
-        <span class="nses-asig-time-label"><i class="ti ti-clock" style="font-size:12px;margin-right:4px"></i>Tiempo dedicado</span>
-        <div class="nses-asig-time">
-          <input type="number" min="0" step="0.5" value="0" id="nses-atm-${ai}"
-            oninput="this.value=Math.max(0,parseFloat(this.value)||0)"> h
-        </div>
+        <span class="nses-asig-time-label">
+          <i class="ti ti-clock" style="font-size:12px"></i>Tiempo dedicado
+          <span id="nses-tema-sum-${ai}" style="color:var(--muted);font-size:10px;margin-left:4px"></span>
+        </span>
+        ${_nSesTimeHtml(`nses-atm-h-${ai}`, `nses-atm-m-${ai}`, 'nSesCheckTotals()')}
       </div>
       <div id="nses-temas-list-${ai}">
         <p style="color:var(--muted);font-size:11px;padding:10px 16px 4px">
