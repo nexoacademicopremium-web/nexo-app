@@ -421,6 +421,25 @@
   .mat-pdf-actions{display:flex;align-items:center;gap:5px;flex-shrink:0}
   @media(max-width:768px){.mat-asig-grid{grid-template-columns:repeat(3,1fr)}}
   @media(max-width:480px){.mat-asig-grid{grid-template-columns:repeat(2,1fr)}}
+
+  /* ── TEST CARDS (prof) ───────────────────────────────────── */
+  .test-prof-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  .test-prof-card{background:linear-gradient(145deg,#0c1838,#060d20);border:1px solid var(--cc,var(--border));border-radius:24px;padding:26px 20px 18px;position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:center;text-align:center;transition:transform .25s cubic-bezier(.4,0,.2,1),box-shadow .25s;-webkit-tap-highlight-color:transparent}
+  .test-prof-card::after{content:'';position:absolute;top:-20px;right:-20px;width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,var(--cc,var(--blue)) 0%,transparent 70%);opacity:.13;pointer-events:none}
+  .test-prof-card:hover{transform:translateY(-5px);box-shadow:0 20px 48px rgba(0,0,0,.65),0 0 0 1px var(--cc,var(--border))}
+  .test-prof-ico{width:72px;height:72px;border-radius:20px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;border:1.5px solid var(--cc,var(--border));background:rgba(255,255,255,.06);flex-shrink:0}
+  .test-prof-ico i{font-size:32px;color:var(--cc,var(--blue))}
+  .test-prof-titulo{color:#fff;font-size:15px;font-weight:700;margin-bottom:5px;line-height:1.35;flex:1;width:100%}
+  .test-prof-meta{color:var(--muted);font-size:11px;margin-bottom:12px;line-height:1.5}
+  .test-prof-result{font-size:11px;padding:3px 12px;border-radius:20px;font-weight:600;margin-bottom:14px;margin-top:auto}
+  .test-prof-actions{display:flex;gap:6px;width:100%;flex-wrap:wrap;justify-content:center;border-top:.5px solid rgba(255,255,255,.06);padding-top:14px;margin-top:2px}
+  .test-prof-btn{background:rgba(255,255,255,.07);color:var(--soft);border:.5px solid rgba(255,255,255,.12);border-radius:9px;padding:6px 13px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .14s,border-color .14s;white-space:nowrap}
+  .test-prof-btn:hover{background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.25)}
+  .test-prof-btn.accent{background:var(--cc,var(--blue));color:#fff;border-color:transparent}
+  .test-prof-btn.accent:hover{opacity:.85}
+  .test-ia-badge{position:absolute;top:12px;left:12px;background:rgba(91,33,182,.35);border:.5px solid rgba(139,92,246,.55);border-radius:6px;padding:2px 7px;font-size:10px;color:#a78bfa;font-weight:700;pointer-events:none}
+  .test-vis-badge{position:absolute;top:12px;right:12px;font-size:9px;padding:2px 7px;border-radius:20px;font-weight:600}
+  @media(max-width:600px){.test-prof-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -803,7 +822,7 @@
       <button class="btn-primary" id="btn-test-pdf" style="background:linear-gradient(135deg,#312e81,#5b21b6);display:none" onclick="abrirModalTestPdf()"><i class="ti ti-brain"></i> Test desde PDF</button>
     </div>
   </div>
-  <div class="card" id="prof-tests-lista">
+  <div id="prof-tests-lista">
     <div class="loading-section"><div class="spinner"></div></div>
   </div>
 </div>
@@ -2909,38 +2928,51 @@ async function loadTestsProf() {
     el.innerHTML = '<div class="empty-state"><i class="ti ti-clipboard-list"></i><p>Aún no has creado ningún test.<br>Pulsa <b>Nuevo test</b> para empezar.</p></div>';
     return;
   }
-  el.innerHTML = `<table class="tabla"><thead><tr>
-    <th>Título</th><th>Alumno</th><th>Preg.</th><th>Resultado</th><th>Estado</th><th></th>
-  </tr></thead><tbody>
-  ${tests.map(t => {
-    const alumNom = t.alumno?.usuario
+
+  const cards = tests.map(t => {
+    const meta      = getSubjectMeta(t.asignatura || '');
+    const alumNom   = t.alumno?.usuario
       ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos || ''}`.trim()
-      : (t.alumno_id ? '—' : '<span style="color:var(--muted);font-size:11px">Todos</span>');
+      : (t.alumno_id ? '—' : 'General');
     const resultado = t.resultados?.[0];
-    const iaBadge = t.generado_ia
-      ? `<span style="background:rgba(91,33,182,.25);border:.5px solid rgba(139,92,246,.5);border-radius:5px;padding:1px 6px;font-size:10px;color:#a78bfa;font-weight:600;margin-left:6px;vertical-align:middle">IA</span>`
-      : '';
-    const resultadoHtml = resultado
-      ? `<span style="color:${resultado.nota >= 5 ? 'var(--green)' : 'var(--red)'};font-weight:600">${resultado.nota}/10</span>`
-      : (t.alumno_id ? `<span style="color:var(--muted);font-size:11px">Pendiente</span>` : '—');
-    const showRepetir = t.generado_ia && resultado && !t.puede_repetir;
+    const numPreg   = t.preguntas?.length || 0;
+
+    // Result badge
+    let resBg, resClr, resTxt;
+    if (resultado) {
+      const ok = resultado.nota >= 5;
+      resBg  = ok ? 'rgba(26,127,94,.25)' : 'rgba(192,57,43,.25)';
+      resClr = ok ? '#34d399' : '#f87171';
+      resTxt = `${resultado.nota}/10`;
+    } else if (t.alumno_id) {
+      resBg = 'rgba(91,33,182,.2)'; resClr = '#a78bfa'; resTxt = 'Pendiente';
+    } else {
+      resBg = 'rgba(255,255,255,.07)'; resClr = 'var(--muted)'; resTxt = `${numPreg} preguntas`;
+    }
+
+    const showRepetir   = t.generado_ia && resultado && !t.puede_repetir;
     const showYaRepetir = t.generado_ia && t.puede_repetir;
-    return `<tr>
-      <td style="color:#fff;font-weight:500">${t.titulo}${iaBadge}</td>
-      <td style="font-size:12px">${alumNom}</td>
-      <td>${t.preguntas?.length || 0}</td>
-      <td>${resultadoHtml}</td>
-      <td><span class="status-pill ${t.visible ? 'st-ok' : 'st-grey'}">${t.visible ? 'Visible' : 'Oculto'}</span></td>
-      <td style="white-space:nowrap">
-        <button class="btn-ghost" style="padding:5px 10px;font-size:11px" onclick="verTestProf('${t.id}')"><i class="ti ti-eye"></i> Ver</button>
-        ${!t.generado_ia ? `<button class="btn-ghost" style="padding:5px 10px;font-size:11px;margin-left:4px" onclick="editarTestProf('${t.id}')"><i class="ti ti-pencil"></i></button>` : ''}
-        <button class="btn-ghost" style="padding:5px 10px;font-size:11px;margin-left:4px" onclick="toggleTestVis('${t.id}',${!t.visible})">${t.visible ? 'Ocultar' : 'Mostrar'}</button>
-        ${showRepetir ? `<button class="btn-ghost" style="padding:5px 10px;font-size:11px;margin-left:4px;color:#a78bfa;border-color:rgba(139,92,246,.4)" onclick="permitirRepetir('${t.id}')">↺ Repetir</button>` : ''}
-        ${showYaRepetir ? `<span style="color:var(--muted);font-size:10px;margin-left:4px">Repetir activo</span>` : ''}
-      </td>
-    </tr>`;
-  }).join('')}
-  </tbody></table>`;
+
+    return `<div class="test-prof-card" style="--cc:${meta.cc}">
+      ${t.generado_ia ? `<div class="test-ia-badge"><i class="ti ti-brain" style="font-size:9px;margin-right:3px"></i>IA</div>` : ''}
+      <div class="test-vis-badge ${t.visible ? 'st-ok' : 'st-grey'}">${t.visible ? 'Visible' : 'Oculto'}</div>
+      <div class="test-prof-ico"><i class="ti ${meta.ico}"></i></div>
+      <div class="test-prof-titulo">${t.titulo}</div>
+      <div class="test-prof-meta">
+        ${t.asignatura || '—'}${alumNom !== 'General' ? ` · ${alumNom}` : ''}
+      </div>
+      <span class="test-prof-result" style="background:${resBg};color:${resClr}">${resTxt}</span>
+      <div class="test-prof-actions">
+        <button class="test-prof-btn accent" onclick="verTestProf('${t.id}')"><i class="ti ti-eye"></i> Ver</button>
+        <button class="test-prof-btn" onclick="toggleTestVis('${t.id}',${!t.visible})">${t.visible ? 'Ocultar' : 'Mostrar'}</button>
+        ${!t.generado_ia ? `<button class="test-prof-btn" onclick="editarTestProf('${t.id}')"><i class="ti ti-pencil"></i> Editar</button>` : ''}
+        ${showRepetir ? `<button class="test-prof-btn" style="color:#a78bfa;border-color:rgba(139,92,246,.4)" onclick="permitirRepetir('${t.id}')">↺ Repetir</button>` : ''}
+        ${showYaRepetir ? `<span style="color:#a78bfa;font-size:10px;padding:6px 4px">↺ Activo</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="test-prof-grid">${cards}</div>`;
 }
 
 async function toggleTestVis(id, vis) {
