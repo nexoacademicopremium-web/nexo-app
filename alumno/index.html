@@ -2088,17 +2088,16 @@ async function enviarTest() {
     completado_at: new Date().toISOString(),
   }, { onConflict: 'test_id,alumno_id' });
 
-  // For AI tests: notify profesor + reset puede_repetir (non-critical, fire and forget)
+  // For AI tests: notify profesor (non-critical, fire and forget)
   if (isIA && creadoPor) {
-    const nombre    = `${ctx.usuario?.nombre || ''} ${ctx.usuario?.apellidos || ''}`.trim() || 'El alumno';
-    const testInfo  = (window._estudiarData?.allTests || []).find(t => t.id === testId);
+    const nombre   = `${ctx.usuario?.nombre || ''} ${ctx.usuario?.apellidos || ''}`.trim() || 'El alumno';
+    const testInfo = (window._estudiarData?.allTests || []).find(t => t.id === testId);
     db.rpc('notificar_test_completado', {
       p_profesor_usuario_id: creadoPor,
       p_alumno_nombre:       nombre,
       p_test_titulo:         testInfo?.titulo || 'Test',
       p_nota:                nota,
     }).catch(() => {});
-    db.rpc('reset_puede_repetir', { p_test_id: testId }).catch(() => {});
   }
 
   renderTest();

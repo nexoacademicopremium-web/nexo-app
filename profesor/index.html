@@ -2966,8 +2966,8 @@ async function loadTestsProf() {
         <button class="test-prof-btn accent" onclick="verTestProf('${t.id}')"><i class="ti ti-eye"></i> Ver</button>
         <button class="test-prof-btn" onclick="toggleTestVis('${t.id}',${!t.visible})">${t.visible ? 'Ocultar' : 'Mostrar'}</button>
         ${!t.generado_ia ? `<button class="test-prof-btn" onclick="editarTestProf('${t.id}')"><i class="ti ti-pencil"></i> Editar</button>` : ''}
-        ${showRepetir ? `<button class="test-prof-btn" style="color:#a78bfa;border-color:rgba(139,92,246,.4)" onclick="permitirRepetir('${t.id}')">↺ Repetir</button>` : ''}
-        ${showYaRepetir ? `<span style="color:#a78bfa;font-size:10px;padding:6px 4px">↺ Activo</span>` : ''}
+        ${showRepetir ? `<button class="test-prof-btn" style="color:#a78bfa;border-color:rgba(139,92,246,.4)" onclick="permitirRepetir('${t.id}')">↺ Permitir repetir</button>` : ''}
+        ${showYaRepetir ? `<button class="test-prof-btn" style="color:#f87171;border-color:rgba(248,113,113,.35)" onclick="bloquearRepetir('${t.id}')"><i class="ti ti-lock"></i> Bloquear</button>` : ''}
       </div>
     </div>`;
   }).join('');
@@ -3255,7 +3255,14 @@ async function guardarTestPdf(e) {
 async function permitirRepetir(testId) {
   const { error } = await db.from('tests').update({ puede_repetir: true }).eq('id', testId);
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
-  showToast('El alumno podrá volver a hacer el test');
+  showToast('El alumno puede repetir el test');
+  loadTestsProf();
+}
+
+async function bloquearRepetir(testId) {
+  const { error } = await db.from('tests').update({ puede_repetir: false }).eq('id', testId);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  showToast('Test bloqueado — el alumno ya no puede repetirlo');
   loadTestsProf();
 }
 
