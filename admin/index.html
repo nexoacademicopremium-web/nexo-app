@@ -4114,6 +4114,8 @@ function _testsRenderCards(c) {
 
 async function eliminarTest(testId) {
   if (!confirm('¿Eliminar este test? Se eliminarán también sus preguntas y resultados.')) return;
+  await db.from('resultados_test').delete().eq('test_id', testId);
+  await db.from('preguntas_test').delete().eq('test_id', testId);
   const { error } = await db.from('tests').delete().eq('id', testId);
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
   showToast('Test eliminado');
