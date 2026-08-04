@@ -1976,15 +1976,9 @@ function renderMatRow(m) {
 
 function volverAsignaturas() { _alGoRoot(); }
 
-async function abrirArchivo(url) {
+function abrirArchivo(url) {
   if (!url) return;
-  const win = window.open('about:blank', '_blank');
-  const marker = '/nexo-files/';
-  const idx = url.indexOf(marker);
-  if (idx === -1) { win.location.href = url; return; }
-  const path = decodeURIComponent(url.slice(idx + marker.length));
-  const { data } = await db.storage.from('nexo-files').createSignedUrl(path, 3600);
-  win.location.href = data?.signedUrl || url;
+  window.open(url, '_blank');
 }
 
 // ============================================================

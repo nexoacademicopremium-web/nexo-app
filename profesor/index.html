@@ -3836,15 +3836,9 @@ function _pMatRenderPdfs(c) {
   c.innerHTML = _pMatBc() + `<div class="mat-pdf-grid">${cards||'<p style="color:var(--muted);font-size:12px;padding:8px 0">Sin archivos</p>'}</div>`;
 }
 
-async function abrirArchivo(url) {
+function abrirArchivo(url) {
   if (!url) return;
-  const win = window.open('about:blank', '_blank');
-  const marker = '/nexo-files/';
-  const idx = url.indexOf(marker);
-  if (idx === -1) { win.location.href = url; return; }
-  const path = decodeURIComponent(url.slice(idx + marker.length));
-  const { data } = await db.storage.from('nexo-files').createSignedUrl(path, 3600);
-  win.location.href = data?.signedUrl || url;
+  window.open(url, '_blank');
 }
 
 // ── Upload modal ──────────────────────────────────────────────
