@@ -1792,7 +1792,7 @@ function _infRenderCards(c) {
       </div>
       <span class="mat-pdf-vis ${isVisible ? 'ok' : 'off'}">${isVisible ? 'Visible' : 'Oculto'}</span>
       <div class="mat-pdf-actions">
-        ${url ? `<a href="${url}" target="_blank" class="btn-edit"><i class="ti ti-external-link"></i> Ver</a>` : ''}
+        <a href="../informe.html?id=${inf.id}" target="_blank" class="btn-edit"><i class="ti ti-external-link"></i> Ver</a>
         ${hasContenido ? `<button class="btn-edit" onclick="verRevisionInforme('${inf.id}')"><i class="ti ti-pencil"></i> Revisar</button>` : ''}
         <button class="btn-danger" onclick="toggleEstadoInforme('${inf.id}',${isVisible})">${isVisible ? 'Ocultar' : 'Publicar'}</button>
         <button class="btn-danger" onclick="eliminarInformeAdmin('${inf.id}')"><i class="ti ti-trash"></i></button>
@@ -2876,7 +2876,7 @@ async function refreshFichaInformes() {
         <div style="color:#fff;font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${inf.titulo || tipoPill}</div>
         <div style="color:var(--muted);font-size:10px">${formatShortDate(fecha)} · ${tipoPill} · <span style="color:${estadoClr}">${inf.estado}</span></div>
       </div>
-      ${url ? `<a href="${url}" target="_blank" title="Ver informe" style="color:var(--blue);font-size:17px;flex-shrink:0"><i class="ti ti-external-link"></i></a>` : ''}
+      <a href="../informe.html?id=${inf.id}" target="_blank" title="Ver informe" style="color:var(--blue);font-size:17px;flex-shrink:0"><i class="ti ti-external-link"></i></a>
     </div>`;
   }).join('');
 }

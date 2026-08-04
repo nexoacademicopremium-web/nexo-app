@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cargando informe…</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:#04071b;color:#c8d8f0;font-family:'DM Sans',sans-serif;
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;flex-direction:column;gap:16px;
+  }
+  .spinner{
+    width:44px;height:44px;border:3px solid rgba(110,174,240,.15);
+    border-top-color:#6eaef0;border-radius:50%;
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+  p{font-size:14px;opacity:.7}
+  .err{color:#f87171;opacity:1}
+</style>
+</head>
+<body>
+<div class="spinner" id="sp"></div>
+<p id="msg">Cargando informe…</p>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script>
+(async () => {
+  const id = new URLSearchParams(location.search).get('id');
+  if (!id) {
+    document.getElementById('sp').remove();
+    document.getElementById('msg').className = 'err';
+    document.getElementById('msg').textContent = 'ID de informe no especificado.';
+    return;
+  }
+
+  const { data, error } = await db
+    .from('informes')
+    .select('html_cache, estado, eliminado')
+    .eq('id', id)
+    .single();
+
+  if (error || !data) {
+    document.getElementById('sp').remove();
+    document.getElementById('msg').className = 'err';
+    document.getElementById('msg').textContent = 'Informe no encontrado.';
+    return;
+  }
+  if (data.eliminado || data.estado !== 'visible') {
+    document.getElementById('sp').remove();
+    document.getElementById('msg').className = 'err';
+    document.getElementById('msg').textContent = 'Este informe no está disponible.';
+    return;
+  }
+  if (!data.html_cache) {
+    document.getElementById('sp').remove();
+    document.getElementById('msg').className = 'err';
+    document.getElementById('msg').textContent = 'Este informe aún no ha sido publicado con el nuevo formato. Vuelve a publicarlo desde el panel admin.';
+    return;
+  }
+
+  document.open();
+  document.write(data.html_cache);
+  document.close();
+})();
+</script>
+</body>
+</html>
