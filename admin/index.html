@@ -3348,17 +3348,21 @@ function _matRenderAsigs(c) {
 }
 
 // ── Nivel 3: Temas ────────────────────────────────────────────
-function _matRenderTemas(c) {
+let _matTemaKeys = [];
+function _matGoTema(i) {
+  const nom = _matTemaKeys[i];
   const { sec, nivel, asigId, alumnoId } = _matNav;
+  _matGo(sec, nivel, asigId, nom, alumnoId);
+}
+function _matRenderTemas(c) {
   const items = _matItems();
   const temaCnt = {};
   items.forEach(m => { const k = m.bloque_tema || temaNombre(m.tema_id) || '__sin__'; temaCnt[k] = (temaCnt[k]||0)+1; });
-  const bubbles = Object.keys(temaCnt).map(nom => {
-    const label  = nom === '__sin__' ? 'Sin tema' : nom;
-    const meta   = getTopicMeta(label);
-    const nivStr = nivel    ? `'${nivel}'`    : 'null';
-    const alStr  = alumnoId ? `'${alumnoId}'` : 'null';
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_matGo('${sec}',${nivStr},${asigId},${JSON.stringify(nom)},${alStr})">
+  _matTemaKeys = Object.keys(temaCnt);
+  const bubbles = _matTemaKeys.map((nom, i) => {
+    const label = nom === '__sin__' ? 'Sin tema' : nom;
+    const meta  = getTopicMeta(label);
+    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_matGoTema(${i})">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
       <span class="mat-asig-label">${label}</span>
       <span class="mat-asig-count">${temaCnt[nom]} archivo${temaCnt[nom]!==1?'s':''}</span>
