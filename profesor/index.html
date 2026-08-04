@@ -705,11 +705,15 @@
                 </div>
                 <div>
                   <label class="field-label" style="margin-top:0">Asignatura *</label>
-                  <input class="field-input" type="text" id="nses-examen-asig" placeholder="Ej: Matemáticas">
+                  <select class="field-input" id="nses-examen-asig" onchange="nSesLoadExamenTemas()">
+                    <option value="">— Selecciona alumno primero —</option>
+                  </select>
                 </div>
               </div>
               <label class="field-label">Tema del examen *</label>
-              <input class="field-input" type="text" id="nses-examen-tema" placeholder="Ej: Álgebra — ecuaciones de 2.º grado">
+              <select class="field-input" id="nses-examen-tema">
+                <option value="">— Selecciona asignatura primero —</option>
+              </select>
               <span class="field-err" id="err-nses-examen-detalle"></span>
             </div>
           </div>
@@ -2329,6 +2333,15 @@ async function nSesLoadAlumno() {
   container.innerHTML = asigs.map((asig, ai) =>
     _nSesRenderAsig(asig, ai, prevTemasMap)
   ).join('');
+
+  // Rellenar desplegable de asignaturas del bloque Examen próximo
+  const exAsigSel = document.getElementById('nses-examen-asig');
+  if (exAsigSel) {
+    exAsigSel.innerHTML = '<option value="">— Selecciona asignatura —</option>' +
+      asigs.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+  }
+  const exTemaSel = document.getElementById('nses-examen-tema');
+  if (exTemaSel) exTemaSel.innerHTML = '<option value="">— Selecciona asignatura primero —</option>';
 }
 
 function _nSesGetMin(prefix, id) {
@@ -2718,8 +2731,8 @@ async function nSesSubmit(e) {
   const examenSi = document.getElementById('nses-examen-si')?.checked;
   if (examenSi) {
     const exFecha = document.getElementById('nses-examen-fecha').value;
-    const exAsig  = document.getElementById('nses-examen-asig').value.trim();
-    const exTema  = document.getElementById('nses-examen-tema').value.trim();
+    const exAsig  = document.getElementById('nses-examen-asig').value;
+    const exTema  = document.getElementById('nses-examen-tema').value;
     const errEx   = document.getElementById('err-nses-examen-detalle');
     if (!exFecha || !exAsig || !exTema) {
       if (errEx) errEx.textContent = 'Rellena la fecha, asignatura y tema del examen.';
@@ -2746,8 +2759,8 @@ async function nSesSubmit(e) {
     estado: 'pendiente_confirmacion',
     examen_proximo:    examenSi || false,
     examen_fecha:      examenSi ? document.getElementById('nses-examen-fecha').value : null,
-    examen_asignatura: examenSi ? document.getElementById('nses-examen-asig').value.trim() : null,
-    examen_tema:       examenSi ? document.getElementById('nses-examen-tema').value.trim() : null,
+    examen_asignatura: examenSi ? (document.getElementById('nses-examen-asig').selectedOptions[0]?.text || null) : null,
+    examen_tema:       examenSi ? document.getElementById('nses-examen-tema').value : null,
   };
 
   const { data: newSes, error: sesErr } = await db.from('sesiones').insert(sesData).select().single();
@@ -2793,6 +2806,42 @@ async function nSesSubmit(e) {
 function nSesToggleExamen() {
   const si = document.getElementById('nses-examen-si')?.checked;
   document.getElementById('nses-examen-detalle').style.display = si ? 'block' : 'none';
+}
+
+async function nSesLoadExamenTemas() {
+  const asigId  = parseInt(document.getElementById('nses-examen-asig').value);
+  const temaSel = document.getElementById('nses-examen-tema');
+  if (!asigId) {
+    temaSel.innerHTML = '<option value="">— Selecciona asignatura primero —</option>';
+    return;
+  }
+  temaSel.innerHTML = '<option value="">Cargando temas…</option>';
+  temaSel.disabled = true;
+
+  const alumnoId = document.getElementById('nses-alumno').value;
+  const alumno   = misAlumnos.find(a => a.id === alumnoId);
+  const nivel    = alumno?.nivel;
+  const nivelesQuery = nivel ? [nivel, 'todos'] : ['todos'];
+
+  const { data: bloques } = await db.from('bloques').select('id')
+    .eq('asignatura_id', asigId).in('nivel', nivelesQuery);
+
+  if (!bloques?.length) {
+    temaSel.innerHTML = '<option value="">Sin temas disponibles</option>';
+    temaSel.disabled = false;
+    return;
+  }
+
+  const { data: temas } = await db.from('temas').select('id, nombre')
+    .in('bloque_id', bloques.map(b => b.id)).order('nombre');
+
+  temaSel.disabled = false;
+  if (!temas?.length) {
+    temaSel.innerHTML = '<option value="">Sin temas disponibles</option>';
+    return;
+  }
+  temaSel.innerHTML = '<option value="">— Selecciona tema —</option>' +
+    temas.map(t => `<option value="${t.nombre}">${t.nombre}</option>`).join('');
 }
 
 function nSesToggleAsigBody(ai) {
