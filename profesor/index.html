@@ -681,6 +681,40 @@
 
         <span class="field-err" id="err-nses-temas" style="display:block;margin-bottom:12px"></span>
 
+        <!-- BLOQUE 3 — Examen próximo -->
+        <div class="nses-bloque">
+          <div class="nses-bloque-title"><i class="ti ti-writing"></i> 3 — Examen próximo</div>
+          <div class="nses-bloque-body">
+            <label class="field-label">¿Tiene el alumno un examen próximo? *</label>
+            <div style="display:flex;gap:24px;margin-top:10px">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--txt);font-size:14px">
+                <input type="radio" name="nses-examen" value="no" id="nses-examen-no" checked onchange="nSesToggleExamen()">
+                No
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--txt);font-size:14px">
+                <input type="radio" name="nses-examen" value="si" id="nses-examen-si" onchange="nSesToggleExamen()">
+                Sí
+              </label>
+            </div>
+
+            <div id="nses-examen-detalle" style="display:none;margin-top:18px">
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div>
+                  <label class="field-label" style="margin-top:0">Fecha del examen *</label>
+                  <input class="field-input" type="date" id="nses-examen-fecha">
+                </div>
+                <div>
+                  <label class="field-label" style="margin-top:0">Asignatura *</label>
+                  <input class="field-input" type="text" id="nses-examen-asig" placeholder="Ej: Matemáticas">
+                </div>
+              </div>
+              <label class="field-label">Tema del examen *</label>
+              <input class="field-input" type="text" id="nses-examen-tema" placeholder="Ej: Álgebra — ecuaciones de 2.º grado">
+              <span class="field-err" id="err-nses-examen-detalle"></span>
+            </div>
+          </div>
+        </div>
+
         <div style="display:flex;justify-content:flex-end;gap:10px;padding:4px 0 24px">
           <button type="button" class="btn-cancel" onclick="nSesHideForm()">Cancelar</button>
           <button type="submit" class="btn-primary" id="nses-submit-btn">
@@ -2680,6 +2714,21 @@ async function nSesSubmit(e) {
     return;
   }
 
+  // Validar examen próximo
+  const examenSi = document.getElementById('nses-examen-si')?.checked;
+  if (examenSi) {
+    const exFecha = document.getElementById('nses-examen-fecha').value;
+    const exAsig  = document.getElementById('nses-examen-asig').value.trim();
+    const exTema  = document.getElementById('nses-examen-tema').value.trim();
+    const errEx   = document.getElementById('err-nses-examen-detalle');
+    if (!exFecha || !exAsig || !exTema) {
+      if (errEx) errEx.textContent = 'Rellena la fecha, asignatura y tema del examen.';
+      showToast('Indica los datos del examen próximo', 'error');
+      return;
+    }
+    if (errEx) errEx.textContent = '';
+  }
+
   const btn = document.getElementById('nses-submit-btn');
   btn.disabled = true;
   btn.innerHTML = '<div style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px"></div> Guardando…';
@@ -2695,6 +2744,10 @@ async function nSesSubmit(e) {
     hora_inicio: horaStr || null,
     duracion_minutos: parseInt(document.getElementById('nses-duracion').value),
     estado: 'pendiente_confirmacion',
+    examen_proximo:    examenSi || false,
+    examen_fecha:      examenSi ? document.getElementById('nses-examen-fecha').value : null,
+    examen_asignatura: examenSi ? document.getElementById('nses-examen-asig').value.trim() : null,
+    examen_tema:       examenSi ? document.getElementById('nses-examen-tema').value.trim() : null,
   };
 
   const { data: newSes, error: sesErr } = await db.from('sesiones').insert(sesData).select().single();
@@ -2721,6 +2774,8 @@ async function nSesSubmit(e) {
   btn.innerHTML = '<i class="ti ti-send"></i> Enviar registro';
 
   document.getElementById('nses-form').reset();
+  document.getElementById('nses-examen-no').checked = true;
+  document.getElementById('nses-examen-detalle').style.display = 'none';
   document.getElementById('nses-bloque2').style.display = 'none';
   document.getElementById('nses-asig-container').innerHTML = '';
   _nSesDatos = null;
@@ -2733,6 +2788,11 @@ async function nSesSubmit(e) {
 
   nSesHideForm();
   await nSesLoadHist();
+}
+
+function nSesToggleExamen() {
+  const si = document.getElementById('nses-examen-si')?.checked;
+  document.getElementById('nses-examen-detalle').style.display = si ? 'block' : 'none';
 }
 
 function nSesToggleAsigBody(ai) {
