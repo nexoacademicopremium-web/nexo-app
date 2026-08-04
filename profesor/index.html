@@ -3828,7 +3828,7 @@ function _pMatRenderPdfs(c) {
         <div class="mat-pdf-tipo">${isPerso ? `<i class="ti ti-crown" style="font-size:10px"></i> Excl. · ${nombres}` : (isPdf?'PDF':'Recurso')}</div>
       </div>
       <div class="mat-pdf-actions">
-        ${m.archivo_url ? `<button class="btn-edit" onclick="abrirArchivo('${m.archivo_url}')">Ver</button>` : ''}
+        ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" rel="noopener" class="btn-edit">Ver</a>` : ''}
         <button class="btn-danger" onclick="pMatEliminar('${m.id}')"><i class="ti ti-trash"></i></button>
       </div>
     </div>`;

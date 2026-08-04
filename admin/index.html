@@ -3391,7 +3391,7 @@ function _matRenderPdfs(c) {
       <span class="mat-pdf-vis ${m.visible?'ok':'off'}">${m.visible?'Visible':'Oculto'}</span>
       <div class="mat-pdf-actions">
         <button class="btn-edit" onclick="abrirEditarMaterial('${m.id}')"><i class="ti ti-pencil"></i></button>
-        ${m.archivo_url ? `<button class="btn-edit" onclick="abrirArchivo('${m.archivo_url}')">Ver</button>` : ''}
+        ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" rel="noopener" class="btn-edit">Ver</a>` : ''}
         <button class="btn-danger" onclick="toggleVisible('material','${m.id}',${!m.visible})">${m.visible?'Ocultar':'Mostrar'}</button>
         <button class="btn-danger" onclick="eliminarMaterial('${m.id}')"><i class="ti ti-trash"></i></button>
       </div>
