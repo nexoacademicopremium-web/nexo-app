@@ -33,28 +33,22 @@ serve(async (req) => {
 
     const html = generarHtml(informe, ia, kpis, alumnoNombre)
 
-    const htmlBlob = new Blob([html], { type: 'text/html; charset=utf-8' })
-    const storagePath = `informes/${informe.alumno_id}/${informe_id}.html`
-
-    const { error: storageErr } = await admin.storage
-      .from('nexo-files')
-      .upload(storagePath, htmlBlob, { contentType: 'text/html; charset=utf-8', upsert: true })
-    if (storageErr) throw new Error('Error al subir el informe: ' + storageErr.message)
-
-    const { data: { publicUrl } } = admin.storage.from('nexo-files').getPublicUrl(storagePath)
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const pdfUrl = `${supabaseUrl}/functions/v1/ver-informe?id=${informe_id}`
 
     const { error: updErr } = await admin.from('informes').update({
       estado: 'visible',
       visible: true,
-      pdf_url: publicUrl,
-      archivo_url: publicUrl,
+      html_cache: html,
+      pdf_url: pdfUrl,
+      archivo_url: pdfUrl,
       published_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }).eq('id', informe_id)
     if (updErr) throw new Error('Error al publicar: ' + updErr.message)
 
     return new Response(
-      JSON.stringify({ success: true, pdf_url: publicUrl }),
+      JSON.stringify({ success: true, pdf_url: pdfUrl }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
 
