@@ -458,7 +458,7 @@
   <div class="nav-item" id="nav-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i> Mis informes</div>
   <div class="nav-item" id="nav-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i> Mi bono</div>
   <div class="nav-item" id="nav-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i> Mi profesor</div>
-  <div class="nav-item" id="nav-estudiar" onclick="showSection('estudiar')"><i class="ti ti-book"></i> Estudiar</div>
+  <div class="nav-item" id="nav-estudiar" onclick="showSection('estudiar')"><i class="ti ti-files"></i> Material</div>
   <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i> Tests</div>
   <div class="nav-item" id="nav-tareas" onclick="showSection('tareas')"><i class="ti ti-clipboard-check"></i> Mis tareas<span class="badge-nav" id="badge-tareas" style="display:none">!</span></div>
   <div class="nav-item" id="nav-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i> Mi calendario</div>
@@ -484,7 +484,7 @@
       <div class="mobile-menu-item" id="mmenu-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i><span>Mis informes</span></div>
       <div class="mobile-menu-item" id="mmenu-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i><span>Mi bono</span></div>
       <div class="mobile-menu-item" id="mmenu-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i><span>Mi profesor</span></div>
-      <div class="mobile-menu-item" id="mmenu-estudiar" onclick="showSection('estudiar')"><i class="ti ti-book"></i><span>Estudiar</span></div>
+      <div class="mobile-menu-item" id="mmenu-estudiar" onclick="showSection('estudiar')"><i class="ti ti-files"></i><span>Material</span></div>
       <div class="mobile-menu-item" id="mmenu-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i><span>Tests</span></div>
       <div class="mobile-menu-item" id="mmenu-tareas" onclick="showSection('tareas')"><i class="ti ti-clipboard-check"></i><span>Mis tareas</span></div>
       <div class="mobile-menu-item" id="mmenu-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i><span>Mi calendario</span></div>
@@ -510,7 +510,7 @@
     <i class="ti ti-credit-card"></i><span>Mi Bono</span>
   </div>
   <div class="bn-item" id="bn-estudiar" onclick="showSection('estudiar')">
-    <i class="ti ti-book"></i><span>Estudiar</span>
+    <i class="ti ti-files"></i><span>Material</span>
   </div>
   <div class="bn-item" id="bn-tests" onclick="showSection('tests')">
     <i class="ti ti-list-check"></i><span>Tests</span>
@@ -650,8 +650,8 @@
 
 <!-- ═══ ESTUDIAR ═══ -->
 <div class="section" id="section-estudiar">
-  <h1 class="page-title">Estudiar</h1>
-  <p class="page-sub" id="estudiar-sub">Material y tests de tus asignaturas</p>
+  <h1 class="page-title">Material</h1>
+  <p class="page-sub" id="estudiar-sub">Fichas, PDFs y tests de tus asignaturas</p>
 
   <div id="estudiar-asignaturas">
     <div class="loading-section"><div class="spinner"></div></div>
@@ -1941,7 +1941,7 @@ function renderMatItem(m, i) {
   const tipTxt     = isPdf ? 'PDF' : 'Recurso';
   const tipBg      = isPdf ? '#0f2240' : '#0d2d1e';
   const tipCl      = isPdf ? 'var(--blue)' : 'var(--green)';
-  const onclick    = m.archivo_url ? `window.open('${m.archivo_url}','_blank')` : '';
+  const onclick    = m.archivo_url ? `abrirArchivo('${m.archivo_url}')` : '';
   const isExclusive = (window._estudiarData?.matIds || []).includes(m.id);
   return `
     <div class="mat-item-card${isExclusive ? ' mat-excl' : ''}" style="--cc:${isExclusive ? '#f59e0b' : cc}" onclick="${onclick}">
@@ -1949,7 +1949,7 @@ function renderMatItem(m, i) {
       <div class="mat-item-ico"><i class="ti ${ico}"></i></div>
       <div class="mat-item-nom">${m.titulo}</div>
       ${isExclusive ? `<span class="mat-item-badge" style="background:#2a1800;color:#f59e0b"><i class="ti ti-crown" style="font-size:9px"></i> Solo para ti</span>` : `<span class="mat-item-badge" style="background:${tipBg};color:${tipCl}">${tipTxt}</span>`}
-      ${m.archivo_url ? `<button class="mat-item-btn" onclick="event.stopPropagation();window.open('${m.archivo_url}','_blank')">Abrir</button>` : '<button class="mat-item-btn" style="opacity:.4" disabled>Sin enlace</button>'}
+      ${m.archivo_url ? `<button class="mat-item-btn" onclick="event.stopPropagation();abrirArchivo('${m.archivo_url}')">Abrir</button>` : '<button class="mat-item-btn" style="opacity:.4" disabled>Sin enlace</button>'}
     </div>`;
 }
 
@@ -1961,7 +1961,7 @@ function renderMatRow(m) {
   const cc          = topicMeta.cc;
   const tipTxt      = isPdf ? 'PDF' : 'Recurso';
   const isExcl      = (window._estudiarData?.matIds || []).includes(m.id);
-  const openFn      = m.archivo_url ? `window.open('${m.archivo_url}','_blank')` : '';
+  const openFn      = m.archivo_url ? `abrirArchivo('${m.archivo_url}')` : '';
   return `<div class="mat-item-row${isExcl?' mat-excl-row':''}" style="--cc:${isExcl?'#f59e0b':cc}" onclick="${openFn}">
     <div class="mat-row-ico"><i class="ti ${ico}"></i></div>
     <div class="mat-row-body">
@@ -1970,11 +1970,22 @@ function renderMatRow(m) {
         ${isExcl ? `<i class="ti ti-crown mat-row-excl-badge"></i><span style="color:#f59e0b;font-size:10px">Exclusivo</span>` : `<span>${tipTxt}</span>`}
       </div>
     </div>
-    ${m.archivo_url ? `<button class="mat-row-btn" onclick="event.stopPropagation();window.open('${m.archivo_url}','_blank')">Abrir</button>` : '<button class="mat-row-btn" style="opacity:.4" disabled>Sin enlace</button>'}
+    ${m.archivo_url ? `<button class="mat-row-btn" onclick="event.stopPropagation();abrirArchivo('${m.archivo_url}')">Abrir</button>` : '<button class="mat-row-btn" style="opacity:.4" disabled>Sin enlace</button>'}
   </div>`;
 }
 
 function volverAsignaturas() { _alGoRoot(); }
+
+async function abrirArchivo(url) {
+  if (!url) return;
+  const win = window.open('about:blank', '_blank');
+  const marker = '/nexo-files/';
+  const idx = url.indexOf(marker);
+  if (idx === -1) { win.location.href = url; return; }
+  const path = decodeURIComponent(url.slice(idx + marker.length));
+  const { data } = await db.storage.from('nexo-files').createSignedUrl(path, 3600);
+  win.location.href = data?.signedUrl || url;
+}
 
 // ============================================================
 // TESTS

@@ -92,7 +92,8 @@ function nivelLabel(nivel) {
     '4PRI': '4.º Primaria', '5PRI': '5.º Primaria', '6PRI': '6.º Primaria',
     '1ESO': '1.º ESO', '2ESO': '2.º ESO', '3ESO': '3.º ESO', '4ESO': '4.º ESO',
     '1BACH': '1.º Bach', '2BACH': '2.º Bach',
-    'UNIV': 'Universidad'
+    'UNIV': 'Universidad',
+    'todos': 'General'
   };
   return map[nivel] || nivel || '—';
 }

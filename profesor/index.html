@@ -3828,12 +3828,23 @@ function _pMatRenderPdfs(c) {
         <div class="mat-pdf-tipo">${isPerso ? `<i class="ti ti-crown" style="font-size:10px"></i> Excl. · ${nombres}` : (isPdf?'PDF':'Recurso')}</div>
       </div>
       <div class="mat-pdf-actions">
-        ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" class="btn-edit">Ver</a>` : ''}
+        ${m.archivo_url ? `<button class="btn-edit" onclick="abrirArchivo('${m.archivo_url}')">Ver</button>` : ''}
         <button class="btn-danger" onclick="pMatEliminar('${m.id}')"><i class="ti ti-trash"></i></button>
       </div>
     </div>`;
   }).join('');
   c.innerHTML = _pMatBc() + `<div class="mat-pdf-grid">${cards||'<p style="color:var(--muted);font-size:12px;padding:8px 0">Sin archivos</p>'}</div>`;
+}
+
+async function abrirArchivo(url) {
+  if (!url) return;
+  const win = window.open('about:blank', '_blank');
+  const marker = '/nexo-files/';
+  const idx = url.indexOf(marker);
+  if (idx === -1) { win.location.href = url; return; }
+  const path = decodeURIComponent(url.slice(idx + marker.length));
+  const { data } = await db.storage.from('nexo-files').createSignedUrl(path, 3600);
+  win.location.href = data?.signedUrl || url;
 }
 
 // ── Upload modal ──────────────────────────────────────────────
