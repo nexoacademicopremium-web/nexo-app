@@ -353,9 +353,17 @@
   .nses-tema-block-hdr{display:flex;align-items:center;gap:8px;padding:9px 12px}
   .nses-tema-block-hdr input[type=text]{flex:1;font-size:12px;font-weight:500;background:transparent;border:.5px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--txt);font-family:inherit;outline:none}
   .nses-tema-block-hdr input[type=text]:focus{border-color:var(--blue)}
-  .nses-tema-block-hdr select{flex:1;font-size:12px;font-weight:500;background:var(--card);border:.5px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--txt);font-family:inherit;outline:none;height:30px;min-width:0;color-scheme:dark}
-  .nses-tema-block-hdr select:focus{border-color:var(--blue)}
-  .nses-tema-block-hdr select option{background:var(--card);color:var(--txt)}
+  /* Custom select (reemplaza native select para control total del color) */
+  .csel{position:relative;flex:1;min-width:0}
+  .csel-btn{width:100%;background:var(--dark);border:.5px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--soft);font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:6px;transition:border-color .15s;height:30px}
+  .csel-btn:focus{outline:none;border-color:var(--blue)}
+  .csel-btn.has-val{color:var(--txt)}
+  .csel-ico{font-size:11px;color:var(--muted);flex-shrink:0;transition:transform .15s}
+  .csel-list{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#060d20;border:.5px solid var(--border);border-radius:8px;z-index:9999;max-height:220px;overflow-y:auto;box-shadow:0 8px 28px rgba(0,0,0,.7)}
+  .csel-list.open{display:block}
+  .csel-opt{padding:8px 12px;color:#a8c8f0;font-size:12px;cursor:pointer;transition:background .1s}
+  .csel-opt:hover,.csel-opt:focus{background:#0a1530;color:#e0eaf8;outline:none}
+  .csel-opt.selected{color:#6eaef0;background:rgba(110,174,240,.08)}
   .nses-tema-del{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:0;font-size:16px;line-height:1;flex-shrink:0;transition:color .15s;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%}
   .nses-tema-del:hover{color:var(--red);background:rgba(255,80,80,.1)}
   .nses-tema-detail{padding:8px 12px 6px;border-top:.5px solid rgba(255,255,255,.06)}
@@ -2622,7 +2630,8 @@ async function nSesSubmit(e) {
     const temaEl  = document.getElementById(`nses-tnm-${pid}`);
     const temaNom = temaEl?.value?.trim() || '';
     if (!temaNom) {
-      if (temaEl) { temaEl.style.borderColor = 'var(--red)'; temaEl.addEventListener('change', () => temaEl.style.borderColor = '', {once:true}); }
+      const temaBtnEl = document.getElementById(`btn-nses-tnm-${pid}`) || temaEl;
+      if (temaBtnEl) temaBtnEl.style.borderColor = 'var(--red)';
       valid = false;
     }
 
@@ -2810,10 +2819,7 @@ async function nSesRenderExamenes() {
   lista.innerHTML = asigs.map((asig, i) => {
     const temas   = _curriculoTemas(alumno?.nivel, asig.nombre);
     const temaCtrl = temas?.length
-      ? `<select class="field-input" id="nses-extema-${i}">
-           <option value="">— Selecciona tema —</option>
-           ${temas.map(t => `<option value="${t}">${t}</option>`).join('')}
-         </select>`
+      ? _cSel(`nses-extema-${i}`, temas)
       : `<input class="field-input" type="text" id="nses-extema-${i}" placeholder="Tema del examen">`;
     return `
       <div style="background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
@@ -2867,18 +2873,15 @@ async function nSesAddTema(ai, asigKey, prefill) {
   const _asigNomSes  = _blockEl?.querySelector('.nses-asig-nom')?.textContent?.trim()
                     || _blockEl?.querySelector('[data-custom-asig]')?.value?.trim() || '';
   const _temasSes    = _curriculoTemas(_nivelSes, _asigNomSes);
-  const _temaField   = (_temasSes?.length)
-    ? `<select id="nses-tnm-${pid}">
-         <option value="">— Selecciona tema —</option>
-         ${_temasSes.map(t => `<option value="${t}"${prefill===t?' selected':''}>${t}</option>`).join('')}
-       </select>`
+  const _temaField = (_temasSes?.length)
+    ? _cSel(`nses-tnm-${pid}`, _temasSes)
     : `<input type="text" id="nses-tnm-${pid}" placeholder="Nombre del tema…"
          value="${prefill ? prefill.replace(/"/g,'&quot;') : ''}">`;
 
   const div = document.createElement('div');
   div.className = 'nses-tema-block';
-  div.dataset.pid    = pid;
-  div.dataset.ai     = ai;
+  div.dataset.pid     = pid;
+  div.dataset.ai      = ai;
   div.dataset.asigkey = asigKey || '';
   div.innerHTML = `
     <div class="nses-tema-block-hdr">
@@ -2892,7 +2895,12 @@ async function nSesAddTema(ai, asigKey, prefill) {
       ${_nSesRenderNota(pid)}
     </div>`;
   listEl.appendChild(div);
-  if (!prefill) div.querySelector(`#nses-tnm-${pid}`)?.focus();
+  if (prefill && _temasSes?.length) {
+    const opt = [...div.querySelectorAll('.csel-opt')].find(o => o.textContent.trim() === prefill);
+    if (opt) cSelPick(`nses-tnm-${pid}`, prefill, opt);
+  } else if (!prefill) {
+    (div.querySelector('.csel-btn') || div.querySelector(`#nses-tnm-${pid}`))?.focus();
+  }
 }
 
 let _nSesCustomAsigCount = 0;
@@ -3983,6 +3991,70 @@ function pMatAlumnoChange() {
 }
 
 // ── Currículum LOMLOE-CV: temas desde Supabase ───────────
+// ============================================================
+// CUSTOM SELECT (dropdown oscuro controlado)
+// ============================================================
+function _cSel(id, temas, placeholder) {
+  const opts = temas.map(t => {
+    const esc = t.replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    return `<div class="csel-opt" tabindex="0"
+      onclick="cSelPick('${id}','${esc}',this)"
+      onkeydown="if(event.key==='Enter'||event.key===' ')cSelPick('${id}','${esc}',this)"
+      >${t}</div>`;
+  }).join('');
+  return `<div class="csel" id="wrap-${id}">
+    <button type="button" class="csel-btn" id="btn-${id}"
+      onclick="cSelToggle('${id}')" aria-haspopup="listbox">
+      <span class="csel-val" id="val-${id}">${placeholder || '— Selecciona tema —'}</span>
+      <i class="ti ti-chevron-down csel-ico" id="ico-${id}"></i>
+    </button>
+    <div class="csel-list" id="list-${id}" role="listbox">${opts}</div>
+    <input type="hidden" id="${id}" value="">
+  </div>`;
+}
+
+function cSelToggle(id) {
+  const list = document.getElementById('list-' + id);
+  const ico  = document.getElementById('ico-' + id);
+  const isOpen = list.classList.contains('open');
+  // Cierra cualquier otro abierto
+  document.querySelectorAll('.csel-list.open').forEach(l => {
+    l.classList.remove('open');
+    const i = document.getElementById(l.id.replace('list-', 'ico-'));
+    if (i) i.style.transform = '';
+  });
+  if (!isOpen) {
+    list.classList.add('open');
+    if (ico) ico.style.transform = 'rotate(180deg)';
+  }
+}
+
+function cSelPick(id, val, optEl) {
+  document.getElementById(id).value = val;
+  const valEl = document.getElementById('val-' + id);
+  const btnEl = document.getElementById('btn-' + id);
+  const icoEl = document.getElementById('ico-' + id);
+  if (valEl) valEl.textContent = val;
+  if (btnEl) { btnEl.classList.add('has-val'); btnEl.style.borderColor = ''; }
+  const list  = document.getElementById('list-' + id);
+  if (list) {
+    list.querySelectorAll('.csel-opt').forEach(o => o.classList.toggle('selected', o === optEl));
+    list.classList.remove('open');
+  }
+  if (icoEl) icoEl.style.transform = '';
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.csel')) {
+    document.querySelectorAll('.csel-list.open').forEach(l => {
+      l.classList.remove('open');
+      const i = document.getElementById(l.id.replace('list-', 'ico-'));
+      if (i) i.style.transform = '';
+    });
+  }
+});
+
+// ============================================================
 const _nivelToCurso = {
   '1ESO':'1º ESO','2ESO':'2º ESO','3ESO':'3º ESO','4ESO':'4º ESO',
   '1BACH':'1º Bachillerato','2BACH':'2º Bachillerato'
