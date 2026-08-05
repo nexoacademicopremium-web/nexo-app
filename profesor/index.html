@@ -4009,12 +4009,53 @@ async function _cargarCurriculo() {
   _curriculoCache = data || [];
 }
 
+function _curriculoKey(nombre) {
+  if (!nombre) return null;
+  const n = nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+  if (/mat.*aplic|mat.*cc\.?s|ccss|ciencias.soc/.test(n)) return 'matematicas_aplic';
+  if (/matematica.*\ba\b/.test(n)) return 'matematicas_a';
+  if (/matematica.*\bb\b/.test(n)) return 'matematicas_b';
+  if (/matematica|mates/.test(n)) return 'matematicas';
+  if (/fisica.*y.*quim|fisicoquim|fis.*quim/.test(n)) return 'fisica_quimica';
+  if (/\bfisica\b/.test(n) && !/quim/.test(n)) return 'fisica';
+  if (/\bquimica\b/.test(n) && !/fisica/.test(n)) return 'quimica';
+  if (/biologia.*geolog|bio.*geo/.test(n)) return 'biologia';
+  if (/biolog/.test(n)) return 'biologia';
+  if (/geologia.*ciencias|geol.*amb/.test(n)) return 'geologia';
+  if (/\bgeologia\b/.test(n)) return 'geologia';
+  if (/geografia.*historia|geo.*hist/.test(n)) return 'geo_historia';
+  if (/historia.*espana|hist.*espa/.test(n)) return 'historia_espana';
+  if (/historia.*mundo|hist.*mundo/.test(n)) return 'historia_mundo';
+  if (/historia.*arte|hist.*art/.test(n)) return 'historia_arte';
+  if (/historia.*filos|hist.*filos/.test(n)) return 'historia_filosofia';
+  if (/\bgeografia\b/.test(n)) return 'geografia';
+  if (/lengua.*castell|castellana|lengua.*lit/.test(n)) return 'lengua';
+  if (/valenci|valenciano|lleng.*val/.test(n)) return 'valenciano';
+  if (/ingles|english|primera lleng|lengua extran/.test(n)) return 'ingles';
+  if (/frances|francais/.test(n)) return 'frances';
+  if (/\bfilosofia\b/.test(n) && !/historia/.test(n)) return 'filosofia';
+  if (/empresa.*diseno|empresa.*negoc|empresa.*model/.test(n)) return 'empresa';
+  if (/econom.*emprend|emprend/.test(n)) return 'economia';
+  if (/\beconomia\b/.test(n) && !/empresa/.test(n)) return 'economia';
+  if (/\blatin\b/.test(n)) return 'latin';
+  if (/\bgriego\b/.test(n)) return 'griego';
+  if (/lit.*universal/.test(n)) return 'literatura_universal';
+  if (/dibujo.*tec|dibuix.*tec/.test(n)) return 'dibujo_tecnico';
+  if (/dibujo.*art|dibuix.*art/.test(n)) return 'dibujo_artistico';
+  if (/cultura.*audiovis/.test(n)) return 'cultura_audiovisual';
+  if (/\bvolumen\b/.test(n)) return 'volumen';
+  if (/\bdiseno\b/.test(n)) return 'diseno';
+  return null;
+}
+
 function _curriculoTemas(nivel, asigNombre) {
   if (!asigNombre || !_curriculoCache) return null;
   const curso = _nivelToCurso[nivel] || null;
-  const rows = _curriculoCache.filter(r =>
-    r.asignatura === asigNombre && (!curso || r.curso === curso)
-  );
+  const qKey  = _curriculoKey(asigNombre);
+  const rows  = _curriculoCache.filter(r => {
+    if (curso && r.curso !== curso) return false;
+    return qKey ? _curriculoKey(r.asignatura) === qKey : r.asignatura === asigNombre;
+  });
   return rows.length ? rows.map(r => r.tema) : null;
 }
 
