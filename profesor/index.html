@@ -349,8 +349,9 @@
   .nses-tema-block-hdr{display:flex;align-items:center;gap:8px;padding:9px 12px}
   .nses-tema-block-hdr input[type=text]{flex:1;font-size:12px;font-weight:500;background:transparent;border:.5px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--txt);font-family:inherit;outline:none}
   .nses-tema-block-hdr input[type=text]:focus{border-color:var(--blue)}
-  .nses-tema-block-hdr select{flex:1;font-size:12px;font-weight:500;background:var(--card);border:.5px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--txt);font-family:inherit;outline:none;height:30px;min-width:0}
+  .nses-tema-block-hdr select{flex:1;font-size:12px;font-weight:500;background:var(--card);border:.5px solid var(--border);border-radius:8px;padding:5px 10px;color:var(--txt);font-family:inherit;outline:none;height:30px;min-width:0;color-scheme:dark}
   .nses-tema-block-hdr select:focus{border-color:var(--blue)}
+  .nses-tema-block-hdr select option{background:var(--card);color:var(--txt)}
   .nses-tema-del{background:transparent;border:none;color:var(--muted);cursor:pointer;padding:0;font-size:16px;line-height:1;flex-shrink:0;transition:color .15s;width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:50%}
   .nses-tema-del:hover{color:var(--red);background:rgba(255,80,80,.1)}
   .nses-tema-detail{padding:8px 12px 6px;border-top:.5px solid rgba(255,255,255,.06)}
@@ -2366,20 +2367,6 @@ function _nSesTimeHtml(hId, mId, onchange, maxH) {
 
 function _nSesRenderAsig(asig, ai, prevTemasMap) {
   const asigKey = _asigKey(asig.nombre);
-  const prevSet = prevTemasMap?.[asig.nombre] || new Set();
-  const chips = prevSet.size > 0
-    ? `<div style="padding:8px 16px 2px">
-         <div style="color:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">
-           Temas anteriores — pulsa para añadir
-         </div>
-         <div class="nses-chips-row" style="padding:0">
-           ${[...prevSet].map(t => `
-             <button type="button" class="nses-chip" onclick="nSesAddTema(${ai},'${asigKey}','${t.replace(/'/g,"\\'")}')">
-               <i class="ti ti-history"></i>${t}
-             </button>`).join('')}
-         </div>
-       </div>`
-    : '';
 
   return `
     <div class="nses-asig-block" id="nses-asig-block-${ai}">
@@ -2395,7 +2382,6 @@ function _nSesRenderAsig(asig, ai, prevTemasMap) {
           </span>
           ${_nSesTimeHtml(`nses-atm-h-${ai}`, `nses-atm-m-${ai}`, 'nSesCheckTotals()')}
         </div>
-        ${chips}
         <div id="nses-temas-list-${ai}" style="margin-top:4px"></div>
         <div style="padding:8px 16px 12px;border-top:.5px solid var(--border2)">
           <button type="button" class="btn-ghost" style="font-size:11px;padding:5px 12px"
@@ -2645,7 +2631,12 @@ async function nSesSubmit(e) {
       || document.getElementById(`nses-asig-nombre-${ai}`)?.value?.trim()
       || '(sin asignatura)';
 
-    const temaNom = document.getElementById(`nses-tnm-${pid}`)?.value?.trim() || '(sin nombre)';
+    const temaEl  = document.getElementById(`nses-tnm-${pid}`);
+    const temaNom = temaEl?.value?.trim() || '';
+    if (!temaNom) {
+      if (temaEl) { temaEl.style.borderColor = 'var(--red)'; temaEl.addEventListener('change', () => temaEl.style.borderColor = '', {once:true}); }
+      valid = false;
+    }
 
     const rec = {
       asignatura: asigNom,
@@ -2696,7 +2687,7 @@ async function nSesSubmit(e) {
     return;
   }
   if (!valid) {
-    showToast('Revisa los campos obligatorios marcados en rojo', 'error');
+    showToast('Selecciona el tema de cada bloque antes de enviar', 'error');
     return;
   }
 
