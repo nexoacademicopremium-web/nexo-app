@@ -4114,9 +4114,9 @@ const _nivelToCurso = {
 let _curriculoCache = null;
 
 async function _cargarCurriculo() {
-  if (_curriculoCache) return;
+  if (_curriculoCache?.length) return;
   const { data } = await db.from('curriculo_temas').select('curso,asignatura,tema').order('id');
-  _curriculoCache = data || [];
+  if (data?.length) _curriculoCache = data;
 }
 
 function _curriculoKey(nombre) {
@@ -4169,7 +4169,8 @@ function _curriculoTemas(nivel, asigNombre) {
   return rows.length ? rows.map(r => r.tema) : null;
 }
 
-function actualizarSelectTemas() {
+async function actualizarSelectTemas() {
+  await _cargarCurriculo();
   const asigId = parseInt(document.getElementById('mat-asignatura').value);
   const nivel  = document.getElementById('mat-nivel').value;
   const sel    = document.getElementById('mat-tema-id');

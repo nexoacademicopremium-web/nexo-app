@@ -2861,7 +2861,8 @@ function nSesToggleAsigBody(ai) {
 
 let _nSesCustomTemaCount = 0;
 
-function nSesAddTema(ai, asigKey, prefill) {
+async function nSesAddTema(ai, asigKey, prefill) {
+  await _cargarCurriculo();
   const listEl = document.getElementById(`nses-temas-list-${ai}`);
   if (!listEl) return;
 
@@ -3307,7 +3308,8 @@ function tpdfAlumnoChange() {
     asigs.map(a => `<option value="${a}">${a}</option>`).join('');
 }
 
-function tpdfAsigChange() {
+async function tpdfAsigChange() {
+  await _cargarCurriculo();
   const alumnoId   = document.getElementById('tpdf-alumno').value;
   const asigNombre = document.getElementById('tpdf-asignatura').value;
   const sel = document.getElementById('tpdf-tema');
@@ -4004,9 +4006,9 @@ const _nivelToCurso = {
 let _curriculoCache = null;
 
 async function _cargarCurriculo() {
-  if (_curriculoCache) return;
+  if (_curriculoCache?.length) return;
   const { data } = await db.from('curriculo_temas').select('curso,asignatura,tema').order('id');
-  _curriculoCache = data || [];
+  if (data?.length) _curriculoCache = data;
 }
 
 function _curriculoKey(nombre) {
@@ -4059,7 +4061,8 @@ function _curriculoTemas(nivel, asigNombre) {
   return rows.length ? rows.map(r => r.tema) : null;
 }
 
-function pMatActualizarTemas() {
+async function pMatActualizarTemas() {
+  await _cargarCurriculo();
   const asigId = parseInt(document.getElementById('pmat-asignatura').value);
   const sel    = document.getElementById('pmat-tema');
   if (!asigId) { sel.innerHTML = '<option value="">— Elige asignatura primero —</option>'; return; }
