@@ -24,6 +24,7 @@
     --green:#1a7f5e; --green-lt:#0d2d1e;
     --amber:#b45309; --amber-lt:#2d1e0d;
     --red:#c0392b; --red-lt:#2d0d0d;
+    color-scheme: dark;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
@@ -700,23 +701,9 @@
               </label>
             </div>
 
-            <div id="nses-examen-detalle" style="display:none;margin-top:18px">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-                <div>
-                  <label class="field-label" style="margin-top:0">Fecha del examen *</label>
-                  <input class="field-input" type="date" id="nses-examen-fecha">
-                </div>
-                <div>
-                  <label class="field-label" style="margin-top:0">Asignatura *</label>
-                  <select class="field-input" id="nses-examen-asig" onchange="nSesLoadExamenTemas()">
-                    <option value="">— Selecciona alumno primero —</option>
-                  </select>
-                </div>
-              </div>
-              <label class="field-label">Tema del examen *</label>
-              <select class="field-input" id="nses-examen-tema">
-                <option value="">— Selecciona asignatura primero —</option>
-              </select>
+            <div id="nses-examen-detalle" style="display:none;margin-top:14px">
+              <p style="color:var(--muted);font-size:12px;margin:0 0 12px">Rellena fecha y tema para cada asignatura con examen próximo. Deja en blanco las que no tengan.</p>
+              <div id="nses-examenes-lista"></div>
               <span class="field-err" id="err-nses-examen-detalle"></span>
             </div>
           </div>
@@ -2339,12 +2326,10 @@ async function nSesLoadAlumno() {
     _nSesRenderAsig(asig, ai, prevTemasMap)
   ).join('');
 
-  // Rellenar desplegable de asignaturas del bloque Examen próximo
-  const exAsigSel = document.getElementById('nses-examen-asig');
-  if (exAsigSel) {
-    exAsigSel.innerHTML = '<option value="">— Selecciona asignatura —</option>' +
-      asigs.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
-  }
+  // Resetear sección examen si el alumno cambia
+  document.getElementById('nses-examen-no').checked = true;
+  document.getElementById('nses-examen-detalle').style.display = 'none';
+  document.getElementById('nses-examenes-lista').innerHTML = '';
   const exTemaSel = document.getElementById('nses-examen-tema');
   if (exTemaSel) exTemaSel.innerHTML = '<option value="">— Selecciona asignatura primero —</option>';
 }
@@ -2724,14 +2709,18 @@ async function nSesSubmit(e) {
 
   // Validar examen próximo
   const examenSi = document.getElementById('nses-examen-si')?.checked;
+  let examenesData = [];
   if (examenSi) {
-    const exFecha = document.getElementById('nses-examen-fecha').value;
-    const exAsig  = document.getElementById('nses-examen-asig').value;
-    const exTema  = document.getElementById('nses-examen-tema').value;
-    const errEx   = document.getElementById('err-nses-examen-detalle');
-    if (!exFecha || !exAsig || !exTema) {
-      if (errEx) errEx.textContent = 'Rellena la fecha, asignatura y tema del examen.';
-      showToast('Indica los datos del examen próximo', 'error');
+    const asigs = _nSesDatos?.asigs || [];
+    asigs.forEach((asig, i) => {
+      const fecha = document.getElementById(`nses-exfecha-${i}`)?.value;
+      const tema  = document.getElementById(`nses-extema-${i}`)?.value?.trim();
+      if (fecha) examenesData.push({ asig: asig.nombre, fecha, tema: tema || '' });
+    });
+    const errEx = document.getElementById('err-nses-examen-detalle');
+    if (!examenesData.length) {
+      if (errEx) errEx.textContent = 'Rellena la fecha de al menos un examen próximo.';
+      showToast('Indica al menos un examen próximo con fecha', 'error');
       return;
     }
     if (errEx) errEx.textContent = '';
@@ -2752,10 +2741,10 @@ async function nSesSubmit(e) {
     hora_inicio: horaStr || null,
     duracion_minutos: parseInt(document.getElementById('nses-duracion').value),
     estado: 'pendiente_confirmacion',
-    examen_proximo:    examenSi || false,
-    examen_fecha:      examenSi ? document.getElementById('nses-examen-fecha').value : null,
-    examen_asignatura: examenSi ? (document.getElementById('nses-examen-asig').selectedOptions[0]?.text || null) : null,
-    examen_tema:       examenSi ? document.getElementById('nses-examen-tema').value : null,
+    examen_proximo:    examenesData.length > 0,
+    examen_fecha:      examenesData[0]?.fecha || null,
+    examen_asignatura: examenesData.length ? examenesData.map(e => e.asig).join(' | ') : null,
+    examen_tema:       examenesData.length ? examenesData.map(e => e.tema ? `${e.asig}: ${e.tema}` : e.asig).join(' | ') : null,
   };
 
   const { data: newSes, error: sesErr } = await db.from('sesiones').insert(sesData).select().single();
@@ -2801,42 +2790,43 @@ async function nSesSubmit(e) {
 function nSesToggleExamen() {
   const si = document.getElementById('nses-examen-si')?.checked;
   document.getElementById('nses-examen-detalle').style.display = si ? 'block' : 'none';
+  if (si) nSesRenderExamenes();
 }
 
-async function nSesLoadExamenTemas() {
-  const asigId  = parseInt(document.getElementById('nses-examen-asig').value);
-  const temaSel = document.getElementById('nses-examen-tema');
-  if (!asigId) {
-    temaSel.innerHTML = '<option value="">— Selecciona asignatura primero —</option>';
-    return;
-  }
-  temaSel.innerHTML = '<option value="">Cargando temas…</option>';
-  temaSel.disabled = true;
-
+async function nSesRenderExamenes() {
+  await _cargarCurriculo();
+  const lista = document.getElementById('nses-examenes-lista');
+  if (!lista) return;
   const alumnoId = document.getElementById('nses-alumno').value;
   const alumno   = misAlumnos.find(a => a.id === alumnoId);
-  const nivel    = alumno?.nivel;
-  const nivelesQuery = nivel ? [nivel, 'todos'] : ['todos'];
-
-  const { data: bloques } = await db.from('bloques').select('id')
-    .eq('asignatura_id', asigId).in('nivel', nivelesQuery);
-
-  if (!bloques?.length) {
-    temaSel.innerHTML = '<option value="">Sin temas disponibles</option>';
-    temaSel.disabled = false;
+  const asigs    = _nSesDatos?.asigs || [];
+  if (!asigs.length) {
+    lista.innerHTML = '<p style="color:var(--muted);font-size:12px">Selecciona un alumno primero.</p>';
     return;
   }
-
-  const { data: temas } = await db.from('temas').select('id, nombre')
-    .in('bloque_id', bloques.map(b => b.id)).order('nombre');
-
-  temaSel.disabled = false;
-  if (!temas?.length) {
-    temaSel.innerHTML = '<option value="">Sin temas disponibles</option>';
-    return;
-  }
-  temaSel.innerHTML = '<option value="">— Selecciona tema —</option>' +
-    temas.map(t => `<option value="${t.nombre}">${t.nombre}</option>`).join('');
+  lista.innerHTML = asigs.map((asig, i) => {
+    const temas   = _curriculoTemas(alumno?.nivel, asig.nombre);
+    const temaCtrl = temas?.length
+      ? `<select class="field-input" id="nses-extema-${i}">
+           <option value="">— Selecciona tema —</option>
+           ${temas.map(t => `<option value="${t}">${t}</option>`).join('')}
+         </select>`
+      : `<input class="field-input" type="text" id="nses-extema-${i}" placeholder="Tema del examen">`;
+    return `
+      <div style="background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
+        <div style="color:var(--soft);font-size:13px;font-weight:600;margin-bottom:10px">${asig.nombre}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div>
+            <label class="field-label" style="margin-top:0;font-size:11px">Fecha del examen</label>
+            <input class="field-input" type="date" id="nses-exfecha-${i}">
+          </div>
+          <div>
+            <label class="field-label" style="margin-top:0;font-size:11px">Tema</label>
+            ${temaCtrl}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 function nSesToggleAsigBody(ai) {
