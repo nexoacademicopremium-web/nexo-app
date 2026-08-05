@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
 <title>Admin — Nexo Académico</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="../assets/logo/icon-192-admin.png">
@@ -24,9 +25,12 @@
     --green:#1a7f5e; --green-lt:#0d2d1e;
     --amber:#b45309; --amber-lt:#2d1e0d;
     --red:#c0392b; --red-lt:#2d0d0d;
+    color-scheme: dark;
   }
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   html,body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--txt);font-size:14px}
+  select option{background:#060d20;color:#e0eaf8}
+  select option:checked{background:#154ca9;color:#fff}
   .topbar{position:fixed;top:0;left:0;right:0;z-index:100;height:calc(62px + env(safe-area-inset-top,0px));background:rgba(4,7,27,.97);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:env(safe-area-inset-top,0px) 20px 0}
   .topbar-brand{display:flex;align-items:center;gap:10px;text-decoration:none}
   .admin-badge{background:#0f2240;border:.5px solid var(--border);border-radius:20px;padding:2px 10px;font-size:10px;color:var(--muted);letter-spacing:.8px}
