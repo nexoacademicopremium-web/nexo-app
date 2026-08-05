@@ -213,6 +213,24 @@
   select option:checked{background:#154ca9;color:#fff}
   textarea.field-input{resize:vertical;min-height:100px;line-height:1.6}
 
+  /* TAREAS — cards */
+  .tareas-alumno-grupo{margin-bottom:32px}
+  .tareas-alumno-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:.5px solid var(--border2)}
+  .tareas-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;letter-spacing:.5px}
+  .tareas-alumno-nom{font-size:14px;font-weight:600;color:var(--txt)}
+  .tareas-alumno-cnt{font-size:11px;color:var(--muted);margin-left:auto}
+  .tareas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+  .tarea-card{background:var(--surface);border:.5px solid var(--border);border-radius:16px;padding:16px 16px 14px;cursor:pointer;transition:border-color .18s,box-shadow .18s,transform .15s;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
+  .tarea-card:hover{border-color:var(--blue);box-shadow:0 6px 24px rgba(59,130,246,.13);transform:translateY(-3px)}
+  .tarea-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+  .tarea-card-asig{font-size:10px;font-weight:700;border-radius:6px;padding:3px 9px;letter-spacing:.3px;flex-shrink:0;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tarea-card-titulo{font-size:13px;font-weight:600;color:#dde8f8;line-height:1.4;word-break:break-word}
+  .tarea-card-tema{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;line-height:1.3}
+  .tarea-card-foot{display:flex;align-items:center;justify-content:space-between;margin-top:auto;gap:6px;flex-wrap:wrap}
+  .tarea-card-limit{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px}
+  .tarea-card-novedad{position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 6px rgba(59,130,246,.6)}
+  @media(max-width:600px){.tareas-grid{grid-template-columns:1fr}}
+
   /* SLIDER */
   .slider-wrap{padding:8px 0}
   input[type=range]{width:100%;accent-color:var(--blue);height:6px}
@@ -901,10 +919,8 @@
       <option value="">Todos los alumnos</option>
     </select>
   </div>
-  <div class="card" style="padding:0">
-    <div id="tareas-prof-lista">
-      <div class="loading-section"><div class="spinner"></div></div>
-    </div>
+  <div id="tareas-prof-lista">
+    <div class="loading-section"><div class="spinner"></div></div>
   </div>
 </div>
 
@@ -924,9 +940,14 @@
       </select>
 
       <label class="field-label">Asignatura</label>
-      <select class="field-input" id="nt-asignatura" disabled>
+      <select class="field-input" id="nt-asignatura" disabled onchange="ntAsigChange()">
         <option value="">— Primero selecciona un alumno —</option>
       </select>
+
+      <div id="nt-tema-wrap" style="display:none">
+        <label class="field-label" style="margin-top:12px">Tema</label>
+        <div id="nt-tema-csel"></div>
+      </div>
 
       <label class="field-label">Título *</label>
       <input class="field-input" id="nt-titulo" placeholder="Ej: Ejercicios tema 5 — Ecuaciones" required>
@@ -3475,6 +3496,32 @@ async function loadTareasProf() {
   _renderTareasProf();
 }
 
+function _asigColor(nom) {
+  const palette = [
+    {bg:'rgba(59,130,246,.18)',tx:'#60a5fa'},
+    {bg:'rgba(139,92,246,.18)',tx:'#a78bfa'},
+    {bg:'rgba(16,185,129,.18)',tx:'#34d399'},
+    {bg:'rgba(245,158,11,.18)',tx:'#fbbf24'},
+    {bg:'rgba(239,68,68,.18)', tx:'#f87171'},
+    {bg:'rgba(6,182,212,.18)', tx:'#22d3ee'},
+    {bg:'rgba(236,72,153,.18)',tx:'#f472b6'},
+    {bg:'rgba(249,115,22,.18)',tx:'#fb923c'},
+  ];
+  let h = 0; for (const c of (nom||'')) h = (h*31+c.charCodeAt(0))&0xffff;
+  return palette[h % palette.length];
+}
+
+function _alumnoInitials(nom) {
+  const parts = (nom||'?').split(' ').filter(Boolean);
+  return (parts[0]?.[0] || '') + (parts[1]?.[0] || '');
+}
+
+function _alumnoAvatarColor(nom) {
+  const cols = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4','#ec4899'];
+  let h = 0; for (const c of (nom||'')) h = (h*31+c.charCodeAt(0))&0xffff;
+  return cols[h % cols.length];
+}
+
 function _renderTareasProf() {
   const el = document.getElementById('tareas-prof-lista');
   if (!el) return;
@@ -3486,28 +3533,58 @@ function _renderTareasProf() {
   if (filtAlum) lista = lista.filter(t => t.alumno_id === filtAlum);
 
   if (!lista.length) {
-    el.innerHTML = '<div class="empty-state" style="padding:32px 16px"><i class="ti ti-clipboard-x" style="font-size:32px;color:var(--muted)"></i><p style="color:var(--muted);font-size:13px;margin-top:12px">No hay tareas que mostrar.</p></div>';
+    el.innerHTML = '<div class="empty-state" style="padding:48px 16px"><i class="ti ti-clipboard-x" style="font-size:36px;color:var(--muted)"></i><p style="color:var(--muted);font-size:13px;margin-top:14px">No hay tareas que mostrar.</p></div>';
     return;
   }
 
-  el.innerHTML = lista.map(t => {
-    const nom = t.alumno?.usuario ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos}` : '—';
-    const pillMap = { pendiente:'st-grey Pendiente', entregada:'st-pend Entregada', corregida:'st-ok Corregida' };
-    const [pc, pt] = (pillMap[t.estado] || 'st-grey —').split(' ');
-    const limStr = t.fecha_limite ? ` · Límite: ${formatDate(t.fecha_limite)}` : '';
-    const novedad = t.estado === 'entregada'
-      ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);margin-right:5px;vertical-align:middle;flex-shrink:0"></span>'
-      : '';
-    return `<div class="recurso-row" onclick="openTareaProf('${t.id}')">
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
-          ${novedad}
-          <span class="status-pill ${pc}" style="font-size:10px">${pt}</span>
-          <span style="color:var(--muted);font-size:11px">${nom} — ${t.asignatura || '—'}${limStr}</span>
+  // Agrupar por alumno
+  const grupos = [];
+  const seen   = new Map();
+  for (const t of lista) {
+    if (!seen.has(t.alumno_id)) {
+      seen.set(t.alumno_id, grupos.length);
+      grupos.push({ alumno_id: t.alumno_id, nom: t.alumno?.usuario ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos}` : '—', tareas: [] });
+    }
+    grupos[seen.get(t.alumno_id)].tareas.push(t);
+  }
+
+  const pillMap = { pendiente:['st-grey','Pendiente'], entregada:['st-pend','Entregada'], corregida:['st-ok','Corregida'] };
+  const meses   = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+
+  el.innerHTML = grupos.map(g => {
+    const initials = _alumnoInitials(g.nom).toUpperCase();
+    const avColor  = _alumnoAvatarColor(g.nom);
+    const cards = g.tareas.map(t => {
+      const [pc, pt] = pillMap[t.estado] || ['st-grey','—'];
+      const ac = _asigColor(t.asignatura || '');
+      const novedad = t.estado === 'entregada' ? '<div class="tarea-card-novedad"></div>' : '';
+      let limHtml = '';
+      if (t.fecha_limite) {
+        const d = new Date(t.fecha_limite + 'T12:00:00');
+        limHtml = `<span class="tarea-card-limit"><i class="ti ti-calendar" style="font-size:10px"></i>${d.getDate()} ${meses[d.getMonth()]}</span>`;
+      }
+      const temaHtml = t.tema ? `<div class="tarea-card-tema"><i class="ti ti-bookmark" style="font-size:10px;flex-shrink:0"></i>${t.tema}</div>` : '';
+      return `<div class="tarea-card" onclick="openTareaProf('${t.id}')">
+        ${novedad}
+        <div class="tarea-card-top">
+          <span class="tarea-card-asig" style="background:${ac.bg};color:${ac.tx}">${t.asignatura || 'Sin asig.'}</span>
+          <span class="status-pill ${pc}" style="font-size:10px;flex-shrink:0">${pt}</span>
         </div>
-        <div style="color:#fff;font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.titulo}</div>
+        <div class="tarea-card-titulo">${t.titulo}</div>
+        ${temaHtml}
+        <div class="tarea-card-foot">
+          ${limHtml}
+          <i class="ti ti-arrow-right" style="color:var(--muted);font-size:13px;margin-left:auto"></i>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="tareas-alumno-grupo">
+      <div class="tareas-alumno-hdr">
+        <div class="tareas-av" style="background:${avColor}">${initials}</div>
+        <span class="tareas-alumno-nom">${g.nom}</span>
+        <span class="tareas-alumno-cnt">${g.tareas.length} tarea${g.tareas.length!==1?'s':''}</span>
       </div>
-      <i class="ti ti-chevron-right" style="color:var(--muted);flex-shrink:0;margin-left:8px"></i>
+      <div class="tareas-grid">${cards}</div>
     </div>`;
   }).join('');
 }
@@ -3517,6 +3594,8 @@ function openNuevaTarea() {
   document.getElementById('modal-nueva-tarea').classList.add('open');
   document.getElementById('form-nueva-tarea').reset();
   document.getElementById('nt-archivo-name').textContent = '';
+  document.getElementById('nt-tema-wrap').style.display = 'none';
+  document.getElementById('nt-tema-csel').innerHTML = '';
 
   const sel = document.getElementById('nt-alumno');
   sel.innerHTML = '<option value="">— Seleccionar alumno —</option>';
@@ -3536,6 +3615,8 @@ function cerrarModalNuevaTarea() {
 function ntAlumnoChange() {
   const alumnoId = document.getElementById('nt-alumno').value;
   const asgSel   = document.getElementById('nt-asignatura');
+  document.getElementById('nt-tema-wrap').style.display = 'none';
+  document.getElementById('nt-tema-csel').innerHTML = '';
   if (!alumnoId) {
     asgSel.innerHTML = '<option value="">— Primero selecciona un alumno —</option>';
     asgSel.disabled = true;
@@ -3547,6 +3628,24 @@ function ntAlumnoChange() {
     asgSel.innerHTML += `<option value="${nombre}">${nombre}</option>`;
   });
   asgSel.disabled = false;
+}
+
+async function ntAsigChange() {
+  await _cargarCurriculo();
+  const alumnoId = document.getElementById('nt-alumno').value;
+  const asigNom  = document.getElementById('nt-asignatura').value;
+  const wrap     = document.getElementById('nt-tema-wrap');
+  const cselDiv  = document.getElementById('nt-tema-csel');
+  if (!alumnoId || !asigNom) { wrap.style.display = 'none'; cselDiv.innerHTML = ''; return; }
+  const alumno = misAlumnos.find(a => a.id === alumnoId);
+  const temas  = _curriculoTemas(alumno?.nivel, asigNom);
+  if (temas?.length) {
+    cselDiv.innerHTML = _cSel('nt-tema', temas, '— Tema (opcional) —');
+    wrap.style.display = 'block';
+  } else {
+    cselDiv.innerHTML = '';
+    wrap.style.display = 'none';
+  }
 }
 
 async function guardarTarea(e) {
@@ -3571,6 +3670,7 @@ async function guardarTarea(e) {
       profesor_id:          ctx.profesorData.id,
       alumno_id:            document.getElementById('nt-alumno').value,
       asignatura:           document.getElementById('nt-asignatura').value || null,
+      tema:                 document.getElementById('nt-tema')?.value || null,
       titulo:               document.getElementById('nt-titulo').value.trim(),
       descripcion:          document.getElementById('nt-descripcion').value.trim() || null,
       archivo_enunciado_url: archivoUrl,
