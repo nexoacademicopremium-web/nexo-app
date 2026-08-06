@@ -1138,7 +1138,6 @@ async function loadDashboard() {
     .select('id,tipo,titulo,fecha,pdf_url,archivo_url')
     .eq('alumno_id', alumno.id)
     .eq('estado', 'visible')
-    .eq('eliminado', false)
     .order('fecha', { ascending: false })
     .limit(3);
 
@@ -1529,7 +1528,6 @@ async function loadInformes() {
     .select('id,tipo,titulo,fecha,pdf_url,archivo_url')
     .eq('alumno_id', ctx.alumnoData.id)
     .eq('estado', 'visible')
-    .eq('eliminado', false)
     .order('fecha', { ascending: false });
 
   const container = document.getElementById('informes-container');
