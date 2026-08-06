@@ -1135,18 +1135,21 @@ async function loadDashboard() {
   // Informes recientes
   const { data: informes } = await db
     .from('informes')
-    .select('*')
+    .select('id,tipo,titulo,fecha,pdf_url,archivo_url')
     .eq('alumno_id', alumno.id)
-    .eq('visible', true)
-    .order('created_at', { ascending: false })
+    .eq('estado', 'visible')
+    .eq('eliminado', false)
+    .order('fecha', { ascending: false })
     .limit(3);
 
   const infEl = document.getElementById('informes-recientes');
   if (!informes || informes.length === 0) {
     infEl.innerHTML = `<div class="empty-state"><i class="ti ti-file-off"></i><p>Sin informes disponibles</p></div>`;
   } else {
-    infEl.innerHTML = informes.map(inf => `
-      <div class="inf-row" onclick="${inf.archivo_url ? `window.open('${inf.archivo_url}','_blank')` : ''}">
+    infEl.innerHTML = informes.map(inf => {
+      const url = inf.pdf_url || inf.archivo_url || `../informe.html?id=${inf.id}`;
+      return `
+      <div class="inf-row" style="cursor:pointer" onclick="window.open(${JSON.stringify(url)},'_blank')">
         <div class="inf-ico ${inf.tipo === 'mensual' ? 'm' : 's'}">
           <i class="ti ${inf.tipo === 'mensual' ? 'ti-report-analytics' : 'ti-report'}"></i>
         </div>
@@ -1155,9 +1158,9 @@ async function loadDashboard() {
           <div class="inf-sub">${formatShortDate(inf.fecha)}</div>
         </div>
         <span class="pill pill-new">Mensual</span>
-        ${inf.archivo_url ? `<div class="dl" style="margin-left:8px"><i class="ti ti-download"></i></div>` : ''}
-      </div>
-    `).join('');
+        <div class="dl" style="margin-left:8px"><i class="ti ti-external-link"></i></div>
+      </div>`;
+    }).join('');
   }
 
 }
@@ -1523,9 +1526,10 @@ async function loadInformes() {
   if (!ctx.alumnoData) return;
   const { data: informes } = await db
     .from('informes')
-    .select('*')
+    .select('id,tipo,titulo,fecha,pdf_url,archivo_url')
     .eq('alumno_id', ctx.alumnoData.id)
-    .eq('visible', true)
+    .eq('estado', 'visible')
+    .eq('eliminado', false)
     .order('fecha', { ascending: false });
 
   const container = document.getElementById('informes-container');
@@ -1538,16 +1542,19 @@ async function loadInformes() {
   const mensuales = informes.filter(i => i.tipo === 'mensual');
   const otros     = informes.filter(i => i.tipo !== 'mensual');
 
-  const renderCard = inf => `
-    <div class="mat-item-card" style="--cc:#154ca9;${inf.archivo_url ? 'cursor:pointer' : ''}" ${inf.archivo_url ? `onclick="window.open('${inf.archivo_url}','_blank')"` : ''}>
+  const renderCard = inf => {
+    const url = inf.pdf_url || inf.archivo_url || `../informe.html?id=${inf.id}`;
+    const isPdf = !!(inf.pdf_url || inf.archivo_url);
+    return `
+    <div class="mat-item-card" style="--cc:#154ca9;cursor:pointer" onclick="window.open(${JSON.stringify(url)},'_blank')">
       <div class="mat-item-ico"><i class="ti ti-file-analytics"></i></div>
       <div class="mat-item-nom">${inf.titulo}</div>
       <div class="mat-item-badge" style="background:#0f2240;color:var(--blue)">${formatDate(inf.fecha)}</div>
-      ${inf.archivo_url
-        ? `<button class="mat-item-btn" onclick="event.stopPropagation();window.open('${inf.archivo_url}','_blank')"><i class="ti ti-download" style="font-size:13px"></i> Descargar</button>`
-        : `<div style="color:var(--muted);font-size:11px;text-align:center;padding:4px 0">Sin archivo todavía</div>`
-      }
+      <button class="mat-item-btn" onclick="event.stopPropagation();window.open(${JSON.stringify(url)},'_blank')">
+        <i class="ti ti-${isPdf ? 'download' : 'external-link'}" style="font-size:13px"></i> ${isPdf ? 'Descargar' : 'Ver informe'}
+      </button>
     </div>`;
+  };
 
   let html = '';
   if (mensuales.length > 0) {
