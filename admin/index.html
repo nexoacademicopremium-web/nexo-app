@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -67,6 +67,17 @@
   .kpi-label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin-bottom:8px;margin-top:4px}
   .kpi-val{color:#fff;font-size:28px;font-weight:700;line-height:1;letter-spacing:-1px}
   .kpi-sub{color:var(--muted);font-size:11px;margin-top:5px}
+
+  /* ── Admin hub bubbles ─────────────────────────────────────── */
+  .admin-hub-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+  .admin-hub-bubble{background:linear-gradient(145deg,#0c1838,#060d20);border:1px solid var(--cc,var(--border));border-radius:24px;padding:24px 16px 20px;cursor:pointer;position:relative;overflow:hidden;text-align:center;transition:transform .28s cubic-bezier(.4,0,.2,1),box-shadow .28s;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+  .admin-hub-bubble::after{content:'';position:absolute;top:-30px;right:-30px;width:130px;height:130px;border-radius:50%;background:radial-gradient(circle,var(--cc,var(--blue)) 0%,transparent 70%);opacity:.14;pointer-events:none}
+  .admin-hub-bubble:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 24px 56px rgba(0,0,0,.65),0 0 0 1.5px var(--cc,var(--border))}
+  .admin-hub-bubble:active{transform:translateY(-2px) scale(1.01)}
+  .admin-hub-ico{width:68px;height:68px;border-radius:18px;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;border:1.5px solid var(--cc,var(--border));background:rgba(255,255,255,.06)}
+  .admin-hub-ico i{font-size:28px;color:var(--cc,var(--blue))}
+  .admin-hub-name{color:#fff;font-size:14px;font-weight:700;margin-bottom:4px}
+  .admin-hub-count{color:var(--muted);font-size:12px;min-height:16px}
 
   .card{background:var(--surface);border:.5px solid var(--border);border-radius:22px;overflow:hidden;margin-bottom:18px;box-shadow:0 4px 24px rgba(0,0,0,.18)}
   .card-head{padding:15px 18px;border-bottom:.5px solid var(--border);display:flex;align-items:center;justify-content:space-between}
@@ -242,9 +253,11 @@
   .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:89;backdrop-filter:blur(2px)}
   @media(max-width:1200px){
     .kpi-grid{grid-template-columns:repeat(3,1fr)}
+    .admin-hub-grid{grid-template-columns:repeat(4,1fr)}
   }
   @media(max-width:900px){
     .kpi-grid{grid-template-columns:repeat(2,1fr)}
+    .admin-hub-grid{grid-template-columns:repeat(4,1fr)}
   }
   @media(max-width:768px){
     .hamburger{display:flex;align-items:center}
@@ -253,6 +266,7 @@
     .sidebar-overlay.open{display:block}
     .main{margin-left:0!important;padding:16px 14px calc(16px + env(safe-area-inset-bottom,0px))}
     .kpi-grid{grid-template-columns:repeat(2,1fr)!important;gap:12px}
+    .admin-hub-grid{grid-template-columns:repeat(2,1fr)!important;gap:12px}
     .kpi{padding:18px 16px}
     .kpi-val{font-size:24px}
     .fi-grid2{grid-template-columns:1fr!important}
@@ -328,7 +342,52 @@
 <!-- ═══ DASHBOARD ═══ -->
 <div class="section active" id="section-dashboard">
   <h1 class="page-title">Panel de administración</h1>
-  <p class="page-sub" id="dash-sub">Resumen de Nexo Académico</p>
+  <p class="page-sub" id="dash-sub">Resumen general · Nexo Académico</p>
+
+  <!-- Hub de navegación por burbujas -->
+  <div class="admin-hub-grid">
+    <div class="admin-hub-bubble" style="--cc:#6eaef0" onclick="showSection('alumnos')">
+      <div class="admin-hub-ico"><i class="ti ti-users"></i></div>
+      <div class="admin-hub-name">Alumnos</div>
+      <div class="admin-hub-count" id="hub-count-alumnos">—</div>
+    </div>
+    <div class="admin-hub-bubble" style="--cc:#34d399" onclick="showSection('profesores')">
+      <div class="admin-hub-ico"><i class="ti ti-chalkboard"></i></div>
+      <div class="admin-hub-name">Profesores</div>
+      <div class="admin-hub-count" id="hub-count-profesores">—</div>
+    </div>
+    <div class="admin-hub-bubble" style="--cc:#a78bfa" onclick="showSection('sesiones')">
+      <div class="admin-hub-ico"><i class="ti ti-calendar-check"></i></div>
+      <div class="admin-hub-name">Sesiones</div>
+      <div class="admin-hub-count" id="hub-count-sesiones">—</div>
+    </div>
+    <div class="admin-hub-bubble" style="--cc:#f59e0b" onclick="showSection('bonos')">
+      <div class="admin-hub-ico"><i class="ti ti-credit-card"></i></div>
+      <div class="admin-hub-name">Bonos</div>
+      <div class="admin-hub-count" id="hub-count-bonos">—</div>
+    </div>
+    <div class="admin-hub-bubble" style="--cc:#60a5fa" onclick="showSection('material')">
+      <div class="admin-hub-ico"><i class="ti ti-files"></i></div>
+      <div class="admin-hub-name">Material</div>
+      <div class="admin-hub-count">Recursos</div>
+    </div>
+    <div class="admin-hub-bubble" style="--cc:#fb923c" onclick="showSection('tests')">
+      <div class="admin-hub-ico"><i class="ti ti-list-check"></i></div>
+      <div class="admin-hub-name">Tests</div>
+      <div class="admin-hub-count">Evaluaciones</div>
+    </div>
+    <div class="admin-hub-bubble" style="--cc:#f472b6" onclick="showSection('avisos')">
+      <div class="admin-hub-ico"><i class="ti ti-bell"></i></div>
+      <div class="admin-hub-name">Avisos</div>
+      <div class="admin-hub-count">Comunicados</div>
+    </div>
+    <div class="admin-hub-bubble" style="--cc:#2dd4bf" onclick="showSection('informes')">
+      <div class="admin-hub-ico"><i class="ti ti-report-analytics"></i></div>
+      <div class="admin-hub-name">Informes</div>
+      <div class="admin-hub-count">IA generados</div>
+    </div>
+  </div>
+
   <div class="kpi-grid" id="dash-kpis">
     <div class="loading-section"><div class="spinner"></div></div>
   </div>
@@ -569,6 +628,10 @@
         <label class="fl">Email</label>
         <input class="fi" id="fich-prof-email" type="email">
       </div>
+      <div>
+        <label class="fl">Código profesor <span style="color:var(--muted);font-size:10px;font-weight:400">(interno — ej. PRO_26_004)</span></label>
+        <input class="fi" id="fich-prof-codigo" placeholder="PRO_26_XXX" style="font-family:monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+      </div>
       <div id="ficha-prof-row-contacto">
         <label class="fl">Zona</label>
         <input class="fi" id="fich-prof-zona" placeholder="Valencia Norte">
@@ -684,6 +747,10 @@
       <div id="ficha-row-email">
         <label class="fl">Email</label>
         <input class="fi" id="fich-email" type="email">
+      </div>
+      <div>
+        <label class="fl">Código alumno <span style="color:var(--muted);font-size:10px;font-weight:400">(interno — ej. ALU_26_008)</span></label>
+        <input class="fi" id="fich-codigo" placeholder="ALU_26_XXX" style="font-family:monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
       </div>
       <div class="fi-grid2">
         <div>
@@ -1466,6 +1533,16 @@ async function loadDashboard() {
     <div class="kpi ${(bonos?.length||0) > 0 ? 'red' : 'green'}"><div class="kpi-label">Bonos bajos</div><div class="kpi-val">${bonos?.length||0}</div></div>
   `;
 
+  // Hub bubble counts
+  const hubA = document.getElementById('hub-count-alumnos');
+  if (hubA) hubA.textContent = `${nAlumnos || 0} activos`;
+  const hubP = document.getElementById('hub-count-profesores');
+  if (hubP) hubP.textContent = `${nProfs || 0} activos`;
+  const hubS = document.getElementById('hub-count-sesiones');
+  if (hubS) hubS.textContent = `${(sesMes||[]).length} sesiones este mes`;
+  const hubB = document.getElementById('hub-count-bonos');
+  if (hubB) hubB.textContent = (bonos?.length||0) > 0 ? `${bonos.length} con bono bajo` : 'Todo en orden';
+
   // Sesiones pendientes
   const pendEl = document.getElementById('dash-pendientes');
   if (!sesPend || sesPend.length === 0) {
@@ -1631,7 +1708,7 @@ function fichaAlumnoModoEdicion(a) {
 
 function abrirModalAlumno() {
   fichaAlumnoId = null;
-  ['fich-nombre','fich-apellidos','fich-email','fich-nivel','fich-modalidad',
+  ['fich-nombre','fich-apellidos','fich-email','fich-codigo','fich-nivel','fich-modalidad',
    'fich-fecha-inicio','fich-direccion',
    'fich-password','fich-observaciones','fich-username-new','fich-password-new'].forEach(id => {
     const el = document.getElementById(id);
@@ -2156,6 +2233,7 @@ async function abrirFichaProfesor(profId) {
   document.getElementById('fich-prof-nombre').value           = u.nombre || '';
   document.getElementById('fich-prof-apellidos').value        = u.apellidos || '';
   document.getElementById('fich-prof-email').value            = u.email || '';
+  document.getElementById('fich-prof-codigo').value           = p.codigo || '';
   document.getElementById('fich-prof-zona').value             = p.zona || '';
   document.getElementById('fich-prof-estudios').value         = p.estudios || '';
   document.getElementById('fich-prof-nivel-max').value        = p.nivel_max || '';
@@ -2177,6 +2255,7 @@ async function guardarFichaProfesor() {
   const nombre        = document.getElementById('fich-prof-nombre').value.trim();
   const apellidos     = document.getElementById('fich-prof-apellidos').value.trim();
   const email         = document.getElementById('fich-prof-email').value.trim();
+  const codigo        = document.getElementById('fich-prof-codigo').value.trim().toUpperCase();
   const zona          = document.getElementById('fich-prof-zona').value.trim();
   const estudios      = document.getElementById('fich-prof-estudios').value.trim();
   const nivel_max     = document.getElementById('fich-prof-nivel-max').value;
@@ -2212,6 +2291,7 @@ async function guardarFichaProfesor() {
       const { data: newProf, error: insErr } = await db.from('profesores').insert({
         usuario_id: newUser.user_id,
         especialidades: asigNombres,
+        codigo: codigo || null,
       }).select('id').single();
       if (insErr) throw new Error('Usuario creado pero error al guardar datos: ' + insErr.message);
 
@@ -2247,6 +2327,7 @@ async function guardarFichaProfesor() {
       ? db.from('usuarios').update({ nombre, apellidos, email }).eq('id', p.usuario_id)
       : Promise.resolve({ error: null }),
     db.from('profesores').update({
+      codigo:                 codigo || null,
       zona:                   zona || null,
       estudios:               estudios || null,
       nivel_max:              nivel_max || null,
@@ -2271,10 +2352,11 @@ async function guardarFichaProfesor() {
       allProfesores[idx].usuario.apellidos = apellidos;
       allProfesores[idx].usuario.email     = email;
     }
-    allProfesores[idx].zona                   = zona;
-    allProfesores[idx].estudios               = estudios;
-    allProfesores[idx].nivel_max              = nivel_max;
-    allProfesores[idx].fecha_inicio           = fecha_inicio;
+    allProfesores[idx].codigo       = codigo || null;
+    allProfesores[idx].zona         = zona;
+    allProfesores[idx].estudios     = estudios;
+    allProfesores[idx].nivel_max    = nivel_max;
+    allProfesores[idx].fecha_inicio = fecha_inicio;
     allProfesores[idx].observaciones          = observaciones;
     allProfesores[idx].puede_generar_test_pdf = puede_generar_test_pdf;
   }
@@ -2405,6 +2487,7 @@ async function abrirFicha(alumnoId) {
   document.getElementById('fich-nombre').value        = u.nombre || '';
   document.getElementById('fich-apellidos').value     = u.apellidos || '';
   document.getElementById('fich-email').value         = u.email || '';
+  document.getElementById('fich-codigo').value        = a.codigo || '';
   document.getElementById('fich-nivel').value         = a.nivel || '';
   document.getElementById('fich-modalidad').value     = a.modalidad || 'presencial';
   document.getElementById('fich-fecha-inicio').value  = a.fecha_inicio || '';
@@ -2432,6 +2515,7 @@ async function guardarFicha() {
   const nombre        = document.getElementById('fich-nombre').value.trim();
   const apellidos     = document.getElementById('fich-apellidos').value.trim();
   const email         = document.getElementById('fich-email').value.trim();
+  const codigo        = document.getElementById('fich-codigo').value.trim().toUpperCase();
   const nivel         = document.getElementById('fich-nivel').value;
   const modalidad     = document.getElementById('fich-modalidad').value;
   const fecha_inicio  = document.getElementById('fich-fecha-inicio').value;
@@ -2460,7 +2544,7 @@ async function guardarFicha() {
       if (!newUser?.user_id) throw new Error(newUser?.error || 'No se recibió el ID del nuevo usuario');
 
       const { data: newAlumno, error: insErr } = await db.from('alumnos').insert({
-        usuario_id: newUser.user_id, nivel, modalidad,
+        usuario_id: newUser.user_id, nivel, modalidad, codigo: codigo || null,
       }).select('id').single();
       if (insErr) throw new Error('Usuario creado pero error al guardar datos: ' + insErr.message);
 
@@ -2501,6 +2585,7 @@ async function guardarFicha() {
       : Promise.resolve({ error: null }),
     db.from('alumnos').update({
       nivel, modalidad,
+      codigo:        codigo || null,
       fecha_inicio:  fecha_inicio || null,
       direccion:     direccion || null,
       observaciones: observaciones || null,
@@ -2523,11 +2608,12 @@ async function guardarFicha() {
       allAlumnos[idx].usuario.apellidos = apellidos;
       allAlumnos[idx].usuario.email     = email;
     }
-    allAlumnos[idx].nivel             = nivel;
-    allAlumnos[idx].modalidad         = modalidad;
+    allAlumnos[idx].nivel         = nivel;
+    allAlumnos[idx].modalidad     = modalidad;
+    allAlumnos[idx].codigo        = codigo || null;
     allAlumnos[idx].fecha_inicio  = fecha_inicio;
     allAlumnos[idx].direccion     = direccion;
-    allAlumnos[idx].observaciones     = observaciones;
+    allAlumnos[idx].observaciones = observaciones;
   }
   document.getElementById('ficha-titulo').textContent = `${nombre} ${apellidos}`;
 
@@ -3036,6 +3122,26 @@ async function cargarCredencialesAdminProf(profId) {
 // ============================================================
 // SESIONES ADMIN
 // ============================================================
+function getWeekNum(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const day = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+}
+
+const _MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+function nivelACurso(nivel) {
+  if (!nivel) return '—';
+  if (/PRI/i.test(nivel)) return 'Primaria';
+  if (/ESO/i.test(nivel)) return 'ESO';
+  if (/BACH/i.test(nivel)) return 'Bachiller';
+  if (/UNIV/i.test(nivel)) return 'Universidad';
+  return nivel;
+}
+
+// ============================================================
 async function loadSesionesAdmin() {
   const aVal   = document.getElementById('fil-ses-alumno').value;
   const pVal   = document.getElementById('fil-ses-profesor').value;
@@ -3095,20 +3201,34 @@ async function loadSesionesAdmin() {
 
   sesEl.innerHTML = !sesiones || sesiones.length === 0
     ? `<div class="empty-state"><i class="ti ti-calendar-off"></i><p>Sin sesiones en este período</p></div>`
-    : `<table class="tabla">
-        <thead><tr><th>Fecha</th><th>Alumno</th><th>Profesor</th><th>Asignatura</th><th>Duración</th><th>Estado</th><th style="text-align:center">Acciones</th></tr></thead>
+    : `<div style="overflow-x:auto"><table class="tabla" style="min-width:900px">
+        <thead><tr>
+          <th>Fecha</th><th>Sem.</th><th>Mes</th><th>Año</th>
+          <th>Alumno</th><th>Cód. Alumno</th><th>Asignatura</th>
+          <th>Cód. Profesor</th><th>Horas</th><th>Curso</th><th>Modalidad</th>
+          <th>Estado</th><th style="text-align:center">Acciones</th>
+        </tr></thead>
         <tbody>
           ${sesiones.map(s => {
             const [pc, pt] = pillMap[s.estado] || ['st-grey', s.estado];
-            const a  = alumnoMap[s.alumno_id]?.usuario || {};
-            const p  = profMap[s.profesor_id]?.usuario || {};
-            const durH = (s.duracion_minutos / 60).toFixed(1).replace('.0','') + 'h';
+            const alu  = alumnoMap[s.alumno_id] || {};
+            const aluU = alu.usuario || {};
+            const prof = profMap[s.profesor_id] || {};
+            const d    = new Date(s.fecha + 'T00:00:00');
+            const horas = (s.duracion_minutos / 60).toFixed(1).replace('.0', '');
+            const modalidad = alu.modalidad ? alu.modalidad.charAt(0).toUpperCase() + alu.modalidad.slice(1) : '—';
             return `<tr>
               <td>${formatShortDate(s.fecha)}</td>
-              <td style="color:#fff">${a.nombre ? a.nombre + ' ' + a.apellidos : '—'}</td>
-              <td>${p.nombre ? p.nombre + ' ' + p.apellidos : '—'}</td>
+              <td style="text-align:center">${getWeekNum(s.fecha)}</td>
+              <td>${_MESES_CORTOS[d.getMonth()]}</td>
+              <td>${d.getFullYear()}</td>
+              <td style="color:#fff">${aluU.nombre ? aluU.nombre + ' ' + aluU.apellidos : '—'}</td>
+              <td style="font-family:monospace;font-size:11px">${alu.codigo || '—'}</td>
               <td>${s.asignatura}</td>
-              <td>${durH}</td>
+              <td style="font-family:monospace;font-size:11px">${prof.codigo || '—'}</td>
+              <td style="text-align:center">${horas}</td>
+              <td>${nivelACurso(alu.nivel)}</td>
+              <td>${modalidad}</td>
               <td><span class="status-pill ${pc}">${pt}</span></td>
               <td style="white-space:nowrap;text-align:center">
                 <button class="btn-edit" style="padding:5px 9px" onclick="abrirEditSesion('${s.id}')"><i class="ti ti-pencil"></i></button>
@@ -3119,7 +3239,7 @@ async function loadSesionesAdmin() {
             </tr>`;
           }).join('')}
         </tbody>
-      </table>${paginacion}`;
+      </table></div>${paginacion}`;
 }
 
 function abrirCancelar(sesId) {
