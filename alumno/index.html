@@ -1138,6 +1138,7 @@ async function loadDashboard() {
     .select('id,tipo,titulo,fecha,pdf_url,archivo_url')
     .eq('alumno_id', alumno.id)
     .eq('estado', 'visible')
+    .not('eliminado', 'is', true)
     .order('fecha', { ascending: false })
     .limit(3);
 
@@ -1147,8 +1148,9 @@ async function loadDashboard() {
   } else {
     infEl.innerHTML = informes.map(inf => {
       const url = inf.pdf_url || inf.archivo_url || `../informe.html?id=${inf.id}`;
+      const safeUrl = url.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
       return `
-      <div class="inf-row" style="cursor:pointer" onclick="window.open(${JSON.stringify(url)},'_blank')">
+      <div class="inf-row" style="cursor:pointer" data-url="${safeUrl}" onclick="window.open(this.dataset.url,'_blank')">
         <div class="inf-ico ${inf.tipo === 'mensual' ? 'm' : 's'}">
           <i class="ti ${inf.tipo === 'mensual' ? 'ti-report-analytics' : 'ti-report'}"></i>
         </div>
@@ -1528,6 +1530,7 @@ async function loadInformes() {
     .select('id,tipo,titulo,fecha,pdf_url,archivo_url')
     .eq('alumno_id', ctx.alumnoData.id)
     .eq('estado', 'visible')
+    .not('eliminado', 'is', true)
     .order('fecha', { ascending: false });
 
   const container = document.getElementById('informes-container');
@@ -1543,12 +1546,13 @@ async function loadInformes() {
   const renderCard = inf => {
     const url = inf.pdf_url || inf.archivo_url || `../informe.html?id=${inf.id}`;
     const isPdf = !!(inf.pdf_url || inf.archivo_url);
+    const safeUrl = url.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
     return `
-    <div class="mat-item-card" style="--cc:#154ca9;cursor:pointer" onclick="window.open(${JSON.stringify(url)},'_blank')">
+    <div class="mat-item-card" style="--cc:#154ca9;cursor:pointer" data-url="${safeUrl}" onclick="window.open(this.dataset.url,'_blank')">
       <div class="mat-item-ico"><i class="ti ti-file-analytics"></i></div>
       <div class="mat-item-nom">${inf.titulo}</div>
       <div class="mat-item-badge" style="background:#0f2240;color:var(--blue)">${formatDate(inf.fecha)}</div>
-      <button class="mat-item-btn" onclick="event.stopPropagation();window.open(${JSON.stringify(url)},'_blank')">
+      <button class="mat-item-btn" onclick="event.stopPropagation();window.open(this.closest('[data-url]').dataset.url,'_blank')">
         <i class="ti ti-${isPdf ? 'download' : 'external-link'}" style="font-size:13px"></i> ${isPdf ? 'Descargar' : 'Ver informe'}
       </button>
     </div>`;
