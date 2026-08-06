@@ -304,6 +304,7 @@
   .mobile-menu-item i{font-size:22px;flex-shrink:0;width:26px}
   .mobile-menu-item.active{color:#fff}
   .mobile-menu-item:active{opacity:.7}
+  .mmenu-section{padding:18px 4px 6px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:500}
   .mobile-menu-footer{margin-top:24px;border-top:.5px solid var(--border);padding-top:20px}
   .mobile-menu-user{color:var(--muted);font-size:13px;margin-bottom:8px;padding-left:4px}
   @media(min-width:769px){.mobile-menu{display:none!important}}
@@ -508,14 +509,17 @@
       <button class="mobile-menu-close" onclick="closeSidebar()"><i class="ti ti-x"></i></button>
     </div>
     <div class="mobile-menu-nav">
-      <div class="mobile-menu-item active" id="mmenu-panel" onclick="showSection('panel');closeSidebar()"><i class="ti ti-layout-dashboard"></i><span>Panel</span></div>
-      <div class="mobile-menu-item" id="mmenu-alumnos" onclick="showSection('alumnos');closeSidebar()"><i class="ti ti-users"></i><span>Mis alumnos</span></div>
+      <div class="mmenu-section">Mi área</div>
+      <div class="mobile-menu-item active" id="mmenu-panel" onclick="showSection('panel');closeSidebar()"><i class="ti ti-layout-dashboard"></i><span>Inicio</span></div>
       <div class="mobile-menu-item" id="mmenu-calendario" onclick="showSection('calendario');closeSidebar()"><i class="ti ti-calendar"></i><span>Calendario</span></div>
-      <div class="mobile-menu-item" id="mmenu-sesion" onclick="showSection('sesion');closeSidebar()"><i class="ti ti-file-pencil"></i><span>Registrar sesión</span></div>
+      <div class="mobile-menu-item" id="mmenu-sesion" onclick="showSection('sesion');closeSidebar()"><i class="ti ti-file-pencil"></i><span>Registrar Sesión</span></div>
       <div class="mobile-menu-item" id="mmenu-actividad" onclick="showSection('actividad');closeSidebar()"><i class="ti ti-chart-bar"></i><span>Mi actividad</span></div>
-      <div class="mobile-menu-item" id="mmenu-tests" onclick="showSection('tests');closeSidebar()"><i class="ti ti-clipboard-list"></i><span>Tests</span></div>
+      <div class="mobile-menu-item" id="mmenu-alumnos" onclick="showSection('alumnos');closeSidebar()"><i class="ti ti-users"></i><span>Mis Alumnos</span></div>
+      <div class="mmenu-section">Estudiar</div>
       <div class="mobile-menu-item" id="mmenu-material" onclick="showSection('material');closeSidebar()"><i class="ti ti-files"></i><span>Material</span></div>
       <div class="mobile-menu-item" id="mmenu-tareas" onclick="showSection('tareas');closeSidebar()"><i class="ti ti-clipboard-check"></i><span>Tareas</span></div>
+      <div class="mobile-menu-item" id="mmenu-tests" onclick="showSection('tests');closeSidebar()"><i class="ti ti-clipboard-list"></i><span>Tests</span></div>
+      <div class="mmenu-section">Avisos</div>
       <div class="mobile-menu-item" id="mmenu-avisos" onclick="showSection('avisos');closeSidebar()"><i class="ti ti-bell"></i><span>Avisos</span></div>
     </div>
     <div class="mobile-menu-footer">
@@ -527,15 +531,17 @@
 
 <!-- SIDEBAR -->
 <nav class="sidebar" id="sidebar">
-  <div class="nav-section">Principal</div>
-  <div class="nav-item active" id="nav-panel" onclick="showSection('panel')"><i class="ti ti-layout-dashboard"></i> Panel</div>
-  <div class="nav-item" id="nav-alumnos" onclick="showSection('alumnos')"><i class="ti ti-users"></i> Mis alumnos</div>
+  <div class="nav-section">Mi área</div>
+  <div class="nav-item active" id="nav-panel" onclick="showSection('panel')"><i class="ti ti-layout-dashboard"></i> Inicio</div>
   <div class="nav-item" id="nav-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i> Calendario</div>
-  <div class="nav-item" id="nav-sesion" onclick="showSection('sesion')"><i class="ti ti-file-pencil"></i> Registrar sesión</div>
+  <div class="nav-item" id="nav-sesion" onclick="showSection('sesion')"><i class="ti ti-file-pencil"></i> Registrar Sesión</div>
   <div class="nav-item" id="nav-actividad" onclick="showSection('actividad')"><i class="ti ti-chart-bar"></i> Mi actividad</div>
-  <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-clipboard-list"></i> Tests</div>
+  <div class="nav-item" id="nav-alumnos" onclick="showSection('alumnos')"><i class="ti ti-users"></i> Mis Alumnos</div>
+  <div class="nav-section" style="padding-top:16px">Estudiar</div>
   <div class="nav-item" id="nav-material" onclick="showSection('material')"><i class="ti ti-files"></i> Material</div>
   <div class="nav-item" id="nav-tareas" onclick="showSection('tareas')"><i class="ti ti-clipboard-check"></i> Tareas</div>
+  <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-clipboard-list"></i> Tests</div>
+  <div class="nav-section" style="padding-top:16px">Avisos</div>
   <div class="nav-item" id="nav-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i> Avisos<span class="badge-nav" id="badge-avisos" style="display:none">!</span></div>
   <div class="nav-divider"></div>
   <div class="nav-bottom">

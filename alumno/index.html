@@ -264,6 +264,12 @@
   .tarea-card-novedad{position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 6px rgba(59,130,246,.6)}
   .tareas-section-titulo{color:var(--soft);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;margin:0 0 18px;display:flex;align-items:center;gap:8px}
   @media(max-width:600px){.tareas-grid{grid-template-columns:1fr}}
+  /* AVISOS */
+  .aviso-row{padding:14px 16px;border-bottom:.5px solid var(--border2)}
+  .aviso-row:last-child{border-bottom:none}
+  .aviso-titulo{color:#fff;font-size:13px;font-weight:500;margin-bottom:4px}
+  .aviso-cuerpo{color:var(--soft);font-size:12px;line-height:1.6;margin-bottom:6px}
+  .aviso-fecha{color:var(--muted);font-size:10px}
 
   /* TESTS */
   .test-pregunta{background:var(--dark);border:.5px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
@@ -440,6 +446,7 @@
   .mobile-menu-item i{font-size:22px;flex-shrink:0;width:26px}
   .mobile-menu-item.active{color:#fff}
   .mobile-menu-item:active{opacity:.7}
+  .mmenu-section{padding:18px 4px 6px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.8px;font-weight:500}
   .mobile-menu-footer{margin-top:24px;border-top:.5px solid var(--border);padding-top:20px}
   .mobile-menu-user{color:var(--muted);font-size:13px;margin-bottom:8px;padding-left:4px}
   @media(min-width:769px){.mobile-menu{display:none!important}}
@@ -472,14 +479,17 @@
 <nav class="sidebar" id="sidebar">
   <div class="nav-section">Mi área</div>
   <div class="nav-item active" id="nav-inicio" onclick="showSection('inicio')"><i class="ti ti-layout-dashboard"></i> Inicio</div>
-  <div class="nav-item" id="nav-sesiones" onclick="showSection('sesiones')"><i class="ti ti-calendar-check"></i> Mis sesiones<span class="badge-nav" id="badge-sesiones" style="display:none">!</span></div>
-  <div class="nav-item" id="nav-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i> Mis informes</div>
-  <div class="nav-item" id="nav-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i> Mi bono</div>
-  <div class="nav-item" id="nav-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i> Mi profesor</div>
+  <div class="nav-item" id="nav-sesiones" onclick="showSection('sesiones')"><i class="ti ti-calendar-check"></i> Sesiones<span class="badge-nav" id="badge-sesiones" style="display:none">!</span></div>
+  <div class="nav-item" id="nav-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i> Informes</div>
+  <div class="nav-item" id="nav-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i> Bonos</div>
+  <div class="nav-item" id="nav-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i> Calendario</div>
+  <div class="nav-item" id="nav-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i> Mi Profesor</div>
+  <div class="nav-section" style="padding-top:16px">Estudiar</div>
   <div class="nav-item" id="nav-estudiar" onclick="showSection('estudiar')"><i class="ti ti-files"></i> Material</div>
-  <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i> Tests</div>
   <div class="nav-item" id="nav-tareas" onclick="showSection('tareas')"><i class="ti ti-clipboard-check"></i> Tareas<span class="badge-nav" id="badge-tareas" style="display:none">!</span></div>
-  <div class="nav-item" id="nav-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i> Mi calendario</div>
+  <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i> Tests</div>
+  <div class="nav-section" style="padding-top:16px">Avisos</div>
+  <div class="nav-item" id="nav-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i> Avisos<span class="badge-nav" id="badge-avisos" style="display:none">!</span></div>
   <div class="nav-divider"></div>
   <div class="nav-bottom">
     <a href="https://nexoacademico.es" class="nav-item"><i class="ti ti-arrow-left"></i> Web principal</a>
@@ -497,15 +507,19 @@
       <button class="mobile-menu-close" onclick="closeSidebar()"><i class="ti ti-x"></i></button>
     </div>
     <div class="mobile-menu-nav">
+      <div class="mmenu-section">Mi área</div>
       <div class="mobile-menu-item active" id="mmenu-inicio" onclick="showSection('inicio')"><i class="ti ti-layout-dashboard"></i><span>Inicio</span></div>
-      <div class="mobile-menu-item" id="mmenu-sesiones" onclick="showSection('sesiones')"><i class="ti ti-calendar-check"></i><span>Mis sesiones</span><span class="badge-nav" id="mmenu-badge-sesiones" style="display:none;margin-left:auto;font-size:11px;background:var(--navy);color:var(--blue);padding:2px 7px;border-radius:20px"></span></div>
-      <div class="mobile-menu-item" id="mmenu-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i><span>Mis informes</span></div>
-      <div class="mobile-menu-item" id="mmenu-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i><span>Mi bono</span></div>
-      <div class="mobile-menu-item" id="mmenu-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i><span>Mi profesor</span></div>
+      <div class="mobile-menu-item" id="mmenu-sesiones" onclick="showSection('sesiones')"><i class="ti ti-calendar-check"></i><span>Sesiones</span><span class="badge-nav" id="mmenu-badge-sesiones" style="display:none;margin-left:auto;font-size:11px;background:var(--navy);color:var(--blue);padding:2px 7px;border-radius:20px"></span></div>
+      <div class="mobile-menu-item" id="mmenu-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i><span>Informes</span></div>
+      <div class="mobile-menu-item" id="mmenu-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i><span>Bonos</span></div>
+      <div class="mobile-menu-item" id="mmenu-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i><span>Calendario</span></div>
+      <div class="mobile-menu-item" id="mmenu-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i><span>Mi Profesor</span></div>
+      <div class="mmenu-section">Estudiar</div>
       <div class="mobile-menu-item" id="mmenu-estudiar" onclick="showSection('estudiar')"><i class="ti ti-files"></i><span>Material</span></div>
-      <div class="mobile-menu-item" id="mmenu-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i><span>Tests</span></div>
       <div class="mobile-menu-item" id="mmenu-tareas" onclick="showSection('tareas')"><i class="ti ti-clipboard-check"></i><span>Tareas</span></div>
-      <div class="mobile-menu-item" id="mmenu-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i><span>Mi calendario</span></div>
+      <div class="mobile-menu-item" id="mmenu-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i><span>Tests</span></div>
+      <div class="mmenu-section">Avisos</div>
+      <div class="mobile-menu-item" id="mmenu-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i><span>Avisos</span></div>
     </div>
     <div class="mobile-menu-footer">
       <div class="mobile-menu-user" id="mmenu-user"></div>
@@ -642,7 +656,7 @@
 
 <!-- ═══ SESIONES PENDIENTES ═══ -->
 <div class="section" id="section-sesiones">
-  <h1 class="page-title">Mis sesiones</h1>
+  <h1 class="page-title">Sesiones</h1>
   <p class="page-sub">Confirma o rechaza las clases registradas por tu profesor</p>
   <div id="sesiones-pendientes-list"></div>
   <div class="card" style="margin-top:8px">
@@ -655,7 +669,7 @@
 
 <!-- ═══ INFORMES ═══ -->
 <div class="section" id="section-informes">
-  <h1 class="page-title">Mis informes</h1>
+  <h1 class="page-title">Informes</h1>
   <p class="page-sub">Informes de seguimiento elaborados por Nexo Académico</p>
   <div id="informes-container">
     <div class="loading-section"><div class="spinner"></div></div>
@@ -664,7 +678,7 @@
 
 <!-- ═══ MI PROFESOR ═══ -->
 <div class="section" id="section-profesor">
-  <h1 class="page-title">Mi profesor</h1>
+  <h1 class="page-title">Mi Profesor</h1>
   <p class="page-sub">Información de tu profesor asignado</p>
   <div id="profesor-content">
     <div class="loading-section"><div class="spinner"></div></div>
@@ -688,7 +702,7 @@
 
 <!-- ═══ TESTS LISTA ═══ -->
 <div class="section" id="section-tests">
-  <h1 class="page-title">Mis tests</h1>
+  <h1 class="page-title">Tests</h1>
   <p class="page-sub" id="tests-sub">Tests de autoevaluación por asignatura</p>
 
   <div id="tests-lista-asignaturas">
@@ -715,7 +729,7 @@
 
 <!-- ═══ CALENDARIO ═══ -->
 <div class="section" id="section-calendario">
-  <h1 class="page-title">Mi calendario</h1>
+  <h1 class="page-title">Calendario</h1>
   <p class="page-sub">Tu agenda personal de clases</p>
   <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
     <button class="btn-primary" onclick="abrirModalEvento()"><i class="ti ti-plus" style="font-size:15px"></i> Añadir entrada</button>
@@ -737,7 +751,7 @@
 </div>
 <!-- ═══ BONOS ═══ -->
 <div class="section" id="section-bonos">
-  <h1 class="page-title">Mi bono</h1>
+  <h1 class="page-title">Bonos</h1>
   <p class="page-sub">Horas contratadas y disponibles</p>
 
   <!-- Bono activo -->
@@ -801,6 +815,17 @@
   <div id="tareas-corregidas-wrap" style="margin-top:32px;display:none">
     <div class="tareas-section-titulo"><i class="ti ti-circle-check" style="font-size:14px;color:var(--green)"></i> Corregidas</div>
     <div id="tareas-corregidas-list"></div>
+  </div>
+</div>
+
+<!-- ═══ AVISOS ═══ -->
+<div class="section" id="section-avisos">
+  <h1 class="page-title">Avisos</h1>
+  <p class="page-sub">Comunicaciones del equipo de Nexo Académico</p>
+  <div class="card">
+    <div id="avisos-lista">
+      <div class="loading-section"><div class="spinner"></div></div>
+    </div>
   </div>
 </div>
 
@@ -974,6 +999,7 @@ function showSection(id) {
     tests:      loadTests,
     tareas:     loadTareasAlumno,
     calendario: loadCalendario,
+    avisos:     loadAvisosAlumno,
   };
   if (loaders[id]) loaders[id]();
 }
@@ -2562,6 +2588,30 @@ async function eliminarSesionAlumno(sesionId) {
 // ============================================================
 async function loadCalendario() {
   await renderCalendario();
+}
+
+// ============================================================
+// AVISOS
+// ============================================================
+async function loadAvisosAlumno() {
+  if (!ctx.usuario) return;
+  const { data: avisos } = await db.from('avisos').select('*').eq('visible', true)
+    .or(`destinatario_id.eq.${ctx.usuario.id},destinatario_rol.eq.alumno,destinatario_rol.eq.todos`)
+    .order('created_at', { ascending: false });
+
+  const el = document.getElementById('avisos-lista');
+  if (!avisos || avisos.length === 0) {
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-bell-off"></i><p>Sin avisos por el momento</p></div>`;
+  } else {
+    el.innerHTML = avisos.map(a => `
+      <div class="aviso-row">
+        <div class="aviso-titulo">${a.titulo}</div>
+        <div class="aviso-cuerpo">${a.contenido}</div>
+        <div class="aviso-fecha">${formatDate(a.created_at?.split('T')[0])}</div>
+      </div>
+    `).join('');
+  }
+  document.getElementById('badge-avisos').style.display = 'none';
 }
 
 async function renderCalendario() {
