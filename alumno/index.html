@@ -533,6 +533,11 @@
   <div class="bn-item" id="bn-tests" onclick="showSection('tests')">
     <i class="ti ti-list-check"></i><span>Tests</span>
   </div>
+  <div class="bn-item" id="bn-tareas" onclick="showSection('tareas')">
+    <i class="ti ti-clipboard-check"></i>
+    <div class="bn-dot" id="bn-dot-tareas"></div>
+    <span>Tareas</span>
+  </div>
 </nav>
 
 <!-- ═══ INICIO ═══ -->
@@ -1710,31 +1715,13 @@ async function loadEstudiar() {
     byAsig[k].push(m);
   });
 
-  // Also fetch tests: by nivel + by alumno_id assignment (AI tests)
-  const { data: rawTests } = await db
-    .from('tests')
-    .select('id,titulo,asignatura,nivel,bloque_tema,alumno_id,generado_ia,puede_repetir,creado_por,visible,resultado:resultados_test(nota,respuestas)')
-    .eq('visible', true)
-    .or(`nivel.eq.${alumno.nivel},alumno_id.eq.${alumno.id}`);
-
-  // Deduplicate (a test might satisfy both conditions)
-  const tests = (rawTests || []).filter((t, i, arr) => arr.findIndex(x => x.id === t.id) === i);
-
-  const byAsigTests = {};
-  tests.forEach(t => {
-    const k = t.asignatura || 'General';
-    if (!byAsigTests[k]) byAsigTests[k] = [];
-    byAsigTests[k].push(t);
-  });
-
   const allMat = Object.values(byAsig).flat();
   const nGen   = allMat.filter(m => !matIds.includes(m.id)).length;
   const nExcl  = allMat.filter(m =>  matIds.includes(m.id)).length;
-  const nTest  = tests.length;
   document.getElementById('estudiar-sub').textContent =
-    `${nGen + nExcl} recurso${nGen+nExcl!==1?'s':''} · ${nTest} test${nTest!==1?'s':''}`;
+    `${nGen + nExcl} recurso${nGen+nExcl!==1?'s':''}`;
 
-  window._estudiarData = { byAsig, byAsigTests, temaMap, matIds, allTests: tests };
+  window._estudiarData = { byAsig, temaMap, matIds };
   _alNav = null;
   _alRender();
 }
@@ -1819,24 +1806,6 @@ function _alRenderSecs() {
   const all     = Object.values(window._estudiarData?.byAsig || {}).flat();
   const genCnt  = all.filter(m => !matIds.includes(m.id)).length;
   const exclCnt = all.filter(m =>  matIds.includes(m.id)).length;
-  const tests   = Object.values(window._estudiarData?.byAsigTests || {}).flat();
-
-  // Pending AI tests assigned specifically to this alumno
-  const alumnoId  = ctx.alumnoData?.id;
-  const pendingIA = (window._estudiarData?.allTests || [])
-    .filter(t => t.generado_ia && t.alumno_id === alumnoId && !(t.resultado?.length));
-  let banner = '';
-  if (pendingIA.length > 0) {
-    const pl = pendingIA.length > 1;
-    banner = `<div style="background:rgba(91,33,182,.15);border:.5px solid rgba(139,92,246,.5);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
-      <i class="ti ti-bell-ringing" style="font-size:22px;color:#a78bfa;flex-shrink:0"></i>
-      <div style="flex:1;min-width:0">
-        <div style="color:#fff;font-size:13px;font-weight:600">${pl ? `${pendingIA.length} tests asignados` : 'Test asignado por tu profesor'}</div>
-        <div style="color:var(--muted);font-size:11px;margin-top:2px">Tienes ${pl ? 'tests' : 'un test'} pendiente${pl ? 's' : ''} de realizar</div>
-      </div>
-      <button onclick="_alGoSec('tests')" style="background:#7c3aed;color:#fff;border:none;border-radius:8px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0">Hacer${pl ? 'los' : 'lo'}</button>
-    </div>`;
-  }
 
   let b = '';
   b += `<div class="mat-tema-bubble" style="--cc:#2563eb" onclick="_alGoSec('gen')">
@@ -1851,20 +1820,12 @@ function _alRenderSecs() {
       <div class="mat-tema-cnt">${exclCnt} solo para ti</div>
     </div>`;
   }
-  if (tests.length > 0) {
-    const pendCnt = pendingIA.length;
-    b += `<div class="mat-tema-bubble" style="--cc:${pendCnt > 0 ? '#5b21b6' : '#1a7f5e'}" onclick="_alGoSec('tests')">
-      <div class="mat-tema-ico"><i class="ti ${pendCnt > 0 ? 'ti-bell-ringing' : 'ti-list-check'}"></i></div>
-      <div class="mat-tema-nom">Tests</div>
-      <div class="mat-tema-cnt">${pendCnt > 0 ? `${pendCnt} pendiente${pendCnt!==1?'s':''}` : `${tests.length} test${tests.length!==1?'s':''}`}</div>
-    </div>`;
-  }
-  if (!all.length && !tests.length) {
+  if (!all.length) {
     b = `<div class="empty-state"><i class="ti ti-clock"></i><p>Sin contenido disponible todavía</p></div>`;
-    document.getElementById('detalle-material').innerHTML = banner + b;
+    document.getElementById('detalle-material').innerHTML = b;
     return;
   }
-  document.getElementById('detalle-material').innerHTML = `${banner}<div class="mat-tema-grid">${b}</div>`;
+  document.getElementById('detalle-material').innerHTML = `<div class="mat-tema-grid">${b}</div>`;
 }
 
 function _alRenderAsigs() {
@@ -2115,7 +2076,7 @@ async function enviarTest() {
   // Notify profesor for assigned tests (IA or manual) — non-critical, fire and forget
   if (isAssigned && creadoPor) {
     const nombre   = `${ctx.usuario?.nombre || ''} ${ctx.usuario?.apellidos || ''}`.trim() || 'El alumno';
-    const testInfo = (window._estudiarData?.allTests || []).find(t => t.id === testId);
+    const testInfo = Object.values(window._testsData?.byAsig || {}).flat().find(t => t.id === testId);
     db.rpc('notificar_test_completado', {
       p_profesor_usuario_id: creadoPor,
       p_alumno_nombre:       nombre,
