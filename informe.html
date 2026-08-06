@@ -39,7 +39,7 @@
 
   const { data, error } = await db
     .from('informes')
-    .select('html_cache, estado, eliminado')
+    .select('html_cache, estado, eliminado, archivo_url')
     .eq('id', id)
     .single();
 
@@ -55,16 +55,20 @@
     document.getElementById('msg').textContent = 'Este informe no está disponible.';
     return;
   }
-  if (!data.html_cache) {
-    document.getElementById('sp').remove();
-    document.getElementById('msg').className = 'err';
-    document.getElementById('msg').textContent = 'Este informe aún no ha sido publicado con el nuevo formato. Vuelve a publicarlo desde el panel admin.';
+  if (data.html_cache) {
+    document.open();
+    document.write(data.html_cache);
+    document.close();
     return;
   }
-
-  document.open();
-  document.write(data.html_cache);
-  document.close();
+  // Informe subido como PDF — redirigir al archivo
+  if (data.archivo_url) {
+    window.location.href = data.archivo_url;
+    return;
+  }
+  document.getElementById('sp').remove();
+  document.getElementById('msg').className = 'err';
+  document.getElementById('msg').textContent = 'Este informe no tiene contenido disponible todavía.';
 })();
 </script>
 </body>

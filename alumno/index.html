@@ -1135,7 +1135,7 @@ async function loadDashboard() {
   // Informes recientes
   const { data: informes } = await db
     .from('informes')
-    .select('id,tipo,titulo,fecha,pdf_url,archivo_url')
+    .select('id,tipo,titulo,fecha')
     .eq('alumno_id', alumno.id)
     .eq('estado', 'visible')
     .not('eliminado', 'is', true)
@@ -1147,10 +1147,8 @@ async function loadDashboard() {
     infEl.innerHTML = `<div class="empty-state"><i class="ti ti-file-off"></i><p>Sin informes disponibles</p></div>`;
   } else {
     infEl.innerHTML = informes.map(inf => {
-      const url = inf.pdf_url || inf.archivo_url || `../informe.html?id=${inf.id}`;
-      const safeUrl = url.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
       return `
-      <div class="inf-row" style="cursor:pointer" data-url="${safeUrl}" onclick="window.open(this.dataset.url,'_blank')">
+      <div class="inf-row" style="cursor:pointer" data-url="../informe.html?id=${inf.id}" onclick="window.open(this.dataset.url,'_blank')">
         <div class="inf-ico ${inf.tipo === 'mensual' ? 'm' : 's'}">
           <i class="ti ${inf.tipo === 'mensual' ? 'ti-report-analytics' : 'ti-report'}"></i>
         </div>
@@ -1527,7 +1525,7 @@ async function loadInformes() {
   if (!ctx.alumnoData) return;
   const { data: informes } = await db
     .from('informes')
-    .select('id,tipo,titulo,fecha,pdf_url,archivo_url')
+    .select('id,tipo,titulo,fecha')
     .eq('alumno_id', ctx.alumnoData.id)
     .eq('estado', 'visible')
     .not('eliminado', 'is', true)
@@ -1544,16 +1542,14 @@ async function loadInformes() {
   const otros     = informes.filter(i => i.tipo !== 'mensual');
 
   const renderCard = inf => {
-    const url = inf.pdf_url || inf.archivo_url || `../informe.html?id=${inf.id}`;
-    const isPdf = !!(inf.pdf_url || inf.archivo_url);
-    const safeUrl = url.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    const url = `../informe.html?id=${inf.id}`;
     return `
-    <div class="mat-item-card" style="--cc:#154ca9;cursor:pointer" data-url="${safeUrl}" onclick="window.open(this.dataset.url,'_blank')">
+    <div class="mat-item-card" style="--cc:#154ca9;cursor:pointer" data-url="${url}" onclick="window.open(this.dataset.url,'_blank')">
       <div class="mat-item-ico"><i class="ti ti-file-analytics"></i></div>
       <div class="mat-item-nom">${inf.titulo}</div>
       <div class="mat-item-badge" style="background:#0f2240;color:var(--blue)">${formatDate(inf.fecha)}</div>
       <button class="mat-item-btn" onclick="event.stopPropagation();window.open(this.closest('[data-url]').dataset.url,'_blank')">
-        <i class="ti ti-${isPdf ? 'download' : 'external-link'}" style="font-size:13px"></i> ${isPdf ? 'Descargar' : 'Ver informe'}
+        <i class="ti ti-external-link" style="font-size:13px"></i> Ver informe
       </button>
     </div>`;
   };
