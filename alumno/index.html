@@ -782,13 +782,18 @@
   </div>
 
   <div id="tareas-pendientes-wrap">
-    <div class="tareas-section-titulo"><i class="ti ti-clock" style="font-size:14px;color:var(--blue)"></i> Pendientes</div>
+    <div class="tareas-section-titulo"><i class="ti ti-clock" style="font-size:14px;color:var(--blue)"></i> Por entregar</div>
     <div id="tareas-pendientes-list">
       <div class="loading-section"><div class="spinner"></div></div>
     </div>
   </div>
 
-  <div id="tareas-corregidas-wrap" style="margin-top:32px">
+  <div id="tareas-entregadas-wrap" style="margin-top:32px;display:none">
+    <div class="tareas-section-titulo"><i class="ti ti-send" style="font-size:14px;color:var(--yellow,#f59e0b)"></i> Entregadas — esperando corrección</div>
+    <div id="tareas-entregadas-list"></div>
+  </div>
+
+  <div id="tareas-corregidas-wrap" style="margin-top:32px;display:none">
     <div class="tareas-section-titulo"><i class="ti ti-circle-check" style="font-size:14px;color:var(--green)"></i> Corregidas</div>
     <div id="tareas-corregidas-list"></div>
   </div>
@@ -2245,9 +2250,10 @@ function _renderTareasGrupo(tareas) {
     }).join('');
 
     return `<div class="tareas-asig-grupo">
-      <div class="tareas-asig-hdr">
-        <span class="tareas-asig-badge" style="background:${ac.bg};color:${ac.tx}">${ag.asig}</span>
-        <span class="tareas-asig-cnt">${ag.tareas.length} tarea${ag.tareas.length!==1?'s':''}</span>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 16px;background:${ac.bg};border-radius:12px;border-left:3px solid ${ac.tx}">
+        <i class="ti ti-book" style="color:${ac.tx};font-size:17px;flex-shrink:0"></i>
+        <span style="font-size:14px;font-weight:700;color:${ac.tx}">${ag.asig}</span>
+        <span style="color:${ac.tx};opacity:.65;font-size:11px;margin-left:auto">${ag.tareas.length} tarea${ag.tareas.length!==1?'s':''}</span>
       </div>
       ${temaHtml}
     </div>`;
@@ -2255,20 +2261,30 @@ function _renderTareasGrupo(tareas) {
 }
 
 function _renderTareasAlumnoLista() {
-  const pendEl = document.getElementById('tareas-pendientes-list');
-  const corrEl = document.getElementById('tareas-corregidas-list');
+  const pendEl  = document.getElementById('tareas-pendientes-list');
+  const entEl   = document.getElementById('tareas-entregadas-list');
+  const corrEl  = document.getElementById('tareas-corregidas-list');
   if (!pendEl) return;
 
-  const pendientes = _tareasAlumno.filter(t => t.estado !== 'corregida');
-  const corregidas = _tareasAlumno.filter(t => t.estado === 'corregida');
+  const pendientes  = _tareasAlumno.filter(t => t.estado === 'pendiente');
+  const entregadas  = _tareasAlumno.filter(t => t.estado === 'entregada');
+  const corregidas  = _tareasAlumno.filter(t => t.estado === 'corregida');
 
-  const pendHtml = _renderTareasGrupo(pendientes);
-  pendEl.innerHTML = pendHtml || '<p style="color:var(--muted);font-size:13px;padding:8px 0">No tienes tareas pendientes.</p>';
+  pendEl.innerHTML = _renderTareasGrupo(pendientes) || '<p style="color:var(--muted);font-size:13px;padding:8px 0">No tienes tareas pendientes.</p>';
 
-  const corrHtml = _renderTareasGrupo(corregidas);
-  corrEl.innerHTML = corrHtml || '<p style="color:var(--muted);font-size:13px;padding:8px 0">Aún no tienes tareas corregidas.</p>';
+  if (entregadas.length) {
+    entEl.innerHTML = _renderTareasGrupo(entregadas) || '';
+    document.getElementById('tareas-entregadas-wrap').style.display = '';
+  } else {
+    document.getElementById('tareas-entregadas-wrap').style.display = 'none';
+  }
 
-  document.getElementById('tareas-corregidas-wrap').style.display = corregidas.length ? '' : 'none';
+  if (corregidas.length) {
+    corrEl.innerHTML = _renderTareasGrupo(corregidas) || '';
+    document.getElementById('tareas-corregidas-wrap').style.display = '';
+  } else {
+    document.getElementById('tareas-corregidas-wrap').style.display = 'none';
+  }
 }
 
 async function openTareaAlumno(tareaId) {
@@ -2326,7 +2342,11 @@ function _renderTareaAlumnoModal(t) {
   }
 
   if (t.archivo_enunciado_url) {
-    html += S(`<a href="${t.archivo_enunciado_url}" target="_blank" class="btn-ghost" style="display:inline-flex;align-items:center;gap:6px;font-size:12px"><i class="ti ti-file-download"></i> Ver enunciado adjunto</a>`);
+    html += S(`<a href="${t.archivo_enunciado_url}" target="_blank"
+      style="display:inline-flex;align-items:center;gap:8px;background:rgba(59,130,246,.14);border:.5px solid rgba(59,130,246,.4);border-radius:10px;padding:10px 16px;color:#60a5fa;font-size:13px;font-weight:600;text-decoration:none;transition:background .15s"
+      onmouseover="this.style.background='rgba(59,130,246,.25)'" onmouseout="this.style.background='rgba(59,130,246,.14)'">
+      <i class="ti ti-file-download" style="font-size:16px"></i> Ver enunciado adjunto
+    </a>`);
   }
 
   if (t.estado === 'pendiente') {
@@ -2363,7 +2383,11 @@ function _renderTareaAlumnoModal(t) {
       ${label('Corrección')}
       ${t.nota != null ? `<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:12px"><span style="color:var(--muted);font-size:12px">Nota:</span><span style="color:#fff;font-size:26px;font-weight:700">${t.nota}<span style="color:var(--muted);font-size:14px">/10</span></span></div>` : ''}
       ${t.comentario_general ? `<div style="margin-bottom:12px"><div style="color:var(--muted);font-size:11px;margin-bottom:4px">Comentario del profesor</div><p style="color:#ddd;font-size:13px;margin:0;white-space:pre-line">${t.comentario_general}</p></div>` : ''}
-      ${t.archivo_correccion_url ? `<div style="margin-bottom:12px"><a href="${t.archivo_correccion_url}" target="_blank" class="btn-ghost" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;border-color:var(--green);color:var(--green)"><i class="ti ti-file-check"></i> Ver tarea corregida</a></div>` : ''}
+      ${t.archivo_correccion_url ? `<div style="margin-bottom:14px"><a href="${t.archivo_correccion_url}" target="_blank"
+        style="display:inline-flex;align-items:center;gap:8px;background:rgba(16,185,129,.14);border:.5px solid rgba(16,185,129,.4);border-radius:10px;padding:10px 16px;color:#34d399;font-size:13px;font-weight:600;text-decoration:none;transition:background .15s"
+        onmouseover="this.style.background='rgba(16,185,129,.25)'" onmouseout="this.style.background='rgba(16,185,129,.14)'">
+        <i class="ti ti-file-check" style="font-size:16px"></i> Ver tarea corregida
+      </a></div>` : ''}
       ${items.length ? `<div><div style="color:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;margin-bottom:6px">Puntos corregidos</div>
         ${items.map(item => `
           <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:.5px solid var(--border2)">
@@ -2380,7 +2404,11 @@ function _renderTareaAlumnoModal(t) {
   if (t.estado === 'pendiente') {
     footer.innerHTML = `
       <button type="button" class="btn-cancel" onclick="cerrarModalTareaAlumno()">Cancelar</button>
-      <button type="button" class="btn-primary" id="btn-entregar" onclick="subirEntrega()"><i class="ti ti-upload"></i> Entregar</button>`;
+      <button type="button" id="btn-entregar" onclick="subirEntrega()"
+        style="background:linear-gradient(135deg,#059669,#10b981);border:none;border-radius:10px;padding:10px 22px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;transition:opacity .15s"
+        onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+        <i class="ti ti-send" style="font-size:15px"></i> Entregar tarea
+      </button>`;
   } else {
     footer.innerHTML = `<button type="button" class="btn-primary" onclick="cerrarModalTareaAlumno()">Cerrar</button>`;
   }
