@@ -945,7 +945,7 @@
       </select>
 
       <div id="nt-tema-wrap" style="display:none">
-        <label class="field-label" style="margin-top:12px">Tema</label>
+        <label class="field-label" style="margin-top:12px">Tema *</label>
         <div id="nt-tema-csel"></div>
       </div>
 
@@ -955,13 +955,6 @@
       <label class="field-label">Instrucciones</label>
       <textarea class="field-input" id="nt-descripcion" rows="3"
         placeholder="Describe qué tiene que hacer el alumno…" style="resize:vertical"></textarea>
-
-      <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <div style="flex:1;min-width:140px">
-          <label class="field-label" style="margin-top:0">Fecha límite</label>
-          <input class="field-input" id="nt-fecha-limite" type="date">
-        </div>
-      </div>
 
       <label class="field-label">Adjunto enunciado (PDF / imagen)</label>
       <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
@@ -973,6 +966,13 @@
         </button>
         <span id="nt-archivo-name" style="color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
       </label>
+
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
+        <div style="flex:1;min-width:140px">
+          <label class="field-label" style="margin-top:0">Fecha límite</label>
+          <input class="field-input" id="nt-fecha-limite" type="date">
+        </div>
+      </div>
 
       <div class="modal-footer">
         <button type="button" class="btn-cancel" onclick="cerrarModalNuevaTarea()">Cancelar</button>
@@ -3538,53 +3538,74 @@ function _renderTareasProf() {
   }
 
   // Agrupar por alumno
-  const grupos = [];
-  const seen   = new Map();
+  const gruposAlumno = [];
+  const seenAlumno   = new Map();
   for (const t of lista) {
-    if (!seen.has(t.alumno_id)) {
-      seen.set(t.alumno_id, grupos.length);
-      grupos.push({ alumno_id: t.alumno_id, nom: t.alumno?.usuario ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos}` : '—', tareas: [] });
+    if (!seenAlumno.has(t.alumno_id)) {
+      seenAlumno.set(t.alumno_id, gruposAlumno.length);
+      gruposAlumno.push({ alumno_id: t.alumno_id, nom: t.alumno?.usuario ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos}` : '—', tareas: [] });
     }
-    grupos[seen.get(t.alumno_id)].tareas.push(t);
+    gruposAlumno[seenAlumno.get(t.alumno_id)].tareas.push(t);
   }
 
   const pillMap = { pendiente:['st-grey','Pendiente'], entregada:['st-pend','Entregada'], corregida:['st-ok','Corregida'] };
   const meses   = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
-  el.innerHTML = grupos.map(g => {
+  el.innerHTML = gruposAlumno.map(g => {
     const initials = _alumnoInitials(g.nom).toUpperCase();
     const avColor  = _alumnoAvatarColor(g.nom);
-    const cards = g.tareas.map(t => {
-      const [pc, pt] = pillMap[t.estado] || ['st-grey','—'];
-      const ac = _asigColor(t.asignatura || '');
-      const novedad = t.estado === 'entregada' ? '<div class="tarea-card-novedad"></div>' : '';
-      let limHtml = '';
-      if (t.fecha_limite) {
-        const d = new Date(t.fecha_limite + 'T12:00:00');
-        limHtml = `<span class="tarea-card-limit"><i class="ti ti-calendar" style="font-size:10px"></i>${d.getDate()} ${meses[d.getMonth()]}</span>`;
-      }
-      const temaHtml = t.tema ? `<div class="tarea-card-tema"><i class="ti ti-bookmark" style="font-size:10px;flex-shrink:0"></i>${t.tema}</div>` : '';
-      return `<div class="tarea-card" onclick="openTareaProf('${t.id}')">
-        ${novedad}
-        <div class="tarea-card-top">
-          <span class="tarea-card-asig" style="background:${ac.bg};color:${ac.tx}">${t.asignatura || 'Sin asig.'}</span>
-          <span class="status-pill ${pc}" style="font-size:10px;flex-shrink:0">${pt}</span>
+
+    // Dentro de cada alumno, agrupar por asignatura
+    const gruposAsig = [];
+    const seenAsig   = new Map();
+    for (const t of g.tareas) {
+      const k = t.asignatura || '—';
+      if (!seenAsig.has(k)) { seenAsig.set(k, gruposAsig.length); gruposAsig.push({ asig: k, tareas: [] }); }
+      gruposAsig[seenAsig.get(k)].tareas.push(t);
+    }
+
+    const asigHtml = gruposAsig.map(ag => {
+      const ac = _asigColor(ag.asig);
+      const cards = ag.tareas.map(t => {
+        const [pc, pt] = pillMap[t.estado] || ['st-grey','—'];
+        const novedad = t.estado === 'entregada' ? '<div class="tarea-card-novedad"></div>' : '';
+        let limHtml = '';
+        if (t.fecha_limite) {
+          const d = new Date(t.fecha_limite + 'T12:00:00');
+          limHtml = `<span class="tarea-card-limit"><i class="ti ti-calendar" style="font-size:10px"></i>${d.getDate()} ${meses[d.getMonth()]}</span>`;
+        }
+        const temaHtml = t.tema
+          ? `<div class="tarea-card-tema"><i class="ti ti-bookmark" style="font-size:10px;flex-shrink:0"></i>${t.tema}</div>`
+          : '';
+        return `<div class="tarea-card" onclick="openTareaProf('${t.id}')">
+          ${novedad}
+          <div class="tarea-card-top">
+            <span class="status-pill ${pc}" style="font-size:10px">${pt}</span>
+          </div>
+          ${temaHtml}
+          <div class="tarea-card-titulo">${t.titulo}</div>
+          <div class="tarea-card-foot">
+            ${limHtml}
+            <i class="ti ti-arrow-right" style="color:var(--muted);font-size:13px;margin-left:auto"></i>
+          </div>
+        </div>`;
+      }).join('');
+      return `<div style="margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <span style="font-size:11px;font-weight:700;border-radius:6px;padding:3px 10px;background:${ac.bg};color:${ac.tx}">${ag.asig}</span>
+          <span style="color:var(--muted);font-size:11px">${ag.tareas.length} tarea${ag.tareas.length!==1?'s':''}</span>
         </div>
-        <div class="tarea-card-titulo">${t.titulo}</div>
-        ${temaHtml}
-        <div class="tarea-card-foot">
-          ${limHtml}
-          <i class="ti ti-arrow-right" style="color:var(--muted);font-size:13px;margin-left:auto"></i>
-        </div>
+        <div class="tareas-grid">${cards}</div>
       </div>`;
     }).join('');
+
     return `<div class="tareas-alumno-grupo">
       <div class="tareas-alumno-hdr">
         <div class="tareas-av" style="background:${avColor}">${initials}</div>
         <span class="tareas-alumno-nom">${g.nom}</span>
         <span class="tareas-alumno-cnt">${g.tareas.length} tarea${g.tareas.length!==1?'s':''}</span>
       </div>
-      <div class="tareas-grid">${cards}</div>
+      ${asigHtml}
     </div>`;
   }).join('');
 }
@@ -3640,7 +3661,7 @@ async function ntAsigChange() {
   const alumno = misAlumnos.find(a => a.id === alumnoId);
   const temas  = _curriculoTemas(alumno?.nivel, asigNom);
   if (temas?.length) {
-    cselDiv.innerHTML = _cSel('nt-tema', temas, '— Tema (opcional) —');
+    cselDiv.innerHTML = _cSel('nt-tema', temas, '— Selecciona tema —');
     wrap.style.display = 'block';
   } else {
     cselDiv.innerHTML = '';
@@ -3651,6 +3672,17 @@ async function ntAsigChange() {
 async function guardarTarea(e) {
   e.preventDefault();
   const btn = document.getElementById('btn-guardar-tarea');
+
+  // Validar tema obligatorio si el desplegable está visible
+  const temaWrap = document.getElementById('nt-tema-wrap');
+  const temaVal  = document.getElementById('nt-tema')?.value || '';
+  if (temaWrap?.style.display !== 'none' && !temaVal) {
+    const btnTema = document.getElementById('btn-nt-tema');
+    if (btnTema) { btnTema.style.borderColor = 'var(--red)'; }
+    showToast('Selecciona un tema', 'error');
+    return;
+  }
+
   btn.disabled = true; btn.textContent = 'Guardando…';
 
   try {
