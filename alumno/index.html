@@ -247,6 +247,24 @@
   .mal-count{font-size:10px;color:var(--muted);margin-left:auto}
   .mal-recurso-indent{padding-left:28px}
 
+  /* TAREAS — cards (misma estética que panel profesor) */
+  .tareas-asig-grupo{margin-bottom:28px}
+  .tareas-asig-hdr{display:flex;align-items:center;gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:.5px solid var(--border2)}
+  .tareas-asig-badge{font-size:11px;font-weight:700;border-radius:8px;padding:4px 12px;letter-spacing:.3px}
+  .tareas-asig-cnt{font-size:11px;color:var(--muted);margin-left:auto}
+  .tareas-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+  .tarea-card{background:var(--surface);border:.5px solid var(--border);border-radius:16px;padding:16px 16px 14px;cursor:pointer;transition:border-color .18s,box-shadow .18s,transform .15s;display:flex;flex-direction:column;gap:10px;position:relative;overflow:hidden}
+  .tarea-card:hover{border-color:var(--blue);box-shadow:0 6px 24px rgba(59,130,246,.13);transform:translateY(-3px)}
+  .tarea-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+  .tarea-card-titulo{font-size:13px;font-weight:600;color:#dde8f8;line-height:1.4;word-break:break-word}
+  .tarea-card-tema{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;line-height:1.3}
+  .tarea-card-foot{display:flex;align-items:center;justify-content:space-between;margin-top:auto;gap:6px;flex-wrap:wrap}
+  .tarea-card-limit{font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px}
+  .tarea-card-limit.vencida{color:#f08080}
+  .tarea-card-novedad{position:absolute;top:10px;right:10px;width:8px;height:8px;border-radius:50%;background:var(--blue);box-shadow:0 0 6px rgba(59,130,246,.6)}
+  .tareas-section-titulo{color:var(--soft);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.7px;margin:0 0 18px;display:flex;align-items:center;gap:8px}
+  @media(max-width:600px){.tareas-grid{grid-template-columns:1fr}}
+
   /* TESTS */
   .test-pregunta{background:var(--dark);border:.5px solid var(--border);border-radius:10px;padding:20px;margin-bottom:16px}
   .test-enunciado{color:#fff;font-size:14px;font-weight:500;margin-bottom:14px;line-height:1.5}
@@ -756,22 +774,22 @@
 
 <!-- ═══ TAREAS ═══ -->
 <div class="section" id="section-tareas">
-  <h1 class="page-title">Mis tareas</h1>
-  <p class="page-sub">Tareas enviadas por tu profesor</p>
-
-  <div class="card" style="padding:0;margin-bottom:14px">
-    <div class="card-head">
-      <div class="card-title"><i class="ti ti-clock" style="font-size:15px"></i> Pendientes</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+    <div>
+      <h1 class="page-title" style="margin:0">Tareas</h1>
+      <p class="page-sub" style="margin:4px 0 0">Tareas enviadas por tu profesor</p>
     </div>
+  </div>
+
+  <div id="tareas-pendientes-wrap">
+    <div class="tareas-section-titulo"><i class="ti ti-clock" style="font-size:14px;color:var(--blue)"></i> Pendientes</div>
     <div id="tareas-pendientes-list">
       <div class="loading-section"><div class="spinner"></div></div>
     </div>
   </div>
 
-  <div class="card" style="padding:0">
-    <div class="card-head">
-      <div class="card-title"><i class="ti ti-circle-check" style="font-size:15px"></i> Corregidas</div>
-    </div>
+  <div id="tareas-corregidas-wrap" style="margin-top:32px">
+    <div class="tareas-section-titulo"><i class="ti ti-circle-check" style="font-size:14px;color:var(--green)"></i> Corregidas</div>
     <div id="tareas-corregidas-list"></div>
   </div>
 </div>
@@ -2148,49 +2166,91 @@ async function loadTareasAlumno() {
   _renderTareasAlumnoLista();
 }
 
+function _asigColorAlumno(nom) {
+  const palette = [
+    {bg:'rgba(59,130,246,.18)',tx:'#60a5fa'},
+    {bg:'rgba(139,92,246,.18)',tx:'#a78bfa'},
+    {bg:'rgba(16,185,129,.18)',tx:'#34d399'},
+    {bg:'rgba(245,158,11,.18)',tx:'#fbbf24'},
+    {bg:'rgba(239,68,68,.18)', tx:'#f87171'},
+    {bg:'rgba(6,182,212,.18)', tx:'#22d3ee'},
+    {bg:'rgba(236,72,153,.18)',tx:'#f472b6'},
+    {bg:'rgba(249,115,22,.18)',tx:'#fb923c'},
+  ];
+  let h = 0; for (const c of (nom||'')) h = (h*31+c.charCodeAt(0))&0xffff;
+  return palette[h % palette.length];
+}
+
+function _renderTareasGrupo(tareas) {
+  if (!tareas.length) return null;
+  const hoy    = new Date();
+  const meses  = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const pillMap = { pendiente:['st-grey','Pendiente'], entregada:['st-pend','Entregada'], corregida:['st-ok','Corregida'] };
+
+  // Agrupar por asignatura
+  const grupos = [];
+  const seen   = new Map();
+  for (const t of tareas) {
+    const k = t.asignatura || '—';
+    if (!seen.has(k)) { seen.set(k, grupos.length); grupos.push({ asig: k, tareas: [] }); }
+    grupos[seen.get(k)].tareas.push(t);
+  }
+
+  return grupos.map(g => {
+    const ac = _asigColorAlumno(g.asig);
+    const cards = g.tareas.map(t => {
+      const [pc, pt] = pillMap[t.estado] || ['st-grey','—'];
+      const novedad  = (t.estado === 'corregida' && !t.visto_por_alumno) ? '<div class="tarea-card-novedad"></div>' : '';
+      let limHtml = '';
+      if (t.fecha_limite) {
+        const lim     = new Date(t.fecha_limite + 'T23:59:59');
+        const vencida = lim < hoy && t.estado === 'pendiente';
+        const d = new Date(t.fecha_limite + 'T12:00:00');
+        limHtml = `<span class="tarea-card-limit${vencida?' vencida':''}"><i class="ti ti-clock" style="font-size:10px"></i>${vencida?'Vencida: ':''}${d.getDate()} ${meses[d.getMonth()]}</span>`;
+      }
+      const temaHtml = t.tema ? `<div class="tarea-card-tema"><i class="ti ti-bookmark" style="font-size:10px;flex-shrink:0"></i>${t.tema}</div>` : '';
+      const corrHtml = t.estado === 'corregida' && t.archivo_correccion_url
+        ? `<div style="font-size:10px;color:var(--green);display:flex;align-items:center;gap:3px"><i class="ti ti-file-check" style="font-size:10px"></i>Corregido</div>` : '';
+      return `<div class="tarea-card" onclick="openTareaAlumno('${t.id}')">
+        ${novedad}
+        <div class="tarea-card-top">
+          <span class="status-pill ${pc}" style="font-size:10px">${pt}</span>
+          ${t.nota != null ? `<span style="font-size:12px;font-weight:700;color:#fff">${t.nota}<span style="color:var(--muted);font-size:10px">/10</span></span>` : ''}
+        </div>
+        <div class="tarea-card-titulo">${t.titulo}</div>
+        ${temaHtml}
+        <div class="tarea-card-foot">
+          ${limHtml}
+          ${corrHtml}
+          <i class="ti ti-arrow-right" style="color:var(--muted);font-size:13px;margin-left:auto"></i>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="tareas-asig-grupo">
+      <div class="tareas-asig-hdr">
+        <span class="tareas-asig-badge" style="background:${ac.bg};color:${ac.tx}">${g.asig}</span>
+        <span class="tareas-asig-cnt">${g.tareas.length} tarea${g.tareas.length!==1?'s':''}</span>
+      </div>
+      <div class="tareas-grid">${cards}</div>
+    </div>`;
+  }).join('');
+}
+
 function _renderTareasAlumnoLista() {
   const pendEl = document.getElementById('tareas-pendientes-list');
   const corrEl = document.getElementById('tareas-corregidas-list');
   if (!pendEl) return;
 
-  const hoy = new Date();
-
-  function renderRow(t) {
-    const pillMap = { pendiente:'st-grey Pendiente', entregada:'st-pend Entregada', corregida:'st-ok Corregida' };
-    const [pc, pt] = (pillMap[t.estado] || 'st-grey —').split(' ');
-    let limHtml = '';
-    if (t.fecha_limite) {
-      const lim     = new Date(t.fecha_limite + 'T23:59:59');
-      const vencida = lim < hoy && t.estado === 'pendiente';
-      limHtml = `<span style="color:${vencida ? '#f08080' : 'var(--muted)'};font-size:11px"><i class="ti ti-clock" style="font-size:11px"></i> ${vencida ? 'Vencida: ' : 'Límite: '}${formatDate(t.fecha_limite)}</span>`;
-    }
-    const novedad = (t.estado === 'corregida' && !t.visto_por_alumno)
-      ? '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);margin-right:4px;flex-shrink:0"></span>'
-      : '';
-    return `<div class="recurso-row" onclick="openTareaAlumno('${t.id}')">
-      <div style="flex:1;min-width:0">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">
-          ${novedad}
-          <span class="status-pill ${pc}" style="font-size:10px">${pt}</span>
-          <span style="color:var(--muted);font-size:11px">${t.asignatura || '—'}</span>
-          ${limHtml}
-        </div>
-        <div style="color:#fff;font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${t.titulo}</div>
-      </div>
-      <i class="ti ti-chevron-right" style="color:var(--muted);flex-shrink:0;margin-left:8px"></i>
-    </div>`;
-  }
-
   const pendientes = _tareasAlumno.filter(t => t.estado !== 'corregida');
   const corregidas = _tareasAlumno.filter(t => t.estado === 'corregida');
 
-  pendEl.innerHTML = pendientes.length
-    ? pendientes.map(renderRow).join('')
-    : '<p style="color:var(--muted);font-size:12px;padding:12px 16px">No tienes tareas pendientes.</p>';
+  const pendHtml = _renderTareasGrupo(pendientes);
+  pendEl.innerHTML = pendHtml || '<p style="color:var(--muted);font-size:13px;padding:8px 0">No tienes tareas pendientes.</p>';
 
-  corrEl.innerHTML = corregidas.length
-    ? corregidas.map(renderRow).join('')
-    : '<p style="color:var(--muted);font-size:12px;padding:12px 16px">Aún no tienes tareas corregidas.</p>';
+  const corrHtml = _renderTareasGrupo(corregidas);
+  corrEl.innerHTML = corrHtml || '<p style="color:var(--muted);font-size:13px;padding:8px 0">Aún no tienes tareas corregidas.</p>';
+
+  document.getElementById('tareas-corregidas-wrap').style.display = corregidas.length ? '' : 'none';
 }
 
 async function openTareaAlumno(tareaId) {
@@ -2285,6 +2345,7 @@ function _renderTareaAlumnoModal(t) {
       ${label('Corrección')}
       ${t.nota != null ? `<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:12px"><span style="color:var(--muted);font-size:12px">Nota:</span><span style="color:#fff;font-size:26px;font-weight:700">${t.nota}<span style="color:var(--muted);font-size:14px">/10</span></span></div>` : ''}
       ${t.comentario_general ? `<div style="margin-bottom:12px"><div style="color:var(--muted);font-size:11px;margin-bottom:4px">Comentario del profesor</div><p style="color:#ddd;font-size:13px;margin:0;white-space:pre-line">${t.comentario_general}</p></div>` : ''}
+      ${t.archivo_correccion_url ? `<div style="margin-bottom:12px"><a href="${t.archivo_correccion_url}" target="_blank" class="btn-ghost" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;border-color:var(--green);color:var(--green)"><i class="ti ti-file-check"></i> Ver tarea corregida</a></div>` : ''}
       ${items.length ? `<div><div style="color:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;margin-bottom:6px">Puntos corregidos</div>
         ${items.map(item => `
           <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:.5px solid var(--border2)">

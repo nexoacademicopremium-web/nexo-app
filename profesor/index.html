@@ -3748,7 +3748,17 @@ function _renderTareaProfModal(t) {
       <input class="field-input" id="corr-nota" type="number" min="0" max="10" step="0.1" style="max-width:120px" placeholder="Opcional">
       <label class="field-label">Comentario general</label>
       <textarea class="field-input" id="corr-comentario" rows="3" placeholder="Opcional…" style="resize:vertical"></textarea>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin:10px 0 8px">
+      <label class="field-label">Adjuntar tarea corregida (PDF / imagen)</label>
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer">
+        <input type="file" id="corr-archivo" accept="image/*,.pdf,.doc,.docx" style="display:none"
+          onchange="document.getElementById('corr-archivo-name').textContent=this.files[0]?.name||''">
+        <button type="button" class="btn-ghost" style="font-size:12px;padding:6px 12px;flex-shrink:0"
+          onclick="document.getElementById('corr-archivo').click()">
+          <i class="ti ti-upload" style="font-size:12px"></i> Subir archivo
+        </button>
+        <span id="corr-archivo-name" style="color:var(--muted);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      </label>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 8px">
         <div style="color:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Puntos de corrección</div>
         <button type="button" class="btn-ghost" style="font-size:11px;padding:5px 10px" onclick="addCorrItem()">
           <i class="ti ti-plus" style="font-size:11px"></i> Añadir punto
@@ -3764,6 +3774,7 @@ function _renderTareaProfModal(t) {
       ${label('Corrección')}
       ${t.nota != null ? `<div style="display:flex;align-items:baseline;gap:6px;margin-bottom:10px"><span style="color:var(--muted);font-size:12px">Nota:</span><span style="color:#fff;font-size:22px;font-weight:700">${t.nota}<span style="color:var(--muted);font-size:13px">/10</span></span></div>` : ''}
       ${t.comentario_general ? `<div style="margin-bottom:10px"><div style="color:var(--muted);font-size:11px;margin-bottom:4px">Comentario general</div><p style="color:#ddd;font-size:13px;margin:0;white-space:pre-line">${t.comentario_general}</p></div>` : ''}
+      ${t.archivo_correccion_url ? `<div style="margin-bottom:10px"><a href="${t.archivo_correccion_url}" target="_blank" class="btn-ghost" style="display:inline-flex;align-items:center;gap:6px;font-size:12px"><i class="ti ti-file-download"></i> Ver tarea corregida</a></div>` : ''}
       ${items.length ? items.map(item => `
         <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:.5px solid var(--border2)">
           <i class="ti ${item.correcto ? 'ti-circle-check' : 'ti-circle-x'}" style="color:${item.correcto ? 'var(--green)' : '#f08080'};font-size:16px;flex-shrink:0;margin-top:1px"></i>
@@ -3834,11 +3845,23 @@ async function guardarCorreccion() {
     const comentario = document.getElementById('corr-comentario')?.value?.trim() || null;
     const correccion = _correccionItems.filter(Boolean).filter(i => i.texto.trim());
 
+    let corrUrl = null;
+    const corrFile = document.getElementById('corr-archivo')?.files?.[0];
+    if (corrFile) {
+      const ext = corrFile.name.split('.').pop();
+      const path = `tareas/correcciones/${Date.now()}.${ext}`;
+      const { error: upErr } = await db.storage.from('nexo-files').upload(path, corrFile);
+      if (upErr) throw new Error('Error al subir el archivo: ' + upErr.message);
+      const { data: urlData } = db.storage.from('nexo-files').getPublicUrl(path);
+      corrUrl = urlData.publicUrl;
+    }
+
     const { data, error } = await db.rpc('corregir_tarea', {
-      p_tarea_id:   _tareaActualId,
-      p_nota:       nota ? parseFloat(nota) : null,
-      p_comentario: comentario,
-      p_correccion: correccion,
+      p_tarea_id:               _tareaActualId,
+      p_nota:                   nota ? parseFloat(nota) : null,
+      p_comentario:             comentario,
+      p_correccion:             correccion,
+      p_archivo_correccion_url: corrUrl,
     });
 
     if (error) throw error;
