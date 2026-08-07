@@ -1758,8 +1758,9 @@ async function loadTablaAlumnos() {
   document.getElementById('alumnos-sub').textContent = `${misAlumnos.length} alumnos activos este mes`;
   await renderTablaAlumnos();
 
-  // Populate actividad filters
+  // Populate actividad filters (clear first to avoid duplicates on re-load)
   const aFiltro = document.getElementById('act-filtro-alumno');
+  while (aFiltro.options.length > 1) aFiltro.remove(1);
   misAlumnos.forEach(a => {
     const u = a.usuario || {};
     const o = document.createElement('option');
@@ -2931,7 +2932,12 @@ async function nSesSubmit(e) {
     if (/does not exist|relation/i.test(tErr.message)) {
       showToast('Sesión guardada. Para activar el desglose por temas ejecuta la migración SQL en Supabase.', 'info');
     } else {
-      showToast('Sesión guardada, error en temas: ' + tErr.message, 'error');
+      // Rollback: remove the sesion row since temas failed
+      await db.from('sesiones').delete().eq('id', newSes.id);
+      showToast('Error al guardar temas. La sesión no se ha guardado: ' + tErr.message, 'error');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-send"></i> Enviar registro';
+      return;
     }
   } else {
     showToast('Sesión registrada correctamente');
@@ -3199,7 +3205,7 @@ async function loadTestsProf() {
   const el = document.getElementById('prof-tests-lista');
   el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
   const { data: rawTests } = await db.from('tests')
-    .select('id,titulo,asignatura,visible,created_at,generado_ia,puede_repetir,alumno_id,preguntas:preguntas_test(id),alumno:alumnos(usuario:usuarios(nombre,apellidos)),resultados:resultados_test(nota,completado_at)')
+    .select('id,titulo,asignatura,visible,created_at,generado_ia,puede_repetir,alumno_id,preguntas:preguntas_test(id),alumno:alumnos(usuario:usuarios(nombre,apellidos)),resultados:resultados_test(nota,completado_at,alumno_id)')
     .eq('creado_por', ctx.usuario.id);
 
   const tests = (rawTests || []).sort((a, b) => {
@@ -3219,7 +3225,10 @@ async function loadTestsProf() {
     const alumNom   = t.alumno?.usuario
       ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos || ''}`.trim()
       : (t.alumno_id ? '—' : 'General');
-    const resultado = t.resultados?.[0];
+    // For assigned tests: find result for the specific alumno. For general: no nota badge.
+    const resultado = t.alumno_id
+      ? (t.resultados || []).find(r => r.alumno_id === t.alumno_id) || null
+      : null;
     const numPreg   = t.preguntas?.length || 0;
 
     // Result badge
@@ -4504,10 +4513,17 @@ async function pMatGuardar(e) {
 
 async function pMatEliminar(id) {
   if (!confirm('¿Eliminar este material?')) return;
+  const mat = (_pMatData || []).find(m => m.id === id);
   const { error: eJun } = await db.from('material_alumno').delete().eq('material_id', id);
   if (eJun) { showToast('Error al eliminar asignaciones: ' + eJun.message, 'error'); return; }
   const { error } = await db.from('material').delete().eq('id', id);
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  // Delete file from storage bucket
+  const archUrl = mat?.archivo_url;
+  if (archUrl) {
+    const storagePath = archUrl.split('/storage/v1/object/public/nexo-files/')?.[1];
+    if (storagePath) await db.storage.from('nexo-files').remove([storagePath]);
+  }
   showToast('Material eliminado');
   await loadProfMaterial();
 }
