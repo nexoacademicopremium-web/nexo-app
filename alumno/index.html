@@ -2021,12 +2021,8 @@ async function iniciarTest(testId, tituloEnc, from) {
   document.getElementById('test-titulo').textContent = titulo;
   document.getElementById('test-content').innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
 
-  // No incluimos respuesta_correcta — se valida en el servidor via corregir_test()
-  const { data: preguntas } = await db
-    .from('preguntas_test')
-    .select('id, enunciado, opcion_a, opcion_b, opcion_c, opcion_d, orden')
-    .eq('test_id', testId)
-    .order('orden');
+  // RPC excluye respuesta_correcta — la política directa preguntas_alumno_read fue eliminada
+  const { data: preguntas } = await db.rpc('get_preguntas_alumno', { p_test_id: testId });
 
   if (!preguntas || preguntas.length === 0) {
     document.getElementById('test-content').innerHTML = `<div class="empty-state"><i class="ti ti-question-mark"></i><p>Este test no tiene preguntas todavía</p></div>`;
