@@ -1947,6 +1947,17 @@ function avg(arr) {
 // CALENDARIO COMPLETO
 // ============================================================
 async function loadCalendarioProf() {
+  // Populate alumno select in case Alumnos section hasn't been visited yet
+  const mcAl = document.getElementById('mc-alumno');
+  if (mcAl.options.length <= 1 && misAlumnos.length > 0) {
+    mcAl.innerHTML = '<option value="">Sin alumno específico</option>';
+    misAlumnos.forEach(a => {
+      const u = a.usuario || {};
+      const o = document.createElement('option');
+      o.value = a.id; o.textContent = (u.nombre || '') + ' ' + (u.apellidos || '');
+      mcAl.appendChild(o);
+    });
+  }
   await renderCalendarioProf();
 }
 
@@ -1997,8 +2008,50 @@ function cambiarMesCal(delta) {
   renderCalendarioProf();
 }
 
+function _formatTimePro(t) { return t ? t.slice(0,5) : ''; }
+function _formatDatePro(d) {
+  if (!d) return '';
+  const [y,m,dd] = d.split('-');
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return dd + ' ' + meses[parseInt(m)-1] + ' ' + y;
+}
+
 function clickDiaProf(dateStr) {
+  const evs = calEventosPro.filter(e => e.fecha === dateStr);
+  if (evs.length > 0) {
+    document.getElementById('form-clase').style.display = 'none';
+    document.getElementById('modal-clase-titulo').textContent = _formatDatePro(dateStr);
+    const existingList = document.getElementById('mc-ev-list');
+    if (existingList) existingList.remove();
+    const list = document.createElement('div');
+    list.id = 'mc-ev-list';
+    list.innerHTML = evs.map(e => {
+      const nom = e.alumno?.usuario ? e.alumno.usuario.nombre + ' ' + e.alumno.usuario.apellidos : '—';
+      const horas = (e.duracion_minutos/60).toFixed(1).replace('.0','')+'h';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:.5px solid var(--border2)">
+        <div>
+          <div style="color:#fff;font-size:13px;font-weight:500">${nom}</div>
+          <div style="color:var(--muted);font-size:11px">${e.asignatura||'—'}${e.hora_inicio ? ' · ' + _formatTimePro(e.hora_inicio) + 'h' : ''} · ${horas}</div>
+          ${e.notas ? '<div style="color:var(--muted);font-size:11px;margin-top:2px">' + e.notas + '</div>' : ''}
+        </div>
+        <div style="display:flex;gap:6px">
+          <button onclick="abrirEditClaseProf('${e.id}')" style="background:var(--border2);color:var(--soft);border:.5px solid var(--border);border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit"><i class='ti ti-pencil' style='font-size:11px'></i> Editar</button>
+          <button onclick="eliminarClaseDia('${e.id}')" style="background:var(--red-lt);color:var(--red);border:.5px solid var(--red);border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit">Borrar</button>
+        </div>
+      </div>`;
+    }).join('') + `<div style="margin-top:16px;text-align:right"><button class="btn-ghost" onclick="prepararNuevaClase('${dateStr}')"><i class="ti ti-plus"></i> Nueva clase</button></div>`;
+    document.querySelector('#modal-clase .modal-box').appendChild(list);
+    document.getElementById('modal-clase').classList.add('open');
+  } else {
+    prepararNuevaClase(dateStr);
+  }
+}
+
+function prepararNuevaClase(dateStr) {
+  const existingList = document.getElementById('mc-ev-list');
+  if (existingList) existingList.remove();
   document.getElementById('form-clase').reset();
+  document.getElementById('form-clase').style.display = 'block';
   document.getElementById('mc-fecha').value = dateStr;
   const _now = new Date();
   document.getElementById('mc-hora').value = String(_now.getHours()).padStart(2,'0') + ':' + String(_now.getMinutes()).padStart(2,'0');
@@ -2009,6 +2062,15 @@ function clickDiaProf(dateStr) {
   actualizarAsignaturaSelectProf();
   editClaseId = null;
   document.getElementById('modal-clase').classList.add('open');
+}
+
+async function eliminarClaseDia(evId) {
+  if (!confirm('¿Eliminar esta clase del calendario?')) return;
+  await db.from('calendario_profesor').delete().eq('id', evId);
+  showToast('Clase eliminada');
+  cerrarModalClase();
+  await renderCalendarioProf();
+  await renderMiniCal();
 }
 
 function toggleRecurrenteProf() {
@@ -2046,7 +2108,10 @@ function generarFechasRecurrentes(desdeStr, jsDay, hastaStr) {
 }
 
 function abrirModalClase() {
+  const list = document.getElementById('mc-ev-list');
+  if (list) list.remove();
   document.getElementById('form-clase').reset();
+  document.getElementById('form-clase').style.display = 'block';
   document.getElementById('mc-fecha').value = new Date().toISOString().split('T')[0];
   document.getElementById('mc-recurrente-opts').style.display = 'none';
   document.getElementById('mc-recurrente-wrap').style.display = 'block';
@@ -2060,8 +2125,11 @@ function abrirModalClase() {
 function cerrarModalClase() {
   document.getElementById('modal-clase').classList.remove('open');
   document.getElementById('form-clase').reset();
+  document.getElementById('form-clase').style.display = 'block';
   document.getElementById('mc-recurrente-opts').style.display = 'none';
   document.getElementById('btn-eliminar-clase').style.display = 'none';
+  const list = document.getElementById('mc-ev-list');
+  if (list) list.remove();
   editClaseId = null;
 }
 
@@ -2081,7 +2149,10 @@ function actualizarAsignaturaSelectProf() {
 async function abrirEditClaseProf(evId) {
   const ev = calEventosPro.find(e => e.id === evId);
   if (!ev) return;
+  const list = document.getElementById('mc-ev-list');
+  if (list) list.remove();
   document.getElementById('form-clase').reset();
+  document.getElementById('form-clase').style.display = 'block';
   document.getElementById('modal-clase-titulo').textContent = 'Editar clase';
   document.getElementById('mc-recurrente-wrap').style.display = 'none';
   document.getElementById('mc-recurrente-opts').style.display = 'none';
