@@ -1274,10 +1274,11 @@ let editClaseId = null;
     // Fetch junction con asignaturas para este profesor
     // asignatura_id es FK→asignaturas(id) añadido vía SQL editor;
     // asignatura TEXT es campo legacy vacío → usamos el nombre del catálogo
-    const { data: junctionData } = await db
+    const { data: junctionData, error: eJunc } = await db
       .from('alumno_profesor')
       .select('alumno_id, asignatura, asignatura_id, asignaturas(nombre)')
       .eq('profesor_id', profesorData.id);
+    if (eJunc) { console.error('Error al cargar alumnos asignados:', eJunc.message); }
 
     const junctionIds = (junctionData || []).map(j => j.alumno_id);
 
@@ -1305,7 +1306,8 @@ let editClaseId = null;
       alumnosQuery = alumnosQuery.in('id', junctionIds);
     }
 
-    const { data } = await alumnosQuery;
+    const { data, error: eAlumnos } = await alumnosQuery;
+    if (eAlumnos) { console.error('Error al cargar alumnos:', eAlumnos.message); }
     misAlumnos = (data || []).map(a => ({
       ...a,
       _asignaturas:   asigPorAlumno[a.id]    || [],
@@ -3309,7 +3311,8 @@ async function abrirModalTestProf() {
 
 async function editarTestProf(id) {
   _tpEditId = id;
-  const { data: t } = await db.from('tests').select('*').eq('id', id).single();
+  const { data: t, error: eTest } = await db.from('tests').select('*').eq('id', id).single();
+  if (eTest || !t) { showToast('Error al cargar el test', 'error'); return; }
   const { data: pregs } = await db.from('preguntas_test').select('*').eq('test_id', id).order('orden');
   document.getElementById('modal-test-prof-titulo').textContent = 'Editar test';
   document.getElementById('tp-titulo').value = t.titulo || '';
@@ -3388,8 +3391,10 @@ async function guardarTestProf(e) {
     if (error) { alert('Error: ' + error.message); return; }
     testId = nt.id;
   } else {
-    await db.from('tests').update(testData).eq('id', testId);
-    await db.from('preguntas_test').delete().eq('test_id', testId);
+    const { error: eUpd } = await db.from('tests').update(testData).eq('id', testId);
+    if (eUpd) { showToast('Error al actualizar test: ' + eUpd.message, 'error'); return; }
+    const { error: eDel } = await db.from('preguntas_test').delete().eq('test_id', testId);
+    if (eDel) { showToast('Error al actualizar preguntas: ' + eDel.message, 'error'); return; }
   }
   const container = document.getElementById('tp-preguntas-container');
   const wraps = container.querySelectorAll('[id^="tp-pw-"]');
@@ -3406,7 +3411,10 @@ async function guardarTestProf(e) {
       respuesta_correcta: document.getElementById(`tp-pr-${n}`)?.value || 'a',
       orden: idx });
   });
-  if (pregs.length > 0) await db.from('preguntas_test').insert(pregs);
+  if (pregs.length > 0) {
+    const { error: eIns } = await db.from('preguntas_test').insert(pregs);
+    if (eIns) { showToast('Test guardado pero error en preguntas: ' + eIns.message, 'error'); return; }
+  }
   cerrarModalTestProf();
   loadTestsProf();
 }
@@ -4496,7 +4504,8 @@ async function pMatGuardar(e) {
 
 async function pMatEliminar(id) {
   if (!confirm('¿Eliminar este material?')) return;
-  await db.from('material_alumno').delete().eq('material_id', id);
+  const { error: eJun } = await db.from('material_alumno').delete().eq('material_id', id);
+  if (eJun) { showToast('Error al eliminar asignaciones: ' + eJun.message, 'error'); return; }
   const { error } = await db.from('material').delete().eq('id', id);
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
   showToast('Material eliminado');

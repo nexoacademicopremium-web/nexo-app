@@ -2052,9 +2052,10 @@ async function verRevisionInforme(informeId) {
 
 async function guardarCambiosInforme() {
   if (!_infRevisionId) return;
-  const { data: inf } = await db.from('informes').select('contenido').eq('id', _infRevisionId).single();
-  const ia   = inf?.contenido?.ia   || {};
-  const kpis = inf?.contenido?.kpis || {};
+  const { data: inf, error: eInf } = await db.from('informes').select('contenido').eq('id', _infRevisionId).single();
+  if (eInf || !inf) { showToast('Error al leer el informe: ' + (eInf?.message || 'no encontrado'), 'error'); return; }
+  const ia   = inf.contenido?.ia   || {};
+  const kpis = inf.contenido?.kpis || {};
   const get  = id => (document.getElementById(id)?.value || '');
   const lines = id => get(id).split('\n').map(l=>l.trim()).filter(Boolean);
 
@@ -3924,8 +3925,9 @@ async function guardarBono() {
       if (currentEstado === 'activo' || currentEstado === 'en_espera' || currentEstado === 'agotado') {
         newEstado = currentEstado;
       } else {
-        const { data: activos } = await db.from('bonos')
+        const { data: activos, error: eAct } = await db.from('bonos')
           .select('id').eq('alumno_id', alumnoId).eq('estado', 'activo').neq('id', editBonoId).limit(1);
+        if (eAct) throw new Error('Error al verificar bonos activos: ' + eAct.message);
         const hayActivo = activos && activos.length > 0;
         newEstado = hayActivo ? 'en_espera' : 'activo';
       }
@@ -3947,9 +3949,10 @@ async function guardarBono() {
           await db.from('bonos').update({ horas_consumidas: +consumidas.toFixed(2), horas_restantes: +newRestantes.toFixed(2) }).eq('id', editBonoId);
           await db.from('alumnos').update({ horas_bono_restantes: +newRestantes.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
         } else if (horas !== oldHoras) {
-          const { data: al } = await db.from('alumnos').select('horas_bono_restantes').eq('id', alumnoId).single();
+          const { data: al, error: eAl } = await db.from('alumnos').select('horas_bono_restantes').eq('id', alumnoId).single();
+          if (eAl || !al) throw new Error('Error al leer horas del alumno: ' + (eAl?.message || 'no encontrado'));
           const delta        = horas - oldHoras;
-          const newRestantes = Math.max(0, (al?.horas_bono_restantes || 0) + delta);
+          const newRestantes = Math.max(0, (al.horas_bono_restantes || 0) + delta);
           await db.from('bonos').update({ horas_restantes: +newRestantes.toFixed(2) }).eq('id', editBonoId);
           await db.from('alumnos').update({ horas_bono_restantes: +newRestantes.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
         }
@@ -3963,8 +3966,9 @@ async function guardarBono() {
       }
     } else {
       // ── CREAR ─────────────────────────────────────────────────
-      const { data: activos } = await db.from('bonos')
+      const { data: activos, error: eAct2 } = await db.from('bonos')
         .select('id').eq('alumno_id', alumnoId).eq('estado', 'activo').limit(1);
+      if (eAct2) throw new Error('Error al verificar bonos activos: ' + eAct2.message);
       const hayActivo = activos && activos.length > 0;
       const estado    = hayActivo ? 'en_espera' : 'activo';
       const esPagado  = true;
@@ -4316,7 +4320,8 @@ async function eliminarMaterial(id) {
   if (!confirm('¿Seguro que quieres eliminar este material? Esta acción no se puede deshacer.')) return;
   const m = allMaterial.find(x => x.id === id);
   try {
-    await db.from('material_alumno').delete().eq('material_id', id);
+    const { error: eJun } = await db.from('material_alumno').delete().eq('material_id', id);
+    if (eJun) throw new Error('Error al eliminar asignaciones: ' + eJun.message);
     const { error } = await db.from('material').delete().eq('id', id);
     if (error) throw new Error('Error al eliminar: ' + error.message);
     if (m?.archivo_url) {
@@ -4497,8 +4502,10 @@ function _testsRenderCards(c) {
 
 async function eliminarTest(testId) {
   if (!confirm('¿Eliminar este test? Se eliminarán también sus preguntas y resultados.')) return;
-  await db.from('resultados_test').delete().eq('test_id', testId);
-  await db.from('preguntas_test').delete().eq('test_id', testId);
+  const { error: e1 } = await db.from('resultados_test').delete().eq('test_id', testId);
+  if (e1) { showToast('Error al eliminar resultados: ' + e1.message, 'error'); return; }
+  const { error: e2 } = await db.from('preguntas_test').delete().eq('test_id', testId);
+  if (e2) { showToast('Error al eliminar preguntas: ' + e2.message, 'error'); return; }
   const { error } = await db.from('tests').delete().eq('id', testId);
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
   showToast('Test eliminado');
@@ -4521,7 +4528,8 @@ function abrirModalTest() {
 
 async function editarTest(id) {
   editTestId = id;
-  const { data: test }      = await db.from('tests').select('*').eq('id', id).single();
+  const { data: test, error: eTest }           = await db.from('tests').select('*').eq('id', id).single();
+  if (eTest || !test) { showToast('Error al cargar el test', 'error'); return; }
   const { data: preguntas } = await db.from('preguntas_test').select('*').eq('test_id', id).order('orden');
   document.getElementById('modal-test-titulo').textContent = 'Editar test';
   document.getElementById('t-titulo').value     = test.titulo || '';
@@ -4581,7 +4589,8 @@ async function guardarTest(e) {
   } else {
     const { error } = await db.from('tests').update(testData).eq('id', testId);
     if (error) { showToast('Error: ' + error.message, 'error'); return; }
-    await db.from('preguntas_test').delete().eq('test_id', testId);
+    const { error: eDel } = await db.from('preguntas_test').delete().eq('test_id', testId);
+    if (eDel) { showToast('Error al actualizar preguntas: ' + eDel.message, 'error'); return; }
   }
 
   const container = document.getElementById('preguntas-container');
@@ -4605,7 +4614,7 @@ async function guardarTest(e) {
 
   if (pregs.length > 0) {
     const { error } = await db.from('preguntas_test').insert(pregs);
-    if (error) { showToast('Test guardado pero error en preguntas: ' + error.message, 'error'); }
+    if (error) { showToast('Error al guardar preguntas: ' + error.message, 'error'); return; }
   }
 
   showToast('Test guardado correctamente');
