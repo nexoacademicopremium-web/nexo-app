@@ -1112,11 +1112,13 @@
     </div>
     <form id="form-clase" onsubmit="guardarClase(event)">
       <label class="field-label">Alumno</label>
-      <select class="field-input" id="mc-alumno">
+      <select class="field-input" id="mc-alumno" onchange="actualizarAsignaturaSelectProf()">
         <option value="">Sin alumno específico</option>
       </select>
       <label class="field-label">Asignatura</label>
-      <input class="field-input" id="mc-asignatura" type="text" placeholder="Ej: Matemáticas">
+      <select class="field-input" id="mc-asignatura">
+        <option value="">— Elige asignatura —</option>
+      </select>
       <label class="field-label">Fecha</label>
       <input class="field-input" id="mc-fecha" type="date" required>
       <label class="field-label">Hora de inicio</label>
@@ -1151,7 +1153,8 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer" style="display:flex;gap:8px">
+        <button type="button" id="btn-eliminar-clase" class="btn-danger" onclick="eliminarClaseProf()" style="display:none;margin-right:auto"><i class="ti ti-trash"></i> Eliminar</button>
         <button type="button" class="btn-cancel" onclick="cerrarModalClase()">Cancelar</button>
         <button type="submit" class="btn-primary">Guardar</button>
       </div>
@@ -1979,7 +1982,7 @@ async function renderCalendarioProf() {
       <div class="cal-full-num">${d}</div>
       ${dayEvs.slice(0,3).map((e,i) => {
         const nom = e.alumno?.usuario ? e.alumno.usuario.nombre.split(' ')[0] : '';
-        return `<div class="cal-full-ev ${evColors[i%4].split(' ')[0]}" title="${nom} · ${e.asignatura||'—'}">${nom || e.asignatura||'—'}</div>`;
+        return `<div class="cal-full-ev ${evColors[i%4].split(' ')[0]}" title="${nom} · ${e.asignatura||'—'}" onclick="event.stopPropagation();abrirEditClaseProf('${e.id}')" style="cursor:pointer">${nom || e.asignatura||'—'}</div>`;
       }).join('')}
       ${dayEvs.length > 3 ? `<div style="font-size:8px;color:var(--muted)">+${dayEvs.length-3}</div>` : ''}
     </div>`;
@@ -1997,7 +2000,13 @@ function cambiarMesCal(delta) {
 function clickDiaProf(dateStr) {
   document.getElementById('form-clase').reset();
   document.getElementById('mc-fecha').value = dateStr;
+  const _now = new Date();
+  document.getElementById('mc-hora').value = String(_now.getHours()).padStart(2,'0') + ':' + String(_now.getMinutes()).padStart(2,'0');
   document.getElementById('mc-recurrente-opts').style.display = 'none';
+  document.getElementById('mc-recurrente-wrap').style.display = 'block';
+  document.getElementById('btn-eliminar-clase').style.display = 'none';
+  document.getElementById('modal-clase-titulo').textContent = 'Nueva clase';
+  actualizarAsignaturaSelectProf();
   editClaseId = null;
   document.getElementById('modal-clase').classList.add('open');
 }
@@ -2041,6 +2050,9 @@ function abrirModalClase() {
   document.getElementById('mc-fecha').value = new Date().toISOString().split('T')[0];
   document.getElementById('mc-recurrente-opts').style.display = 'none';
   document.getElementById('mc-recurrente-wrap').style.display = 'block';
+  document.getElementById('btn-eliminar-clase').style.display = 'none';
+  document.getElementById('modal-clase-titulo').textContent = 'Nueva clase';
+  actualizarAsignaturaSelectProf();
   editClaseId = null;
   document.getElementById('modal-clase').classList.add('open');
 }
@@ -2049,7 +2061,50 @@ function cerrarModalClase() {
   document.getElementById('modal-clase').classList.remove('open');
   document.getElementById('form-clase').reset();
   document.getElementById('mc-recurrente-opts').style.display = 'none';
+  document.getElementById('btn-eliminar-clase').style.display = 'none';
   editClaseId = null;
+}
+
+function actualizarAsignaturaSelectProf() {
+  const alumnoId = document.getElementById('mc-alumno').value;
+  const sel = document.getElementById('mc-asignatura');
+  if (!alumnoId) {
+    sel.innerHTML = '<option value="">— Elige asignatura —</option>';
+    return;
+  }
+  const alumno = misAlumnos.find(a => a.id === alumnoId);
+  const asigs = alumno?._asignaturas || [];
+  sel.innerHTML = '<option value="">— Elige asignatura —</option>' +
+    asigs.map(n => '<option value="' + n + '">' + n + '</option>').join('');
+}
+
+async function abrirEditClaseProf(evId) {
+  const ev = calEventosPro.find(e => e.id === evId);
+  if (!ev) return;
+  document.getElementById('form-clase').reset();
+  document.getElementById('modal-clase-titulo').textContent = 'Editar clase';
+  document.getElementById('mc-recurrente-wrap').style.display = 'none';
+  document.getElementById('mc-recurrente-opts').style.display = 'none';
+  document.getElementById('btn-eliminar-clase').style.display = 'inline-flex';
+  document.getElementById('mc-alumno').value = ev.alumno_id || '';
+  actualizarAsignaturaSelectProf();
+  document.getElementById('mc-asignatura').value = ev.asignatura || '';
+  document.getElementById('mc-fecha').value = ev.fecha;
+  document.getElementById('mc-hora').value = ev.hora_inicio ? ev.hora_inicio.slice(0,5) : '';
+  document.getElementById('mc-duracion').value = ev.duracion_minutos || 60;
+  document.getElementById('mc-notas').value = ev.notas || '';
+  editClaseId = evId;
+  document.getElementById('modal-clase').classList.add('open');
+}
+
+async function eliminarClaseProf() {
+  if (!editClaseId) return;
+  if (!confirm('¿Eliminar esta clase del calendario?')) return;
+  await db.from('calendario_profesor').delete().eq('id', editClaseId);
+  showToast('Clase eliminada');
+  cerrarModalClase();
+  await renderCalendarioProf();
+  await renderMiniCal();
 }
 
 async function guardarClase(e) {

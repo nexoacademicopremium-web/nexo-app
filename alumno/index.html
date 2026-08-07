@@ -853,6 +853,10 @@
     <form id="form-evento" onsubmit="guardarEvento(event)">
       <input type="hidden" id="ev-titulo">
       <input type="hidden" id="ev-fecha">
+      <label class="field-label">Profesor</label>
+      <select class="field-input" id="ev-profesor" onchange="actualizarAsigPorProf()">
+        <option value="">— Todos —</option>
+      </select>
       <label class="field-label">Asignatura</label>
       <select class="field-input" id="ev-asignatura">
         <option value="">— Sin asignatura —</option>
@@ -891,7 +895,8 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer">
+      <div class="modal-footer" style="display:flex;gap:8px">
+        <button type="button" id="btn-eliminar-evento" class="btn-danger" onclick="eliminarEventoEdit()" style="display:none;margin-right:auto"><i class="ti ti-trash"></i> Eliminar</button>
         <button type="button" class="btn-ghost" onclick="cerrarModalEvento()">Cancelar</button>
         <button type="submit" class="btn-primary">Guardar</button>
       </div>
@@ -2683,7 +2688,10 @@ function clickDia(dateStr) {
           <div style="color:var(--muted);font-size:11px">${e.asignatura || ''}${e.hora_inicio ? ' · ' + formatTime(e.hora_inicio) + 'h' : ''} · ${(e.duracion_minutos/60).toFixed(1).replace('.0','') + 'h'}</div>
           ${e.notas ? `<div style="color:var(--muted);font-size:11px;margin-top:2px">${e.notas}</div>` : ''}
         </div>
-        <button onclick="eliminarEvento('${e.id}')" style="background:var(--red-lt);color:var(--red);border:.5px solid var(--red);border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit">Borrar</button>
+        <div style="display:flex;gap:6px">
+          <button onclick="abrirEditEvento(calEventos.find(x=>x.id==='${e.id}'))" style="background:var(--border2);color:var(--soft);border:.5px solid var(--border);border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit"><i class="ti ti-pencil" style="font-size:11px"></i> Editar</button>
+          <button onclick="eliminarEvento('${e.id}')" style="background:var(--red-lt);color:var(--red);border:.5px solid var(--red);border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit">Borrar</button>
+        </div>
       </div>
     `).join('');
     document.getElementById('modal-evento-title').textContent = formatDate(dateStr);
@@ -2737,6 +2745,7 @@ function generarFechasEv(desdeStr, jsDay, hastaStr) {
 function _resetRecurrenteEv() {
   document.getElementById('ev-recurrente-opts').style.display = 'none';
   document.getElementById('ev-recurrente-wrap').style.display = 'block';
+  document.getElementById('btn-eliminar-evento').style.display = 'none';
 }
 
 async function prepararNuevoEvento(dateStr) {
@@ -2746,13 +2755,73 @@ async function prepararNuevoEvento(dateStr) {
   document.getElementById('form-evento').style.display = 'block';
   document.getElementById('modal-evento-title').textContent = 'Nueva entrada';
   document.getElementById('ev-fecha').value = dateStr;
+  const _n = new Date();
+  document.getElementById('ev-hora').value = String(_n.getHours()).padStart(2,'0') + ':' + String(_n.getMinutes()).padStart(2,'0');
+  document.getElementById('btn-eliminar-evento').style.display = 'none';
   _resetRecurrenteEv();
   editEventoId = null;
+  await _poblarProfSelect(null);
   await _poblarAsignaturaSelect(null);
   document.getElementById('modal-evento').classList.add('open');
 }
 
 let _cachedAsignaturas = null;
+let _profAsigCalMap = null;
+
+async function _cargarProfAsig() {
+  if (_profAsigCalMap !== null) return _profAsigCalMap;
+  const alumnoId = ctx.alumnoData.id;
+  const { data: apRows } = await db.from('alumno_profesor')
+    .select('profesor_id, asignatura, asignatura_id').eq('alumno_id', alumnoId);
+  const asigIds = [...new Set((apRows||[]).map(r=>r.asignatura_id).filter(Boolean))];
+  let asigNombreMap = {};
+  if (asigIds.length) {
+    const { data: asigs } = await db.from('asignaturas').select('id,nombre').in('id', asigIds);
+    (asigs||[]).forEach(a => { asigNombreMap[a.id] = a.nombre; });
+  }
+  const profIds = [...new Set((apRows||[]).map(r=>r.profesor_id).filter(Boolean))];
+  if (!profIds.length) { _profAsigCalMap = []; return []; }
+  const { data: profs } = await db.from('profesores')
+    .select('id, usuario:usuarios(nombre, apellidos)').in('id', profIds);
+  const asigPorProf = {};
+  (apRows||[]).forEach(r => {
+    const nombre = asigNombreMap[r.asignatura_id] || r.asignatura || null;
+    if (nombre) {
+      if (!asigPorProf[r.profesor_id]) asigPorProf[r.profesor_id] = [];
+      if (!asigPorProf[r.profesor_id].includes(nombre)) asigPorProf[r.profesor_id].push(nombre);
+    }
+  });
+  _profAsigCalMap = (profs||[]).map(p => ({
+    id: p.id,
+    nombre: p.usuario?.nombre || '',
+    apellidos: p.usuario?.apellidos || '',
+    asignaturas: asigPorProf[p.id] || [],
+  }));
+  return _profAsigCalMap;
+}
+
+async function _poblarProfSelect(valorId) {
+  const profs = await _cargarProfAsig();
+  const sel = document.getElementById('ev-profesor');
+  sel.innerHTML = '<option value="">— Todos —</option>' +
+    profs.map(p => '<option value="' + p.id + '"' + (p.id === valorId ? ' selected' : '') + '>' + p.nombre + ' ' + p.apellidos + '</option>').join('');
+}
+
+async function actualizarAsigPorProf() {
+  const profId = document.getElementById('ev-profesor').value;
+  const profs = await _cargarProfAsig();
+  let nombres;
+  if (profId) {
+    const prof = profs.find(p => p.id === profId);
+    nombres = prof ? prof.asignaturas : [];
+  } else {
+    nombres = [...new Set(profs.flatMap(p => p.asignaturas))];
+  }
+  const sel = document.getElementById('ev-asignatura');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Sin asignatura —</option>' +
+    nombres.map(n => '<option value="' + n + '"' + (n === cur ? ' selected' : '') + '>' + n + '</option>').join('');
+}
 
 async function _cargarAsignaturas() {
   if (_cachedAsignaturas !== null) return _cachedAsignaturas;
@@ -2767,10 +2836,8 @@ async function _cargarAsignaturas() {
 }
 
 async function _poblarAsignaturaSelect(valor) {
-  const nombres = await _cargarAsignaturas();
-  const sel = document.getElementById('ev-asignatura');
-  sel.innerHTML = '<option value="">— Sin asignatura —</option>' +
-    nombres.map(n => `<option value="${n}"${n === valor ? ' selected' : ''}>${n}</option>`).join('');
+  await actualizarAsigPorProf();
+  if (valor) document.getElementById('ev-asignatura').value = valor;
 }
 
 async function abrirModalEvento() {
@@ -2779,8 +2846,10 @@ async function abrirModalEvento() {
   if (list) list.remove();
   document.getElementById('form-evento').style.display = 'block';
   document.getElementById('modal-evento-title').textContent = 'Nueva entrada';
+  document.getElementById('btn-eliminar-evento').style.display = 'none';
   _resetRecurrenteEv();
   editEventoId = null;
+  await _poblarProfSelect(null);
   await _poblarAsignaturaSelect(null);
   document.getElementById('modal-evento').classList.add('open');
 }
@@ -2792,11 +2861,44 @@ function cerrarModalEvento() {
   if (list) list.remove();
   document.getElementById('form-evento').style.display = 'block';
   document.getElementById('ev-recurrente-opts').style.display = 'none';
+  document.getElementById('btn-eliminar-evento').style.display = 'none';
+  editEventoId = null;
+}
+
+async function abrirEditEvento(ev) {
+  const list = document.getElementById('modal-ev-list');
+  if (list) list.remove();
+  document.getElementById('form-evento').reset();
+  document.getElementById('form-evento').style.display = 'block';
+  document.getElementById('modal-evento-title').textContent = 'Editar entrada';
+  document.getElementById('ev-recurrente-wrap').style.display = 'none';
+  document.getElementById('ev-recurrente-opts').style.display = 'none';
+  document.getElementById('btn-eliminar-evento').style.display = 'inline-flex';
+  document.getElementById('ev-fecha').value = ev.fecha;
+  document.getElementById('ev-hora').value = ev.hora_inicio ? ev.hora_inicio.slice(0,5) : '';
+  document.getElementById('ev-duracion').value = ev.duracion_minutos || 60;
+  document.getElementById('ev-notas').value = ev.notas || '';
+  editEventoId = ev.id;
+  await _poblarProfSelect(ev.profesor_id || null);
+  await actualizarAsigPorProf();
+  document.getElementById('ev-asignatura').value = ev.asignatura || '';
+  document.getElementById('modal-evento').classList.add('open');
+}
+
+async function eliminarEventoEdit() {
+  if (!editEventoId) return;
+  await db.from('calendario_alumno').delete().eq('id', editEventoId);
+  showToast('Entrada eliminada');
+  cerrarModalEvento();
+  await renderCalendario();
 }
 
 async function guardarEvento(e) {
   e.preventDefault();
   const asignatura = document.getElementById('ev-asignatura').value || null;
+  const profId = document.getElementById('ev-profesor').value || null;
+  const profs = _profAsigCalMap || [];
+  const profObj = profs.find(p => p.id === profId);
   const ev = {
     alumno_id:        ctx.alumnoData.id,
     titulo:           asignatura || 'Clase',
@@ -2805,6 +2907,7 @@ async function guardarEvento(e) {
     hora_inicio:      document.getElementById('ev-hora').value || null,
     duracion_minutos: parseInt(document.getElementById('ev-duracion').value),
     notas:            document.getElementById('ev-notas').value || null,
+    profesor_nombre:  profObj ? profObj.nombre + ' ' + profObj.apellidos : null,
   };
 
   const esRecurrente = !editEventoId && document.getElementById('ev-recurrente').checked;
