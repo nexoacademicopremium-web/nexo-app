@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -908,6 +908,9 @@
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
 <script>
+function escHTML(s) {
+  return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 // ============================================================
 // State
 // ============================================================
@@ -1104,8 +1107,8 @@ async function loadDashboard() {
             <div style="color:var(--muted);font-size:9px">${dc.toLocaleDateString('es-ES',{month:'short'}).toUpperCase()}</div>
           </div>
           <div style="flex:1">
-            <div style="color:#fff;font-size:12px;font-weight:500">${c.asignatura || c.titulo}</div>
-            <div style="color:var(--muted);font-size:11px">${c.hora_inicio ? formatTime(c.hora_inicio) + 'h · ' : ''}${(c.duracion_minutos/60).toFixed(1).replace('.0','')}h${c.profesor_nombre ? ' · ' + c.profesor_nombre : ''}</div>
+            <div style="color:#fff;font-size:12px;font-weight:500">${escHTML(c.asignatura || c.titulo)}</div>
+            <div style="color:var(--muted);font-size:11px">${c.hora_inicio ? formatTime(c.hora_inicio) + 'h · ' : ''}${(c.duracion_minutos/60).toFixed(1).replace('.0','')}h${c.profesor_nombre ? ' · ' + escHTML(c.profesor_nombre) : ''}</div>
           </div>
           <span style="color:var(--blue);font-size:11px;font-weight:500">${lbl}</span>
         </div>
@@ -1158,7 +1161,7 @@ async function loadDashboard() {
           <i class="ti ${inf.tipo === 'mensual' ? 'ti-report-analytics' : 'ti-report'}"></i>
         </div>
         <div style="flex:1">
-          <div class="inf-name">${inf.titulo}</div>
+          <div class="inf-name">${escHTML(inf.titulo)}</div>
           <div class="inf-sub">${formatShortDate(inf.fecha)}</div>
         </div>
         <span class="pill pill-new">Mensual</span>
@@ -1251,7 +1254,7 @@ async function loadSesiones() {
           return `
             <div class="pend-card">
               <div class="pend-header">
-                <div class="pend-asig">${s.asignatura}</div>
+                <div class="pend-asig">${escHTML(s.asignatura)}</div>
                 <div class="pend-prof"><i class="ti ti-user"></i> ${profNom}</div>
               </div>
               <div class="pend-meta">
@@ -1261,7 +1264,7 @@ async function loadSesiones() {
                 <span class="pend-horas">· ${horas}h del bono</span>
               </div>
               ${tTexto ? `<div class="pend-tiempo ${tClase}"><i class="ti ti-info-circle" style="font-size:11px"></i> ${tTexto}</div>` : ''}
-              ${s.contenido_trabajado ? `<div class="pend-contenido">${s.contenido_trabajado.substring(0,150)}${s.contenido_trabajado.length > 150 ? '…' : ''}</div>` : ''}
+              ${s.contenido_trabajado ? `<div class="pend-contenido">${escHTML(s.contenido_trabajado.substring(0,150))}${s.contenido_trabajado.length > 150 ? '…' : ''}</div>` : ''}
               <div class="pend-actions">
                 <button class="btn-reject" onclick="procesarSesion('${s.id}','rechazar')"><i class="ti ti-x"></i> No asistí</button>
                 <button class="btn-confirm" onclick="procesarSesion('${s.id}','confirmar')"><i class="ti ti-check"></i> Confirmar asistencia</button>
@@ -1497,7 +1500,7 @@ function renderWACardsAlumno() {
   el.innerHTML = horas.map(h => {
     const t = tarifasAlumno.find(x => x.grupo === grupo && x.modalidad === modTarifaWA && x.horas === h);
     if (!t) return '';
-    const msg = encodeURIComponent(`Hola, soy ${nombre}. Quiero contratar el bono ${grupo} ${modTarifaWA} de ${h} horas.`);
+    const msg = encodeURIComponent(`Hola, soy ${escHTML(nombre)}. Quiero contratar el bono ${grupo} ${modTarifaWA} de ${h} horas.`);
     return `<div class="tarifa-card" onclick="window.open('https://wa.me/34699529399?text=${msg}','_blank')" style="cursor:pointer">
       <div class="tarifa-h">${h}</div>
       <div class="tarifa-h-lbl">horas</div>
@@ -1551,7 +1554,7 @@ async function loadInformes() {
     return `
     <div class="mat-item-card" style="--cc:#154ca9;cursor:pointer" data-url="${url}" onclick="window.open(this.dataset.url,'_blank')">
       <div class="mat-item-ico"><i class="ti ti-file-analytics"></i></div>
-      <div class="mat-item-nom">${inf.titulo}</div>
+      <div class="mat-item-nom">${escHTML(inf.titulo)}</div>
       <div class="mat-item-badge" style="background:#0f2240;color:var(--blue)">${formatDate(inf.fecha)}</div>
       <button class="mat-item-btn" onclick="event.stopPropagation();window.open(this.closest('[data-url]').dataset.url,'_blank')">
         <i class="ti ti-external-link" style="font-size:13px"></i> Ver informe
@@ -1669,8 +1672,8 @@ async function loadProfesor() {
         <div style="width:90px;height:90px;border-radius:26px;background:linear-gradient(135deg,#0d1e40,#1a3a6e);display:flex;align-items:center;justify-content:center;color:#6eaef0;font-size:34px;font-weight:800;margin-bottom:18px;border:2px solid #1a3a6e;flex-shrink:0;letter-spacing:-1px">
           ${initials}
         </div>
-        <div style="color:#fff;font-size:22px;font-weight:700;margin-bottom:5px">${u.nombre} ${u.apellidos}</div>
-        <div style="color:var(--muted);font-size:13px;margin-bottom:20px">${prof.estudios || 'Profesor'} · ${prof.zona || 'Valencia'}</div>
+        <div style="color:#fff;font-size:22px;font-weight:700;margin-bottom:5px">${escHTML(u.nombre)} ${escHTML(u.apellidos)}</div>
+        <div style="color:var(--muted);font-size:13px;margin-bottom:20px">${escHTML(prof.estudios || 'Profesor')} · ${escHTML(prof.zona || 'Valencia')}</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
           ${asigs.map(a => `<span class="tag tag-b" style="font-size:13px;padding:6px 16px;border-radius:20px">${a}</span>`).join('')}
           ${prof.nivel_max ? `<span class="tag tag-g" style="font-size:13px;padding:6px 16px;border-radius:20px">Hasta ${nivelLabel(prof.nivel_max)}</span>` : ''}
@@ -1686,7 +1689,7 @@ async function loadProfesor() {
           <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Modalidad</div>
         </div>
         <div style="padding:20px 10px;text-align:center">
-          <div style="color:var(--soft);font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.2">${ctx.alumnoData.horario_habitual || '—'}</div>
+          <div style="color:var(--soft);font-size:12px;font-weight:600;margin-bottom:4px;line-height:1.2">${escHTML(ctx.alumnoData.horario_habitual || '—')}</div>
           <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px">Horario</div>
         </div>
       </div>
@@ -1810,13 +1813,13 @@ function _alBcHtml() {
   parts.push(secLink);
   if (asig) {
     const asigSpan = temaId != null
-      ? `<span class="mat-bc-link" data-asig="${asig.replace(/"/g,'&quot;')}" onclick="_alGoAsig(this.dataset.asig)">${asig}</span>`
-      : `<span class="mat-bc-cur">${asig}</span>`;
+      ? `<span class="mat-bc-link" data-asig="${asig.replace(/"/g,'&quot;')}" onclick="_alGoAsig(this.dataset.asig)">${escHTML(asig)}</span>`
+      : `<span class="mat-bc-cur">${escHTML(asig)}</span>`;
     parts.push(asigSpan);
   }
   if (temaId != null) {
     const nom = temaId === '__sin__' ? 'Sin tema' : temaId;
-    parts.push(`<span class="mat-bc-cur">${nom}</span>`);
+    parts.push(`<span class="mat-bc-cur">${escHTML(nom)}</span>`);
   }
   return `<div class="mat-nav-bar">
     <button class="mat-back-btn" onclick="_alBack()"><i class="ti ti-arrow-left"></i> Volver</button>
@@ -1881,7 +1884,7 @@ function _alRenderAsigs() {
     const meta = getSubjectMeta(asig);
     return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" data-asig="${asig.replace(/"/g,'&quot;')}" onclick="_alGoAsig(this.dataset.asig)">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
-      <span class="mat-asig-label">${asig}</span>
+      <span class="mat-asig-label">${escHTML(asig)}</span>
       <span class="mat-asig-count">${asigCnt[asig]} archivo${asigCnt[asig]!==1?'s':''}</span>
     </div>`;
   }).join('');
@@ -1901,7 +1904,7 @@ function _alRenderTemas() {
     const meta  = getTopicMeta(label);
     return `<div class="mat-tema-bubble" style="--cc:${meta.cc}" data-tid="${tid.replace(/"/g,'&quot;')}" onclick="_alGoTema(this.dataset.tid)">
       <div class="mat-tema-ico"><i class="ti ${meta.ico}"></i></div>
-      <div class="mat-tema-nom">${label}</div>
+      <div class="mat-tema-nom">${escHTML(label)}</div>
       <div class="mat-tema-cnt">${temaCnt[tid]} archivo${temaCnt[tid]!==1?'s':''}</div>
     </div>`;
   }).join('');
@@ -1945,7 +1948,7 @@ function _alRenderTests() {
     return `<div class="mat-item-card" style="--cc:${cc};position:relative" onclick="iniciarTest('${t.id}','${encodeURIComponent(t.titulo)}')">
       ${iaBadge}
       <div class="mat-item-ico"><i class="ti ${ico}"></i></div>
-      <div class="mat-item-nom">${t.titulo}</div>
+      <div class="mat-item-nom">${escHTML(t.titulo)}</div>
       <span class="mat-item-badge" style="background:${badgeBg};color:${badgeClr}">${badge}</span>
       <button class="mat-item-btn">${btnTxt}</button>
     </div>`;
@@ -1967,7 +1970,7 @@ function renderMatItem(m, i) {
     <div class="mat-item-card${isExclusive ? ' mat-excl' : ''}" style="--cc:${isExclusive ? '#f59e0b' : cc}" onclick="${onclick}">
       ${isExclusive ? `<div class="mat-excl-corner"><i class="ti ti-crown"></i></div>` : ''}
       <div class="mat-item-ico"><i class="ti ${ico}"></i></div>
-      <div class="mat-item-nom">${m.titulo}</div>
+      <div class="mat-item-nom">${escHTML(m.titulo)}</div>
       ${isExclusive ? `<span class="mat-item-badge" style="background:#2a1800;color:#f59e0b"><i class="ti ti-crown" style="font-size:9px"></i> Solo para ti</span>` : `<span class="mat-item-badge" style="background:${tipBg};color:${tipCl}">${tipTxt}</span>`}
       ${m.archivo_url ? `<button class="mat-item-btn" onclick="event.stopPropagation();abrirArchivo('${m.archivo_url}')">Abrir</button>` : '<button class="mat-item-btn" style="opacity:.4" disabled>Sin enlace</button>'}
     </div>`;
@@ -1985,7 +1988,7 @@ function renderMatRow(m) {
   return `<div class="mat-item-row${isExcl?' mat-excl-row':''}" style="--cc:${isExcl?'#f59e0b':cc}" onclick="${openFn}">
     <div class="mat-row-ico"><i class="ti ${ico}"></i></div>
     <div class="mat-row-body">
-      <div class="mat-row-nom">${m.titulo}</div>
+      <div class="mat-row-nom">${escHTML(m.titulo)}</div>
       <div class="mat-row-sub">
         ${isExcl ? `<i class="ti ti-crown mat-row-excl-badge"></i><span style="color:#f59e0b;font-size:10px">Exclusivo</span>` : `<span>${tipTxt}</span>`}
       </div>
@@ -2229,7 +2232,7 @@ function _renderTareasGrupo(tareas) {
             <span class="status-pill ${pc}" style="font-size:10px">${pt}</span>
             ${t.nota != null ? `<span style="font-size:12px;font-weight:700;color:#fff">${t.nota}<span style="color:var(--muted);font-size:10px">/10</span></span>` : ''}
           </div>
-          <div class="tarea-card-titulo">${t.titulo}</div>
+          <div class="tarea-card-titulo">${escHTML(t.titulo)}</div>
           <div class="tarea-card-foot">
             ${limHtml}${corrHtml}
             <i class="ti ti-arrow-right" style="color:var(--muted);font-size:13px;margin-left:auto"></i>
@@ -2240,7 +2243,7 @@ function _renderTareasGrupo(tareas) {
       const temaLabel = tg.tema
         ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
              <i class="ti ti-bookmark" style="font-size:11px;color:${ac.tx}"></i>
-             <span style="font-size:11px;font-weight:600;color:var(--soft)">${tg.tema}</span>
+             <span style="font-size:11px;font-weight:600;color:var(--soft)">${escHTML(tg.tema)}</span>
            </div>`
         : '';
       return `<div style="margin-bottom:16px">${temaLabel}<div class="tareas-grid">${cards}</div></div>`;
@@ -2249,7 +2252,7 @@ function _renderTareasGrupo(tareas) {
     return `<div class="tareas-asig-grupo">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding:10px 16px;background:${ac.bg};border-radius:12px;border-left:3px solid ${ac.tx}">
         <i class="ti ti-book" style="color:${ac.tx};font-size:17px;flex-shrink:0"></i>
-        <span style="font-size:14px;font-weight:700;color:${ac.tx}">${ag.asig}</span>
+        <span style="font-size:14px;font-weight:700;color:${ac.tx}">${escHTML(ag.asig)}</span>
         <span style="color:${ac.tx};opacity:.65;font-size:11px;margin-left:auto">${ag.tareas.length} tarea${ag.tareas.length!==1?'s':''}</span>
       </div>
       ${temaHtml}
@@ -2321,9 +2324,9 @@ function _renderTareaAlumnoModal(t) {
   let html = `<div style="padding:16px 20px 12px;border-bottom:.5px solid var(--border2)">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
       <span class="status-pill ${pc}" style="font-size:10px">${pt}</span>
-      <span style="color:var(--muted);font-size:12px">${t.asignatura || '—'}</span>
+      <span style="color:var(--muted);font-size:12px">${escHTML(t.asignatura || '—')}</span>
     </div>
-    <h3 style="color:#fff;font-size:15px;font-weight:600;margin:0 0 4px">${t.titulo}</h3>`;
+    <h3 style="color:#fff;font-size:15px;font-weight:600;margin:0 0 4px">${escHTML(t.titulo)}</h3>`;
 
   if (t.fecha_limite) {
     const lim     = new Date(t.fecha_limite + 'T23:59:59');
@@ -2335,7 +2338,7 @@ function _renderTareaAlumnoModal(t) {
   html += '</div>';
 
   if (t.descripcion) {
-    html += S(label('Instrucciones') + `<p style="color:#ddd;font-size:13px;margin:0;white-space:pre-line">${t.descripcion}</p>`);
+    html += S(label('Instrucciones') + `<p style="color:#ddd;font-size:13px;margin:0;white-space:pre-line">${escHTML(t.descripcion)}</p>`);
   }
 
   if (t.archivo_enunciado_url) {
@@ -2502,7 +2505,7 @@ async function loadTests() {
     const det = n === 0 ? 'Próximamente' : `${completados}/${n} completados`;
     return `<div class="asig-bubble${n === 0 ? ' empty' : ''}" style="--cc:${cc}" onclick="mostrarDetalleTests('${encodeURIComponent(asig)}')">
       <div class="asig-bubble-ico"><i class="ti ${n === 0 ? 'ti-clock' : 'ti-list-check'}"></i></div>
-      <div class="asig-bubble-name">${asig}</div>
+      <div class="asig-bubble-name">${escHTML(asig)}</div>
       <div class="asig-bubble-det">${det}</div>
       ${n > 0 ? `<div class="asig-bubble-prog"><div class="asig-bubble-prog-fill" style="width:${pct}%"></div></div>` : ''}
     </div>`;
@@ -2545,7 +2548,7 @@ function mostrarDetalleTests(asigEnc) {
     if (testsEnTema.length === 0) {
       return `<div style="margin-bottom:22px">
         <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:5px">
-          <i class="ti ti-bookmark" style="font-size:11px"></i>${tema}
+          <i class="ti ti-bookmark" style="font-size:11px"></i>${escHTML(tema)}
         </div>
         <div style="background:linear-gradient(145deg,#0c1838,#060d20);border:1px dashed var(--border);border-radius:20px;padding:24px;text-align:center">
           <i class="ti ti-clock" style="font-size:26px;color:var(--muted);display:block;margin-bottom:8px"></i>
@@ -2566,14 +2569,14 @@ function mostrarDetalleTests(asigEnc) {
       const btnTxt     = locked ? 'Ver respuestas' : (done ? 'Repetir' : 'Iniciar');
       return `<div class="mat-item-card" style="--cc:${cc}" onclick="iniciarTest('${t.id}','${encodeURIComponent(t.titulo)}','tests')">
         <div class="mat-item-ico"><i class="ti ${ico}"></i></div>
-        <div class="mat-item-nom">${t.titulo}</div>
+        <div class="mat-item-nom">${escHTML(t.titulo)}</div>
         <span class="mat-item-badge" style="background:${badgeBg};color:${badgeClr}">${badgeTxt}</span>
         <button class="mat-item-btn">${btnTxt}</button>
       </div>`;
     }).join('');
     return `<div style="margin-bottom:26px">
       <div style="color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:5px">
-        <i class="ti ti-bookmark" style="font-size:11px"></i>${tema}
+        <i class="ti ti-bookmark" style="font-size:11px"></i>${escHTML(tema)}
       </div>
       <div class="mat-item-grid">${cards}</div>
     </div>`;
@@ -2615,8 +2618,8 @@ async function loadAvisosAlumno() {
   } else {
     el.innerHTML = avisos.map(a => `
       <div class="aviso-row">
-        <div class="aviso-titulo">${a.titulo}</div>
-        <div class="aviso-cuerpo">${a.contenido}</div>
+        <div class="aviso-titulo">${escHTML(a.titulo)}</div>
+        <div class="aviso-cuerpo">${escHTML(a.contenido)}</div>
         <div class="aviso-fecha">${formatDate(a.created_at?.split('T')[0])}</div>
       </div>
     `).join('');
@@ -2684,9 +2687,9 @@ function clickDia(dateStr) {
     const evHtml = evs.map(e => `
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:.5px solid var(--border2)">
         <div>
-          <div style="color:#fff;font-size:13px;font-weight:500">${e.titulo}</div>
+          <div style="color:#fff;font-size:13px;font-weight:500">${escHTML(e.titulo)}</div>
           <div style="color:var(--muted);font-size:11px">${e.asignatura || ''}${e.hora_inicio ? ' · ' + formatTime(e.hora_inicio) + 'h' : ''} · ${(e.duracion_minutos/60).toFixed(1).replace('.0','') + 'h'}</div>
-          ${e.notas ? `<div style="color:var(--muted);font-size:11px;margin-top:2px">${e.notas}</div>` : ''}
+          ${e.notas ? `<div style="color:var(--muted);font-size:11px;margin-top:2px">${escHTML(e.notas)}</div>` : ''}
         </div>
         <div style="display:flex;gap:6px">
           <button onclick="abrirEditEvento(calEventos.find(x=>x.id==='${e.id}'))" style="background:var(--border2);color:var(--soft);border:.5px solid var(--border);border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit"><i class="ti ti-pencil" style="font-size:11px"></i> Editar</button>

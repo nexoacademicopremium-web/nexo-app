@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1356,7 +1356,7 @@ async function loadAll() {
     matAlumSel.innerHTML = '<option value="">Para su nivel en general</option>';
     allAlumnos.forEach(a => {
       const u = a.usuario || {};
-      matAlumSel.add(new Option(`${u.nombre || '?'} ${u.apellidos || ''}`, a.id));
+      matAlumSel.add(new Option(`${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}`, a.id));
     });
 
     // Populate: catálogo de asignaturas
@@ -1399,7 +1399,7 @@ async function loadAll() {
     const avUserSel = document.getElementById('av-usuario-especifico');
     avUserSel.innerHTML = '';
     allUsuarios.forEach(u => {
-      avUserSel.add(new Option(`${u.nombre} ${u.apellidos} (${u.rol})`, u.id));
+      avUserSel.add(new Option(`${escHTML(u.nombre)} ${escHTML(u.apellidos)} (${u.rol})`, u.id));
     });
 
     // Populate: filtro alumno en sesiones
@@ -1407,7 +1407,7 @@ async function loadAll() {
     while (filSesAlumno.options.length > 1) filSesAlumno.remove(1);
     allAlumnos.forEach(a => {
       const u = a.usuario || {};
-      filSesAlumno.add(new Option(`${u.nombre || '?'} ${u.apellidos || ''}`, a.id));
+      filSesAlumno.add(new Option(`${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}`, a.id));
     });
 
     // Populate: filtro de profesor en sesiones
@@ -1416,7 +1416,7 @@ async function loadAll() {
     while (filProf.options.length > 1) filProf.remove(1);
     allProfesores.forEach(p => {
       const u = p.usuario || {};
-      filProf.add(new Option(`${u.nombre || '?'} ${u.apellidos || ''}`, p.id));
+      filProf.add(new Option(`${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}`, p.id));
     });
 
     // Populate: filtro de meses en sesiones (solo si vacío)
@@ -1439,7 +1439,7 @@ async function loadAll() {
     while (filBonoAlumno.options.length > 1) filBonoAlumno.remove(1);
     allAlumnos.forEach(a => {
       const u = a.usuario || {};
-      filBonoAlumno.add(new Option(`${u.nombre || '?'} ${u.apellidos || ''}`, a.id));
+      filBonoAlumno.add(new Option(`${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}`, a.id));
     });
   } catch (err) {
     console.error('[Nexo] Error inesperado en loadAll:', err);
@@ -1559,9 +1559,9 @@ async function loadDashboard() {
         const p = profMap[s.profesor_id]?.usuario || {};
         return `<tr>
           <td style="color:#fff">${a.nombre ? a.nombre + ' ' + a.apellidos : '—'}</td>
-          <td>${s.asignatura}</td>
+          <td>${escHTML(s.asignatura)}</td>
           <td>${formatShortDate(s.fecha)}</td>
-          <td>${p.nombre || '—'}</td>
+          <td>${escHTML(p.nombre || '—')}</td>
           <td><button class="btn-danger" onclick="abrirCancelar('${s.id}')">Cancelar</button></td>
         </tr>`;
       }).join('')}
@@ -1577,7 +1577,7 @@ async function loadDashboard() {
       ${bonos.map(a => {
         const u = allAlumnos.find(x => x.id === a.id)?.usuario || {};
         return `<tr>
-          <td style="color:#fff">${u.nombre || '?'} ${u.apellidos || ''}</td>
+          <td style="color:#fff">${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}</td>
           <td><span class="pill pill-warn">${a.horas_bono_restantes}h restantes</span></td>
           <td>
             <button class="btn-edit" onclick="abrirFicha('${a.id}')">Ficha</button>
@@ -1631,17 +1631,17 @@ function renderTablaAlumnos(lista, horasByAlumno = {}) {
       });
       profCell = Object.values(grouped).map(g => {
         const asigText = g.asigs.length ? ' · ' + g.asigs.join(', ') : '';
-        return `<span class="pill pill-eso" style="margin:1px">${g.nombre}${asigText}</span>`;
+        return `<span class="pill pill-eso" style="margin:1px">${escHTML(g.nombre)}${escHTML(asigText)}</span>`;
       }).join('');
     } else if (a.profesor_id) {
       const profNom = allProfesores.find(p => p.id === a.profesor_id)?.usuario || {};
-      profCell = profNom.nombre ? `${profNom.nombre} ${profNom.apellidos}` : '<span style="color:var(--muted)">Sin asignar</span>';
+      profCell = profNom.nombre ? `${escHTML(profNom.nombre)} ${escHTML(profNom.apellidos)}` : '<span style="color:var(--muted)">Sin asignar</span>';
     } else {
       profCell = '<span style="color:var(--muted)">Sin asignar</span>';
     }
 
     return `<tr onclick="abrirQuickFicha('${a.id}')" style="cursor:pointer">
-      <td><b style="color:#fff">${u.nombre || '?'} ${u.apellidos || ''}</b><br><span style="color:var(--muted);font-size:11px">${u.email || ''}</span></td>
+      <td><b style="color:#fff">${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}</b><br><span style="color:var(--muted);font-size:11px">${escHTML(u.email || '')}</span></td>
       <td><span class="pill ${(a.nivel||'').includes('BACH') ? 'pill-bach' : 'pill-eso'}">${nivelLabel(a.nivel)}</span></td>
       <td style="max-width:160px;white-space:normal">${(a._asigNombres || []).join(', ') || '—'}</td>
       <td style="max-width:180px">${profCell}</td>
@@ -1660,13 +1660,13 @@ function filtrar(tipo) {
   if (tipo === 'alumnos') {
     const res = allAlumnos.filter(a => {
       const u = a.usuario || {};
-      return `${u.nombre} ${u.apellidos} ${(a._asigNombres||[]).join(' ')} ${a.nivel}`.toLowerCase().includes(q);
+      return `${escHTML(u.nombre)} ${escHTML(u.apellidos)} ${(a._asigNombres||[]).join(' ')} ${a.nivel}`.toLowerCase().includes(q);
     });
     renderTablaAlumnos(res);
   } else {
     const res = allProfesores.filter(p => {
       const u = p.usuario || {};
-      return `${u.nombre} ${u.apellidos} ${(p._asigNombres||[]).join(' ')} ${p.zona||''}`.toLowerCase().includes(q);
+      return `${escHTML(u.nombre)} ${escHTML(u.apellidos)} ${(p._asigNombres||[]).join(' ')} ${p.zona||''}`.toLowerCase().includes(q);
     });
     renderTablaProfesores(res);
   }
@@ -1689,7 +1689,7 @@ function fichaAlumnoModoCreacion() {
 }
 function fichaAlumnoModoEdicion(a) {
   const u = a.usuario || {};
-  document.getElementById('ficha-titulo').textContent                  = `${u.nombre || '?'} ${u.apellidos || ''}`;
+  document.getElementById('ficha-titulo').textContent                  = `${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}`;
   document.getElementById('ficha-section-profs').style.display        = '';
   document.getElementById('ficha-bono-section').style.display         = '';
   document.getElementById('ficha-section-sesiones').style.display     = '';
@@ -1787,11 +1787,11 @@ function _infBc() {
     sep,
   ];
   if (mes != null) {
-    parts.push(`<span class="mat-bc-link" onclick="_infGo(${idJs},null)">${alumnoLbl}</span>`);
+    parts.push(`<span class="mat-bc-link" onclick="_infGo(${idJs},null)">${escHTML(alumnoLbl)}</span>`);
     parts.push(sep);
     parts.push(`<span class="mat-bc-cur">${mes}</span>`);
   } else {
-    parts.push(`<span class="mat-bc-cur">${alumnoLbl}</span>`);
+    parts.push(`<span class="mat-bc-cur">${escHTML(alumnoLbl)}</span>`);
   }
   parts.push('</div>');
   return `<div class="mat-nav-bar">${parts.join('')}</div>`;
@@ -1819,7 +1819,7 @@ function _infRenderAlumnos(c) {
     const cnt    = b.cnt;
     return `<div class="mat-asig-bubble" style="--ab-clr:#0f4c8a" onclick="_infGo(${idJs},null)">
       <div class="mat-asig-ico"><i class="ti ti-user"></i></div>
-      <span class="mat-asig-label">${nombre}</span>
+      <span class="mat-asig-label">${escHTML(nombre)}</span>
       <span class="mat-asig-count">${cnt} informe${cnt !== 1 ? 's' : ''}</span>
     </div>`;
   }).join('');
@@ -1868,7 +1868,7 @@ function _infRenderCards(c) {
     return `<div class="mat-pdf-card" style="--ab-clr:#0f4c8a">
       <div class="mat-pdf-ico"><i class="ti ti-report-analytics"></i></div>
       <div class="mat-pdf-body">
-        <div class="mat-pdf-nom">${inf.titulo || tipoLabel}</div>
+        <div class="mat-pdf-nom">${escHTML(inf.titulo || tipoLabel)}</div>
         <div class="mat-pdf-tipo">${tipoLabel} · ${rango}</div>
       </div>
       <span class="mat-pdf-vis ${isVisible ? 'ok' : 'off'}">${isVisible ? 'Visible' : 'Oculto'}</span>
@@ -1991,13 +1991,13 @@ async function verRevisionInforme(informeId) {
 
   const bloque = (id, label, val) => `
     <div style="margin-bottom:18px">
-      <label class="fl">${label}</label>
+      <label class="fl">${escHTML(label)}</label>
       <textarea class="fi" id="inf-edit-${id}" rows="4" style="min-height:80px;resize:vertical">${(val||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
     </div>`;
 
   const lista = (id, label, arr) => `
     <div style="margin-bottom:18px">
-      <label class="fl">${label} <span style="color:var(--muted);font-size:11px">(una por línea)</span></label>
+      <label class="fl">${escHTML(label)} <span style="color:var(--muted);font-size:11px">(una por línea)</span></label>
       <textarea class="fi" id="inf-edit-${id}" rows="4" style="min-height:80px;resize:vertical">${(Array.isArray(arr)?arr.join('\n'):'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
     </div>`;
 
@@ -2006,11 +2006,11 @@ async function verRevisionInforme(informeId) {
     const v  = kA.valoraciones||{};
     const chip = (f,lbl) => v[f]!=null ? `<span style="background:var(--dark);padding:4px 10px;border-radius:14px;font-size:11px;color:var(--soft)">${lbl}: <b style="color:#fff">${v[f]}/10</b></span>` : '';
     return `<div style="background:var(--surface);border:.5px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px">
-      <div style="font-weight:700;color:#fff;font-size:15px;margin-bottom:3px">${asig.nombre}</div>
-      <div style="color:var(--muted);font-size:12px;margin-bottom:12px">Prof. ${asig.profesor||'—'} · ${kA.num_sesiones||'—'} ses. · ${kA.horas_totales||'—'} h${kA.nota_media!=null?` · nota est. ${kA.nota_media}/10`:''}</div>
+      <div style="font-weight:700;color:#fff;font-size:15px;margin-bottom:3px">${escHTML(asig.nombre)}</div>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:12px">Prof. ${escHTML(asig.profesor||'—')} · ${kA.num_sesiones||'—'} ses. · ${kA.horas_totales||'—'} h${kA.nota_media!=null?` · nota est. ${kA.nota_media}/10`:''}</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
         ${chip('comprension','Comprensión')}${chip('aplicacion','Aplicación')}${chip('concentracion','Concentración')}${chip('motivacion','Motivación')}${chip('autonomia','Autonomía')}
-        ${kA.tendencia_autonomia?`<span style="background:var(--dark);padding:4px 10px;border-radius:14px;font-size:11px;color:var(--soft)">tendencia: <b style="color:#fff">${kA.tendencia_autonomia}</b></span>`:''}
+        ${kA.tendencia_autonomia?`<span style="background:var(--dark);padding:4px 10px;border-radius:14px;font-size:11px;color:var(--soft)">tendencia: <b style="color:#fff">${escHTML(kA.tendencia_autonomia)}</b></span>`:''}
       </div>
       <label class="fl">Análisis</label>
       <textarea class="fi" id="inf-edit-asig-${idx}" rows="5" style="min-height:100px;resize:vertical">${(asig.analisis||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea>
@@ -2162,9 +2162,9 @@ function renderTablaProfesores(lista) {
     const u = p.usuario || {};
     const nAlumnos = Object.values(alumnoProfesorMap).filter(aps => aps.some(ap => ap.profesor_id === p.id)).length;
     return `<tr onclick="abrirFichaProfesor('${p.id}')" style="cursor:pointer">
-      <td><b style="color:#fff">${u.nombre || '?'} ${u.apellidos || ''}</b><br><span style="color:var(--muted);font-size:11px">${u.email || ''}</span></td>
+      <td><b style="color:#fff">${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}</b><br><span style="color:var(--muted);font-size:11px">${escHTML(u.email || '')}</span></td>
       <td>${(p._asigNombres||[]).join(', ') || '—'}</td>
-      <td>${p.zona || '—'}</td>
+      <td>${escHTML(p.zona || '—')}</td>
       <td><span class="pill pill-ok">${nAlumnos} alumno${nAlumnos !== 1 ? 's' : ''}</span></td>
       <td><span class="pill ${p.activo ? 'pill-ok' : 'pill-grey'}">${p.activo ? 'Activo' : 'Inactivo'}</span></td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
@@ -2193,7 +2193,7 @@ function fichaProfModoCreacion() {
 }
 function fichaProfModoEdicion(p) {
   const u = p.usuario || {};
-  document.getElementById('ficha-prof-titulo').textContent                = `${u.nombre || '?'} ${u.apellidos || ''}`;
+  document.getElementById('ficha-prof-titulo').textContent                = `${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}`;
   document.getElementById('ficha-prof-section-creds').style.display      = '';
   document.getElementById('ficha-prof-section-creds-new').style.display  = 'none';
   document.getElementById('ficha-prof-section-pwd').style.display        = '';
@@ -2229,7 +2229,7 @@ async function abrirFichaProfesor(profId) {
   if (!p) return;
   const u = p.usuario || {};
 
-  document.getElementById('ficha-prof-titulo').textContent    = `${u.nombre || '?'} ${u.apellidos || ''}`;
+  document.getElementById('ficha-prof-titulo').textContent    = `${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}`;
   document.getElementById('fich-prof-nombre').value           = u.nombre || '';
   document.getElementById('fich-prof-apellidos').value        = u.apellidos || '';
   document.getElementById('fich-prof-email').value            = u.email || '';
@@ -2304,7 +2304,7 @@ async function guardarFichaProfesor() {
       cerrarModal('modal-ficha-profesor');
       await loadAll();
       await loadTablaProfesores();
-      mostrarCredencialesCreadas(newUser.username, newUser.password, `${nombre} ${apellidos}`);
+      mostrarCredencialesCreadas(newUser.username, newUser.password, `${escHTML(nombre)} ${apellidos}`);
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
@@ -2360,7 +2360,7 @@ async function guardarFichaProfesor() {
     allProfesores[idx].observaciones          = observaciones;
     allProfesores[idx].puede_generar_test_pdf = puede_generar_test_pdf;
   }
-  document.getElementById('ficha-prof-titulo').textContent = `${nombre} ${apellidos}`;
+  document.getElementById('ficha-prof-titulo').textContent = `${escHTML(nombre)} ${apellidos}`;
 
   if (document.getElementById('section-profesores').classList.contains('active')) {
     renderTablaProfesores(allProfesores);
@@ -2405,7 +2405,7 @@ function renderFichaProfAsigCheckboxes(el, asignadas) {
       const checked = asignadas.has(a.id);
       return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:6px;border:.5px solid ${checked ? 'var(--blue)' : 'transparent'};background:${checked ? '#0a1a30' : 'transparent'}" onchange="this.style.border=this.querySelector('input').checked?'.5px solid var(--blue)':'transparent';this.style.background=this.querySelector('input').checked?'#0a1a30':'transparent';this.querySelector('span').style.color=this.querySelector('input').checked?'#fff':'var(--muted)'">
         <input type="checkbox" value="${a.id}" ${checked ? 'checked' : ''} onchange="toggleFichaProfAsignatura(${a.id},this.checked)" style="accent-color:var(--blue);flex-shrink:0">
-        <span style="font-size:12px;color:${checked ? '#fff' : 'var(--muted)'}">${a.nombre}</span>
+        <span style="font-size:12px;color:${checked ? '#fff' : 'var(--muted)'}">${escHTML(a.nombre)}</span>
       </label>`;
     }).join('') +
   `</div>`;
@@ -2466,10 +2466,10 @@ async function eliminarProfesor(profId) {
   const nombre = `${p.usuario?.nombre || ''} ${p.usuario?.apellidos || ''}`.trim();
   const { count: nSes } = await db.from('sesiones').select('id', { count: 'exact', head: true }).eq('profesor_id', profId);
   if (nSes > 0) {
-    showToast(`No se puede eliminar: ${nombre} tiene ${nSes} sesión/es registrada/s. Elimínalas primero desde Sesiones.`, 'error');
+    showToast(`No se puede eliminar: ${escHTML(nombre)} tiene ${nSes} sesión/es registrada/s. Elimínalas primero desde Sesiones.`, 'error');
     return;
   }
-  if (!confirm(`¿Eliminar definitivamente al profesor ${nombre}? Esta acción no se puede deshacer.`)) return;
+  if (!confirm(`¿Eliminar definitivamente al profesor ${escHTML(nombre)}? Esta acción no se puede deshacer.`)) return;
   const usuarioId = p.usuario_id || p.usuario?.id;
   const { error } = await db.from('usuarios').delete().eq('id', usuarioId);
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
@@ -2565,7 +2565,7 @@ async function guardarFicha() {
       cerrarModal('modal-ficha');
       await loadAll();
       await loadTablaAlumnos();
-      mostrarCredencialesCreadas(newUser.username, newUser.password, `${nombre} ${apellidos}`);
+      mostrarCredencialesCreadas(newUser.username, newUser.password, `${escHTML(nombre)} ${apellidos}`);
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
@@ -2620,7 +2620,7 @@ async function guardarFicha() {
     allAlumnos[idx].direccion     = direccion;
     allAlumnos[idx].observaciones = observaciones;
   }
-  document.getElementById('ficha-titulo').textContent = `${nombre} ${apellidos}`;
+  document.getElementById('ficha-titulo').textContent = `${escHTML(nombre)} ${apellidos}`;
 
   if (document.getElementById('section-alumnos').classList.contains('active')) {
     renderTablaAlumnos(allAlumnos);
@@ -2782,7 +2782,7 @@ async function refreshFichaSesiones() {
         const pu = p?.usuario || {};
         return `<tr>
           <td style="font-size:12px">${formatShortDate(s.fecha)}</td>
-          <td style="font-size:12px;color:#fff">${s.asignatura}</td>
+          <td style="font-size:12px;color:#fff">${escHTML(s.asignatura)}</td>
           <td style="font-size:12px">${pu.nombre ? pu.nombre + ' ' + pu.apellidos : '—'}</td>
           <td style="font-size:12px">${(s.duracion_minutos/60).toFixed(1).replace('.0','') + 'h'}</td>
           <td><span class="status-pill ${pc}" style="font-size:10px">${pt}</span></td>
@@ -2991,7 +2991,7 @@ function renderFichaAsigCheckboxes(el, asignadas) {
       const checked = asignadas.has(a.id);
       return `<label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:6px;border:.5px solid ${checked ? 'var(--blue)' : 'transparent'};background:${checked ? '#0a1a30' : 'transparent'}" onchange="this.style.border=this.querySelector('input').checked?'.5px solid var(--blue)':'transparent';this.style.background=this.querySelector('input').checked?'#0a1a30':'transparent';this.querySelector('span').style.color=this.querySelector('input').checked?'#fff':'var(--muted)'">
         <input type="checkbox" value="${a.id}" ${checked ? 'checked' : ''} onchange="toggleFichaAsignatura(${a.id},this.checked)" style="accent-color:var(--blue);flex-shrink:0">
-        <span style="font-size:12px;color:${checked ? '#fff' : 'var(--muted)'}">${a.nombre}</span>
+        <span style="font-size:12px;color:${checked ? '#fff' : 'var(--muted)'}">${escHTML(a.nombre)}</span>
       </label>`;
     }).join('') +
   `</div>`;
@@ -3227,7 +3227,7 @@ async function loadSesionesAdmin() {
               <td>${d.getFullYear()}</td>
               <td style="color:#fff">${aluU.nombre ? aluU.nombre + ' ' + aluU.apellidos : '—'}</td>
               <td style="font-family:monospace;font-size:11px">${alu.codigo || '—'}</td>
-              <td>${s.asignatura}</td>
+              <td>${escHTML(s.asignatura)}</td>
               <td style="font-family:monospace;font-size:11px">${prof.codigo || '—'}</td>
               <td style="text-align:center">${horas}</td>
               <td>${nivelACurso(alu.nivel)}</td>
@@ -3379,7 +3379,7 @@ function _matBc() {
   if (sec === 'excl' && alumnoId != null) {
     const al  = allAlumnos.find(x => x.id === alumnoId);
     const nom = al ? `${al.usuario?.nombre||''} ${al.usuario?.apellidos||''}`.trim() : 'Alumno';
-    parts.push(`<span class="mat-bc-link" onclick="_matGo('excl',null,null,null,'${alumnoId}')">${nom}</span>`);
+    parts.push(`<span class="mat-bc-link" onclick="_matGo('excl',null,null,null,'${alumnoId}')">${escHTML(nom)}</span>`);
   } else if (sec === 'gen' && nivel != null) {
     parts.push(`<span class="mat-bc-link" onclick="_matGo('gen','${nivel}',null,null,null)">${nivelLabel(nivel)}</span>`);
   }
@@ -3390,7 +3390,7 @@ function _matBc() {
   }
   if (temaId != null) {
     const nom = temaId === '__sin__' ? 'Sin tema' : temaId;
-    parts.push(`<span class="mat-bc-cur">${nom}</span>`);
+    parts.push(`<span class="mat-bc-cur">${escHTML(nom)}</span>`);
   }
   return `<div class="mat-nav-bar">
     <button class="mat-back-btn" onclick="_matBack()"><i class="ti ti-arrow-left"></i> Volver</button>
@@ -3430,7 +3430,7 @@ function _matRenderAlumnos(c) {
     const cnt    = alumnoCnt[aid];
     return `<div class="mat-asig-bubble" style="--ab-clr:#f59e0b" onclick="_matGo('excl',null,null,null,'${aid}')">
       <div class="mat-asig-ico"><i class="ti ti-user-circle"></i></div>
-      <span class="mat-asig-label">${nombre}</span>
+      <span class="mat-asig-label">${escHTML(nombre)}</span>
       <span class="mat-asig-count">${nivel ? nivel+' · ' : ''}${cnt} archivo${cnt!==1?'s':''}</span>
     </div>`;
   }).join('');
@@ -3467,7 +3467,7 @@ function _matRenderAsigs(c) {
     const alStr  = alumnoId ? `'${alumnoId}'` : 'null';
     return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_matGo('${sec}',${nivStr},${aid},null,${alStr})">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
-      <span class="mat-asig-label">${nom}</span>
+      <span class="mat-asig-label">${escHTML(nom)}</span>
       <span class="mat-asig-count">${asigCnt[aid]} archivo${asigCnt[aid]!==1?'s':''}</span>
     </div>`;
   }).join('');
@@ -3491,7 +3491,7 @@ function _matRenderTemas(c) {
     const meta  = getTopicMeta(label);
     return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_matGoTema(${i})">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
-      <span class="mat-asig-label">${label}</span>
+      <span class="mat-asig-label">${escHTML(label)}</span>
       <span class="mat-asig-count">${temaCnt[nom]} archivo${temaCnt[nom]!==1?'s':''}</span>
     </div>`;
   }).join('');
@@ -3516,8 +3516,8 @@ function _matRenderPdfs(c) {
     return `<div class="mat-pdf-card${isPerso?' excl':''}" style="--ab-clr:${cc}">
       <div class="mat-pdf-ico"><i class="ti ${ico}"></i></div>
       <div class="mat-pdf-body">
-        <div class="mat-pdf-nom">${m.titulo}</div>
-        <div class="mat-pdf-tipo">${isPerso ? `<i class="ti ti-crown" style="font-size:10px"></i> Excl. · ${nombres}` : (isPdf?'PDF':'Recurso')}</div>
+        <div class="mat-pdf-nom">${escHTML(m.titulo)}</div>
+        <div class="mat-pdf-tipo">${isPerso ? `<i class="ti ti-crown" style="font-size:10px"></i> Excl. · ${escHTML(nombres)}` : (isPdf?'PDF':'Recurso')}</div>
       </div>
       <span class="mat-pdf-vis ${m.visible?'ok':'off'}">${m.visible?'Visible':'Oculto'}</span>
       <div class="mat-pdf-actions">
@@ -3694,7 +3694,7 @@ async function loadBonos() {
     <tbody>
       ${data.map(b => {
         const u = b.alumno?.usuario || {};
-        const alumnoNom = u.nombre ? `${u.nombre} ${u.apellidos}` : '—';
+        const alumnoNom = u.nombre ? `${escHTML(u.nombre)} ${escHTML(u.apellidos)}` : '—';
         const consumidas = parseFloat(b.horas_consumidas) || 0;
         const restantes  = parseFloat(b.horas_restantes)  || 0;
         const [pc, pt]   = pillMap[b.estado] || ['st-grey', b.estado];
@@ -3756,7 +3756,7 @@ function abrirModalBono() {
   sel.innerHTML = '<option value="">— Selecciona alumno —</option>';
   allAlumnos.filter(a => a.activo).forEach(a => {
     const u = a.usuario || {};
-    sel.add(new Option(`${u.nombre || '?'} ${u.apellidos || ''}`, a.id));
+    sel.add(new Option(`${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}`, a.id));
   });
 
   document.getElementById('bono-horas').value = '8';
@@ -3790,7 +3790,7 @@ async function abrirEditBono(bonoId) {
   const sel = document.getElementById('bono-alumno-sel');
   const a = allAlumnos.find(x => x.id === b.alumno_id);
   const u = a?.usuario || {};
-  sel.innerHTML = `<option value="${b.alumno_id}">${u.nombre || '?'} ${u.apellidos || ''}</option>`;
+  sel.innerHTML = `<option value="${b.alumno_id}">${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}</option>`;
   sel.disabled = true;
 
   const horasStd = [2, 4, 8, 12];
@@ -4142,8 +4142,8 @@ async function abrirQuickFicha(alumnoId) {
   }
   const profsHtml = Object.values(grouped).length > 0
     ? Object.values(grouped).map(g => {
-        const asigText = g.asigs.length ? `<span style="color:var(--muted);font-size:11px"> · ${g.asigs.join(', ')}</span>` : '';
-        return `<div class="aqf-row"><span>${g.nombre}${asigText}</span><b>&nbsp;</b></div>`;
+        const asigText = g.asigs.length ? `<span style="color:var(--muted);font-size:11px"> · ${escHTML(g.asigs.join(', '))}</span>` : '';
+        return `<div class="aqf-row"><span>${escHTML(g.nombre)}${asigText}</span><b>&nbsp;</b></div>`;
       }).join('')
     : '<div style="color:var(--muted);font-size:12px;padding:6px 0">Sin profesor asignado</div>';
 
@@ -4151,7 +4151,7 @@ async function abrirQuickFicha(alumnoId) {
   const sesHtml = (sesiones||[]).length > 0
     ? (sesiones||[]).slice(0,5).map(s => {
         const [pc, pt] = pillMap[s.estado] || ['st-grey', '—'];
-        return `<div class="aqf-row"><span>${formatShortDate(s.fecha)} · ${s.asignatura}</span><b><span class="status-pill ${pc}" style="font-size:9px">${pt}</span></b></div>`;
+        return `<div class="aqf-row"><span>${formatShortDate(s.fecha)} · ${escHTML(s.asignatura)}</span><b><span class="status-pill ${pc}" style="font-size:9px">${pt}</span></b></div>`;
       }).join('')
     : '<div style="color:var(--muted);font-size:12px;padding:6px 0">Sin sesiones registradas</div>';
 
@@ -4168,7 +4168,7 @@ async function abrirQuickFicha(alumnoId) {
     </div>
 
     <div class="aqf-section"><i class="ti ti-info-circle"></i> Datos</div>
-    <div class="aqf-row"><span>Asignaturas</span><b>${(alumno._asigNombres||[]).join(', ')||'—'}</b></div>
+    <div class="aqf-row"><span>Asignaturas</span><b>${escHTML((alumno._asigNombres||[]).join(', ')||'—')}</b></div>
     <div class="aqf-row"><span>Zona</span><b>${alumno.direccion||'—'}</b></div>
     <div class="aqf-row"><span>Desde</span><b>${formatDate(alumno.fecha_inicio)}</b></div>
 
@@ -4212,7 +4212,7 @@ function populateAsigSelect(elId, withAll = false) {
     ? '<option value="">Todas las asignaturas</option>'
     : '<option value="">— Selecciona asignatura —</option>';
   sel.innerHTML = first + allAsignaturas.map(a =>
-    `<option value="${a.id}">${a.nombre}</option>`
+    `<option value="${a.id}">${escHTML(a.nombre)}</option>`
   ).join('');
 }
 
@@ -4226,7 +4226,7 @@ function populateFichaAddAsig() {
     sel.innerHTML = '<option value="">Sin asignaturas de repaso</option>';
   } else {
     sel.innerHTML = '<option value="">— Selecciona asignatura —</option>' +
-      asigs.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+      asigs.map(a => `<option value="${a.id}">${escHTML(a.nombre)}</option>`).join('');
   }
 }
 
@@ -4390,7 +4390,7 @@ function _testsAlumnoNombre(alumnoId) {
   const t = _testsData.find(x => x.alumno_id === alumnoId);
   if (!t?.alumno?.usuario) return 'Alumno';
   const u = t.alumno.usuario;
-  return `${u.nombre} ${u.apellidos||''}`.trim();
+  return `${escHTML(u.nombre)} ${u.apellidos||''}`.trim();
 }
 
 function _testsBc() {
@@ -4406,11 +4406,11 @@ function _testsBc() {
     sep,
   ];
   if (asig != null) {
-    parts.push(`<span class="mat-bc-link" onclick="_testsGo(${alumnoIdJs},null)">${alumnoLbl}</span>`);
+    parts.push(`<span class="mat-bc-link" onclick="_testsGo(${alumnoIdJs},null)">${escHTML(alumnoLbl)}</span>`);
     parts.push(sep);
-    parts.push(`<span class="mat-bc-cur">${asig}</span>`);
+    parts.push(`<span class="mat-bc-cur">${escHTML(asig)}</span>`);
   } else {
-    parts.push(`<span class="mat-bc-cur">${alumnoLbl}</span>`);
+    parts.push(`<span class="mat-bc-cur">${escHTML(alumnoLbl)}</span>`);
   }
   parts.push('</div>');
   return `<div class="mat-nav-bar">${parts.join('')}</div>`;
@@ -4427,7 +4427,7 @@ function _testsRenderAlumnos(c) {
     if (!buckets[key]) buckets[key] = { alumnoId: t.alumno_id || null, nombre: null, cnt: 0 };
     if (t.alumno?.usuario && !buckets[key].nombre) {
       const u = t.alumno.usuario;
-      buckets[key].nombre = `${u.nombre} ${u.apellidos||''}`.trim();
+      buckets[key].nombre = `${escHTML(u.nombre)} ${u.apellidos||''}`.trim();
     }
     buckets[key].cnt++;
   });
@@ -4444,7 +4444,7 @@ function _testsRenderAlumnos(c) {
     const idJs   = b.alumnoId ? `'${b.alumnoId}'` : 'null';
     return `<div class="mat-asig-bubble" style="--ab-clr:${cc}" onclick="_testsGo(${idJs},null)">
       <div class="mat-asig-ico"><i class="ti ${ico}"></i></div>
-      <span class="mat-asig-label">${nombre}</span>
+      <span class="mat-asig-label">${escHTML(nombre)}</span>
       <span class="mat-asig-count">${cnt} test${cnt!==1?'s':''}</span>
     </div>`;
   }).join('');
@@ -4462,7 +4462,7 @@ function _testsRenderAsigs(c) {
     const cnt  = asigCnt[asig];
     return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_testsGo(${idJs},'${asig.replace(/'/g,"\\'")}')">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
-      <span class="mat-asig-label">${asig}</span>
+      <span class="mat-asig-label">${escHTML(asig)}</span>
       <span class="mat-asig-count">${cnt} test${cnt!==1?'s':''}</span>
     </div>`;
   }).join('');
@@ -4481,7 +4481,7 @@ function _testsRenderCards(c) {
     return `<div class="mat-pdf-card" style="--ab-clr:${meta.cc}">
       <div class="mat-pdf-ico"><i class="ti ${meta.ico}"></i></div>
       <div class="mat-pdf-body">
-        <div class="mat-pdf-nom">${t.titulo}</div>
+        <div class="mat-pdf-nom">${escHTML(t.titulo)}</div>
         <div class="mat-pdf-tipo">${nPreg} pregunta${nPreg!==1?'s':''}</div>
       </div>
       <span class="mat-pdf-vis ${t.visible?'ok':'off'}">${t.visible?'Visible':'Oculto'}</span>
@@ -4637,8 +4637,8 @@ async function loadTablaAvisos() {
           : a.destinatario_rol === 'profesor' ? 'Profesores'
           : 'Alumnos';
         return `<tr>
-          <td style="color:#fff">${a.titulo}</td>
-          <td>${dest}</td>
+          <td style="color:#fff">${escHTML(a.titulo)}</td>
+          <td>${escHTML(dest)}</td>
           <td>${formatShortDate(a.created_at?.split('T')[0])}</td>
           <td><span class="pill ${a.visible ? 'pill-ok' : 'pill-grey'}">${a.visible ? 'Visible' : 'Oculto'}</span></td>
           <td><button class="btn-danger" onclick="ocultarAviso('${a.id}')">Ocultar</button></td>

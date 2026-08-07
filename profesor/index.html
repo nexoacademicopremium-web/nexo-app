@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -1242,6 +1242,9 @@
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
 <script>
+function escHTML(s) {
+  return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 // ============================================================
 // State
 // ============================================================
@@ -1474,7 +1477,7 @@ async function loadDashboardProf() {
         <div class="ses-row">
           <div class="ses-ico ${icoCls}"><i class="ti ${icoIcon}"></i></div>
           <div style="flex:1">
-            <div class="ses-name">${nom} · ${s.asignatura}</div>
+            <div class="ses-name">${escHTML(nom)} · ${escHTML(s.asignatura)}</div>
             <div class="ses-sub">${formatDate(s.fecha)}${s.hora_inicio ? ' · ' + formatTime(s.hora_inicio) + 'h' : ''} · ${(s.duracion_minutos/60).toFixed(1).replace('.0','')}h</div>
           </div>
           <span class="status-pill ${pillCls}">${pillTxt}</span>
@@ -1535,7 +1538,7 @@ function prepararFormSesion() {
     const opt = document.createElement('option');
     opt.value = a.id;
     opt.dataset.nivel = a.nivel || '';
-    opt.textContent = `${u.nombre} ${u.apellidos}`;
+    opt.textContent = `${escHTML(u.nombre)} ${escHTML(u.apellidos)}`;
     sel.appendChild(opt);
   });
   document.getElementById('ses-fecha').value = _fechaHoy();
@@ -1702,7 +1705,7 @@ async function checkSesionPendiente() {
   if (pending && pending.length > 0) {
     const s = pending[0];
     const u = s.profesor?.usuario;
-    const profNombre = u ? `${u.nombre} ${u.apellidos}` : 'un profesor';
+    const profNombre = u ? `${escHTML(u.nombre)} ${escHTML(u.apellidos)}` : 'un profesor';
     document.getElementById('aviso-sesion-pendiente-txt').textContent =
       `Este alumno tiene una sesión del ${formatDate(s.fecha)} con ${profNombre} pendiente de confirmación ` +
       `por la familia. No se puede registrar otra hasta que la familia la confirme, rechace, ` +
@@ -1801,9 +1804,9 @@ async function renderTablaAlumnos() {
     const h = (horasByAlumno[a.id] || 0).toFixed(1);
     const bonoOk = a.horas_bono_restantes > 3;
     return `<tr onclick="abrirFicha('${a.id}')">
-      <td><div style="display:flex;align-items:center;gap:10px"><div class="av">${ini}</div><div><div class="alumno-name">${u.nombre} ${u.apellidos}</div><div class="alumno-det">${(a._asignaturas||[]).join(', ')}</div></div></div></td>
+      <td><div style="display:flex;align-items:center;gap:10px"><div class="av">${ini}</div><div><div class="alumno-name">${escHTML(u.nombre)} ${escHTML(u.apellidos)}</div><div class="alumno-det">${escHTML((a._asignaturas||[]).join(', '))}</div></div></div></td>
       <td><span class="pill ${pillCls}">${nivelLabel(a.nivel)}</span></td>
-      <td>${(a._asignaturas||[]).join(', ')}</td>
+      <td>${escHTML((a._asignaturas||[]).join(', '))}</td>
       <td>${a.horario_habitual||'—'}</td>
       <td><b style="color:#fff">${h}h</b></td>
       <td><span class="pill ${bonoOk ? 'pill-ok' : 'pill-warn'}">${a.horas_bono_restantes}h restantes</span></td>
@@ -1815,7 +1818,7 @@ function filtrarAlumnos() {
   const q = document.getElementById('buscador-alumnos').value.toLowerCase();
   filteredAlumnos = misAlumnos.filter(a => {
     const u = a.usuario || {};
-    const s = `${u.nombre} ${u.apellidos} ${(a._asignaturas||[]).join(' ')} ${a.nivel}`.toLowerCase();
+    const s = `${escHTML(u.nombre)} ${escHTML(u.apellidos)} ${(a._asignaturas||[]).join(' ')} ${a.nivel}`.toLowerCase();
     return s.includes(q);
   });
   renderTablaAlumnos();
@@ -1877,7 +1880,7 @@ async function abrirFicha(alumnoId) {
 
   document.getElementById('ficha-contenido').innerHTML = `
     <div class="ficha-av">${ini}</div>
-    <div class="ficha-name">${u.nombre} ${u.apellidos}</div>
+    <div class="ficha-name">${escHTML(u.nombre)} ${escHTML(u.apellidos)}</div>
     <div class="ficha-sub"><span class="pill ${pillCls}">${nivelLabel(alumno.nivel)}</span></div>
     <div class="ficha-kpi-grid">
       <div class="ficha-kpi"><div class="ficha-kpi-val">${todosTotalH}h</div><div class="ficha-kpi-label">Horas totales</div></div>
@@ -1902,7 +1905,7 @@ async function abrirFicha(alumnoId) {
       </div>
     </div>
     <div class="ficha-section">Información</div>
-    <div class="ficha-row"><span>Asignatura</span><b>${(alumno._asignaturas||[]).join(', ')||'—'}</b></div>
+    <div class="ficha-row"><span>Asignatura</span><b>${escHTML((alumno._asignaturas||[]).join(', ')||'—')}</b></div>
     <div class="ficha-row"><span>Horario</span><b>${alumno.horario_habitual||'—'}</b></div>
     <div class="ficha-row"><span>Modalidad</span><b>${alumno.modalidad==='presencial'?'Presencial':'Online'}</b></div>
     <div class="ficha-row"><span>Desde</span><b>${formatDate(alumno.fecha_inicio)}</b></div>
@@ -1924,7 +1927,7 @@ async function abrirFicha(alumnoId) {
     ${sesList && sesList.length > 0 ? sesList.slice(0,5).map(s => {
       const pm = { confirmada:'st-ok Conf.', pendiente_confirmacion:'st-pend Pend.', rechazada:'st-red Rech.', cancelada:'st-grey Canc.' };
       const [pc, pt] = (pm[s.estado]||'st-grey —').split(' ');
-      return `<div class="ficha-row"><span>${formatShortDate(s.fecha)} · ${s.asignatura}</span><b><span class="status-pill ${pc}" style="font-size:9px">${pt}</span></b></div>`;
+      return `<div class="ficha-row"><span>${formatShortDate(s.fecha)} · ${escHTML(s.asignatura)}</span><b><span class="status-pill ${pc}" style="font-size:9px">${pt}</span></b></div>`;
     }).join('') : '<div style="color:var(--muted);font-size:12px;text-align:center;padding:12px">Sin sesiones</div>'}
     <div style="margin-top:20px">
       <button class="btn-primary" style="width:100%;" onclick="showSection('sesion');nSesShowFormWithAlumno('${alumno.id}');cerrarFicha()">
@@ -1993,7 +1996,7 @@ async function renderCalendarioProf() {
       <div class="cal-full-num">${d}</div>
       ${dayEvs.slice(0,3).map((e,i) => {
         const nom = e.alumno?.usuario ? e.alumno.usuario.nombre.split(' ')[0] : '';
-        return `<div class="cal-full-ev ${evColors[i%4].split(' ')[0]}" title="${nom} · ${e.asignatura||'—'}">${nom || e.asignatura||'—'}</div>`;
+        return `<div class="cal-full-ev ${evColors[i%4].split(' ')[0]}" title="${escHTML(nom)} · ${e.asignatura||'—'}">${nom || e.asignatura||'—'}</div>`;
       }).join('')}
       ${dayEvs.length > 3 ? `<div style="font-size:8px;color:var(--muted)">+${dayEvs.length-3}</div>` : ''}
     </div>`;
@@ -2030,7 +2033,7 @@ function clickDiaProf(dateStr) {
       const horas = (e.duracion_minutos/60).toFixed(1).replace('.0','')+'h';
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:.5px solid var(--border2)">
         <div>
-          <div style="color:#fff;font-size:13px;font-weight:500">${nom}</div>
+          <div style="color:#fff;font-size:13px;font-weight:500">${escHTML(nom)}</div>
           <div style="color:var(--muted);font-size:11px">${e.asignatura||'—'}${e.hora_inicio ? ' · ' + _formatTimePro(e.hora_inicio) + 'h' : ''} · ${horas}</div>
           ${e.notas ? '<div style="color:var(--muted);font-size:11px;margin-top:2px">' + e.notas + '</div>' : ''}
         </div>
@@ -2294,8 +2297,8 @@ async function loadActividad() {
             const nom = s.alumno?.usuario ? s.alumno.usuario.nombre + ' ' + s.alumno.usuario.apellidos : '—';
             return `<tr onclick="abrirFicha('${s.alumno_id}')">
               <td>${formatShortDate(s.fecha)}</td>
-              <td><b style="color:#fff">${nom}</b></td>
-              <td>${s.asignatura}</td>
+              <td><b style="color:#fff">${escHTML(nom)}</b></td>
+              <td>${escHTML(s.asignatura)}</td>
               <td>${(s.duracion_minutos/60).toFixed(1).replace('.0','')}h</td>
               <td><span class="status-pill ${pc}">${pt}</span></td>
             </tr>`;
@@ -2327,8 +2330,8 @@ async function loadAvisos() {
   } else {
     el.innerHTML = avisos.map(a => `
       <div class="aviso-row">
-        <div class="aviso-titulo">${a.titulo}</div>
-        <div class="aviso-cuerpo">${a.contenido}</div>
+        <div class="aviso-titulo">${escHTML(a.titulo)}</div>
+        <div class="aviso-cuerpo">${escHTML(a.contenido)}</div>
         <div class="aviso-fecha">${formatDate(a.created_at?.split('T')[0])}</div>
       </div>
     `).join('');
@@ -2403,8 +2406,8 @@ async function nSesLoadHist() {
           <i class="ti ${icoIcon}" style="color:${icoColor}"></i>
         </div>
         <div class="nses-hist-body">
-          <div class="nses-hist-nom">${nom}</div>
-          <div class="nses-hist-sub">${formatDate(s.fecha)}${s.hora_inicio ? ' · ' + formatTime(s.hora_inicio) : ''} · ${horas}h · ${s.asignatura || '—'}</div>
+          <div class="nses-hist-nom">${escHTML(nom)}</div>
+          <div class="nses-hist-sub">${formatDate(s.fecha)}${s.hora_inicio ? ' · ' + formatTime(s.hora_inicio) : ''} · ${horas}h · ${escHTML(s.asignatura || '—')}</div>
         </div>
         <span class="status-pill ${pc}">${pt}</span>
         <button class="btn-ghost" style="margin-left:6px;font-size:11px;padding:5px 10px;flex-shrink:0" onclick="nSesVerDetalle('${s.id}',event)">
@@ -2521,7 +2524,7 @@ function _nSesRenderAsig(asig, ai, prevTemasMap) {
     <div class="nses-asig-block" id="nses-asig-block-${ai}">
       <div class="nses-asig-hdr" onclick="nSesToggleAsigBody(${ai})">
         <i class="ti ti-chevron-right nses-asig-chevron" id="nses-asig-chev-${ai}"></i>
-        <span class="nses-asig-nom">${asig.nombre}</span>
+        <span class="nses-asig-nom">${escHTML(asig.nombre)}</span>
       </div>
       <div class="nses-asig-body" id="nses-asig-body-${ai}">
         <div class="nses-asig-time-row">
@@ -2976,7 +2979,7 @@ async function nSesRenderExamenes() {
       : `<input class="field-input" type="text" id="nses-extema-${i}" placeholder="Tema del examen">`;
     return `
       <div style="background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
-        <div style="color:var(--soft);font-size:13px;font-weight:600;margin-bottom:10px">${asig.nombre}</div>
+        <div style="color:var(--soft);font-size:13px;font-weight:600;margin-bottom:10px">${escHTML(asig.nombre)}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div>
             <label class="field-label" style="margin-top:0;font-size:11px">Fecha del examen</label>
@@ -3133,7 +3136,7 @@ async function nSesVerDetalle(sesId, evt) {
 
   let html = `<div class="nses-det-section">
     <div class="nses-det-title">Información general</div>
-    <div class="nses-det-row"><span>Alumno</span><b>${nom}</b></div>
+    <div class="nses-det-row"><span>Alumno</span><b>${escHTML(nom)}</b></div>
     <div class="nses-det-row"><span>Fecha</span><b>${formatDate(ses.fecha)}${ses.hora_inicio ? ' · ' + formatTime(ses.hora_inicio) : ''}</b></div>
     <div class="nses-det-row"><span>Duración</span><b>${(ses.duracion_minutos / 60).toFixed(1).replace('.0', '')}h</b></div>
     <div class="nses-det-row"><span>Estado</span><b><span class="status-pill ${pc}" style="font-size:10px">${pt}</span></b></div>
@@ -3154,19 +3157,19 @@ async function nSesVerDetalle(sesId, evt) {
         batHtml = `<div style="margin:6px 0 2px"><div class="nses-bat-tag" style="margin-bottom:6px"><i class="ti ti-chart-bar"></i> Batería respondida</div>${rows}</div>`;
       }
       html += `<div class="nses-det-section" style="margin-top:14px;padding-top:12px;border-top:.5px solid var(--border)">
-        <div class="nses-det-title">${t.asignatura} — ${t.tema}</div>
+        <div class="nses-det-title">${escHTML(t.asignatura)} — ${escHTML(t.tema)}</div>
         ${t.tiempo_minutos ? `<div class="nses-det-row"><span>Tiempo</span><b>${t.tiempo_minutos} min</b></div>` : ''}
         ${t.categoria_idioma ? `<div class="nses-det-row"><span>Categoría</span><b>${_catLabels[t.categoria_idioma] || t.categoria_idioma}</b></div>` : ''}
         ${batHtml}
         ${t.ejercicios_propuestos > 0 ? `<div class="nses-det-row"><span>Ejercicios</span><b>${t.ejercicios_propuestos} prop · ${t.ejercicios_solo} solo · ${t.ejercicios_ayuda} ayuda · ${t.ejercicios_sin_resolver} sin</b></div>` : ''}
         ${t.tipo_ejercicios?.length ? `<div class="nses-det-row"><span>Tipo</span><b>${t.tipo_ejercicios.join(', ')}</b></div>` : ''}
-        ${t.donde_falla ? `<div class="nses-det-row"><span>Errores</span><b>${mapaLabel[t.donde_falla] || t.donde_falla}</b></div>` : ''}
-        ${t.detecta_errores ? `<div class="nses-det-row"><span>Detecta errores</span><b>${mapaLabel[t.detecta_errores] || t.detecta_errores}</b></div>` : ''}
-        ${t.actitud_dificultad ? `<div class="nses-det-row"><span>Dificultad</span><b>${mapaLabel[t.actitud_dificultad] || t.actitud_dificultad}</b></div>` : ''}
-        ${t.actitud_ritmo ? `<div class="nses-det-row"><span>Ritmo</span><b>${mapaLabel[t.actitud_ritmo] || t.actitud_ritmo}</b></div>` : ''}
+        ${t.donde_falla ? `<div class="nses-det-row"><span>Errores</span><b>${escHTML(mapaLabel[t.donde_falla] || t.donde_falla)}</b></div>` : ''}
+        ${t.detecta_errores ? `<div class="nses-det-row"><span>Detecta errores</span><b>${escHTML(mapaLabel[t.detecta_errores] || t.detecta_errores)}</b></div>` : ''}
+        ${t.actitud_dificultad ? `<div class="nses-det-row"><span>Dificultad</span><b>${escHTML(mapaLabel[t.actitud_dificultad] || t.actitud_dificultad)}</b></div>` : ''}
+        ${t.actitud_ritmo ? `<div class="nses-det-row"><span>Ritmo</span><b>${escHTML(mapaLabel[t.actitud_ritmo] || t.actitud_ritmo)}</b></div>` : ''}
         ${t.test_inicio_propuestos > 0 ? `<div class="nses-det-row"><span>Test inicio</span><b>${t.test_inicio_propuestos} prop · ${t.test_inicio_solo} solo · ${t.test_inicio_ayuda} ayuda · ${t.test_inicio_sin_resolver} sin</b></div>` : ''}
         ${t.test_cierre_propuestos > 0 ? `<div class="nses-det-row"><span>Test cierre</span><b>${t.test_cierre_propuestos} prop · ${t.test_cierre_solo} solo · ${t.test_cierre_ayuda} ayuda · ${t.test_cierre_sin_resolver} sin</b></div>` : ''}
-        ${t.nota_profesor ? `<div class="nses-det-row" style="flex-direction:column;align-items:flex-start;gap:4px"><span>Nota</span><b style="text-align:left">${t.nota_profesor}</b></div>` : ''}
+        ${t.nota_profesor ? `<div class="nses-det-row" style="flex-direction:column;align-items:flex-start;gap:4px"><span>Nota</span><b style="text-align:left">${escHTML(t.nota_profesor)}</b></div>` : ''}
       </div>`;
     });
   }
@@ -3237,9 +3240,9 @@ async function loadTestsProf() {
       ${t.generado_ia ? `<div class="test-ia-badge"><i class="ti ti-brain" style="font-size:9px;margin-right:3px"></i>IA</div>` : ''}
       <div class="test-vis-badge ${t.visible ? 'st-ok' : 'st-grey'}">${t.visible ? 'Visible' : 'Oculto'}</div>
       <div class="test-prof-ico"><i class="ti ${meta.ico}"></i></div>
-      <div class="test-prof-titulo">${t.titulo}</div>
+      <div class="test-prof-titulo">${escHTML(t.titulo)}</div>
       <div class="test-prof-meta">
-        ${t.asignatura || '—'}${alumNom !== 'General' ? ` · ${alumNom}` : ''}
+        ${escHTML(t.asignatura || '—')}${alumNom !== 'General' ? ` · ${escHTML(alumNom)}` : ''}
       </div>
       <span class="test-prof-result" style="background:${resBg};color:${resClr}">${resTxt}</span>
       <div class="test-prof-actions">
@@ -3296,7 +3299,7 @@ async function abrirModalTestProf() {
   _cargarAlumnosProf();
   const selA = document.getElementById('tp-alumno');
   selA.innerHTML = '<option value="">— Seleccionar alumno —</option>' +
-    _tpAlumnosData.map(a => `<option value="${a.id}">${a.nombre} ${a.apellidos || ''}</option>`).join('');
+    _tpAlumnosData.map(a => `<option value="${a.id}">${escHTML(a.nombre)} ${escHTML(a.apellidos || '')}</option>`).join('');
   const selAs = document.getElementById('tp-asignatura');
   selAs.innerHTML = '<option value="">— Primero selecciona un alumno —</option>';
   selAs.disabled = true;
@@ -3316,7 +3319,7 @@ async function editarTestProf(id) {
   // Poblar alumno
   const selA = document.getElementById('tp-alumno');
   selA.innerHTML = '<option value="">— Seleccionar alumno —</option>' +
-    _tpAlumnosData.map(a => `<option value="${a.id}" ${a.id === t.alumno_id ? 'selected' : ''}>${a.nombre} ${a.apellidos || ''}</option>`).join('');
+    _tpAlumnosData.map(a => `<option value="${a.id}" ${a.id === t.alumno_id ? 'selected' : ''}>${escHTML(a.nombre)} ${escHTML(a.apellidos || '')}</option>`).join('');
   // Poblar asignatura del alumno guardado
   if (t.alumno_id) {
     const alumno = _tpAlumnosData.find(a => a.id === t.alumno_id);
@@ -3423,7 +3426,7 @@ async function abrirModalTestPdf() {
   _cargarAlumnosProf();
   const selA = document.getElementById('tpdf-alumno');
   selA.innerHTML = '<option value="">— Seleccionar alumno —</option>' +
-    _tpAlumnosData.map(a => `<option value="${a.id}">${a.nombre} ${a.apellidos || ''}</option>`).join('');
+    _tpAlumnosData.map(a => `<option value="${a.id}">${escHTML(a.nombre)} ${escHTML(a.apellidos || '')}</option>`).join('');
   document.getElementById('tpdf-asignatura').innerHTML = '<option value="">— Primero selecciona un alumno —</option>';
   document.getElementById('tpdf-asignatura').disabled = true;
   document.getElementById('tpdf-tema').innerHTML = '<option value="">— Primero selecciona asignatura —</option>';
@@ -3619,7 +3622,7 @@ async function loadTareasProf() {
       if (!seen.has(t.alumno_id)) {
         seen.add(t.alumno_id);
         const nom = t.alumno?.usuario ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos}` : t.alumno_id;
-        opts += `<option value="${t.alumno_id}">${nom}</option>`;
+        opts += `<option value="${t.alumno_id}">${escHTML(nom)}</option>`;
       }
     });
     selAlumno.innerHTML = opts;
@@ -3707,7 +3710,7 @@ function _renderTareasProf() {
           limHtml = `<span class="tarea-card-limit"><i class="ti ti-calendar" style="font-size:10px"></i>${d.getDate()} ${meses[d.getMonth()]}</span>`;
         }
         const temaHtml = t.tema
-          ? `<div class="tarea-card-tema"><i class="ti ti-bookmark" style="font-size:10px;flex-shrink:0"></i>${t.tema}</div>`
+          ? `<div class="tarea-card-tema"><i class="ti ti-bookmark" style="font-size:10px;flex-shrink:0"></i>${escHTML(t.tema)}</div>`
           : '';
         return `<div class="tarea-card" onclick="openTareaProf('${t.id}')">
           ${novedad}
@@ -3715,7 +3718,7 @@ function _renderTareasProf() {
             <span class="status-pill ${pc}" style="font-size:10px">${pt}</span>
           </div>
           ${temaHtml}
-          <div class="tarea-card-titulo">${t.titulo}</div>
+          <div class="tarea-card-titulo">${escHTML(t.titulo)}</div>
           <div class="tarea-card-foot">
             ${limHtml}
             <i class="ti ti-arrow-right" style="color:var(--muted);font-size:13px;margin-left:auto"></i>
@@ -3725,7 +3728,7 @@ function _renderTareasProf() {
       return `<div style="margin-bottom:20px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 14px;background:${ac.bg};border-radius:10px;border-left:3px solid ${ac.tx}">
           <i class="ti ti-book" style="color:${ac.tx};font-size:14px;flex-shrink:0"></i>
-          <span style="font-size:12px;font-weight:700;color:${ac.tx}">${ag.asig}</span>
+          <span style="font-size:12px;font-weight:700;color:${ac.tx}">${escHTML(ag.asig)}</span>
           <span style="color:${ac.tx};opacity:.65;font-size:11px;margin-left:auto">${ag.tareas.length} tarea${ag.tareas.length!==1?'s':''}</span>
         </div>
         <div class="tareas-grid">${cards}</div>
@@ -3757,7 +3760,7 @@ function openNuevaTarea() {
   sel.innerHTML = '<option value="">— Seleccionar alumno —</option>';
   misAlumnos.forEach(a => {
     const nom = a.usuario ? `${a.usuario.nombre} ${a.usuario.apellidos}` : a.id;
-    sel.innerHTML += `<option value="${a.id}">${nom}</option>`;
+    sel.innerHTML += `<option value="${a.id}">${escHTML(nom)}</option>`;
   });
   const asgSel = document.getElementById('nt-asignatura');
   asgSel.innerHTML = '<option value="">— Primero selecciona un alumno —</option>';
@@ -3781,7 +3784,7 @@ function ntAlumnoChange() {
   const alumno = misAlumnos.find(a => a.id === alumnoId);
   asgSel.innerHTML = '<option value="">— Sin asignatura —</option>';
   (alumno?._asignaturas || []).forEach(nombre => {
-    asgSel.innerHTML += `<option value="${nombre}">${nombre}</option>`;
+    asgSel.innerHTML += `<option value="${escHTML(nombre)}">${escHTML(nombre)}</option>`;
   });
   asgSel.disabled = false;
 }
@@ -3887,9 +3890,9 @@ function _renderTareaProfModal(t) {
   let html = `<div style="padding:16px 20px 12px;border-bottom:.5px solid var(--border2)">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap">
       <span class="status-pill ${pc}" style="font-size:10px">${pt}</span>
-      <span style="color:var(--muted);font-size:12px">${nom} · ${t.asignatura || '—'}</span>
+      <span style="color:var(--muted);font-size:12px">${escHTML(nom)} · ${escHTML(t.asignatura || '—')}</span>
     </div>
-    <h3 style="color:#fff;font-size:15px;font-weight:600;margin:0 0 4px">${t.titulo}</h3>
+    <h3 style="color:#fff;font-size:15px;font-weight:600;margin:0 0 4px">${escHTML(t.titulo)}</h3>
     ${t.fecha_limite ? `<div style="color:var(--muted);font-size:11px"><i class="ti ti-clock" style="font-size:11px"></i> Límite: ${formatDate(t.fecha_limite)}</div>` : ''}
   </div>`;
 
@@ -3897,7 +3900,7 @@ function _renderTareaProfModal(t) {
   const label = s => `<div style="color:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">${s}</div>`;
 
   if (t.descripcion) {
-    html += S(label('Instrucciones') + `<p style="color:#ddd;font-size:13px;margin:0;white-space:pre-line">${t.descripcion}</p>`);
+    html += S(label('Instrucciones') + `<p style="color:#ddd;font-size:13px;margin:0;white-space:pre-line">${escHTML(t.descripcion)}</p>`);
   }
 
   if (t.archivo_enunciado_url) {
@@ -4164,15 +4167,15 @@ function _pMatBc() {
   if (alumnoId != null) {
     const al  = misAlumnos.find(a => a.id === alumnoId);
     const nom = al ? `${al.usuario?.nombre||''} ${al.usuario?.apellidos||''}`.trim() : '—';
-    parts.push(`<span class="mat-bc-link" onclick="_pMatGo('${alumnoId}',null,null)">${nom}</span>`);
+    parts.push(`<span class="mat-bc-link" onclick="_pMatGo('${alumnoId}',null,null)">${escHTML(nom)}</span>`);
   }
   if (asigId != null) {
     const nom = pAllAsignaturas.find(a => a.id === asigId)?.nombre || '—';
-    parts.push(`<span class="mat-bc-link" onclick="_pMatGo('${alumnoId}',${asigId},null)">${nom}</span>`);
+    parts.push(`<span class="mat-bc-link" onclick="_pMatGo('${alumnoId}',${asigId},null)">${escHTML(nom)}</span>`);
   }
   if (temaId != null) {
     const nom = temaId === '__sin__' ? 'Sin tema' : temaId;
-    parts.push(`<span class="mat-bc-cur">${nom}</span>`);
+    parts.push(`<span class="mat-bc-cur">${escHTML(nom)}</span>`);
   }
   return `<div class="mat-nav-bar">
     <button class="mat-back-btn" onclick="_pMatBack()"><i class="ti ti-arrow-left"></i> Volver</button>
@@ -4194,7 +4197,7 @@ function _pMatRenderAlumnos(c) {
     const cnt = Object.entries(pMatAlumnoMap).filter(([,ids]) => ids.includes(aid)).length;
     return `<div class="mat-asig-bubble" style="--ab-clr:#2563eb" onclick="_pMatGo('${aid}',null,null)">
       <div class="mat-asig-ico"><i class="ti ti-user-circle"></i></div>
-      <span class="mat-asig-label">${nom}</span>
+      <span class="mat-asig-label">${escHTML(nom)}</span>
       <span class="mat-asig-count">${cnt} archivo${cnt!==1?'s':''}</span>
     </div>`;
   }).join('');
@@ -4212,7 +4215,7 @@ function _pMatRenderAsigs(c) {
     const meta = getSubjectMeta(nom);
     return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo('${alumnoId}',${aid},null)">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
-      <span class="mat-asig-label">${nom}</span>
+      <span class="mat-asig-label">${escHTML(nom)}</span>
       <span class="mat-asig-count">${asigCnt[aid]} archivo${asigCnt[aid]!==1?'s':''}</span>
     </div>`;
   }).join('');
@@ -4230,7 +4233,7 @@ function _pMatRenderTemas(c) {
     const meta  = getTopicMeta(label);
     return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_pMatGo('${alumnoId}',${asigId},${JSON.stringify(nom).replace(/"/g,'&quot;')})">
       <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
-      <span class="mat-asig-label">${label}</span>
+      <span class="mat-asig-label">${escHTML(label)}</span>
       <span class="mat-asig-count">${temaCnt[nom]} archivo${temaCnt[nom]!==1?'s':''}</span>
     </div>`;
   }).join('');
@@ -4255,8 +4258,8 @@ function _pMatRenderPdfs(c) {
     return `<div class="mat-pdf-card${isPerso?' excl':''}" style="--ab-clr:${cc}">
       <div class="mat-pdf-ico"><i class="ti ${ico}"></i></div>
       <div class="mat-pdf-body">
-        <div class="mat-pdf-nom">${m.titulo}</div>
-        <div class="mat-pdf-tipo">${isPerso ? `<i class="ti ti-crown" style="font-size:10px"></i> Excl. · ${nombres}` : (isPdf?'PDF':'Recurso')}</div>
+        <div class="mat-pdf-nom">${escHTML(m.titulo)}</div>
+        <div class="mat-pdf-tipo">${isPerso ? `<i class="ti ti-crown" style="font-size:10px"></i> Excl. · ${escHTML(nombres)}` : (isPdf?'PDF':'Recurso')}</div>
       </div>
       <div class="mat-pdf-actions">
         ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" rel="noopener" class="btn-edit">Ver</a>` : ''}
@@ -4295,7 +4298,7 @@ function pMatAlumnoChange() {
   if (!asigIds.length) { asel.innerHTML = '<option value="">— Sin asignaturas asignadas —</option>'; asel.disabled = true; return; }
   const asigs = pAllAsignaturas.filter(a => asigIds.includes(a.id));
   asel.innerHTML = '<option value="">— Seleccionar asignatura —</option>' +
-    asigs.map(a => `<option value="${a.id}">${a.nombre}</option>`).join('');
+    asigs.map(a => `<option value="${a.id}">${escHTML(a.nombre)}</option>`).join('');
   asel.disabled = false;
 }
 

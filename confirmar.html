@@ -67,6 +67,9 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="js/config.js"></script>
 <script>
+function escHTML(s) {
+  return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 const params  = new URLSearchParams(window.location.search);
 const sid     = params.get('id');
 const token   = params.get('token');
@@ -117,12 +120,12 @@ function renderDetails(sesion) {
   const alumno = sesion.alumno?.usuario;
   return `
     <div class="detail-grid">
-      <div class="detail-row"><span>Profesor</span><b>${prof ? prof.nombre + ' ' + prof.apellidos : '—'}</b></div>
-      <div class="detail-row"><span>Asignatura</span><b>${sesion.asignatura}</b></div>
+      <div class="detail-row"><span>Profesor</span><b>${prof ? escHTML(prof.nombre) + ' ' + escHTML(prof.apellidos) : '—'}</b></div>
+      <div class="detail-row"><span>Asignatura</span><b>${escHTML(sesion.asignatura)}</b></div>
       <div class="detail-row"><span>Fecha</span><b>${formatDate(sesion.fecha)}</b></div>
       <div class="detail-row"><span>Hora</span><b>${sesion.hora_inicio ? sesion.hora_inicio.substring(0,5) + 'h' : '—'}</b></div>
       <div class="detail-row"><span>Duración</span><b>${sesion.duracion_minutos} minutos</b></div>
-      ${sesion.contenido_trabajado ? `<div class="detail-row"><span>Contenido</span><b>${sesion.contenido_trabajado}</b></div>` : ''}
+      ${sesion.contenido_trabajado ? `<div class="detail-row"><span>Contenido</span><b>${escHTML(sesion.contenido_trabajado)}</b></div>` : ''}
     </div>
   `;
 }
