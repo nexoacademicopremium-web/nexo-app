@@ -9,6 +9,27 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) return new Response(JSON.stringify({ error: 'Sin autorización' }), { status: 401, headers: corsHeaders })
+
+  const callerClient = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    { global: { headers: { Authorization: authHeader } } }
+  )
+  const { data: { user: caller } } = await callerClient.auth.getUser()
+  if (!caller) return new Response(JSON.stringify({ error: 'Token inválido' }), { status: 401, headers: corsHeaders })
+
+  const { data: callerProfile } = await callerClient
+    .from('usuarios')
+    .select('rol')
+    .eq('id', caller.id)
+    .single()
+
+  if (callerProfile?.rol !== 'admin') {
+    return new Response(JSON.stringify({ error: 'Solo el administrador puede generar informes' }), { status: 403, headers: corsHeaders })
+  }
+
   try {
     const { alumno_id, tipo, fecha_inicio, fecha_fin } = await req.json()
 

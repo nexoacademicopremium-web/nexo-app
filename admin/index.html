@@ -2464,6 +2464,11 @@ async function eliminarProfesor(profId) {
   const p = allProfesores.find(x => x.id === profId);
   if (!p) return;
   const nombre = `${p.usuario?.nombre || ''} ${p.usuario?.apellidos || ''}`.trim();
+  const { count: nSes } = await db.from('sesiones').select('id', { count: 'exact', head: true }).eq('profesor_id', profId);
+  if (nSes > 0) {
+    showToast(`No se puede eliminar: ${nombre} tiene ${nSes} sesión/es registrada/s. Elimínalas primero desde Sesiones.`, 'error');
+    return;
+  }
   if (!confirm(`¿Eliminar definitivamente al profesor ${nombre}? Esta acción no se puede deshacer.`)) return;
   const usuarioId = p.usuario_id || p.usuario?.id;
   const { error } = await db.from('usuarios').delete().eq('id', usuarioId);
@@ -3164,7 +3169,11 @@ async function loadSesionesAdmin() {
 
   if (aVal)   query = query.eq('alumno_id', aVal);
   if (pVal)   query = query.eq('profesor_id', pVal);
-  if (mVal)   query = query.gte('fecha', mVal + '-01').lte('fecha', mVal + '-31');
+  if (mVal) {
+    const [_my, _mm] = mVal.split('-').map(Number);
+    const _lastDay = new Date(_my, _mm, 0).getDate();
+    query = query.gte('fecha', mVal + '-01').lte('fecha', mVal + '-' + String(_lastDay).padStart(2, '0'));
+  }
   if (estVal) query = query.eq('estado', estVal);
 
   const from = sesionesPageNum * SESIONES_PAGE_SIZE;
@@ -3762,7 +3771,7 @@ function abrirModalBono() {
   document.getElementById('bono-precio-base').value = '';
   document.getElementById('bono-descuento').value = '0';
   document.getElementById('bono-precio-final').value = '';
-  document.getElementById('bono-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('bono-fecha').value = _fechaHoy();
   document.getElementById('bono-pago').value = 'pagado';
   document.getElementById('bono-estado').value = '';
   document.getElementById('bono-estado-display').style.display = 'none';
@@ -3908,7 +3917,7 @@ async function guardarBono() {
 
     if (!fechaCompra) { showToast('La fecha es obligatoria', 'error'); btn.disabled = false; return; }
 
-    const hoy = new Date().toISOString().split('T')[0];
+    const hoy = _fechaHoy();
 
     if (editBonoId) {
       // ── EDITAR ────────────────────────────────────────────────

@@ -1538,7 +1538,7 @@ function prepararFormSesion() {
     opt.textContent = `${u.nombre} ${u.apellidos}`;
     sel.appendChild(opt);
   });
-  document.getElementById('ses-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('ses-fecha').value = _fechaHoy();
   resetSliders();
 }
 

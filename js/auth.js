@@ -26,7 +26,7 @@ async function requireAuth(requiredRole) {
     return null;
   }
 
-  if (requiredRole && usuario.rol !== requiredRole && usuario.rol !== 'admin') {
+  if (requiredRole && usuario.rol !== requiredRole) {
     if (usuario.rol === 'alumno')   window.location.href = BASE_PATH + '/alumno/index.html';
     if (usuario.rol === 'profesor') window.location.href = BASE_PATH + '/profesor/index.html';
     if (usuario.rol === 'admin')    window.location.href = BASE_PATH + '/admin/index.html';
@@ -67,6 +67,11 @@ function getInitials(nombre, apellidos) {
   const a = (apellidos || '').trim();
   if (!n) return '?';
   return (n[0] + (a ? a[0] : '')).toUpperCase();
+}
+
+function _fechaHoy() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 }
 
 function formatDate(dateStr) {

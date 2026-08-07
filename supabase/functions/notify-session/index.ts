@@ -24,6 +24,15 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     )
 
+    const { data: { user: caller } } = await supabase.auth.getUser()
+    if (!caller) return new Response(JSON.stringify({ error: 'Token inválido' }), { status: 401, headers: corsHeaders })
+
+    const { data: callerProfile } = await supabase
+      .from('usuarios')
+      .select('rol')
+      .eq('id', caller.id)
+      .single()
+
     const { session_id } = await req.json()
     if (!session_id) return new Response(JSON.stringify({ error: 'Falta session_id' }), { status: 400, headers: corsHeaders })
 
@@ -36,7 +45,7 @@ serve(async (req) => {
     const { data: sesion, error: sesErr } = await adminClient
       .from('sesiones')
       .select(`
-        id, asignatura, fecha, hora_inicio, duracion_minutos, contenido_trabajado, confirmation_token,
+        id, asignatura, fecha, hora_inicio, duracion_minutos, contenido_trabajado, confirmation_token, profesor_id,
         alumno:alumnos(
           usuario:usuarios(nombre, apellidos, email)
         ),
@@ -49,6 +58,17 @@ serve(async (req) => {
 
     if (sesErr || !sesion) {
       return new Response(JSON.stringify({ error: 'Sesión no encontrada' }), { status: 404, headers: corsHeaders })
+    }
+
+    if (callerProfile?.rol !== 'admin') {
+      const { data: profData } = await adminClient
+        .from('profesores')
+        .select('id')
+        .eq('usuario_id', caller.id)
+        .single()
+      if (!profData || profData.id !== sesion.profesor_id) {
+        return new Response(JSON.stringify({ error: 'No autorizado para notificar esta sesión' }), { status: 403, headers: corsHeaders })
+      }
     }
 
     const alumnoUser  = sesion.alumno?.usuario
