@@ -81,17 +81,11 @@ async function loadSession() {
     return;
   }
 
-  // Fetch session details (public RPC without auth)
-  const { data: sesion, error } = await db
-    .from('sesiones')
-    .select(`
-      *,
-      alumno:alumnos(usuario_id, usuario:usuarios(nombre, apellidos)),
-      profesor:profesores(usuario_id, usuario:usuarios(nombre, apellidos))
-    `)
-    .eq('id', sid)
-    .eq('confirmation_token', token)
-    .single();
+  // Fetch session details via RPC (no auth required — token is the credential)
+  const { data: sesion, error } = await db.rpc('get_sesion_por_token', {
+    p_session_id: sid,
+    p_token:      token,
+  });
 
   if (error || !sesion) {
     renderError('Enlace inválido o sesión no encontrada.');
