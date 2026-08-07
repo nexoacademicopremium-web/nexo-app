@@ -130,9 +130,8 @@ serve(async (req) => {
     }
 
     const { error: credErr } = await adminClient.from('admin_credenciales').insert({
-      usuario_id:     userId,
+      usuario_id: userId,
       username,
-      password_plain: password,
     })
     if (credErr) {
       // Non-fatal: user is created, just credentials won't be stored

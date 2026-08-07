@@ -50,11 +50,6 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: corsHeaders })
     }
 
-    await adminClient
-      .from('admin_credenciales')
-      .update({ password_plain: password, updated_at: new Date().toISOString() })
-      .eq('usuario_id', user_id)
-
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })

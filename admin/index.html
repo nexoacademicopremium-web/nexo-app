@@ -3064,27 +3064,24 @@ async function cargarCredencialesAdmin(alumnoId) {
     return;
   }
   el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
-  const { data, error } = await db.from('admin_credenciales').select('username, password_plain').eq('usuario_id', userId).maybeSingle();
+  const { data, error } = await db.from('admin_credenciales').select('username').eq('usuario_id', userId).maybeSingle();
   if (error) { el.innerHTML = `<p style="color:var(--red);font-size:12px">${escHTML(error.message)}</p>`; return; }
   if (!data) {
     el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:4px 0">Sin credenciales guardadas (usuario creado antes del nuevo sistema).</p>';
     return;
   }
   el.innerHTML = `
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;align-items:flex-end">
       <div style="flex:1">
-        <label class="fl" style="margin-top:0">Usuario</label>
+        <label class="fl" style="margin-top:0">Usuario / Email</label>
         <div style="display:flex;gap:6px">
           <input class="fi" id="cred-alu-username" value="${escHTML(data.username)}" readonly style="font-family:monospace">
           <button class="btn-ghost" onclick="copiarTexto('cred-alu-username')" title="Copiar"><i class="ti ti-copy"></i></button>
         </div>
       </div>
-      <div style="flex:1">
-        <label class="fl" style="margin-top:0">Contraseña actual</label>
-        <div style="display:flex;gap:6px">
-          <input class="fi" id="cred-alu-password" value="${escHTML(data.password_plain)}" readonly style="font-family:monospace">
-          <button class="btn-ghost" onclick="copiarTexto('cred-alu-password')" title="Copiar"><i class="ti ti-copy"></i></button>
-        </div>
+      <div style="flex:1;color:var(--muted);font-size:12px;padding-bottom:10px">
+        <i class="ti ti-lock" style="font-size:14px;vertical-align:middle;margin-right:4px"></i>Contraseña oculta.
+        Usa <b style="color:var(--soft)">Cambiar contraseña</b> para asignarle una nueva y comunicársela.
       </div>
     </div>`;
 }
@@ -3099,27 +3096,24 @@ async function cargarCredencialesAdminProf(profId) {
     return;
   }
   el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
-  const { data, error } = await db.from('admin_credenciales').select('username, password_plain').eq('usuario_id', userId).maybeSingle();
+  const { data, error } = await db.from('admin_credenciales').select('username').eq('usuario_id', userId).maybeSingle();
   if (error) { el.innerHTML = `<p style="color:var(--red);font-size:12px">${escHTML(error.message)}</p>`; return; }
   if (!data) {
     el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:4px 0">Sin credenciales guardadas (usuario creado antes del nuevo sistema).</p>';
     return;
   }
   el.innerHTML = `
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;align-items:flex-end">
       <div style="flex:1">
-        <label class="fl" style="margin-top:0">Usuario</label>
+        <label class="fl" style="margin-top:0">Usuario / Email</label>
         <div style="display:flex;gap:6px">
           <input class="fi" id="cred-prof-username" value="${escHTML(data.username)}" readonly style="font-family:monospace">
           <button class="btn-ghost" onclick="copiarTexto('cred-prof-username')" title="Copiar"><i class="ti ti-copy"></i></button>
         </div>
       </div>
-      <div style="flex:1">
-        <label class="fl" style="margin-top:0">Contraseña actual</label>
-        <div style="display:flex;gap:6px">
-          <input class="fi" id="cred-prof-password" value="${escHTML(data.password_plain)}" readonly style="font-family:monospace">
-          <button class="btn-ghost" onclick="copiarTexto('cred-prof-password')" title="Copiar"><i class="ti ti-copy"></i></button>
-        </div>
+      <div style="flex:1;color:var(--muted);font-size:12px;padding-bottom:10px">
+        <i class="ti ti-lock" style="font-size:14px;vertical-align:middle;margin-right:4px"></i>Contraseña oculta.
+        Usa <b style="color:var(--soft)">Cambiar contraseña</b> para asignarle una nueva y comunicársela.
       </div>
     </div>`;
 }
