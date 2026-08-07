@@ -975,8 +975,8 @@
 
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:4px">
         <div style="flex:1;min-width:140px">
-          <label class="field-label" style="margin-top:0">Fecha límite</label>
-          <input class="field-input" id="nt-fecha-limite" type="date">
+          <label class="field-label" style="margin-top:0">Fecha límite <span style="color:var(--red);font-size:10px">*</span></label>
+          <input class="field-input" id="nt-fecha-limite" type="date" required>
         </div>
       </div>
 
@@ -1993,7 +1993,7 @@ async function renderCalendarioProf() {
       <div class="cal-full-num">${d}</div>
       ${dayEvs.slice(0,3).map((e,i) => {
         const nom = e.alumno?.usuario ? e.alumno.usuario.nombre.split(' ')[0] : '';
-        return `<div class="cal-full-ev ${evColors[i%4].split(' ')[0]}" title="${nom} · ${e.asignatura||'—'}" onclick="event.stopPropagation();abrirEditClaseProf('${e.id}')" style="cursor:pointer">${nom || e.asignatura||'—'}</div>`;
+        return `<div class="cal-full-ev ${evColors[i%4].split(' ')[0]}" title="${nom} · ${e.asignatura||'—'}">${nom || e.asignatura||'—'}</div>`;
       }).join('')}
       ${dayEvs.length > 3 ? `<div style="font-size:8px;color:var(--muted)">+${dayEvs.length-3}</div>` : ''}
     </div>`;
@@ -3807,6 +3807,13 @@ async function ntAsigChange() {
 async function guardarTarea(e) {
   e.preventDefault();
   const btn = document.getElementById('btn-guardar-tarea');
+
+  // Validar fecha límite obligatoria
+  if (!document.getElementById('nt-fecha-limite').value) {
+    showToast('La fecha límite es obligatoria', 'error');
+    document.getElementById('nt-fecha-limite').focus();
+    return;
+  }
 
   // Validar tema obligatorio si el desplegable está visible
   const temaWrap = document.getElementById('nt-tema-wrap');
