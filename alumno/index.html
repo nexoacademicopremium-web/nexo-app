@@ -1072,7 +1072,7 @@ async function loadDashboard() {
   document.getElementById('kpi-sesiones-sub').textContent = `${horasMes.toFixed(1)}h trabajadas`;
 
   // Próximas clases desde calendario personal
-  const hoy = now.toISOString().split('T')[0];
+  const hoy = _fechaHoy();
   const { data: proximas } = await db
     .from('calendario_alumno')
     .select('*')
@@ -1207,7 +1207,10 @@ function tiempoDesdeRegistro(registradaAt) {
   if (!registradaAt) return { texto: '', clase: 'ok' };
   const horas = (Date.now() - new Date(registradaAt).getTime()) / 3600000;
   let texto, clase;
-  if (horas < 24) {
+  if (horas >= 48) {
+    texto = `Registrada hace ${Math.floor(horas)}h · Pendiente de auto-confirmación`;
+    clase = 'urgent';
+  } else if (horas < 24) {
     texto = `Registrada hace ${Math.round(horas)}h · Se confirma auto en ${Math.round(48 - horas)}h si no respondes`;
     clase = 'ok';
   } else if (horas < 36) {
@@ -1224,16 +1227,16 @@ async function loadSesiones() {
   if (!ctx.alumnoData) return;
   const alumnoId = ctx.alumnoData.id;
 
-  // Fallback cliente: auto-confirmar sesiones > 48h (por si pg_cron no está activo)
-  try { await db.rpc('auto_confirm_old_sessions'); } catch (_) {}
+  // auto_confirm_old_sessions se ejecuta solo via pg_cron (no desde el cliente)
 
-  const { data: pendientes } = await db
+  const { data: pendientes, error: ePend } = await db
     .from('sesiones')
     .select('*, profesor:profesores(usuario:usuarios(nombre, apellidos))')
     .eq('alumno_id', alumnoId)
     .eq('estado', 'pendiente_confirmacion')
     .order('fecha', { ascending: false });
 
+  if (ePend) { console.error('Error cargando sesiones pendientes:', ePend.message); }
   const pendEl = document.getElementById('sesiones-pendientes-list');
   if (!pendientes || pendientes.length === 0) {
     pendEl.innerHTML = '';
@@ -1276,7 +1279,7 @@ async function loadSesiones() {
     `;
   }
 
-  const { data: historial } = await db
+  const { data: historial, error: eHist } = await db
     .from('sesiones')
     .select('*, profesor:profesores(usuario:usuarios(nombre, apellidos))')
     .eq('alumno_id', alumnoId)
@@ -1284,6 +1287,7 @@ async function loadSesiones() {
     .order('fecha', { ascending: false })
     .limit(20);
 
+  if (eHist) { console.error('Error cargando historial de sesiones:', eHist.message); }
   const histEl = document.getElementById('sesiones-historial');
   if (!historial || historial.length === 0) {
     histEl.innerHTML = `<div class="empty-state"><i class="ti ti-history"></i><p>Sin historial de sesiones</p></div>`;
@@ -2007,7 +2011,7 @@ function abrirArchivo(url) {
 // ============================================================
 // TESTS
 // ============================================================
-let testState = { testId: null, preguntas: [], respuestas: {}, enviado: false };
+let testState = { testId: null, preguntas: [], respuestas: {}, enviado: false, respuestas_correctas: {} };
 let _testOriginSection = 'estudiar';
 
 async function iniciarTest(testId, tituloEnc, from) {
@@ -2017,9 +2021,10 @@ async function iniciarTest(testId, tituloEnc, from) {
   document.getElementById('test-titulo').textContent = titulo;
   document.getElementById('test-content').innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
 
+  // No incluimos respuesta_correcta — se valida en el servidor via corregir_test()
   const { data: preguntas } = await db
     .from('preguntas_test')
-    .select('*')
+    .select('id, enunciado, opcion_a, opcion_b, opcion_c, opcion_d, orden')
     .eq('test_id', testId)
     .order('orden');
 
@@ -2039,11 +2044,12 @@ async function iniciarTest(testId, tituloEnc, from) {
   const creadoPor  = testRecord?.creado_por    || null;
 
   if (resultado && isAssigned && !puedeRep) {
-    // View-only: show completed test with answers highlighted
-    testState = { testId, preguntas, respuestas: resultado.respuestas || {}, enviado: true, viewOnly: true, isAssigned, creadoPor };
+    // View-only: fetch solucionario server-side (only available after submission)
+    const { data: solucionario } = await db.rpc('get_solucionario', { p_test_id: testId });
+    testState = { testId, preguntas, respuestas: resultado.respuestas || {}, enviado: true, viewOnly: true, isAssigned, creadoPor, isIA: !!testRecord?.generado_ia, respuestas_correctas: solucionario || {} };
     renderTest();
     const nota      = resultado.nota;
-    const correctas = preguntas.filter(p => (resultado.respuestas || {})[p.id] === p.respuesta_correcta).length;
+    const correctas = preguntas.filter(p => (resultado.respuestas || {})[p.id] === (solucionario || {})[p.id]).length;
     const content   = document.getElementById('test-content');
     const resultDiv = document.createElement('div');
     resultDiv.style.cssText = 'background:var(--surface);border:.5px solid var(--border);border-radius:16px;padding:32px 24px 24px;text-align:center;margin-bottom:20px';
@@ -2060,12 +2066,12 @@ async function iniciarTest(testId, tituloEnc, from) {
     return;
   }
 
-  testState = { testId, preguntas, respuestas: {}, enviado: false, viewOnly: false, isAssigned, creadoPor };
+  testState = { testId, preguntas, respuestas: {}, enviado: false, viewOnly: false, isAssigned, creadoPor, isIA: !!testRecord?.generado_ia, respuestas_correctas: {} };
   renderTest();
 }
 
 function renderTest() {
-  const { preguntas, respuestas, enviado } = testState;
+  const { preguntas, respuestas, enviado, respuestas_correctas } = testState;
   const content = document.getElementById('test-content');
   const respondidas = Object.keys(respuestas).length;
 
@@ -2079,7 +2085,7 @@ function renderTest() {
         <div class="test-enunciado">${i+1}. ${p.enunciado}</div>
         <div class="test-opciones">
           ${['a','b','c','d'].map(op => `
-            <label class="test-opcion ${respuestas[p.id] === op ? 'selected' : ''} ${enviado ? (op === p.respuesta_correcta ? 'correct' : respuestas[p.id] === op ? 'wrong' : '') : ''}">
+            <label class="test-opcion ${respuestas[p.id] === op ? 'selected' : ''} ${enviado ? (op === respuestas_correctas[p.id] ? 'correct' : respuestas[p.id] === op ? 'wrong' : '') : ''}">
               <input type="radio" name="p_${p.id}" value="${op}" ${respuestas[p.id] === op ? 'checked' : ''} ${enviado ? 'disabled' : ''} onchange="seleccionarRespuesta('${p.id}','${op}')">
               <span class="test-opcion-txt"><b style="color:var(--blue)">${op.toUpperCase()})</b> ${p['opcion_' + op]}</span>
             </label>
@@ -2098,32 +2104,28 @@ function seleccionarRespuesta(pregId, opcion) {
 }
 
 async function enviarTest() {
-  const { testId, preguntas, respuestas, isAssigned, creadoPor } = testState;
-  let correctas = 0;
-  preguntas.forEach(p => { if (respuestas[p.id] === p.respuesta_correcta) correctas++; });
-  const nota = parseFloat((correctas / preguntas.length * 10).toFixed(2));
+  const { testId, preguntas, respuestas, isIA } = testState;
   testState.enviado = true;
 
-  await db.from('resultados_test').upsert({
-    test_id: testId,
-    alumno_id: ctx.alumnoData.id,
-    respuestas: respuestas,
-    nota: nota,
-    completado_at: new Date().toISOString(),
-  }, { onConflict: 'test_id,alumno_id' });
+  const btn = document.querySelector('#test-content button[onclick="enviarTest()"]');
+  if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
 
-  // Notify profesor for assigned tests (IA or manual) — non-critical, fire and forget
-  if (isAssigned && creadoPor) {
-    const nombre   = `${ctx.usuario?.nombre || ''} ${ctx.usuario?.apellidos || ''}`.trim() || 'El alumno';
-    const testInfo = Object.values(window._testsData?.byAsig || {}).flat().find(t => t.id === testId);
-    db.rpc('notificar_test_completado', {
-      p_profesor_usuario_id: creadoPor,
-      p_alumno_nombre:       nombre,
-      p_test_titulo:         testInfo?.titulo || 'Test',
-      p_nota:                nota,
-    }).catch(() => {});
+  const { data: resultado, error } = await db.rpc('corregir_test', {
+    p_test_id:   testId,
+    p_respuestas: respuestas,
+  });
+
+  if (error || !resultado) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Enviar respuestas'; }
+    const msg = error?.message?.includes('ya completado') ? 'Ya has completado este test.' : (error?.message || 'Error al enviar. Inténtalo de nuevo.');
+    showToast(msg, 'error');
+    return;
   }
 
+  const { nota, correctas, total, solucionario } = resultado;
+
+  // Actualizar testState con el solucionario para que renderTest() marque respuestas
+  testState.respuestas_correctas = solucionario || {};
   renderTest();
 
   const content = document.getElementById('test-content');
@@ -2133,7 +2135,7 @@ async function enviarTest() {
     <div style="font-size:64px;font-weight:800;color:${nota >= 5 ? '#34d399' : '#f87171'};line-height:1;letter-spacing:-2px">${nota}</div>
     <div style="color:var(--muted);font-size:12px;margin-top:6px;margin-bottom:22px">sobre 10</div>
     <div style="color:#fff;font-size:18px;font-weight:700;margin-bottom:6px">${nota >= 9 ? '¡Excelente!' : nota >= 7 ? '¡Muy bien!' : nota >= 5 ? 'Aprobado' : 'Sigue practicando'}</div>
-    <div style="color:var(--muted);font-size:13px;margin-bottom:20px">${correctas} de ${preguntas.length} respuestas correctas</div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:20px">${correctas} de ${total} respuestas correctas</div>
     ${isIA ? `<div style="color:var(--muted);font-size:11px;padding:10px 14px;background:var(--dark);border-radius:10px;margin-bottom:22px;line-height:1.6">Las respuestas correctas están marcadas en verde debajo.</div>` : ''}
     <button class="btn-primary" onclick="showSection(_testOriginSection||'estudiar')">← Volver</button>
   `;
@@ -2644,7 +2646,7 @@ async function renderCalendario() {
   const primerDia = new Date(calYear, calMes, 1).getDay();
   const offset = primerDia === 0 ? 6 : primerDia - 1;
   const totalDias = new Date(calYear, calMes + 1, 0).getDate();
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = _fechaHoy();
 
   const evByDay = {};
   calEventos.forEach(e => {
