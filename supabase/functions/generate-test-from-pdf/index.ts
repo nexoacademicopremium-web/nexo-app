@@ -30,6 +30,28 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403, headers: corsHeaders })
   }
 
+  // Service client needed for rate-limit check and authorized writes
+  const admin = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  )
+
+  // Rate limit: 15 calls per user per day
+  const dayStart = new Date()
+  dayStart.setUTCHours(0, 0, 0, 0)
+  const { count: usageCount } = await admin
+    .from('claude_usage_log')
+    .select('id', { count: 'exact', head: true })
+    .eq('usuario_id', caller.id)
+    .eq('funcion', 'generate-test-from-pdf')
+    .gte('created_at', dayStart.toISOString())
+  if ((usageCount ?? 0) >= 15) {
+    return new Response(
+      JSON.stringify({ error: 'Límite diario de generación de tests alcanzado (15/día). Inténtalo mañana.' }),
+      { status: 429, headers: corsHeaders },
+    )
+  }
+
   try {
     const formData = await req.formData()
     const pdfFile          = formData.get('pdf') as File
@@ -39,10 +61,36 @@ serve(async (req) => {
     const bloque_tema      = formData.get('bloque_tema') as string
     const alumno_id        = formData.get('alumno_id') as string
     const alumno_usuario_id = formData.get('alumno_usuario_id') as string
-    const profesor_usuario_id = formData.get('profesor_usuario_id') as string
 
     if (!pdfFile) throw new Error('No se recibió el archivo PDF')
     if (!titulo || !asignatura || !alumno_id) throw new Error('Faltan campos obligatorios')
+
+    // PDF size limit: 10 MB
+    const MAX_PDF_BYTES = 10 * 1024 * 1024
+    if (pdfFile.size > MAX_PDF_BYTES) {
+      throw new Error(`El PDF es demasiado grande (${(pdfFile.size / 1024 / 1024).toFixed(1)} MB). Máximo permitido: 10 MB.`)
+    }
+
+    // Validate that the alumno belongs to this profesor (unless admin)
+    if (callerProfile.rol === 'profesor') {
+      const { data: prof } = await admin
+        .from('profesores')
+        .select('id')
+        .eq('usuario_id', caller.id)
+        .single()
+      if (!prof) throw new Error('Profesor no encontrado')
+      const { count: asignado } = await admin
+        .from('alumno_profesor')
+        .select('id', { count: 'exact', head: true })
+        .eq('profesor_id', prof.id)
+        .eq('alumno_id', alumno_id)
+      if (!asignado || asignado === 0) {
+        return new Response(
+          JSON.stringify({ error: 'No puedes asignar tests a alumnos que no son tuyos' }),
+          { status: 403, headers: corsHeaders },
+        )
+      }
+    }
 
     const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY')
     if (!ANTHROPIC_KEY) throw new Error('ANTHROPIC_API_KEY no configurada en Edge Function secrets')
@@ -143,11 +191,7 @@ Reglas:
     )
     if (qs.length === 0) throw new Error('Las preguntas generadas no tienen el formato correcto.')
 
-    // Service-role Supabase client for DB + Storage writes
-    const admin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    )
+    // admin client already created above for rate-limit check
 
     // Upload PDF to Storage
     const storagePath = `tests-pdf/${Date.now()}-${alumno_id.slice(0, 8)}.pdf`
@@ -161,14 +205,14 @@ Reglas:
       pdfPublicUrl = publicUrl
     }
 
-    // Insert test record
+    // Insert test record — creado_por from verified JWT, not from client body
     const { data: test, error: testErr } = await admin.from('tests').insert({
       titulo,
       asignatura,
       nivel: nivel || null,
       bloque_tema: bloque_tema || null,
       alumno_id,
-      creado_por: profesor_usuario_id,
+      creado_por: caller.id,
       visible: true,
       generado_ia: true,
       puede_repetir: false,
@@ -199,10 +243,16 @@ Reglas:
         destinatario_rol: 'alumno',
         titulo: `Nuevo test de ${asignatura}`,
         contenido: `Tu profesor te ha asignado el test "${titulo}". Entra en Estudiar → Tests para realizarlo.`,
-        creado_por: profesor_usuario_id,
+        creado_por: caller.id,  // from verified JWT, not client body
         visible: true,
       })
     }
+
+    // Log successful Claude usage for rate limiting
+    await admin.from('claude_usage_log').insert({
+      usuario_id: caller.id,
+      funcion: 'generate-test-from-pdf',
+    })
 
     return new Response(
       JSON.stringify({ success: true, testId: test.id, questionCount: qs.length }),

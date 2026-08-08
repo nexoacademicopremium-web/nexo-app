@@ -30,6 +30,26 @@ serve(async (req) => {
     return new Response(JSON.stringify({ error: 'Solo el administrador puede generar informes' }), { status: 403, headers: corsHeaders })
   }
 
+  const adminClient = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+  )
+
+  // Rate limit: 10 informe generations per day (admin-wide)
+  const dayStart = new Date()
+  dayStart.setUTCHours(0, 0, 0, 0)
+  const { count: usageCount } = await adminClient
+    .from('claude_usage_log')
+    .select('id', { count: 'exact', head: true })
+    .eq('funcion', 'generar-informe')
+    .gte('created_at', dayStart.toISOString())
+  if ((usageCount ?? 0) >= 10) {
+    return new Response(
+      JSON.stringify({ error: 'Límite diario de generación de informes alcanzado (10/día). Inténtalo mañana.' }),
+      { status: 429, headers: corsHeaders },
+    )
+  }
+
   try {
     const { alumno_id, tipo, fecha_inicio, fecha_fin } = await req.json()
 
@@ -38,13 +58,15 @@ serve(async (req) => {
     if (fecha_fin < fecha_inicio)
       throw new Error('fecha_fin debe ser posterior a fecha_inicio')
 
+    // Max 3 months of data to bound prompt size
+    const ms = new Date(fecha_fin).getTime() - new Date(fecha_inicio).getTime()
+    if (ms > 93 * 24 * 60 * 60 * 1000)
+      throw new Error('El rango máximo permitido es 3 meses')
+
     const ANTHROPIC_KEY = Deno.env.get('ANTHROPIC_API_KEY')
     if (!ANTHROPIC_KEY) throw new Error('ANTHROPIC_API_KEY no configurada')
 
-    const admin = createClient(
-      Deno.env.get('SUPABASE_URL')!,
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
-    )
+    const admin = adminClient  // reuse service client created above
 
     // 1. Datos del alumno
     const { data: alumno, error: alumnoErr } = await admin
@@ -273,6 +295,12 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta. Sin texto antes
     }).select().single()
 
     if (infErr) throw new Error('Error al guardar el informe: ' + infErr.message)
+
+    // Log successful Claude usage for rate limiting
+    await adminClient.from('claude_usage_log').insert({
+      usuario_id: caller.id,
+      funcion: 'generar-informe',
+    })
 
     return new Response(
       JSON.stringify({ success: true, informe_id: informe.id }),
