@@ -3540,11 +3540,13 @@ async function guardarTestPdf(e) {
     fd.append('bloque_tema', tema || '');
     fd.append('alumno_id', alumnoId);
     fd.append('alumno_usuario_id', alumnoUsuarioId);
-    fd.append('profesor_usuario_id', ctx.usuario.id);
-
+    const sesProf = (await db.auth.getSession()).data.session;
     const resp = await fetch(`${SUPABASE_URL}/functions/v1/generate-test-from-pdf`, {
       method: 'POST',
-      headers: { 'Authorization': `Bearer ${SUPABASE_KEY}` },
+      headers: {
+        'Authorization': `Bearer ${sesProf?.access_token}`,
+        'apikey': SUPABASE_KEY,
+      },
       body: fd,
     });
 

@@ -2423,6 +2423,11 @@ async function subirEntrega() {
 
   try {
     const file = fileInput.files[0];
+    if (file.size > 10 * 1024 * 1024) {
+      showToast('El archivo es demasiado grande. Máximo 10 MB.', 'error');
+      btn.disabled = false; btn.textContent = 'Subir entrega';
+      return;
+    }
     const ext  = file.name.split('.').pop();
     const path = `tareas/entregas/${Date.now()}.${ext}`;
     const { error: upErr } = await db.storage.from('nexo-files').upload(path, file);
