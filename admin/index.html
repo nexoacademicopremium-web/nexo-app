@@ -993,6 +993,21 @@
   </div>
 </div>
 
+<!-- MODAL VER SESIÓN COMPLETA -->
+<div class="modal-overlay" id="modal-ver-sesion">
+  <div class="modal-box" style="max-width:740px;overflow:visible">
+    <div class="modal-title">
+      <span><i class="ti ti-eye" style="color:var(--blue);margin-right:6px"></i>Sesión completa</span>
+      <button class="modal-close" onclick="cerrarModal('modal-ver-sesion')">×</button>
+    </div>
+    <div id="ver-sesion-content" style="max-height:78vh;overflow-y:auto;padding:4px 2px"></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModal('modal-ver-sesion')">Cerrar</button>
+      <button class="btn-edit" id="btn-ver-ses-editar" style="margin-left:8px"><i class="ti ti-pencil"></i> Editar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL MATERIAL -->
 <div class="modal-overlay" id="modal-material">
   <div class="modal-box">
@@ -2884,6 +2899,148 @@ async function abrirEditSesion(sesionId) {
   document.getElementById('modal-edit-sesion').classList.add('open');
 }
 
+async function abrirVerSesion(sesionId) {
+  const cont = document.getElementById('ver-sesion-content');
+  cont.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+  document.getElementById('modal-ver-sesion').classList.add('open');
+
+  const [{ data: s }, { data: temas }, { data: pregsData }] = await Promise.all([
+    db.from('sesiones').select('*').eq('id', sesionId).single(),
+    db.from('sesion_temas').select('*').eq('sesion_id', sesionId).order('id'),
+    db.from('preguntas_asignatura').select('codigo, pregunta').order('orden'),
+  ]);
+
+  if (!s) { cont.innerHTML = '<p style="color:var(--red);padding:16px">Error al cargar la sesión.</p>'; return; }
+
+  const alu   = allAlumnos.find(a => a.id === s.alumno_id) || {};
+  const aluU  = alu.usuario || {};
+  const prof  = allProfesores.find(p => p.id === s.profesor_id) || {};
+  const profU = prof.usuario || {};
+  const pregMap = {};
+  (pregsData || []).forEach(p => { pregMap[p.codigo] = p.pregunta; });
+
+  document.getElementById('btn-ver-ses-editar').onclick = () => {
+    cerrarModal('modal-ver-sesion');
+    abrirEditSesion(sesionId);
+  };
+
+  const pillMap = {
+    confirmada:             ['st-ok',   'Confirmada'],
+    pendiente_confirmacion: ['st-pend', 'Pendiente'],
+    rechazada:              ['st-red',  'Rechazada'],
+    cancelada:              ['st-grey', 'Cancelada'],
+  };
+  const [pc, pt] = pillMap[s.estado] || ['st-grey', s.estado];
+
+  const row = (label, val) => (val != null && val !== '') ? `
+    <div style="display:flex;gap:8px;padding:6px 0;border-bottom:.5px solid var(--border)">
+      <span style="color:var(--muted);font-size:12px;min-width:170px;flex-shrink:0">${label}</span>
+      <span style="color:var(--txt);font-size:13px;white-space:pre-wrap;word-break:break-word">${escHTML(String(val))}</span>
+    </div>` : '';
+
+  const secTitle = (ico, t) => `
+    <div style="display:flex;align-items:center;gap:8px;margin:18px 0 10px;border-bottom:.5px solid var(--border);padding-bottom:6px">
+      <i class="ti ${ico}" style="color:var(--blue);font-size:14px"></i>
+      <span style="color:var(--soft);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px">${t}</span>
+    </div>`;
+
+  const val10 = (lbl, v) => `
+    <div>
+      <div style="color:var(--muted);font-size:11px;margin-bottom:5px">${lbl}</div>
+      ${v != null ? `<div style="display:flex;align-items:center;gap:8px">
+        <span style="color:var(--txt);font-size:14px;font-weight:700;min-width:20px">${v}</span>
+        <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${v * 10}%;background:var(--blue);border-radius:3px"></div>
+        </div>
+        <span style="color:var(--muted);font-size:11px">/10</span>
+      </div>` : '<span style="color:var(--muted);font-size:13px">—</span>'}
+    </div>`;
+
+  let temasHtml = '';
+  if (temas && temas.length > 0) {
+    temasHtml = temas.map(t => {
+      let batHtml = '';
+      if (t.respuestas_bateria && Object.keys(t.respuestas_bateria).length) {
+        batHtml = `<div style="margin-top:10px;padding:10px 12px;background:var(--body-bg, #0a0f1e);border:.5px solid var(--border);border-radius:6px">
+          <div style="color:var(--muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Batería de preguntas</div>`;
+        for (const [cod, val] of Object.entries(t.respuestas_bateria)) {
+          const pregText = pregMap[cod] ? escHTML(pregMap[cod]) : cod;
+          batHtml += `<div style="display:flex;gap:10px;padding:5px 0;border-bottom:.5px solid var(--border)">
+            <span style="color:var(--muted);font-size:11px;min-width:28px;flex-shrink:0;font-family:monospace;font-weight:600">${cod}</span>
+            <span style="color:var(--soft);font-size:12px;flex:1">${pregText}</span>
+            <span style="color:#fff;font-size:12px;font-weight:600;white-space:nowrap;margin-left:8px">${escHTML(String(val))}</span>
+          </div>`;
+        }
+        batHtml += `</div>`;
+      }
+      return `<div style="padding:12px 14px;background:var(--dark);border:.5px solid var(--border);border-radius:8px;margin-bottom:8px">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <span style="color:#fff;font-size:13px;font-weight:600">${escHTML(t.asignatura || '—')}</span>
+          <span style="color:var(--blue);font-size:13px">${escHTML(t.tema || '—')}</span>
+          ${t.tiempo_minutos ? `<span style="color:var(--muted);font-size:12px"><i class="ti ti-clock"></i> ${t.tiempo_minutos} min</span>` : ''}
+          ${t.nota_profesor ? `<span style="color:var(--amber);font-size:12px">Nota del profe: ${escHTML(t.nota_profesor)}</span>` : ''}
+          ${t.categoria_idioma ? `<span style="color:var(--soft);font-size:11px">[${escHTML(t.categoria_idioma)}]</span>` : ''}
+        </div>
+        ${batHtml}
+      </div>`;
+    }).join('');
+  } else {
+    temasHtml = '<p style="color:var(--muted);font-size:12px">Sin temas registrados (sesión sin desglose por temas)</p>';
+  }
+
+  const horas    = s.duracion_minutos ? (s.duracion_minutos / 60).toFixed(1).replace('.0', '') + 'h' : '—';
+  const fechaFmt = s.fecha ? new Date(s.fecha + 'T00:00:00').toLocaleDateString('es-ES', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) : '—';
+
+  cont.innerHTML = `<div style="padding:0 2px">
+    ${secTitle('ti-info-circle', 'Identificación')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
+      ${row('Alumno', (`${aluU.nombre || ''} ${aluU.apellidos || ''}`).trim() || '—')}
+      ${row('Profesor', (`${profU.nombre || ''} ${profU.apellidos || ''}`).trim() || '—')}
+      ${row('Fecha', fechaFmt)}
+      ${row('Hora inicio', s.hora_inicio ? s.hora_inicio.substring(0,5) : '—')}
+      ${row('Asignatura', s.asignatura)}
+      ${row('Duración', horas)}
+      ${row('Curso', nivelACurso(alu.nivel) || '—')}
+      ${row('Modalidad', alu.modalidad || '—')}
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 0">
+      <span style="color:var(--muted);font-size:12px;min-width:170px">Estado</span>
+      <span class="status-pill ${pc}">${pt}</span>
+    </div>
+    ${s.examen_proximo ? `<div style="margin:6px 0 4px;padding:8px 12px;background:var(--amber-lt);border:.5px solid var(--amber);border-radius:6px;color:var(--amber);font-size:12px;font-weight:600">
+      <i class="ti ti-writing"></i> Examen próximo — ${escHTML(s.examen_asignatura || '')}${s.examen_fecha ? ' · ' + s.examen_fecha : ''}${s.examen_tema ? ' · ' + escHTML(s.examen_tema) : ''}
+    </div>` : ''}
+
+    ${secTitle('ti-books', 'Temas trabajados')}
+    ${temasHtml}
+
+    ${secTitle('ti-message-2', 'Narrativa de la sesión')}
+    ${row('Contenido trabajado', s.contenido_trabajado)}
+    ${row('Estado al inicio', s.estado_alumno_inicio)}
+    ${row('Momento de bloqueo', s.momento_bloqueo)}
+    ${row('Lo resolvió solo', s.resolvio_solo)}
+    ${row('Ayuda necesitada', s.necesito_ayuda)}
+    ${row('Falta de base', s.falta_base)}
+    ${row('vs. sesiones anteriores', s.comparacion_anterior)}
+    ${row('Nota estimada', s.nota_estimada != null ? s.nota_estimada + ' / 10' : null)}
+    ${row('Arranque próxima sesión', s.arranque_proxima)}
+    ${row('Tarea para casa', s.tarea_casa)}
+
+    ${secTitle('ti-chart-bar', 'Valoraciones (1 – 10)')}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 24px;margin-bottom:6px">
+      ${val10('Comprensión', s.valoracion_comprension)}
+      ${val10('Aplicación / Esfuerzo', s.valoracion_aplicacion)}
+      ${val10('Concentración', s.valoracion_concentracion)}
+      ${val10('Actitud / Motivación', s.valoracion_motivacion)}
+      ${val10('Autonomía', s.valoracion_autonomia)}
+    </div>
+
+    ${secTitle('ti-eye', 'Observaciones')}
+    ${row('Para la familia', s.observaciones)}
+    ${row('Para Nexo (privado)', s.observaciones_nexo)}
+  </div>`;
+}
+
 async function guardarEditSesion() {
   const btn = document.getElementById('btn-guardar-edit-ses');
   btn.disabled = true;
@@ -3235,7 +3392,8 @@ async function loadSesionesAdmin() {
               <td>${modalidad}</td>
               <td><span class="status-pill ${pc}">${pt}</span></td>
               <td style="white-space:nowrap;text-align:center">
-                <button class="btn-edit" style="padding:5px 9px" onclick="abrirEditSesion('${s.id}')"><i class="ti ti-pencil"></i></button>
+                <button class="btn-ghost" style="padding:5px 9px" title="Ver completo" onclick="abrirVerSesion('${s.id}')"><i class="ti ti-eye"></i></button>
+                <button class="btn-edit" style="padding:5px 9px;margin-left:4px" onclick="abrirEditSesion('${s.id}')"><i class="ti ti-pencil"></i></button>
                 ${s.estado !== 'cancelada'
                   ? `<button class="btn-danger" style="padding:5px 9px;margin-left:4px" onclick="abrirCancelar('${s.id}')"><i class="ti ti-ban"></i></button>`
                   : `<button class="btn-danger" style="padding:5px 9px;margin-left:4px" onclick="eliminarSesionAdmin('${s.id}')"><i class="ti ti-trash"></i></button>`}
