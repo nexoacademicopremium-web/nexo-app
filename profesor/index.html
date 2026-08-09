@@ -2671,6 +2671,8 @@ function _renderBateriaPregs(pid, pregs) {
 // Renderiza el bloque completo de batería para un tema (con o sin selector de categoría)
 function _nSesRenderBateria(pid, asigKey) {
   if (!asigKey || !pAllPreguntas.length) return '';
+  const _aid = document.getElementById('nses-alumno')?.value;
+  if (/univ/i.test(misAlumnos.find(a => a.id === _aid)?.nivel || '')) return '';
 
   const catMeta = _CAT_META[asigKey];
   if (catMeta) {
@@ -2779,6 +2781,8 @@ async function nSesSubmit(e) {
   errTemasEl.textContent = '';
   let valid = true;
   const temasInsert = [];
+  const _alumnoNivel = misAlumnos.find(a => a.id === document.getElementById('nses-alumno').value)?.nivel || '';
+  const _esUniv = /univ/i.test(_alumnoNivel);
 
   // Recorrer todos los .nses-tema-block del formulario
   document.querySelectorAll('#nses-asig-container .nses-tema-block').forEach(block => {
@@ -2806,7 +2810,7 @@ async function nSesSubmit(e) {
       nota_profesor: document.getElementById(`nses-nota-${pid}`)?.value?.trim() || null,
     };
 
-    if (asigKey && pAllPreguntas.length) {
+    if (asigKey && pAllPreguntas.length && !_esUniv) {
       const catMeta = _CAT_META[asigKey] || null;
       let catVal = null;
 
