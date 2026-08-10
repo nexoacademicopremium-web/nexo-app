@@ -378,7 +378,7 @@
   .csel-btn:focus{outline:none;border-color:var(--blue)}
   .csel-btn.has-val{color:var(--txt)}
   .csel-ico{font-size:11px;color:var(--muted);flex-shrink:0;transition:transform .15s}
-  .csel-list{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:#060d20;border:.5px solid var(--border);border-radius:8px;z-index:9999;max-height:220px;overflow-y:auto;box-shadow:0 8px 28px rgba(0,0,0,.7)}
+  .csel-list{display:none;position:fixed;background:#060d20;border:.5px solid var(--border);border-radius:8px;z-index:9999;max-height:220px;overflow-y:auto;box-shadow:0 8px 28px rgba(0,0,0,.7)}
   .csel-list.open{display:block}
   .csel-opt{padding:8px 12px;color:#a8c8f0;font-size:12px;cursor:pointer;transition:background .1s}
   .csel-opt:hover,.csel-opt:focus{background:#0a1530;color:#e0eaf8;outline:none}
@@ -4355,6 +4355,7 @@ function _cSel(id, temas, placeholder) {
 
 function cSelToggle(id) {
   const list = document.getElementById('list-' + id);
+  const btn  = document.getElementById('btn-' + id);
   const ico  = document.getElementById('ico-' + id);
   const isOpen = list.classList.contains('open');
   // Cierra cualquier otro abierto
@@ -4364,6 +4365,11 @@ function cSelToggle(id) {
     if (i) i.style.transform = '';
   });
   if (!isOpen) {
+    // position:fixed para escapar overflow:hidden de contenedores padre
+    const rect = btn.getBoundingClientRect();
+    list.style.top   = (rect.bottom + 4) + 'px';
+    list.style.left  = rect.left + 'px';
+    list.style.width = rect.width + 'px';
     list.classList.add('open');
     if (ico) ico.style.transform = 'rotate(180deg)';
   }
