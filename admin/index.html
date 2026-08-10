@@ -3106,68 +3106,84 @@ function descargarSesionTxt() {
   txt += '\n';
 
   // ── Temas trabajados ──────────────────────────────────────
-  txt += SEP;
-  txt += 'TEMAS TRABAJADOS\n';
-  txt += SEP + '\n';
-
   if (temas && temas.length > 0) {
     temas.forEach((t, i) => {
-      if (i > 0) txt += sep2;
-      txt += lbl('Asignatura',    t.asignatura || '—');
-      txt += lbl('Tema',          t.tema || '—');
-      if (t.tiempo_minutos) txt += lbl('Tiempo',      t.tiempo_minutos + ' min');
-      if (t.nota_profesor)  txt += lbl('Nota profe',  t.nota_profesor);
-      if (t.categoria_idioma) txt += lbl('Categoría', t.categoria_idioma);
-
-      if (t.respuestas_bateria && Object.keys(t.respuestas_bateria).length) {
-        txt += '\n  BATERÍA DE PREGUNTAS:\n';
-        for (const [cod, val] of Object.entries(t.respuestas_bateria)) {
-          const pregText = pregMap[cod] || cod;
-          txt += `  ${cod.padEnd(4)} ${pregText}\n         → ${val}\n`;
-        }
-      }
+      txt += SEP;
+      txt += `TEMA ${i + 1}: ${t.tema || '—'}`;
+      if (t.asignatura) txt += ` (${t.asignatura})`;
       txt += '\n';
+      txt += SEP;
+      if (t.tiempo_minutos) txt += lbl('Tiempo',           t.tiempo_minutos + ' min');
+      if (t.nota_profesor)  txt += lbl('Nota del profesor', t.nota_profesor);
+      if (t.categoria_idioma) txt += lbl('Categoría',      t.categoria_idioma);
+      txt += '\n';
+
+      const bat = t.respuestas_bateria;
+      if (bat && Object.keys(bat).length) {
+        txt += 'RESPUESTAS A LAS PREGUNTAS DE LA BATERÍA:\n\n';
+        Object.entries(bat).forEach(([cod, val]) => {
+          const pregText = pregMap[cod] || cod;
+          txt += `  [${cod}] ${pregText}\n`;
+          txt += `        Respuesta: ${val || '—'}\n\n`;
+        });
+      } else {
+        txt += '  (Sin respuestas de batería para este tema)\n\n';
+      }
     });
   } else {
-    txt += '  Sin temas registrados\n\n';
+    txt += SEP;
+    txt += 'TEMAS TRABAJADOS\n';
+    txt += SEP + '\n';
+    txt += '  (Sin temas registrados con el nuevo formulario)\n\n';
   }
 
-  // ── Narrativa ─────────────────────────────────────────────
-  txt += SEP;
-  txt += 'NARRATIVA DE LA SESIÓN\n';
-  txt += SEP + '\n';
+  // ── Narrativa (si existe) ─────────────────────────────────
+  const nCampos = [
+    ['Contenido trabajado',      s.contenido_trabajado],
+    ['Estado al inicio',         s.estado_alumno_inicio],
+    ['Momento de bloqueo',       s.momento_bloqueo],
+    ['Lo resolvió solo',         s.resolvio_solo],
+    ['Ayuda necesitada',         s.necesito_ayuda],
+    ['Falta de base',            s.falta_base],
+    ['vs. Sesiones anteriores',  s.comparacion_anterior],
+    ['Arranque próxima sesión',  s.arranque_proxima],
+    ['Tarea para casa',          s.tarea_casa],
+  ];
+  const tieneNarrativa = nCampos.some(([, v]) => v) || s.nota_estimada != null;
+  if (tieneNarrativa) {
+    txt += SEP;
+    txt += 'NARRATIVA DE LA SESIÓN\n';
+    txt += SEP + '\n';
+    nCampos.forEach(([label, val]) => { if (val) txt += blk(label, val); });
+    if (s.nota_estimada != null) txt += blk('Nota estimada', s.nota_estimada + ' / 10');
+  }
 
-  txt += blk('Contenido trabajado',       s.contenido_trabajado);
-  txt += blk('Estado al inicio',          s.estado_alumno_inicio);
-  txt += blk('Momento de bloqueo',        s.momento_bloqueo);
-  txt += blk('Lo resolvió solo',          s.resolvio_solo);
-  txt += blk('Ayuda necesitada',          s.necesito_ayuda);
-  txt += blk('Falta de base',             s.falta_base);
-  txt += blk('vs. Sesiones anteriores',   s.comparacion_anterior);
-  if (s.nota_estimada != null) txt += blk('Nota estimada', s.nota_estimada + ' / 10');
-  txt += blk('Arranque próxima sesión',   s.arranque_proxima);
-  txt += blk('Tarea para casa',           s.tarea_casa);
+  // ── Valoraciones (si existen) ─────────────────────────────
+  const vCampos = [
+    ['Comprensión',           s.valoracion_comprension],
+    ['Aplicación / Esfuerzo', s.valoracion_aplicacion],
+    ['Concentración',         s.valoracion_concentracion],
+    ['Actitud / Motivación',  s.valoracion_motivacion],
+    ['Autonomía',             s.valoracion_autonomia],
+  ];
+  if (vCampos.some(([, v]) => v != null)) {
+    txt += SEP;
+    txt += 'VALORACIONES (1 – 10)\n';
+    txt += SEP + '\n';
+    vCampos.forEach(([label, v]) => {
+      if (v != null) txt += lbl(label, `${v} / 10`);
+    });
+    txt += '\n';
+  }
 
-  // ── Valoraciones ──────────────────────────────────────────
-  txt += SEP;
-  txt += 'VALORACIONES (1 – 10)\n';
-  txt += SEP + '\n';
-
-  const v10 = (l, v) => v != null ? lbl(l, `${v} / 10`) : '';
-  txt += v10('Comprensión',          s.valoracion_comprension);
-  txt += v10('Aplicación / Esfuerzo', s.valoracion_aplicacion);
-  txt += v10('Concentración',        s.valoracion_concentracion);
-  txt += v10('Actitud / Motivación', s.valoracion_motivacion);
-  txt += v10('Autonomía',            s.valoracion_autonomia);
-  txt += '\n';
-
-  // ── Observaciones ─────────────────────────────────────────
-  txt += SEP;
-  txt += 'OBSERVACIONES\n';
-  txt += SEP + '\n';
-
-  txt += blk('Para la familia',      s.observaciones);
-  txt += blk('Para Nexo (privado)',  s.observaciones_nexo);
+  // ── Observaciones (si existen) ────────────────────────────
+  if (s.observaciones || s.observaciones_nexo) {
+    txt += SEP;
+    txt += 'OBSERVACIONES\n';
+    txt += SEP + '\n';
+    if (s.observaciones)      txt += blk('Para la familia',     s.observaciones);
+    if (s.observaciones_nexo) txt += blk('Para Nexo (privado)', s.observaciones_nexo);
+  }
 
   // ── Pie ───────────────────────────────────────────────────
   txt += SEP;
@@ -3287,82 +3303,93 @@ async function descargarMesTxt() {
     const horas = s.duracion_minutos
       ? (s.duracion_minutos / 60).toFixed(1).replace('.0','') + 'h' : '—';
 
-    txt += SEP2;
-    txt += `SESIÓN ${idx + 1} — ${fechaLarga.toUpperCase()}\n`;
-    txt += `Asignatura: ${s.asignatura || '—'} · ${horas} · ${estadoLabel[s.estado] || s.estado}\n`;
-    txt += SEP2 + '\n';
-
-    txt += lbl('Profesor', profNombre);
-    if (s.hora_inicio) txt += lbl('Hora', s.hora_inicio.substring(0,5));
+    txt += '\n' + SEP;
+    txt += `SESIÓN ${idx + 1} DE ${sesiones.length} — ${fechaLarga.toUpperCase()}\n`;
+    txt += SEP;
+    txt += lbl('Profesor',   profNombre);
+    txt += lbl('Asignatura', s.asignatura || '—');
+    txt += lbl('Duración',   horas);
+    txt += lbl('Estado',     estadoLabel[s.estado] || s.estado || '—');
+    if (s.hora_inicio) txt += lbl('Hora de inicio', s.hora_inicio.substring(0,5));
     if (s.examen_proximo) {
       txt += lbl('Examen próximo',
         [s.examen_asignatura, s.examen_fecha, s.examen_tema].filter(Boolean).join(' · '));
     }
     txt += '\n';
 
-    // Temas + batería
+    // Temas + batería (fuente principal: formulario nuevo)
     const temas = temasPorSesion[s.id] || [];
     if (temas.length > 0) {
-      txt += '[TEMAS TRABAJADOS]\n';
-      temas.forEach(t => {
-        txt += `  • ${t.asignatura || '—'} — ${t.tema || '—'}`;
-        if (t.tiempo_minutos) txt += ` (${t.tiempo_minutos} min)`;
-        if (t.nota_profesor)  txt += ` | Nota: ${t.nota_profesor}`;
-        if (t.categoria_idioma) txt += ` [${t.categoria_idioma}]`;
+      temas.forEach((t, ti) => {
+        txt += SEP2;
+        txt += `TEMA ${ti + 1}: ${t.tema || '—'}`;
+        if (t.asignatura) txt += ` (${t.asignatura})`;
+        txt += '\n' + SEP2;
+        if (t.tiempo_minutos) txt += lbl('Tiempo', t.tiempo_minutos + ' min');
+        if (t.nota_profesor)  txt += lbl('Nota del profesor', t.nota_profesor);
+        if (t.categoria_idioma) txt += lbl('Categoría', t.categoria_idioma);
         txt += '\n';
 
-        if (t.respuestas_bateria && Object.keys(t.respuestas_bateria).length) {
-          txt += '    Batería de preguntas:\n';
-          for (const [cod, val] of Object.entries(t.respuestas_bateria)) {
+        const bat = t.respuestas_bateria;
+        if (bat && Object.keys(bat).length) {
+          txt += 'RESPUESTAS A LAS PREGUNTAS DE LA BATERÍA:\n\n';
+          Object.entries(bat).forEach(([cod, val]) => {
             const pregText = pregMap[cod] || cod;
-            txt += `    ${cod.padEnd(4)} ${pregText}\n`;
-            txt += `         → ${val}\n`;
-          }
+            txt += `  [${cod}] ${pregText}\n`;
+            txt += `        Respuesta: ${val || '—'}\n\n`;
+          });
+        } else {
+          txt += '  (Sin respuestas de batería registradas para este tema)\n\n';
         }
       });
-      txt += '\n';
     }
 
-    // Narrativa
-    const tieneNarrativa = [s.contenido_trabajado, s.estado_alumno_inicio, s.momento_bloqueo,
-      s.resolvio_solo, s.necesito_ayuda, s.falta_base, s.comparacion_anterior,
-      s.arranque_proxima, s.tarea_casa].some(v => v);
-    if (tieneNarrativa) {
-      txt += '[NARRATIVA]\n';
-      txt += blk('Contenido trabajado',     s.contenido_trabajado);
-      txt += blk('Estado al inicio',        s.estado_alumno_inicio);
-      txt += blk('Momento de bloqueo',      s.momento_bloqueo);
-      txt += blk('Lo resolvió solo',        s.resolvio_solo);
-      txt += blk('Ayuda necesitada',        s.necesito_ayuda);
-      txt += blk('Falta de base',           s.falta_base);
-      txt += blk('vs. Sesiones anteriores', s.comparacion_anterior);
+    // Narrativa (fuente alternativa: formulario antiguo)
+    const camposNarrativa = [
+      ['Contenido trabajado',      s.contenido_trabajado],
+      ['Estado del alumno al inicio', s.estado_alumno_inicio],
+      ['Momento de bloqueo',       s.momento_bloqueo],
+      ['Lo resolvió solo',         s.resolvio_solo],
+      ['Ayuda necesitada',         s.necesito_ayuda],
+      ['Falta de base',            s.falta_base],
+      ['vs. Sesiones anteriores',  s.comparacion_anterior],
+      ['Arranque próxima sesión',  s.arranque_proxima],
+      ['Tarea para casa',          s.tarea_casa],
+    ];
+    const tieneNarrativa = camposNarrativa.some(([, v]) => v);
+    if (tieneNarrativa || s.nota_estimada != null) {
+      txt += SEP2;
+      txt += 'NARRATIVA DE LA SESIÓN\n' + SEP2;
+      camposNarrativa.forEach(([label, val]) => {
+        if (val) txt += blk(label, val);
+      });
       if (s.nota_estimada != null) txt += blk('Nota estimada', s.nota_estimada + ' / 10');
-      txt += blk('Arranque próxima sesión', s.arranque_proxima);
-      txt += blk('Tarea para casa',         s.tarea_casa);
     }
 
     // Valoraciones
-    const vals = [s.valoracion_comprension, s.valoracion_aplicacion,
-      s.valoracion_concentracion, s.valoracion_motivacion, s.valoracion_autonomia];
-    if (vals.some(v => v != null)) {
-      txt += '[VALORACIONES]\n';
-      const vp = (l, v) => v != null ? `  ${(l+':').padEnd(24)} ${v} / 10\n` : '';
-      txt += vp('Comprensión',          s.valoracion_comprension);
-      txt += vp('Aplicación / Esfuerzo', s.valoracion_aplicacion);
-      txt += vp('Concentración',        s.valoracion_concentracion);
-      txt += vp('Actitud / Motivación', s.valoracion_motivacion);
-      txt += vp('Autonomía',            s.valoracion_autonomia);
+    const camposVal = [
+      ['Comprensión',           s.valoracion_comprension],
+      ['Aplicación / Esfuerzo', s.valoracion_aplicacion],
+      ['Concentración',         s.valoracion_concentracion],
+      ['Actitud / Motivación',  s.valoracion_motivacion],
+      ['Autonomía',             s.valoracion_autonomia],
+    ];
+    if (camposVal.some(([, v]) => v != null)) {
+      txt += SEP2;
+      txt += 'VALORACIONES (escala 1 – 10)\n' + SEP2;
+      camposVal.forEach(([label, v]) => {
+        if (v != null) txt += `  ${(label + ':').padEnd(24)} ${v} / 10\n`;
+      });
       txt += '\n';
     }
 
     // Observaciones
     if (s.observaciones || s.observaciones_nexo) {
-      txt += '[OBSERVACIONES]\n';
-      txt += blk('Para la familia',     s.observaciones);
-      txt += blk('Para Nexo (privado)', s.observaciones_nexo);
+      txt += SEP2;
+      txt += 'OBSERVACIONES\n' + SEP2;
+      if (s.observaciones)      txt += blk('Para la familia',     s.observaciones);
+      if (s.observaciones_nexo) txt += blk('Para Nexo (privado)', s.observaciones_nexo);
     }
-
-    txt += '\n';
   });
 
   // ── Pie ───────────────────────────────────────────────────
