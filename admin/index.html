@@ -3236,19 +3236,28 @@ async function descargarMesTxt() {
   const sesIds = sesiones.map(s => s.id);
 
   // 2. Temas y preguntas en paralelo
-  const [{ data: todosLosTemasRaw }, { data: pregsData }] = await Promise.all([
+  const [temasRes, pregsRes] = await Promise.all([
     db.from('sesion_temas').select('*').in('sesion_id', sesIds).order('id'),
     db.from('preguntas_asignatura').select('codigo, pregunta').order('orden'),
   ]);
 
+  if (temasRes.error) {
+    showToast(`Error al cargar temas: ${temasRes.error.message}`, 'error');
+    console.error('sesion_temas error:', temasRes.error);
+    // Continúa de todas formas para mostrar al menos los datos básicos
+  }
+
+  const todosLosTemasRaw = temasRes.data || [];
+  console.log(`sesion_temas: ${todosLosTemasRaw.length} registros para ${sesIds.length} sesiones`);
+
   const temasPorSesion = {};
   sesIds.forEach(id => { temasPorSesion[id] = []; });
-  (todosLosTemasRaw || []).forEach(t => {
+  todosLosTemasRaw.forEach(t => {
     if (temasPorSesion[t.sesion_id]) temasPorSesion[t.sesion_id].push(t);
   });
 
   const pregMap = {};
-  (pregsData || []).forEach(p => { pregMap[p.codigo] = p.pregunta; });
+  (pregsRes.data || []).forEach(p => { pregMap[p.codigo] = p.pregunta; });
 
   const alu  = allAlumnos.find(a => a.id === aluId) || {};
   const aluU = alu.usuario || {};
