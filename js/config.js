@@ -14,7 +14,7 @@ const BASE_PATH = '';
 const WHATSAPP_MANU = '34699529399';
 
 // Base URL del app (para links en emails)
-const APP_BASE_URL  = 'https://app.nexoacademico.es';
+const APP_BASE_URL  = 'https://app.nexoacademico.com';
 
 // Inicializar cliente Supabase (disponible como window.db)
 const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
