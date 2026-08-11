@@ -97,7 +97,28 @@ serve(async (req) => {
     if (!sesiones || sesiones.length === 0)
       throw new Error('No hay sesiones confirmadas en el periodo seleccionado')
 
-    // 3. Agregar datos por asignatura (cálculos en JS, nunca en la IA)
+    // 3. Sesion_temas (nuevo formulario) + preguntas para texto completo
+    const sesIds = sesiones.map((s: any) => s.id)
+    const [{ data: todosLosTemas }, { data: pregsData }] = await Promise.all([
+      admin.from('sesion_temas')
+        .select('sesion_id, asignatura, tema, tiempo_minutos, nota_profesor, respuestas_bateria')
+        .in('sesion_id', sesIds)
+        .order('id'),
+      admin.from('preguntas_asignatura')
+        .select('codigo, pregunta')
+        .order('orden'),
+    ])
+
+    const pregMap: Record<string, string> = {}
+    ;(pregsData || []).forEach((p: any) => { pregMap[p.codigo] = p.pregunta })
+
+    const temasPorSesion: Record<string, any[]> = {}
+    sesIds.forEach((id: string) => { temasPorSesion[id] = [] })
+    ;(todosLosTemas || []).forEach((t: any) => {
+      if (temasPorSesion[t.sesion_id]) temasPorSesion[t.sesion_id].push(t)
+    })
+
+    // 4. Agregar datos por asignatura (cálculos en JS, nunca en la IA)
     const asigMap: Record<string, any> = {}
     for (const s of sesiones) {
       const asig = s.asignatura || 'Sin asignatura'
@@ -139,9 +160,49 @@ serve(async (req) => {
       }
 
       const nota_media = avg(sesas.map((s: any) => s.nota_estimada).filter((v: any) => v != null))
-      const temas_trabajados = [...new Set(
-        sesas.map((s: any) => s.contenido_trabajado).filter((v: any) => v && v.trim())
-      )]
+
+      // Temas: combina sesion_temas (nuevo formulario) con contenido_trabajado (formulario antiguo)
+      const temasNuevos = sesas.flatMap((s: any) =>
+        (temasPorSesion[s.id] || []).map((t: any) => t.tema).filter(Boolean)
+      )
+      const temasAntiguos = sesas.map((s: any) => s.contenido_trabajado).filter((v: any) => v && v.trim())
+      const temas_trabajados = [...new Set([...temasNuevos, ...temasAntiguos])]
+
+      // Respuestas de batería por sesión (nuevo formulario)
+      const sesiones_detalle = sesas.map((s: any) => {
+        const temasSesion = temasPorSesion[s.id] || []
+        const temas_con_bateria = temasSesion.map((t: any) => {
+          const bat = t.respuestas_bateria || {}
+          const respuestas = Object.entries(bat).map(([cod, val]) => ({
+            pregunta: pregMap[cod] || cod,
+            respuesta: val,
+          }))
+          return {
+            tema: t.tema,
+            asignatura: t.asignatura,
+            tiempo_minutos: t.tiempo_minutos,
+            nota_profesor: t.nota_profesor || null,
+            respuestas_bateria: respuestas.length ? respuestas : null,
+          }
+        })
+        // Narrativa del formulario antiguo
+        const narrativa_antigua = (s.resolvio_solo || s.necesito_ayuda || s.falta_base || s.comparacion_anterior)
+          ? {
+              resolvio_solo: s.resolvio_solo,
+              necesito_ayuda: s.necesito_ayuda,
+              falta_base: s.falta_base,
+              comparacion_anterior: s.comparacion_anterior,
+              arranque_proxima: s.arranque_proxima,
+              tarea_casa: s.tarea_casa,
+            }
+          : null
+        return {
+          fecha: s.fecha,
+          temas: temas_con_bateria.length ? temas_con_bateria : null,
+          narrativa: narrativa_antigua,
+        }
+      }).filter((s: any) => s.temas || s.narrativa)
+
       const estado_dominante = mode(sesas.map((s: any) => s.estado_alumno_inicio).filter(Boolean))
       const bloqueo_dominante = mode(sesas.map((s: any) => s.momento_bloqueo).filter(Boolean))
 
@@ -162,21 +223,11 @@ serve(async (req) => {
         nota_media,
         estado_dominante,
         bloqueo_dominante,
-        narrativas: sesas
-          .filter((s: any) => s.resolvio_solo || s.necesito_ayuda || s.falta_base || s.comparacion_anterior)
-          .map((s: any) => ({
-            fecha: s.fecha,
-            resolvio_solo: s.resolvio_solo,
-            necesito_ayuda: s.necesito_ayuda,
-            falta_base: s.falta_base,
-            comparacion_anterior: s.comparacion_anterior,
-            arranque_proxima: s.arranque_proxima,
-            tarea_casa: s.tarea_casa,
-          })),
+        sesiones_detalle,
       }
     })
 
-    // KPIs globales
+    // 5. KPIs globales
     const total_sesiones = sesiones.length
     const total_horas = Math.round(sesiones.reduce((a, s) => a + (s.duracion_minutos || 60), 0) / 60 * 10) / 10
     const asignaturas_distintas = Object.keys(asigMap).length
@@ -193,7 +244,7 @@ serve(async (req) => {
       asignaturas: asignaturas_agregadas,
     }
 
-    // 4. Llamada a Claude
+    // 6. Llamada a Claude
     const systemPrompt = `Eres un asistente que redacta el contenido narrativo de informes de seguimiento académico para Nexo Académico, una agencia de clases particulares en Valencia. No diseñas el informe ni generas gráficos: solo escribes texto a partir de datos que ya te llegan calculados.
 
 DATOS DE ENTRADA
@@ -280,7 +331,7 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta. Sin texto antes
       throw new Error('La IA no devolvió un formato JSON válido. Inténtalo de nuevo.')
     }
 
-    // 5. Guardar informe en BD con estado oculto
+    // 7. Guardar informe en BD con estado oculto
     const { data: informe, error: infErr } = await admin.from('informes').insert({
       alumno_id,
       tipo,
