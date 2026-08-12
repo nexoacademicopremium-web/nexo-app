@@ -1968,7 +1968,8 @@ function renderMatItem(m, i) {
   const tipTxt     = isPdf ? 'PDF' : 'Recurso';
   const tipBg      = isPdf ? '#0f2240' : '#0d2d1e';
   const tipCl      = isPdf ? 'var(--blue)' : 'var(--green)';
-  const onclick    = m.archivo_url ? `abrirArchivo('${m.archivo_url}')` : '';
+  const tituloSafe = (m.titulo||'').replace(/'/g,' ').replace(/"/g,' ');
+  const onclick    = m.archivo_url ? `descargarArchivo('${m.archivo_url}','${tituloSafe}')` : '';
   const isExclusive = (window._estudiarData?.matIds || []).includes(m.id);
   return `
     <div class="mat-item-card${isExclusive ? ' mat-excl' : ''}" style="--cc:${isExclusive ? '#f59e0b' : cc}" onclick="${onclick}">
@@ -1976,7 +1977,7 @@ function renderMatItem(m, i) {
       <div class="mat-item-ico"><i class="ti ${ico}"></i></div>
       <div class="mat-item-nom">${escHTML(m.titulo)}</div>
       ${isExclusive ? `<span class="mat-item-badge" style="background:#2a1800;color:#f59e0b"><i class="ti ti-crown" style="font-size:9px"></i> Solo para ti</span>` : `<span class="mat-item-badge" style="background:${tipBg};color:${tipCl}">${tipTxt}</span>`}
-      ${m.archivo_url ? `<button class="mat-item-btn" onclick="event.stopPropagation();abrirArchivo('${m.archivo_url}')">Abrir</button>` : '<button class="mat-item-btn" style="opacity:.4" disabled>Sin enlace</button>'}
+      ${m.archivo_url ? `<button class="mat-item-btn" onclick="event.stopPropagation();descargarArchivo('${m.archivo_url}','${tituloSafe}')">Descargar</button>` : '<button class="mat-item-btn" style="opacity:.4" disabled>Sin enlace</button>'}
     </div>`;
 }
 
@@ -1988,7 +1989,8 @@ function renderMatRow(m) {
   const cc          = topicMeta.cc;
   const tipTxt      = isPdf ? 'PDF' : 'Recurso';
   const isExcl      = (window._estudiarData?.matIds || []).includes(m.id);
-  const openFn      = m.archivo_url ? `abrirArchivo('${m.archivo_url}')` : '';
+  const tituloSafeR = (m.titulo||'').replace(/'/g,' ').replace(/"/g,' ');
+  const openFn      = m.archivo_url ? `descargarArchivo('${m.archivo_url}','${tituloSafeR}')` : '';
   return `<div class="mat-item-row${isExcl?' mat-excl-row':''}" style="--cc:${isExcl?'#f59e0b':cc}" onclick="${openFn}">
     <div class="mat-row-ico"><i class="ti ${ico}"></i></div>
     <div class="mat-row-body">
@@ -1997,15 +1999,34 @@ function renderMatRow(m) {
         ${isExcl ? `<i class="ti ti-crown mat-row-excl-badge"></i><span style="color:#f59e0b;font-size:10px">Exclusivo</span>` : `<span>${tipTxt}</span>`}
       </div>
     </div>
-    ${m.archivo_url ? `<button class="mat-row-btn" onclick="event.stopPropagation();abrirArchivo('${m.archivo_url}')">Abrir</button>` : '<button class="mat-row-btn" style="opacity:.4" disabled>Sin enlace</button>'}
+    ${m.archivo_url ? `<button class="mat-row-btn" onclick="event.stopPropagation();descargarArchivo('${m.archivo_url}','${tituloSafeR}')">Descargar</button>` : '<button class="mat-row-btn" style="opacity:.4" disabled>Sin enlace</button>'}
   </div>`;
 }
 
 function volverAsignaturas() { _alGoRoot(); }
 
-function abrirArchivo(url) {
+async function descargarArchivo(url, nombre) {
   if (!url) return;
-  window.open(url, '_blank');
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Error al descargar');
+    const blob = await resp.blob();
+    const ext = blob.type.includes('pdf') ? '.pdf'
+      : blob.type.includes('png') ? '.png'
+      : (blob.type.includes('jpeg') || blob.type.includes('jpg')) ? '.jpg'
+      : blob.type.includes('word') ? '.docx'
+      : '';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (nombre || 'documento') + ext;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  } catch(e) {
+    console.error('Descarga fallida:', e);
+    window.open(url, '_blank');
+  }
 }
 
 // ============================================================

@@ -4290,7 +4290,7 @@ function _pMatRenderPdfs(c) {
         <div class="mat-pdf-tipo">${isPerso ? `<i class="ti ti-crown" style="font-size:10px"></i> Excl. · ${escHTML(nombres)}` : (isPdf?'PDF':'Recurso')}</div>
       </div>
       <div class="mat-pdf-actions">
-        ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" rel="noopener" class="btn-edit">Ver</a>` : ''}
+        ${m.archivo_url ? `<button class="btn-edit" onclick="descargarArchivo('${m.archivo_url}','${(m.titulo||'').replace(/'/g,' ').replace(/"/g,' ')}')"><i class="ti ti-download"></i> Descargar</button>` : ''}
         <button class="btn-danger" onclick="pMatEliminar('${m.id}')"><i class="ti ti-trash"></i></button>
       </div>
     </div>`;
@@ -4298,9 +4298,28 @@ function _pMatRenderPdfs(c) {
   c.innerHTML = _pMatBc() + `<div class="mat-pdf-grid">${cards||'<p style="color:var(--muted);font-size:12px;padding:8px 0">Sin archivos</p>'}</div>`;
 }
 
-function abrirArchivo(url) {
+async function descargarArchivo(url, nombre) {
   if (!url) return;
-  window.open(url, '_blank');
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Error al descargar');
+    const blob = await resp.blob();
+    const ext = blob.type.includes('pdf') ? '.pdf'
+      : blob.type.includes('png') ? '.png'
+      : (blob.type.includes('jpeg') || blob.type.includes('jpg')) ? '.jpg'
+      : blob.type.includes('word') ? '.docx'
+      : '';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (nombre || 'documento') + ext;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  } catch(e) {
+    console.error('Descarga fallida:', e);
+    window.open(url, '_blank');
+  }
 }
 
 // ── Upload modal ──────────────────────────────────────────────

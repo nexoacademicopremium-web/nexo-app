@@ -80,12 +80,13 @@ serve(async (req) => {
     const { data: sesiones, error: sesErr } = await admin
       .from('sesiones')
       .select(`
-        id, asignatura, fecha, duracion_minutos,
+        id, asignatura, fecha, hora_inicio, duracion_minutos,
         contenido_trabajado, estado_alumno_inicio, momento_bloqueo,
         resolvio_solo, necesito_ayuda, falta_base,
         nota_estimada, comparacion_anterior, arranque_proxima, tarea_casa,
         valoracion_comprension, valoracion_aplicacion, valoracion_concentracion,
         valoracion_motivacion, valoracion_autonomia,
+        examen_proximo, examen_asignatura, examen_fecha, examen_tema,
         profesor:profesores(usuario:usuarios(nombre, apellidos))
       `)
       .eq('alumno_id', alumno_id)
@@ -237,10 +238,36 @@ serve(async (req) => {
     const u = alumno.usuario as any
     const alumnoNombre = u ? `${u.nombre} ${u.apellidos || ''}`.trim() : 'Alumno'
 
+    // Exámenes registrados en las sesiones del periodo (deduplicados por asignatura+fecha)
+    const examenesMap: Record<string, any> = {}
+    for (const s of sesiones) {
+      if (s.examen_proximo && s.examen_fecha) {
+        const key = `${s.examen_asignatura || s.asignatura}|${s.examen_fecha}`
+        if (!examenesMap[key]) {
+          examenesMap[key] = {
+            asignatura: s.examen_asignatura || s.asignatura,
+            fecha: s.examen_fecha,
+            tema: s.examen_tema || null,
+          }
+        }
+      }
+    }
+    const examenes_proximos = Object.values(examenesMap).sort((a: any, b: any) => a.fecha < b.fecha ? -1 : 1)
+
+    // Calendario de sesiones (fecha + asignatura + hora) para generar calendarios visuales
+    const sesiones_calendario = sesiones.map((s: any) => ({
+      fecha: s.fecha,
+      asignatura: s.asignatura,
+      hora_inicio: s.hora_inicio || null,
+      duracion_minutos: s.duracion_minutos || 60,
+    }))
+
     const inputData = {
       alumno: { nombre: alumnoNombre, nivel: alumno.nivel },
       periodo: { tipo, fecha_inicio, fecha_fin },
       global: { total_sesiones, total_horas, asignaturas_distintas, profesores_distintos, horas_por_asig },
+      examenes_proximos: examenes_proximos.length ? examenes_proximos : null,
+      sesiones_calendario,
       asignaturas: asignaturas_agregadas,
     }
 
@@ -276,14 +303,22 @@ Por defecto "mantener". "aumentar" solo si hay dificultad creciente clara. "redu
 PUNTOS DE MEJORA
 Ordena por prioridad real según impacto en el aprendizaje.
 
+ANÁLISIS POR ASIGNATURA
+El campo "analisis" debe ser máximo 2 frases. El campo "observaciones" debe ser un array de 3-4 bullets cortos (máximo 15 palabras cada uno) describiendo lo más relevante de esa asignatura: qué funciona bien, qué cuesta, qué patrón destaca.
+
+MAYOR LOGRO
+Identifica el logro más llamativo del periodo (puede ser un avance de autonomía, superación de un bloqueo, constancia destacada…). Debe ser algo concreto y verificable con los datos recibidos. Preferiblemente incluye números o comparaciones si los hay.
+
 FORMATO DE SALIDA
 Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta. Sin texto antes ni después, sin backticks de markdown, sin comentarios:
 {
-  "resumen_ejecutivo": "string",
+  "resumen_ejecutivo": "string (máx 3 frases)",
+  "mayor_logro": { "asignatura": "string", "descripcion": "string concreta con datos, máx 20 palabras" },
   "cabecera": { "profesores": [{ "nombre": "string", "asignaturas": ["string"] }] },
   "asignaturas": [{
     "nombre": "string", "profesor": "string", "temas_trabajados": ["string"],
-    "analisis": "string",
+    "analisis": "string (máx 2 frases)",
+    "observaciones": ["string bullet 1", "string bullet 2", "string bullet 3"],
     "horas_recomendacion": { "direccion": "aumentar | mantener | reducir", "motivo": "string" }
   }],
   "puntos_fuertes": ["string"],

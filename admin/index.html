@@ -4058,7 +4058,7 @@ function _matRenderPdfs(c) {
       <span class="mat-pdf-vis ${m.visible?'ok':'off'}">${m.visible?'Visible':'Oculto'}</span>
       <div class="mat-pdf-actions">
         <button class="btn-edit" onclick="abrirEditarMaterial('${m.id}')"><i class="ti ti-pencil"></i></button>
-        ${m.archivo_url ? `<a href="${m.archivo_url}" target="_blank" rel="noopener" class="btn-edit">Ver</a>` : ''}
+        ${m.archivo_url ? `<button class="btn-edit" onclick="descargarArchivo('${m.archivo_url}','${(m.titulo||'').replace(/'/g,' ').replace(/"/g,' ')}')"><i class="ti ti-download"></i> Descargar</button>` : ''}
         <button class="btn-danger" onclick="toggleVisible('material','${m.id}',${!m.visible})">${m.visible?'Ocultar':'Mostrar'}</button>
         <button class="btn-danger" onclick="eliminarMaterial('${m.id}')"><i class="ti ti-trash"></i></button>
       </div>
@@ -4067,9 +4067,28 @@ function _matRenderPdfs(c) {
   c.innerHTML = _matBc() + `<div class="mat-pdf-grid">${cards||'<p style="color:var(--muted);font-size:12px;padding:8px 0">Sin archivos</p>'}</div>`;
 }
 
-function abrirArchivo(url) {
+async function descargarArchivo(url, nombre) {
   if (!url) return;
-  window.open(url, '_blank');
+  try {
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Error al descargar');
+    const blob = await resp.blob();
+    const ext = blob.type.includes('pdf') ? '.pdf'
+      : blob.type.includes('png') ? '.png'
+      : (blob.type.includes('jpeg') || blob.type.includes('jpg')) ? '.jpg'
+      : blob.type.includes('word') ? '.docx'
+      : '';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (nombre || 'documento') + ext;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  } catch(e) {
+    console.error('Descarga fallida:', e);
+    window.open(url, '_blank');
+  }
 }
 
 function abrirModalMaterial() {
