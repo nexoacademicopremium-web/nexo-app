@@ -54,22 +54,52 @@ serve(async (req) => {
 
     const html = generarHtml(informe, ia, kpis, alumnoNombre)
 
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-    const pdfUrl = `${supabaseUrl}/functions/v1/ver-informe?id=${informe_id}`
+    // ── Generar PDF con PDFShift ──────────────────────────────────
+    let realPdfUrl = ''
+    const pdfShiftKey = Deno.env.get('PDFSHIFT_API_KEY')
+    if (pdfShiftKey) {
+      try {
+        const pdfResp = await fetch('https://api.pdfshift.io/v3/convert/pdf', {
+          method: 'POST',
+          headers: {
+            'X-API-Key': pdfShiftKey,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ source: html, format: 'A4', margin: '0' }),
+        })
+        if (pdfResp.ok) {
+          const pdfBytes = await pdfResp.arrayBuffer()
+          const pdfPath = `informes/${informe_id}.pdf`
+          const { error: storErr } = await admin.storage
+            .from('nexo-files')
+            .upload(pdfPath, pdfBytes, { contentType: 'application/pdf', upsert: true })
+          if (!storErr) {
+            const { data: pubData } = admin.storage.from('nexo-files').getPublicUrl(pdfPath)
+            realPdfUrl = pubData.publicUrl
+          } else {
+            console.error('Storage upload error:', storErr.message)
+          }
+        } else {
+          console.error('PDFShift error:', await pdfResp.text())
+        }
+      } catch (pdfErr) {
+        console.error('PDF generation failed:', pdfErr)
+      }
+    }
 
     const { error: updErr } = await admin.from('informes').update({
       estado: 'visible',
       visible: true,
       html_cache: html,
-      pdf_url: pdfUrl,
-      archivo_url: pdfUrl,
+      pdf_url: realPdfUrl || null,
+      archivo_url: realPdfUrl || null,
       published_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }).eq('id', informe_id)
     if (updErr) throw new Error('Error al publicar: ' + updErr.message)
 
     return new Response(
-      JSON.stringify({ success: true, pdf_url: pdfUrl }),
+      JSON.stringify({ success: true, pdf_url: realPdfUrl || null }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
 
