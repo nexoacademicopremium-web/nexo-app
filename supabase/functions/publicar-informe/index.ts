@@ -87,19 +87,29 @@ serve(async (req) => {
       }
     }
 
+    // Generar token de acceso con caducidad de 30 días
+    const accessToken = crypto.randomUUID()
+    const tokenExpira = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
     const { error: updErr } = await admin.from('informes').update({
       estado: 'visible',
       visible: true,
       html_cache: html,
       pdf_url: realPdfUrl || null,
       archivo_url: realPdfUrl || null,
+      token: accessToken,
+      token_expira: tokenExpira,
       published_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }).eq('id', informe_id)
     if (updErr) throw new Error('Error al publicar: ' + updErr.message)
 
+    // URL segura con token
+    const baseUrl = Deno.env.get('SUPABASE_URL')!.replace('.supabase.co', '.functions.supabase.co')
+    const viewUrl = `${baseUrl}/ver-informe?id=${informe_id}&t=${accessToken}`
+
     return new Response(
-      JSON.stringify({ success: true, pdf_url: realPdfUrl || null }),
+      JSON.stringify({ success: true, pdf_url: realPdfUrl || null, view_url: viewUrl }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
 

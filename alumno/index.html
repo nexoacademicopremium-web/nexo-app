@@ -1058,7 +1058,7 @@ async function loadDashboard() {
 
   // Sesiones este mes
   const now = new Date();
-  const mesInicio = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const mesInicio = _fechaLocal(new Date(now.getFullYear(), now.getMonth(), 1));
   const { data: sesionesMes } = await db
     .from('sesiones')
     .select('id, duracion_minutos, estado')
@@ -2107,7 +2107,7 @@ function renderTest() {
     </div>
     ${preguntas.map((p, i) => `
       <div class="test-pregunta" id="preg-${p.id}">
-        <div class="test-enunciado">${i+1}. ${p.enunciado}</div>
+        <div class="test-enunciado">${i+1}. ${escHTML(p.enunciado)}</div>
         <div class="test-opciones">
           ${['a','b','c','d'].map(op => `
             <label class="test-opcion ${respuestas[p.id] === op ? 'selected' : ''} ${enviado ? (op === respuestas_correctas[p.id] ? 'correct' : respuestas[p.id] === op ? 'wrong' : '') : ''}">
@@ -2419,7 +2419,7 @@ function _renderTareaAlumnoModal(t) {
         ${items.map(item => `
           <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:.5px solid var(--border2)">
             <i class="ti ${item.correcto ? 'ti-circle-check' : 'ti-circle-x'}" style="color:${item.correcto ? 'var(--green)' : '#f08080'};font-size:16px;flex-shrink:0;margin-top:1px"></i>
-            <span style="color:#ddd;font-size:13px">${item.texto}</span>
+            <span style="color:#ddd;font-size:13px">${escHTML(item.texto)}</span>
           </div>`).join('')}
       </div>` : ''}
     </div>`;
@@ -2665,8 +2665,8 @@ async function renderCalendario() {
     .from('calendario_alumno')
     .select('*')
     .eq('alumno_id', ctx.alumnoData.id)
-    .gte('fecha', new Date(calYear, calMes, 1).toISOString().split('T')[0])
-    .lte('fecha', new Date(calYear, calMes + 1, 0).toISOString().split('T')[0]);
+    .gte('fecha', _fechaLocal(new Date(calYear, calMes, 1)))
+    .lte('fecha', _fechaLocal(new Date(calYear, calMes + 1, 0)));
 
   calEventos = eventos || [];
 
@@ -2697,7 +2697,7 @@ async function renderCalendario() {
     const evColors = ['ev-blue','ev-green','ev-amber'];
     html += `<div class="cal-day${isToday ? ' today' : ''}${evs.length ? ' has-event' : ''}" onclick="clickDia('${dateStr}')">
       <div class="cal-num">${d}</div>
-      ${evs.slice(0,2).map((e,i) => `<div class="cal-ev ${evColors[i%3]}">${e.asignatura || e.titulo}</div>`).join('')}
+      ${evs.slice(0,2).map((e,i) => `<div class="cal-ev ${evColors[i%3]}">${escHTML(e.asignatura || e.titulo)}</div>`).join('')}
       ${evs.length > 2 ? `<div style="font-size:8px;color:var(--muted);margin-top:1px">+${evs.length-2} más</div>` : ''}
     </div>`;
   }
@@ -2720,7 +2720,7 @@ function clickDia(dateStr) {
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:.5px solid var(--border2)">
         <div>
           <div style="color:#fff;font-size:13px;font-weight:500">${escHTML(e.titulo)}</div>
-          <div style="color:var(--muted);font-size:11px">${e.asignatura || ''}${e.hora_inicio ? ' · ' + formatTime(e.hora_inicio) + 'h' : ''} · ${(e.duracion_minutos/60).toFixed(1).replace('.0','') + 'h'}</div>
+          <div style="color:var(--muted);font-size:11px">${escHTML(e.asignatura || '')}${e.hora_inicio ? ' · ' + formatTime(e.hora_inicio) + 'h' : ''} · ${(e.duracion_minutos/60).toFixed(1).replace('.0','') + 'h'}</div>
           ${e.notas ? `<div style="color:var(--muted);font-size:11px;margin-top:2px">${escHTML(e.notas)}</div>` : ''}
         </div>
         <div style="display:flex;gap:6px">
@@ -2751,7 +2751,7 @@ function toggleRecurrenteAlumno() {
 function setFinMesEv() {
   const hoy = new Date();
   const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-  document.getElementById('ev-hasta').value = fin.toISOString().split('T')[0];
+  document.getElementById('ev-hasta').value = _fechaLocal(fin);
 }
 
 function setFinTrimEv() {
@@ -2762,7 +2762,7 @@ function setFinTrimEv() {
   else if (m < 6) fin = new Date(hoy.getFullYear(), 6,  0);
   else if (m < 9) fin = new Date(hoy.getFullYear(), 9,  0);
   else            fin = new Date(hoy.getFullYear(), 12, 0);
-  document.getElementById('ev-hasta').value = fin.toISOString().split('T')[0];
+  document.getElementById('ev-hasta').value = _fechaLocal(fin);
 }
 
 function generarFechasEv(desdeStr, jsDay, hastaStr) {
@@ -2771,7 +2771,7 @@ function generarFechasEv(desdeStr, jsDay, hastaStr) {
   let cur = new Date(desdeStr + 'T12:00:00');
   while (cur.getDay() !== parseInt(jsDay)) cur.setDate(cur.getDate() + 1);
   while (cur <= hasta) {
-    fechas.push(cur.toISOString().split('T')[0]);
+    fechas.push(_fechaLocal(cur));
     cur.setDate(cur.getDate() + 7);
   }
   return fechas;

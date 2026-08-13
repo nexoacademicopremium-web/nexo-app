@@ -1504,7 +1504,7 @@ async function renderMiniCal() {
   const m = now.getMonth(), y = now.getFullYear();
   const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   document.getElementById('cal-mini-titulo').textContent = meses[m] + ' ' + y;
-  const hoy = now.toISOString().split('T')[0];
+  const hoy = _fechaHoy();
   const firstDay = new Date(y, m, 1).getDay();
   const offset = firstDay === 0 ? 6 : firstDay - 1;
   const totalDias = new Date(y, m + 1, 0).getDate();
@@ -1792,7 +1792,7 @@ async function renderTablaAlumnos() {
   }
 
   const now = new Date();
-  const mesIni = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const mesIni = _fechaLocal(new Date(now.getFullYear(), now.getMonth(), 1));
   const { data: horasData } = await db
     .from('sesiones')
     .select('alumno_id, duracion_minutos')
@@ -1815,7 +1815,7 @@ async function renderTablaAlumnos() {
       <td><div style="display:flex;align-items:center;gap:10px"><div class="av">${ini}</div><div><div class="alumno-name">${escHTML(u.nombre)} ${escHTML(u.apellidos)}</div><div class="alumno-det">${escHTML((a._asignaturas||[]).join(', '))}</div></div></div></td>
       <td><span class="pill ${pillCls}">${nivelLabel(a.nivel)}</span></td>
       <td>${escHTML((a._asignaturas||[]).join(', '))}</td>
-      <td>${a.horario_habitual||'—'}</td>
+      <td>${escHTML(a.horario_habitual||'—')}</td>
       <td><b style="color:#fff">${h}h</b></td>
       <td><span class="pill ${bonoOk ? 'pill-ok' : 'pill-warn'}">${a.horas_bono_restantes}h restantes</span></td>
     </tr>`;
@@ -1914,7 +1914,7 @@ async function abrirFicha(alumnoId) {
     </div>
     <div class="ficha-section">Información</div>
     <div class="ficha-row"><span>Asignatura</span><b>${escHTML((alumno._asignaturas||[]).join(', ')||'—')}</b></div>
-    <div class="ficha-row"><span>Horario</span><b>${alumno.horario_habitual||'—'}</b></div>
+    <div class="ficha-row"><span>Horario</span><b>${escHTML(alumno.horario_habitual||'—')}</b></div>
     <div class="ficha-row"><span>Modalidad</span><b>${alumno.modalidad==='presencial'?'Presencial':'Online'}</b></div>
     <div class="ficha-row"><span>Desde</span><b>${formatDate(alumno.fecha_inicio)}</b></div>
     ${confirmadas.length > 0 ? `
@@ -1979,7 +1979,7 @@ async function renderCalendarioProf() {
   const totalDias = new Date(calYear, calMes + 1, 0).getDate();
   const firstDay = new Date(calYear, calMes, 1).getDay();
   const offset = firstDay === 0 ? 6 : firstDay - 1;
-  const hoy = new Date().toISOString().split('T')[0];
+  const hoy = _fechaHoy();
   const mesStr = `${calYear}-${String(calMes+1).padStart(2,'0')}`;
 
   const { data: evs } = await db
@@ -2042,8 +2042,8 @@ function clickDiaProf(dateStr) {
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:.5px solid var(--border2)">
         <div>
           <div style="color:#fff;font-size:13px;font-weight:500">${escHTML(nom)}</div>
-          <div style="color:var(--muted);font-size:11px">${e.asignatura||'—'}${e.hora_inicio ? ' · ' + _formatTimePro(e.hora_inicio) + 'h' : ''} · ${horas}</div>
-          ${e.notas ? '<div style="color:var(--muted);font-size:11px;margin-top:2px">' + e.notas + '</div>' : ''}
+          <div style="color:var(--muted);font-size:11px">${escHTML(e.asignatura||'—')}${e.hora_inicio ? ' · ' + _formatTimePro(e.hora_inicio) + 'h' : ''} · ${horas}</div>
+          ${e.notas ? '<div style="color:var(--muted);font-size:11px;margin-top:2px">' + escHTML(e.notas) + '</div>' : ''}
         </div>
         <div style="display:flex;gap:6px">
           <button onclick="abrirEditClaseProf('${e.id}')" style="background:var(--border2);color:var(--soft);border:.5px solid var(--border);border-radius:5px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:inherit"><i class='ti ti-pencil' style='font-size:11px'></i> Editar</button>
@@ -2077,7 +2077,8 @@ function prepararNuevaClase(dateStr) {
 
 async function eliminarClaseDia(evId) {
   if (!confirm('¿Eliminar esta clase del calendario?')) return;
-  await db.from('calendario_profesor').delete().eq('id', evId);
+  const { error } = await db.from('calendario_profesor').delete().eq('id', evId);
+  if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
   showToast('Clase eliminada');
   cerrarModalClase();
   await renderCalendarioProf();
@@ -2092,7 +2093,7 @@ function toggleRecurrenteProf() {
 function setFinMesCal() {
   const hoy = new Date();
   const fin = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-  document.getElementById('mc-hasta').value = fin.toISOString().split('T')[0];
+  document.getElementById('mc-hasta').value = _fechaLocal(fin);
 }
 
 function setFinTrimestreCal() {
@@ -2103,7 +2104,7 @@ function setFinTrimestreCal() {
   else if (m < 6) fin = new Date(hoy.getFullYear(), 6,  0);
   else if (m < 9) fin = new Date(hoy.getFullYear(), 9,  0);
   else            fin = new Date(hoy.getFullYear(), 12, 0);
-  document.getElementById('mc-hasta').value = fin.toISOString().split('T')[0];
+  document.getElementById('mc-hasta').value = _fechaLocal(fin);
 }
 
 function generarFechasRecurrentes(desdeStr, jsDay, hastaStr) {
@@ -2112,7 +2113,7 @@ function generarFechasRecurrentes(desdeStr, jsDay, hastaStr) {
   let cur = new Date(desdeStr + 'T12:00:00');
   while (cur.getDay() !== parseInt(jsDay)) cur.setDate(cur.getDate() + 1);
   while (cur <= hasta) {
-    fechas.push(cur.toISOString().split('T')[0]);
+    fechas.push(_fechaLocal(cur));
     cur.setDate(cur.getDate() + 7);
   }
   return fechas;
@@ -2123,7 +2124,7 @@ function abrirModalClase() {
   if (list) list.remove();
   document.getElementById('form-clase').reset();
   document.getElementById('form-clase').style.display = 'block';
-  document.getElementById('mc-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('mc-fecha').value = _fechaHoy();
   document.getElementById('mc-recurrente-opts').style.display = 'none';
   document.getElementById('mc-recurrente-wrap').style.display = 'block';
   document.getElementById('btn-eliminar-clase').style.display = 'none';
@@ -2182,7 +2183,8 @@ async function abrirEditClaseProf(evId) {
 async function eliminarClaseProf() {
   if (!editClaseId) return;
   if (!confirm('¿Eliminar esta clase del calendario?')) return;
-  await db.from('calendario_profesor').delete().eq('id', editClaseId);
+  const { error } = await db.from('calendario_profesor').delete().eq('id', editClaseId);
+  if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
   showToast('Clase eliminada');
   cerrarModalClase();
   await renderCalendarioProf();
@@ -2257,7 +2259,9 @@ async function loadActividad() {
 
   const mesVal = document.getElementById('act-filtro-mes').value;
   if (mesVal) {
-    query = query.gte('fecha', mesVal + '-01').lte('fecha', mesVal + '-31');
+    const [y, m] = mesVal.split('-').map(Number);
+    const ultimoDia = new Date(y, m, 0).getDate();
+    query = query.gte('fecha', mesVal + '-01').lte('fecha', `${mesVal}-${String(ultimoDia).padStart(2,'0')}`);
   }
   const aluVal = document.getElementById('act-filtro-alumno').value;
   if (aluVal) query = query.eq('alumno_id', aluVal);
@@ -3279,7 +3283,8 @@ async function loadTestsProf() {
 }
 
 async function toggleTestVis(id, vis) {
-  await db.from('tests').update({ visible: vis }).eq('id', id);
+  const { error } = await db.from('tests').update({ visible: vis }).eq('id', id);
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
   loadTestsProf();
 }
 
@@ -3602,7 +3607,7 @@ async function verTestProf(testId) {
   document.getElementById('ver-test-titulo').textContent = test?.titulo || 'Test';
   el.innerHTML = pregs.map((q, i) => `
     <div style="margin-bottom:20px;padding:14px;background:rgba(255,255,255,.04);border-radius:10px;border:.5px solid rgba(255,255,255,.08)">
-      <p style="font-weight:600;margin:0 0 10px;font-size:13px;color:#e2e8f0">${i + 1}. ${q.enunciado}</p>
+      <p style="font-weight:600;margin:0 0 10px;font-size:13px;color:#e2e8f0">${i + 1}. ${escHTML(q.enunciado)}</p>
       ${['a','b','c','d'].map(l => {
         const isCorrect = q.respuesta_correcta === l;
         return `<div style="display:flex;align-items:center;gap:8px;padding:6px 10px;margin:4px 0;border-radius:7px;font-size:12px;
@@ -3995,7 +4000,7 @@ function _renderTareaProfModal(t) {
       ${items.length ? items.map(item => `
         <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:.5px solid var(--border2)">
           <i class="ti ${item.correcto ? 'ti-circle-check' : 'ti-circle-x'}" style="color:${item.correcto ? 'var(--green)' : '#f08080'};font-size:16px;flex-shrink:0;margin-top:1px"></i>
-          <span style="color:#ddd;font-size:13px">${item.texto}</span>
+          <span style="color:#ddd;font-size:13px">${escHTML(item.texto)}</span>
         </div>`).join('') : ''}
     </div>`;
   }
@@ -4531,10 +4536,18 @@ async function pMatGuardar(e) {
     };
 
     const { data: mat, error: matErr } = await db.from('material').insert(payload).select('id').single();
-    if (matErr) throw new Error('Error al guardar material: ' + matErr.message);
+    if (matErr) {
+      await db.storage.from('nexo-files').remove([path]);
+      throw new Error('Error al guardar material: ' + matErr.message);
+    }
 
     if (mat?.id) {
-      await db.from('material_alumno').insert({ material_id: mat.id, alumno_id: alumnoId, asignado_por: ctx.usuario.id });
+      const { error: asignErr } = await db.from('material_alumno').insert({ material_id: mat.id, alumno_id: alumnoId, asignado_por: ctx.usuario.id });
+      if (asignErr) {
+        await db.from('material').delete().eq('id', mat.id);
+        await db.storage.from('nexo-files').remove([path]);
+        throw new Error('Error al asignar material: ' + asignErr.message);
+      }
     }
 
     showToast('Material subido correctamente');

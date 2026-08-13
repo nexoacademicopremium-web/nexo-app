@@ -1521,7 +1521,7 @@ function cerrarModal(id) {
 // ============================================================
 async function loadDashboard() {
   const now = new Date();
-  const mesIni = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+  const mesIni = _fechaLocal(new Date(now.getFullYear(), now.getMonth(), 1));
 
   const [
     { count: nAlumnos },
@@ -1614,7 +1614,8 @@ async function loadDashboard() {
 async function loadTablaAlumnos() {
   document.getElementById('alumnos-sub').textContent = `${allAlumnos.length} alumnos en el sistema`;
 
-  const mesIni = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+  const now = new Date();
+  const mesIni = _fechaLocal(new Date(now.getFullYear(), now.getMonth(), 1));
   const { data: horasData } = await db
     .from('sesiones')
     .select('alumno_id, duracion_minutos')
@@ -4469,55 +4470,28 @@ async function guardarBono() {
     const hoy = _fechaHoy();
 
     if (editBonoId) {
-      // ── EDITAR ────────────────────────────────────────────────
+      // ── EDITAR (vía RPC transaccional) ────────────────────────
       const currentEstado = document.getElementById('bono-estado').value;
-      const oldHoras      = parseFloat(document.getElementById('bono-old-horas').value) || 0;
-      const oldEstado     = document.getElementById('bono-old-estado').value;
+      const consumidasWrap = document.getElementById('bono-consumidas-wrap');
+      const consumidas = consumidasWrap.style.display !== 'none'
+        ? parseFloat(document.getElementById('bono-consumidas').value) || null
+        : null;
 
-      const esPagado = true;
-      let newEstado;
-      if (currentEstado === 'activo' || currentEstado === 'en_espera' || currentEstado === 'agotado') {
-        newEstado = currentEstado;
-      } else {
-        const { data: activos, error: eAct } = await db.from('bonos')
-          .select('id').eq('alumno_id', alumnoId).eq('estado', 'activo').neq('id', editBonoId).limit(1);
-        if (eAct) throw new Error('Error al verificar bonos activos: ' + eAct.message);
-        const hayActivo = activos && activos.length > 0;
-        newEstado = hayActivo ? 'en_espera' : 'activo';
-      }
+      const { data: result, error: rpcErr } = await db.rpc('ajustar_bono_admin', {
+        p_bono_id:           editBonoId,
+        p_horas_contratadas: horas,
+        p_horas_consumidas:  consumidas,
+        p_modalidad:         modalidad,
+        p_precio_base:       precioBase,
+        p_descuento:         descuento,
+        p_precio_final:      precioFinal,
+        p_fecha_compra:      fechaCompra,
+        p_estado:            currentEstado || null,
+        p_notas:             notas,
+      });
 
-      const payload = {
-        horas_contratadas: horas, modalidad, precio_base: precioBase, descuento,
-        precio_final: precioFinal, fecha_compra: fechaCompra, estado: newEstado, notas,
-        pagado: esPagado, fecha_pago: esPagado ? hoy : null,
-      };
-
-      const { error } = await db.from('bonos').update(payload).eq('id', editBonoId);
-      if (error) throw error;
-
-      if (newEstado === 'activo') {
-        const consumidasWrap = document.getElementById('bono-consumidas-wrap');
-        if (consumidasWrap.style.display !== 'none') {
-          const consumidas   = parseFloat(document.getElementById('bono-consumidas').value) || 0;
-          const newRestantes = Math.max(0, horas - consumidas);
-          await db.from('bonos').update({ horas_consumidas: +consumidas.toFixed(2), horas_restantes: +newRestantes.toFixed(2) }).eq('id', editBonoId);
-          await db.from('alumnos').update({ horas_bono_restantes: +newRestantes.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
-        } else if (horas !== oldHoras) {
-          const { data: al, error: eAl } = await db.from('alumnos').select('horas_bono_restantes').eq('id', alumnoId).single();
-          if (eAl || !al) throw new Error('Error al leer horas del alumno: ' + (eAl?.message || 'no encontrado'));
-          const delta        = horas - oldHoras;
-          const newRestantes = Math.max(0, (al.horas_bono_restantes || 0) + delta);
-          await db.from('bonos').update({ horas_restantes: +newRestantes.toFixed(2) }).eq('id', editBonoId);
-          await db.from('alumnos').update({ horas_bono_restantes: +newRestantes.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
-        }
-        if (oldEstado !== 'activo') {
-          await vencerBonosActivos(alumnoId, editBonoId);
-          await db.from('bonos').update({ horas_consumidas: 0, horas_restantes: +horas.toFixed(2) }).eq('id', editBonoId);
-          await db.from('alumnos').update({ horas_bono_restantes: +horas.toFixed(2), horas_bono_total: +horas.toFixed(2) }).eq('id', alumnoId);
-        }
-      } else if (oldEstado === 'activo' && newEstado !== 'activo') {
-        await db.from('alumnos').update({ horas_bono_restantes: 0, horas_bono_total: 0 }).eq('id', alumnoId);
-      }
+      if (rpcErr) throw new Error('Error al ajustar bono: ' + rpcErr.message);
+      if (!result?.success) throw new Error(result?.error || 'Error desconocido al ajustar bono');
     } else {
       // ── CREAR ─────────────────────────────────────────────────
       const { data: activos, error: eAct2 } = await db.from('bonos')
