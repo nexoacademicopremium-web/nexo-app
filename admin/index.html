@@ -1758,7 +1758,7 @@ async function loadInformesAdmin() {
     .eq('eliminado', false)
     .order('created_at', { ascending: false });
   if (error) {
-    el.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error: ${error.message}</p></div>`;
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error: ${escHTML(error.message)}</p></div>`;
     return;
   }
   _infData = (data || []).map(inf => ({
@@ -2443,7 +2443,7 @@ async function refreshFichaProfAsignaturas() {
   el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
   const { data, error } = await db.from('profesor_asignaturas')
     .select('asignatura_id').eq('profesor_id', fichaProfesorId);
-  if (error) { el.innerHTML = `<p style="color:var(--red);font-size:12px">${error.message}</p>`; return; }
+  if (error) { el.innerHTML = `<p style="color:var(--red);font-size:12px">${escHTML(error.message)}</p>`; return; }
   const asigSet = new Set((data || []).map(r => r.asignatura_id));
   profesorAsignaturasMap[fichaProfesorId] = asigSet;
   const names = [...asigSet].map(id => allAsignaturas.find(x => x.id === id)?.nombre).filter(Boolean).sort();
@@ -3545,7 +3545,7 @@ async function refreshFichaAsignaturas() {
   el.innerHTML = '<div class="loading-section" style="padding:10px"><div class="spinner"></div></div>';
   const { data, error } = await db.from('alumno_asignaturas')
     .select('asignatura_id').eq('alumno_id', fichaAlumnoId);
-  if (error) { el.innerHTML = `<p style="color:var(--red);font-size:12px">${error.message}</p>`; return; }
+  if (error) { el.innerHTML = `<p style="color:var(--red);font-size:12px">${escHTML(error.message)}</p>`; return; }
   const asigSet = new Set((data || []).map(r => r.asignatura_id));
   alumnoAsignaturasMap[fichaAlumnoId] = asigSet;
   renderFichaAsigCheckboxes(el, asigSet);
@@ -3711,7 +3711,7 @@ async function loadSesionesAdmin() {
   const { data: sesiones, error, count } = await query.range(from, to);
 
   if (error) {
-    sesEl.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error al cargar sesiones: ${error.message}</p></div>`;
+    sesEl.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error al cargar sesiones: ${escHTML(error.message)}</p></div>`;
     return;
   }
 
@@ -3843,7 +3843,7 @@ async function loadTablaMaterial() {
   const { data: material, error } = await db.from('material').select('*')
     .order('asignatura_id').order('bloque_id').order('tema_id').order('titulo');
   const container = document.getElementById('material-list');
-  if (error) { container.innerHTML = `<div class="empty-state"><i class="ti ti-alert-circle"></i><p style="color:var(--red)">${error.message}</p></div>`; return; }
+  if (error) { container.innerHTML = `<div class="empty-state"><i class="ti ti-alert-circle"></i><p style="color:var(--red)">${escHTML(error.message)}</p></div>`; return; }
   if (!material?.length) { container.innerHTML = `<div class="empty-state"><i class="ti ti-file-off"></i><p>Sin material todavía</p></div>`; return; }
   allMaterial = material;
   _matData = {
@@ -4116,8 +4116,8 @@ function abrirEditarMaterial(id) {
   const temaGuardado = m.bloque_tema || temaNombre(m.tema_id) || '';
   if (temaGuardado) document.getElementById('mat-tema-id').value = temaGuardado;
   const infoEl = document.getElementById('mat-archivo-actual');
-  if (m.archivo_url) {
-    infoEl.innerHTML = `Archivo actual: <a href="${m.archivo_url}" target="_blank" style="color:var(--blue)">Ver archivo</a> · Sube uno nuevo solo si quieres reemplazarlo`;
+  if (m.archivo_url && m.archivo_url.startsWith('https://')) {
+    infoEl.innerHTML = `Archivo actual: <a href="${escHTML(m.archivo_url)}" target="_blank" style="color:var(--blue)">Ver archivo</a> · Sube uno nuevo solo si quieres reemplazarlo`;
     infoEl.style.display = 'block';
   } else {
     infoEl.style.display = 'none';
@@ -4224,7 +4224,7 @@ async function loadBonos() {
   const { data, error } = await query.limit(200);
 
   if (error) {
-    el.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p style="color:var(--red)">Error: ${error.message}</p></div>`;
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p style="color:var(--red)">Error: ${escHTML(error.message)}</p></div>`;
     return;
   }
 
@@ -4892,7 +4892,7 @@ async function loadListaTests() {
     .select('*, preguntas:preguntas_test(id), alumno:alumnos(usuario:usuarios(nombre,apellidos))')
     .order('created_at', { ascending: false });
   if (error) {
-    el.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error: ${error.message}</p></div>`;
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error: ${escHTML(error.message)}</p></div>`;
     return;
   }
   _testsData = tests || [];
@@ -5157,7 +5157,7 @@ async function loadTablaAvisos() {
   const { data: avisos, error } = await db.from('avisos').select('*').order('created_at', { ascending: false });
   const el = document.getElementById('avisos-tabla');
   if (error) {
-    el.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error: ${error.message}</p></div>`;
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error: ${escHTML(error.message)}</p></div>`;
     return;
   }
   if (!avisos || avisos.length === 0) {

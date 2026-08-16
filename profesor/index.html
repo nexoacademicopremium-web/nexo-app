@@ -4132,7 +4132,7 @@ async function loadProfMaterial() {
     .select('*')
     .eq('subido_por', ctx.usuario.id)
     .order('asignatura_id').order('bloque_id').order('tema_id').order('titulo');
-  if (error) { c.innerHTML = `<div class="empty-state"><p style="color:var(--red)">${error.message}</p></div>`; return; }
+  if (error) { c.innerHTML = `<div class="empty-state"><p style="color:var(--red)">${escHTML(error.message)}</p></div>`; return; }
   pAllMaterial = mat || [];
 
   // Build alumno map
