@@ -1275,6 +1275,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
+<script src="../js/push.js"></script>
 <script>
 // ============================================================
 // State
@@ -2128,6 +2129,11 @@ async function publicarInformeIA() {
     });
     const result = await res.json();
     if (!res.ok || result.error) throw new Error(result.error || 'Error desconocido');
+
+    // Avisar a la familia de que ya pueden descargarlo.
+    db.functions.invoke('notificar', { body: { evento: 'informe_publicado', id: _infRevisionId } })
+      .catch(err => console.warn('Aviso de informe fallido:', err));
+
     showToast('Informe publicado y visible para el alumno');
     btn.style.display = 'none';
     document.getElementById('inf-rev-sub').textContent =
@@ -5212,9 +5218,25 @@ async function guardarAviso(e) {
     destinatario_id:  tipo === 'especifico' ? document.getElementById('av-usuario-especifico').value : null,
   };
 
-  const { error } = await db.from('avisos').insert(aviso);
+  const { data: nuevo, error } = await db.from('avisos').insert(aviso).select('id').single();
   if (error) { showToast('Error al publicar: ' + error.message, 'error'); return; }
-  showToast('Aviso publicado correctamente');
+
+  // Enviar el aviso al móvil y al correo de los destinatarios.
+  let entregados = null;
+  if (nuevo?.id) {
+    try {
+      const { data: res } = await db.functions.invoke('notificar', {
+        body: { evento: 'aviso_admin', id: nuevo.id },
+      });
+      entregados = res?.push?.enviados ?? null;
+    } catch (err) {
+      console.warn('Envío de notificaciones fallido:', err);
+    }
+  }
+
+  showToast(entregados !== null
+    ? `Aviso publicado y enviado a ${entregados} dispositivo${entregados === 1 ? '' : 's'}`
+    : 'Aviso publicado correctamente');
   cerrarModal('modal-aviso');
   await loadTablaAvisos();
 }

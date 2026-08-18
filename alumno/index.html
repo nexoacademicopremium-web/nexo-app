@@ -907,6 +907,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
+<script src="../js/push.js"></script>
 <script>
 // escHTML() vive en js/auth.js
 // ============================================================
@@ -2146,6 +2147,11 @@ async function enviarTest() {
 
   const { nota, correctas, total, solucionario } = resultado;
 
+  // Avisar al profesor que lo creó. Es accesorio: si falla, el test ya
+  // está corregido y guardado.
+  db.functions.invoke('notificar', { body: { evento: 'test_entregado', id: testId } })
+    .catch(err => console.warn('Aviso al profesor fallido:', err));
+
   // Actualizar testState con el solucionario para que renderTest() marque respuestas
   testState.respuestas_correctas = solucionario || {};
   renderTest();
@@ -2467,6 +2473,10 @@ async function subirEntrega() {
 
     if (error) throw error;
     if (data && !data.success) throw new Error(data.error || 'Error al entregar');
+
+    // Avisar al profesor. Accesorio: la entrega ya está registrada.
+    db.functions.invoke('notificar', { body: { evento: 'tarea_entregada', id: _tareaAlumnoActId } })
+      .catch(e => console.warn('Aviso al profesor fallido:', e));
 
     showToast('¡Tarea entregada!');
     cerrarModalTareaAlumno();
