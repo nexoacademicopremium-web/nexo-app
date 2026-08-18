@@ -4193,6 +4193,11 @@ async function guardarMaterial(e) {
           asignado_por: ctx.usuario.id,
         });
         if (maErr) console.warn('[Nexo] material_alumno insert:', maErr.message);
+        // Avisar al alumno solo si se le ha asignado a él en concreto.
+        else {
+          db.functions.invoke('notificar', { body: { evento: 'material_asignado', id: mat.id } })
+            .catch(e => console.warn('Aviso de material fallido:', e));
+        }
       }
       showToast('Material añadido correctamente');
     }

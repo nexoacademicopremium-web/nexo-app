@@ -4557,6 +4557,13 @@ async function pMatGuardar(e) {
       }
     }
 
+    // Avisar al alumno de que tiene material nuevo. Accesorio: el
+    // material ya está guardado y asignado.
+    if (mat?.id) {
+      db.functions.invoke('notificar', { body: { evento: 'material_asignado', id: mat.id } })
+        .catch(e => console.warn('Aviso de material fallido:', e));
+    }
+
     showToast('Material subido correctamente');
     document.getElementById('pmodal-material').classList.remove('open');
     await loadProfMaterial();

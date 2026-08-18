@@ -226,6 +226,32 @@ serve(async (req) => {
       url    = `${APP_BASE_URL}/profesor/`
       cta    = 'Ver la entrega'
 
+    // ── MATERIAL ASIGNADO → a los alumnos que lo reciben ───────
+    } else if (evento === 'material_asignado') {
+      const { data: mat } = await admin
+        .from('material').select('id, titulo, subido_por').eq('id', id).single()
+      if (!mat) return new Response(JSON.stringify({ error: 'Material no encontrado' }), { status: 404, headers: H })
+
+      // Solo quien lo subió, o el admin
+      if (rol !== 'admin' && mat.subido_por !== user.id) {
+        return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403, headers: H })
+      }
+
+      const { data: asignaciones } = await admin
+        .from('material_alumno')
+        .select('alumno:alumnos(usuario_id)')
+        .eq('material_id', id)
+
+      destinatarios = (asignaciones || [])
+        .map((a: any) => a.alumno?.usuario_id)
+        .filter(Boolean)
+
+      titulo = 'Nuevo material disponible'
+      cuerpo = `${esc(quien)} ha subido "${esc(mat.titulo)}" a tu material.`
+      asunto = `Nuevo material: ${mat.titulo}`
+      url    = `${APP_BASE_URL}/alumno/`
+      cta    = 'Ver el material'
+
     // ── AVISO DEL ADMIN → por rol o a una persona ──────────────
     } else if (evento === 'aviso_admin') {
       if (rol !== 'admin') {
