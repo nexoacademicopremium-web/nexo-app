@@ -4536,12 +4536,8 @@ async function guardarBono() {
   }
 }
 
-async function vencerBonosActivos(alumnoId, exceptId) {
-  let q = db.from('bonos').update({ estado: 'agotado', horas_restantes: 0 }).eq('alumno_id', alumnoId).eq('estado', 'activo');
-  if (exceptId) q = q.neq('id', exceptId);
-  await q;
-}
-
+// (vencerBonosActivos eliminada: su lógica vive en el RPC ajustar_bono_admin,
+//  que agota los bonos activos dentro de la misma transacción.)
 
 // ── CATÁLOGO TARIFAS ─────────────────────────────────────────
 function toggleCatalogoTarifas() {
