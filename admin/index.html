@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Admin — Nexo Académico</title>
 <link rel="manifest" href="manifest.json">
@@ -1577,7 +1577,7 @@ async function loadDashboard() {
         const a = alumnoMap[s.alumno_id]?.usuario || {};
         const p = profMap[s.profesor_id]?.usuario || {};
         return `<tr>
-          <td style="color:#fff">${a.nombre ? a.nombre + ' ' + a.apellidos : '—'}</td>
+          <td style="color:#fff">${escHTML(a.nombre ? a.nombre + ' ' + a.apellidos : '—')}</td>
           <td>${escHTML(s.asignatura)}</td>
           <td>${formatShortDate(s.fecha)}</td>
           <td>${escHTML(p.nombre || '—')}</td>
@@ -1686,7 +1686,7 @@ function filtrar(tipo) {
   } else {
     const res = allProfesores.filter(p => {
       const u = p.usuario || {};
-      return `${escHTML(u.nombre)} ${escHTML(u.apellidos)} ${(p._asigNombres||[]).join(' ')} ${p.zona||''}`.toLowerCase().includes(q);
+      return `${escHTML(u.nombre)} ${escHTML(u.apellidos)} ${(p._asigNombres||[]).join(' ')} ${escHTML(p.zona||'')}`.toLowerCase().includes(q);
     });
     renderTablaProfesores(res);
   }
@@ -1791,7 +1791,7 @@ function _infBack() {
 function _infAlumnoNombre(alumnoId) {
   const a = allAlumnos.find(x => x.id === alumnoId);
   if (!a?.usuario) return 'Alumno';
-  return `${a.usuario.nombre || ''} ${a.usuario.apellidos || ''}`.trim();
+  return `${escHTML(a.usuario.nombre || '')} ${escHTML(a.usuario.apellidos || '')}`.trim();
 }
 
 function _infBc() {
@@ -1880,7 +1880,7 @@ function _infRenderCards(c) {
   const cards = items.map(inf => {
     const isVisible   = inf.estado === 'visible';
     const hasContenido = !!(inf.contenido?.ia);
-    const url         = inf.pdf_url || inf.archivo_url;
+    const url         = inf.pdf_url;
     const tipoLabel   = inf.tipo === 'mensual' ? 'Mensual' : inf.tipo === 'personalizado' ? 'Personalizado' : inf.tipo;
     const fi          = inf.fecha_inicio || inf.fecha;
     const ff          = inf.fecha_fin    || inf.fecha;
@@ -1916,7 +1916,7 @@ function _infAbrirGenerar(alumnoId) {
   sel.innerHTML = '<option value="">— Selecciona alumno —</option>' +
     allAlumnos.filter(a => a.activo).map(a => {
       const u = a.usuario || {};
-      return `<option value="${a.id}" ${a.id === alumnoId ? 'selected' : ''}>${u.nombre || ''} ${u.apellidos || ''}</option>`;
+      return `<option value="${a.id}" ${a.id === alumnoId ? 'selected' : ''}>${escHTML(u.nombre || '')} ${escHTML(u.apellidos || '')}</option>`;
     }).join('');
   _infTipoChange();
   document.getElementById('gen-inf-error').style.display = 'none';
@@ -1988,7 +1988,7 @@ async function verRevisionInforme(informeId) {
   const ia   = inf.contenido?.ia   || {};
   const kpis = inf.contenido?.kpis || {};
   const u    = inf.alumno?.usuario || {};
-  const alumnoNombre = `${u.nombre || ''} ${u.apellidos || ''}`.trim() || 'Alumno';
+  const alumnoNombre = `${escHTML(u.nombre || '')} ${escHTML(u.apellidos || '')}`.trim() || 'Alumno';
   const tipoLabel    = inf.tipo === 'mensual' ? 'Mensual' : 'Personalizado';
   const fi = inf.fecha_inicio || inf.fecha;
   const ff = inf.fecha_fin    || inf.fecha;
@@ -2317,9 +2317,10 @@ async function guardarFichaProfesor() {
       if (insErr) throw new Error('Usuario creado pero error al guardar datos: ' + insErr.message);
 
       if (asigIds.length && newProf?.id) {
-        await db.from('profesor_asignaturas').insert(
+        const { error: asigErr } = await db.from('profesor_asignaturas').insert(
           asigIds.map(asignatura_id => ({ profesor_id: newProf.id, asignatura_id }))
         );
+        if (asigErr) showToast('Profesor creado, pero no se guardaron las asignaturas: ' + asigErr.message, 'error');
       }
 
       cerrarModal('modal-ficha-profesor');
@@ -2484,7 +2485,7 @@ async function toggleActivo(tipo, id, nuevoEstado) {
 async function eliminarProfesor(profId) {
   const p = allProfesores.find(x => x.id === profId);
   if (!p) return;
-  const nombre = `${p.usuario?.nombre || ''} ${p.usuario?.apellidos || ''}`.trim();
+  const nombre = `${escHTML(p.usuario?.nombre || '')} ${escHTML(p.usuario?.apellidos || '')}`.trim();
   const { count: nSes } = await db.from('sesiones').select('id', { count: 'exact', head: true }).eq('profesor_id', profId);
   if (nSes > 0) {
     showToast(`No se puede eliminar: ${escHTML(nombre)} tiene ${nSes} sesión/es registrada/s. Elimínalas primero desde Sesiones.`, 'error');
@@ -2525,7 +2526,7 @@ async function abrirFicha(alumnoId) {
   sel.innerHTML = '<option value="">— Seleccionar —</option>';
   allProfesores.forEach(p => {
     const pu = p.usuario || {};
-    sel.add(new Option(`${pu.nombre || '?'} ${pu.apellidos || ''}`, p.id));
+    sel.add(new Option(`${escHTML(pu.nombre || '?')} ${escHTML(pu.apellidos || '')}`, p.id));
   });
   populateFichaAddAsig();
 
@@ -2578,9 +2579,10 @@ async function guardarFicha() {
       const asigIds = [...document.querySelectorAll('#ficha-asignaturas-lista input[type=checkbox]:checked')]
         .map(cb => parseInt(cb.value));
       if (asigIds.length && newAlumno?.id) {
-        await db.from('alumno_asignaturas').insert(
+        const { error: asigErr } = await db.from('alumno_asignaturas').insert(
           asigIds.map(asignatura_id => ({ alumno_id: newAlumno.id, asignatura_id }))
         );
+        if (asigErr) showToast('Alumno creado, pero no se guardaron las asignaturas: ' + asigErr.message, 'error');
       }
 
       cerrarModal('modal-ficha');
@@ -2720,7 +2722,7 @@ function renderFichaProfs() {
       <div class="prof-tag-left">
         <i class="ti ti-chalkboard"></i>
         <div>
-          <div class="prof-tag-name">${pu.nombre || '?'} ${pu.apellidos || ''}</div>
+          <div class="prof-tag-name">${escHTML(pu.nombre || '?')} ${escHTML(pu.apellidos || '')}</div>
           <div class="prof-tag-asig">${asigTexto}</div>
         </div>
       </div>
@@ -2804,7 +2806,7 @@ async function refreshFichaSesiones() {
         return `<tr>
           <td style="font-size:12px">${formatShortDate(s.fecha)}</td>
           <td style="font-size:12px;color:#fff">${escHTML(s.asignatura)}</td>
-          <td style="font-size:12px">${pu.nombre ? pu.nombre + ' ' + pu.apellidos : '—'}</td>
+          <td style="font-size:12px">${escHTML(pu.nombre ? pu.nombre + ' ' + pu.apellidos : '—')}</td>
           <td style="font-size:12px">${(s.duracion_minutos/60).toFixed(1).replace('.0','') + 'h'}</td>
           <td><span class="status-pill ${pc}" style="font-size:10px">${pt}</span></td>
           <td><button class="btn-edit" style="padding:4px 8px;font-size:11px" onclick="abrirEditSesion('${s.id}')"><i class="ti ti-pencil"></i> Editar</button></td>
@@ -3001,8 +3003,8 @@ async function abrirVerSesion(sesionId) {
   cont.innerHTML = `<div style="padding:0 2px">
     ${secTitle('ti-info-circle', 'Identificación')}
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 24px">
-      ${row('Alumno', (`${aluU.nombre || ''} ${aluU.apellidos || ''}`).trim() || '—')}
-      ${row('Profesor', (`${profU.nombre || ''} ${profU.apellidos || ''}`).trim() || '—')}
+      ${row('Alumno', (`${escHTML(aluU.nombre || '')} ${escHTML(aluU.apellidos || '')}`).trim() || '—')}
+      ${row('Profesor', (`${escHTML(profU.nombre || '')} ${escHTML(profU.apellidos || '')}`).trim() || '—')}
       ${row('Fecha', fechaFmt)}
       ${row('Hora inicio', s.hora_inicio ? s.hora_inicio.substring(0,5) : '—')}
       ${row('Asignatura', s.asignatura)}
@@ -3066,8 +3068,8 @@ function descargarSesionTxt() {
     ? fecha.toLocaleDateString('es-ES', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
     : '—';
 
-  const alumnoNombre = (`${aluU.nombre || ''} ${aluU.apellidos || ''}`).trim() || '—';
-  const profNombre   = (`${profU.nombre || ''} ${profU.apellidos || ''}`).trim() || '—';
+  const alumnoNombre = (`${escHTML(aluU.nombre || '')} ${escHTML(aluU.apellidos || '')}`).trim() || '—';
+  const profNombre   = (`${escHTML(profU.nombre || '')} ${escHTML(profU.apellidos || '')}`).trim() || '—';
 
   const LBL_W = 24;
   const lbl = (label, val) =>
@@ -3110,8 +3112,8 @@ function descargarSesionTxt() {
   if (temas && temas.length > 0) {
     temas.forEach((t, i) => {
       txt += SEP;
-      txt += `TEMA ${i + 1}: ${t.tema || '—'}`;
-      if (t.asignatura) txt += ` (${t.asignatura})`;
+      txt += `TEMA ${i + 1}: ${escHTML(t.tema || '—')}`;
+      if (t.asignatura) txt += ` (${escHTML(t.asignatura)})`;
       txt += '\n';
       txt += SEP;
       if (t.tiempo_minutos) txt += lbl('Tiempo',           t.tiempo_minutos + ' min');
@@ -3262,7 +3264,7 @@ async function descargarMesTxt() {
 
   const alu  = allAlumnos.find(a => a.id === aluId) || {};
   const aluU = alu.usuario || {};
-  const alumnoNombre = (`${aluU.nombre || ''} ${aluU.apellidos || ''}`).trim() || '—';
+  const alumnoNombre = (`${escHTML(aluU.nombre || '')} ${escHTML(aluU.apellidos || '')}`).trim() || '—';
 
   const slug = str => (str || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
     .replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '');
@@ -3304,7 +3306,7 @@ async function descargarMesTxt() {
   sesiones.forEach((s, idx) => {
     const prof  = allProfesores.find(p => p.id === s.profesor_id) || {};
     const profU = prof.usuario || {};
-    const profNombre = (`${profU.nombre || ''} ${profU.apellidos || ''}`).trim() || '—';
+    const profNombre = (`${escHTML(profU.nombre || '')} ${escHTML(profU.apellidos || '')}`).trim() || '—';
 
     const fecha = s.fecha ? new Date(s.fecha + 'T00:00:00') : null;
     const fechaLarga = fecha
@@ -3332,8 +3334,8 @@ async function descargarMesTxt() {
     if (temas.length > 0) {
       temas.forEach((t, ti) => {
         txt += SEP2;
-        txt += `TEMA ${ti + 1}: ${t.tema || '—'}`;
-        if (t.asignatura) txt += ` (${t.asignatura})`;
+        txt += `TEMA ${ti + 1}: ${escHTML(t.tema || '—')}`;
+        if (t.asignatura) txt += ` (${escHTML(t.asignatura)})`;
         txt += '\n' + SEP2;
         if (t.tiempo_minutos) txt += lbl('Tiempo', t.tiempo_minutos + ' min');
         if (t.nota_profesor)  txt += lbl('Nota del profesor', t.nota_profesor);
@@ -3495,7 +3497,7 @@ async function refreshFichaInformes() {
   }
 
   el.innerHTML = data.map(inf => {
-    const url     = inf.pdf_url || inf.archivo_url;
+    const url     = inf.pdf_url;
     const fecha   = inf.fecha_inicio || inf.fecha;
     const tipoPill = inf.tipo === 'mensual' ? 'Mensual' : inf.tipo === 'personalizado' ? 'Personalizado' : inf.tipo;
     const estadoClr = inf.estado === 'visible' ? 'var(--green)' : 'var(--muted)';
@@ -3504,7 +3506,7 @@ async function refreshFichaInformes() {
         <i class="ti ti-report-analytics" style="color:var(--blue);font-size:15px"></i>
       </div>
       <div style="flex:1;min-width:0">
-        <div style="color:#fff;font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${inf.titulo || tipoPill}</div>
+        <div style="color:#fff;font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHTML(inf.titulo || tipoPill)}</div>
         <div style="color:var(--muted);font-size:10px">${formatShortDate(fecha)} · ${tipoPill} · <span style="color:${estadoClr}">${inf.estado}</span></div>
       </div>
       ${url ? `<button onclick="descargarArchivo('${url}','${(inf.titulo||'Informe').replace(/'/g,' ').replace(/"/g,' ')}')" title="Descargar informe" style="background:none;border:none;color:var(--blue);font-size:17px;flex-shrink:0;cursor:pointer"><i class="ti ti-download"></i></button>` : `<a href="../informe.html?id=${inf.id}" target="_blank" title="Ver informe" style="color:var(--blue);font-size:17px;flex-shrink:0"><i class="ti ti-external-link"></i></a>`}
@@ -3573,9 +3575,7 @@ async function toggleFichaAsignatura(asignaturaId, checked) {
 // ============================================================
 // CREDENCIALES ADMIN
 // ============================================================
-function escHTML(s) {
-  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+// escHTML() vive en js/auth.js
 
 function copiarTexto(inputId) {
   const el = document.getElementById(inputId);
@@ -3761,7 +3761,7 @@ async function loadSesionesAdmin() {
               <td style="text-align:center">${getWeekNum(s.fecha)}</td>
               <td>${_MESES_CORTOS[d.getMonth()]}</td>
               <td>${d.getFullYear()}</td>
-              <td style="color:#fff">${aluU.nombre ? aluU.nombre + ' ' + aluU.apellidos : '—'}</td>
+              <td style="color:#fff">${escHTML(aluU.nombre ? aluU.nombre + ' ' + aluU.apellidos : '—')}</td>
               <td style="font-family:monospace;font-size:11px">${alu.codigo || '—'}</td>
               <td>${escHTML(s.asignatura)}</td>
               <td style="font-family:monospace;font-size:11px">${prof.codigo || '—'}</td>
@@ -3915,7 +3915,7 @@ function _matBc() {
   ];
   if (sec === 'excl' && alumnoId != null) {
     const al  = allAlumnos.find(x => x.id === alumnoId);
-    const nom = al ? `${al.usuario?.nombre||''} ${al.usuario?.apellidos||''}`.trim() : 'Alumno';
+    const nom = al ? `${escHTML(al.usuario?.nombre||'')} ${escHTML(al.usuario?.apellidos||'')}`.trim() : 'Alumno';
     parts.push(`<span class="mat-bc-link" onclick="_matGo('excl',null,null,null,'${alumnoId}')">${escHTML(nom)}</span>`);
   } else if (sec === 'gen' && nivel != null) {
     parts.push(`<span class="mat-bc-link" onclick="_matGo('gen','${nivel}',null,null,null)">${nivelLabel(nivel)}</span>`);
@@ -3962,7 +3962,7 @@ function _matRenderAlumnos(c) {
   });
   const bubbles = Object.keys(alumnoCnt).map(aid => {
     const al     = allAlumnos.find(x => x.id === aid);
-    const nombre = al ? `${al.usuario?.nombre||''} ${al.usuario?.apellidos||''}`.trim() : 'Alumno';
+    const nombre = al ? `${escHTML(al.usuario?.nombre||'')} ${escHTML(al.usuario?.apellidos||'')}`.trim() : 'Alumno';
     const nivel  = al?.nivel ? nivelLabel(al.nivel) : '';
     const cnt    = alumnoCnt[aid];
     return `<div class="mat-asig-bubble" style="--ab-clr:#f59e0b" onclick="_matGo('excl',null,null,null,'${aid}')">
@@ -4663,14 +4663,14 @@ async function abrirQuickFicha(alumnoId) {
     if (!grouped[ap.profesor_id]) {
       const p = allProfesores.find(x => x.id === ap.profesor_id);
       const pu = p?.usuario || {};
-      grouped[ap.profesor_id] = { nombre: `${pu.nombre||'?'} ${pu.apellidos||''}`.trim(), asigs: [] };
+      grouped[ap.profesor_id] = { nombre: `${escHTML(pu.nombre||'?')} ${escHTML(pu.apellidos||'')}`.trim(), asigs: [] };
     }
     if (ap.asignatura_id) grouped[ap.profesor_id].asigs.push(asigNombre(ap.asignatura_id));
   });
   if (Object.keys(grouped).length === 0 && alumno.profesor_id) {
     const p = allProfesores.find(x => x.id === alumno.profesor_id);
     const pu = p?.usuario || {};
-    grouped[alumno.profesor_id] = { nombre: `${pu.nombre||'?'} ${pu.apellidos||''}`.trim(), asigs: [] };
+    grouped[alumno.profesor_id] = { nombre: `${escHTML(pu.nombre||'?')} ${escHTML(pu.apellidos||'')}`.trim(), asigs: [] };
   }
   const profsHtml = Object.values(grouped).length > 0
     ? Object.values(grouped).map(g => {
@@ -4689,7 +4689,7 @@ async function abrirQuickFicha(alumnoId) {
 
   document.getElementById('aqf-contenido').innerHTML = `
     <div class="aqf-av">${ini}</div>
-    <div class="aqf-name">${u.nombre||'?'} ${u.apellidos||''}</div>
+    <div class="aqf-name">${escHTML(u.nombre||'?')} ${escHTML(u.apellidos||'')}</div>
     <div class="aqf-sub"><span class="pill ${pillCls}">${nivelLabel(alumno.nivel)}</span> &nbsp;·&nbsp; ${alumno.modalidad==='online'?'Online':'Presencial'}</div>
 
     <div class="aqf-kpi-grid">
@@ -4701,7 +4701,7 @@ async function abrirQuickFicha(alumnoId) {
 
     <div class="aqf-section"><i class="ti ti-info-circle"></i> Datos</div>
     <div class="aqf-row"><span>Asignaturas</span><b>${escHTML((alumno._asigNombres||[]).join(', ')||'—')}</b></div>
-    <div class="aqf-row"><span>Zona</span><b>${alumno.direccion||'—'}</b></div>
+    <div class="aqf-row"><span>Zona</span><b>${escHTML(alumno.direccion||'—')}</b></div>
     <div class="aqf-row"><span>Desde</span><b>${formatDate(alumno.fecha_inicio)}</b></div>
 
     <div class="aqf-section"><i class="ti ti-credit-card"></i> Bono</div>
@@ -4923,7 +4923,7 @@ function _testsAlumnoNombre(alumnoId) {
   const t = _testsData.find(x => x.alumno_id === alumnoId);
   if (!t?.alumno?.usuario) return 'Alumno';
   const u = t.alumno.usuario;
-  return `${escHTML(u.nombre)} ${u.apellidos||''}`.trim();
+  return `${escHTML(u.nombre)} ${escHTML(u.apellidos||'')}`.trim();
 }
 
 function _testsBc() {
@@ -4960,7 +4960,7 @@ function _testsRenderAlumnos(c) {
     if (!buckets[key]) buckets[key] = { alumnoId: t.alumno_id || null, nombre: null, cnt: 0 };
     if (t.alumno?.usuario && !buckets[key].nombre) {
       const u = t.alumno.usuario;
-      buckets[key].nombre = `${escHTML(u.nombre)} ${u.apellidos||''}`.trim();
+      buckets[key].nombre = `${escHTML(u.nombre)} ${escHTML(u.apellidos||'')}`.trim();
     }
     buckets[key].cnt++;
   });
@@ -5081,7 +5081,7 @@ function addPregunta(data = null) {
       <button type="button" onclick="document.getElementById('preg-wrap-${i}').remove()" class="btn-cancel" style="padding:3px 8px;font-size:11px">✕</button>
     </div>
     <label class="fl" style="margin-top:0">Enunciado *</label>
-    <textarea class="fi" id="preg-enunciado-${i}" rows="2" required style="resize:vertical">${data?.enunciado || ''}</textarea>
+    <textarea class="fi" id="preg-enunciado-${i}" rows="2" required style="resize:vertical">${escHTML(data?.enunciado || '')}</textarea>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
       <div><label class="fl" style="margin-top:0">Opción A *</label><input class="fi" id="preg-a-${i}" value="${data?.opcion_a || ''}" required></div>
       <div><label class="fl" style="margin-top:0">Opción B *</label><input class="fi" id="preg-b-${i}" value="${data?.opcion_b || ''}" required></div>

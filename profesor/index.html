@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>Panel Profesor — Nexo Académico</title>
 <link rel="manifest" href="../manifest.json">
@@ -1247,9 +1247,7 @@
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
 <script>
-function escHTML(s) {
-  return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+// escHTML() vive en js/auth.js
 // ============================================================
 // State
 // ============================================================
@@ -1466,7 +1464,7 @@ async function loadDashboardProf() {
     document.getElementById('prox-title').textContent =
       `Próxima clase — ${formatDate(p.fecha)}${p.hora_inicio ? ' a las ' + formatTime(p.hora_inicio) + 'h' : ''}`;
     document.getElementById('prox-sub').textContent =
-      `${alumNom} · ${p.asignatura || '—'} · ${(p.duracion_minutos/60).toFixed(1).replace('.0','')}h`;
+      `${alumNom} · ${escHTML(p.asignatura || '—')} · ${(p.duracion_minutos/60).toFixed(1).replace('.0','')}h`;
   }
 
   // Sesiones recientes
@@ -1528,7 +1526,7 @@ async function renderMiniCal() {
     const dayEvs = evByDay[dateStr] || [];
     html += `<div class="cal-d${isToday ? ' today' : ''}">
       <div class="cal-num">${d}</div>
-      ${dayEvs.slice(0,2).map((e,i) => `<div class="ev ${evClasses[i%4]}">${(e.asignatura||'').substring(0,5)}</div>`).join('')}
+      ${dayEvs.slice(0,2).map((e,i) => `<div class="ev ${evClasses[i%4]}">${escHTML((e.asignatura||'').substring(0,5))}</div>`).join('')}
     </div>`;
   }
   document.getElementById('cal-mini-days').innerHTML = html;
@@ -2004,7 +2002,7 @@ async function renderCalendarioProf() {
       <div class="cal-full-num">${d}</div>
       ${dayEvs.slice(0,3).map((e,i) => {
         const nom = e.alumno?.usuario ? e.alumno.usuario.nombre.split(' ')[0] : '';
-        return `<div class="cal-full-ev ${evColors[i%4].split(' ')[0]}" title="${escHTML(nom)} · ${e.asignatura||'—'}">${nom || e.asignatura||'—'}</div>`;
+        return `<div class="cal-full-ev ${evColors[i%4].split(' ')[0]}" title="${escHTML(nom)} · ${escHTML(e.asignatura||'—')}">${escHTML(nom || e.asignatura||'—')}</div>`;
       }).join('')}
       ${dayEvs.length > 3 ? `<div style="font-size:8px;color:var(--muted)">+${dayEvs.length-3}</div>` : ''}
     </div>`;
@@ -2367,7 +2365,7 @@ function nSesInit() {
     const u = a.usuario || {};
     const opt = document.createElement('option');
     opt.value = a.id;
-    opt.textContent = `${u.nombre || ''} ${u.apellidos || ''}`.trim();
+    opt.textContent = `${escHTML(u.nombre || '')} ${escHTML(u.apellidos || '')}`.trim();
     sel.appendChild(opt);
   });
   // Fecha/hora por defecto = ahora (inputs separados)
@@ -2406,7 +2404,7 @@ async function nSesLoadHist() {
   el.innerHTML = '<div class="card">' + sesiones.map(s => {
     const [pc, pt] = (pillMap[s.estado] || 'st-grey —').split(' ');
     const nom = s.alumno?.usuario
-      ? `${s.alumno.usuario.nombre} ${s.alumno.usuario.apellidos}`
+      ? `${escHTML(s.alumno.usuario.nombre)} ${escHTML(s.alumno.usuario.apellidos)}`
       : '—';
     const horas = (s.duracion_minutos / 60).toFixed(1).replace('.0', '');
     const icoColor = s.estado === 'confirmada' ? 'var(--green)' : s.estado === 'rechazada' ? 'var(--red)' : 'var(--amber)';
@@ -2652,7 +2650,7 @@ function _getBateriaPregs(asigKey, catVal) {
 function _renderBateriaPregs(pid, pregs) {
   function renderQ(q) {
     return `<div>
-      <div class="nses-p-label">${q.codigo} — ${q.pregunta} *
+      <div class="nses-p-label">${q.codigo} — ${escHTML(q.pregunta)} *
         <span class="nses-p-err" id="err-${q.codigo}-${pid}"></span>
       </div>
       <div class="nses-radio-group">
@@ -2928,7 +2926,7 @@ async function nSesSubmit(e) {
     examen_proximo:    examenesData.length > 0,
     examen_fecha:      examenesData[0]?.fecha || null,
     examen_asignatura: examenesData.length ? examenesData.map(e => e.asig).join(' | ') : null,
-    examen_tema:       examenesData.length ? examenesData.map(e => e.tema ? `${e.asig}: ${e.tema}` : e.asig).join(' | ') : null,
+    examen_tema:       examenesData.length ? examenesData.map(e => e.tema ? `${e.asig}: ${escHTML(e.tema)}` : e.asig).join(' | ') : null,
   };
 
   const { data: newSes, error: sesErr } = await db.from('sesiones').insert(sesData).select().single();
@@ -3143,7 +3141,7 @@ async function nSesVerDetalle(sesId, evt) {
     return;
   }
 
-  const nom = ses.alumno?.usuario ? `${ses.alumno.usuario.nombre} ${ses.alumno.usuario.apellidos}` : '—';
+  const nom = ses.alumno?.usuario ? `${escHTML(ses.alumno.usuario.nombre)} ${escHTML(ses.alumno.usuario.apellidos)}` : '—';
   const pillMap = { confirmada:'st-ok Confirmada', pendiente_confirmacion:'st-pend Pendiente', rechazada:'st-red Rechazada', cancelada:'st-grey Cancelada' };
   const [pc, pt] = (pillMap[ses.estado] || 'st-grey —').split(' ');
 
@@ -3222,8 +3220,8 @@ async function loadTestsProf() {
     .eq('creado_por', ctx.usuario.id);
 
   const tests = (rawTests || []).sort((a, b) => {
-    const aNom = a.alumno?.usuario ? `${a.alumno.usuario.nombre} ${a.alumno.usuario.apellidos||''}`.trim() : '￿';
-    const bNom = b.alumno?.usuario ? `${b.alumno.usuario.nombre} ${b.alumno.usuario.apellidos||''}`.trim() : '￿';
+    const aNom = a.alumno?.usuario ? `${escHTML(a.alumno.usuario.nombre)} ${escHTML(a.alumno.usuario.apellidos||'')}`.trim() : '￿';
+    const bNom = b.alumno?.usuario ? `${escHTML(b.alumno.usuario.nombre)} ${escHTML(b.alumno.usuario.apellidos||'')}`.trim() : '￿';
     const cmp  = aNom.localeCompare(bNom, 'es');
     return cmp !== 0 ? cmp : (a.asignatura||'').localeCompare(b.asignatura||'', 'es');
   });
@@ -3236,7 +3234,7 @@ async function loadTestsProf() {
   const cards = tests.map(t => {
     const meta      = getSubjectMeta(t.asignatura || '');
     const alumNom   = t.alumno?.usuario
-      ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos || ''}`.trim()
+      ? `${escHTML(t.alumno.usuario.nombre)} ${escHTML(t.alumno.usuario.apellidos || '')}`.trim()
       : (t.alumno_id ? '—' : 'General');
     // For assigned tests: find result for the specific alumno. For general: no nota badge.
     const resultado = t.alumno_id
@@ -3380,7 +3378,7 @@ function addPreguntaProf(data = null) {
       <button type="button" onclick="this.closest('[id^=tp-pw-]').remove();renumberPreguntas()" class="btn-cancel" style="padding:3px 10px;font-size:11px">✕</button>
     </div>
     <label class="field-label" style="margin-top:0">Enunciado *</label>
-    <textarea class="field-input" id="tp-pe-${i}" rows="2" required style="resize:vertical">${data?.enunciado || ''}</textarea>
+    <textarea class="field-input" id="tp-pe-${i}" rows="2" required style="resize:vertical">${escHTML(data?.enunciado || '')}</textarea>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
       <div><label class="field-label" style="margin-top:0">Opción A *</label><input class="field-input" id="tp-pa-${i}" value="${data?.opcion_a || ''}" required></div>
       <div><label class="field-label" style="margin-top:0">Opción B *</label><input class="field-input" id="tp-pb-${i}" value="${data?.opcion_b || ''}" required></div>
@@ -3654,7 +3652,7 @@ async function loadTareasProf() {
     _tareasData.forEach(t => {
       if (!seen.has(t.alumno_id)) {
         seen.add(t.alumno_id);
-        const nom = t.alumno?.usuario ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos}` : t.alumno_id;
+        const nom = t.alumno?.usuario ? `${escHTML(t.alumno.usuario.nombre)} ${escHTML(t.alumno.usuario.apellidos)}` : t.alumno_id;
         opts += `<option value="${t.alumno_id}">${escHTML(nom)}</option>`;
       }
     });
@@ -3711,7 +3709,7 @@ function _renderTareasProf() {
   for (const t of lista) {
     if (!seenAlumno.has(t.alumno_id)) {
       seenAlumno.set(t.alumno_id, gruposAlumno.length);
-      gruposAlumno.push({ alumno_id: t.alumno_id, nom: t.alumno?.usuario ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos}` : '—', tareas: [] });
+      gruposAlumno.push({ alumno_id: t.alumno_id, nom: t.alumno?.usuario ? `${escHTML(t.alumno.usuario.nombre)} ${escHTML(t.alumno.usuario.apellidos)}` : '—', tareas: [] });
     }
     gruposAlumno[seenAlumno.get(t.alumno_id)].tareas.push(t);
   }
@@ -3792,7 +3790,7 @@ function openNuevaTarea() {
   const sel = document.getElementById('nt-alumno');
   sel.innerHTML = '<option value="">— Seleccionar alumno —</option>';
   misAlumnos.forEach(a => {
-    const nom = a.usuario ? `${a.usuario.nombre} ${a.usuario.apellidos}` : a.id;
+    const nom = a.usuario ? `${escHTML(a.usuario.nombre)} ${escHTML(a.usuario.apellidos)}` : a.id;
     sel.innerHTML += `<option value="${a.id}">${escHTML(nom)}</option>`;
   });
   const asgSel = document.getElementById('nt-asignatura');
@@ -3916,7 +3914,7 @@ function cerrarModalTareaProf() {
 }
 
 function _renderTareaProfModal(t) {
-  const nom = t.alumno?.usuario ? `${t.alumno.usuario.nombre} ${t.alumno.usuario.apellidos}` : '—';
+  const nom = t.alumno?.usuario ? `${escHTML(t.alumno.usuario.nombre)} ${escHTML(t.alumno.usuario.apellidos)}` : '—';
   const pillMap = { pendiente:'st-grey Pendiente', entregada:'st-pend Entregada', corregida:'st-ok Corregida' };
   const [pc, pt] = (pillMap[t.estado] || 'st-grey —').split(' ');
 
@@ -4199,7 +4197,7 @@ function _pMatBc() {
   const parts = [`<span class="mat-bc-link" onclick="_pMatGoRoot()">Material</span>`];
   if (alumnoId != null) {
     const al  = misAlumnos.find(a => a.id === alumnoId);
-    const nom = al ? `${al.usuario?.nombre||''} ${al.usuario?.apellidos||''}`.trim() : '—';
+    const nom = al ? `${escHTML(al.usuario?.nombre||'')} ${escHTML(al.usuario?.apellidos||'')}`.trim() : '—';
     parts.push(`<span class="mat-bc-link" onclick="_pMatGo('${alumnoId}',null,null)">${escHTML(nom)}</span>`);
   }
   if (asigId != null) {
@@ -4226,7 +4224,7 @@ function _pMatRenderAlumnos(c) {
   }
   const bubbles = [...alumnoIds].map(aid => {
     const al  = misAlumnos.find(a => a.id === aid);
-    const nom = al ? `${al.usuario?.nombre||''} ${al.usuario?.apellidos||''}`.trim() : '—';
+    const nom = al ? `${escHTML(al.usuario?.nombre||'')} ${escHTML(al.usuario?.apellidos||'')}`.trim() : '—';
     const cnt = Object.entries(pMatAlumnoMap).filter(([,ids]) => ids.includes(aid)).length;
     return `<div class="mat-asig-bubble" style="--ab-clr:#2563eb" onclick="_pMatGo('${aid}',null,null)">
       <div class="mat-asig-ico"><i class="ti ti-user-circle"></i></div>
@@ -4336,7 +4334,7 @@ function pMatAbrirModal() {
   document.getElementById('pmat-tema').innerHTML = '<option value="">— Elige asignatura primero —</option>';
   const almSel = document.getElementById('pmat-alumno');
   almSel.innerHTML = '<option value="">— Seleccionar alumno —</option>' +
-    misAlumnos.map(a => `<option value="${a.id}">${(a.usuario?.nombre||'')} ${(a.usuario?.apellidos||'')}</option>`).join('');
+    misAlumnos.map(a => `<option value="${a.id}">${escHTML((a.usuario?.nombre||''))} ${escHTML((a.usuario?.apellidos||''))}</option>`).join('');
   document.getElementById('pmodal-material').classList.add('open');
 }
 

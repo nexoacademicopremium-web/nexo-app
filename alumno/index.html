@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Área Alumno — Nexo Académico</title>
 <link rel="manifest" href="../manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="../assets/logo/icon-192.png">
@@ -908,9 +908,7 @@
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
 <script>
-function escHTML(s) {
-  return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+// escHTML() vive en js/auth.js
 // ============================================================
 // State
 // ============================================================
@@ -1155,10 +1153,10 @@ async function loadDashboard() {
     infEl.innerHTML = `<div class="empty-state"><i class="ti ti-file-off"></i><p>Sin informes disponibles</p></div>`;
   } else {
     infEl.innerHTML = informes.map(inf => {
-      const pdfUrl = inf.pdf_url || inf.archivo_url;
-      const dlAction = pdfUrl
-        ? `descargarArchivo('${pdfUrl}','${(inf.titulo||'Informe').replace(/'/g,' ')}')`
-        : `window.open('../informe.html?id=${inf.id}','_blank')`;
+      const tituloDl = (inf.titulo||'Informe').replace(/'/g,' ').replace(/"/g,' ');
+      const dlAction = inf.pdf_url
+        ? `descargarArchivo('${inf.pdf_url}','${tituloDl}')`
+        : `window.open('${inf.archivo_url || `../informe.html?id=${inf.id}`}','_blank')`;
       return `
       <div class="inf-row" style="cursor:pointer" onclick="${dlAction}">
         <div class="inf-ico ${inf.tipo === 'mensual' ? 'm' : 's'}">
@@ -1503,7 +1501,7 @@ function renderWACardsAlumno() {
   if (modWrap) modWrap.style.display = tieneOnline ? 'block' : 'none';
   if (!tieneOnline) modTarifaWA = 'Presencial';
 
-  const nombre = `${ctx.usuario?.nombre || ''} ${ctx.usuario?.apellidos || ''}`.trim();
+  const nombre = `${escHTML(ctx.usuario?.nombre || '')} ${escHTML(ctx.usuario?.apellidos || '')}`.trim();
   const horas  = [2, 4, 8, 12];
   el.innerHTML = horas.map(h => {
     const t = tarifasAlumno.find(x => x.grupo === grupo && x.modalidad === modTarifaWA && x.horas === h);
@@ -1558,11 +1556,10 @@ async function loadInformes() {
   const otros     = informes.filter(i => i.tipo !== 'mensual');
 
   const renderCard = inf => {
-    const pdfUrl = inf.pdf_url || inf.archivo_url;
     const tituloSafe = (inf.titulo||'Informe').replace(/'/g,' ').replace(/"/g,' ');
-    const dlAction = pdfUrl
-      ? `descargarArchivo('${pdfUrl}','${tituloSafe}')`
-      : `window.open('../informe.html?id=${inf.id}','_blank')`;
+    const dlAction = inf.pdf_url
+      ? `descargarArchivo('${inf.pdf_url}','${tituloSafe}')`
+      : `window.open('${inf.archivo_url || `../informe.html?id=${inf.id}`}','_blank')`;
     return `
     <div class="mat-item-card" style="--cc:#154ca9;cursor:pointer" onclick="${dlAction}">
       <div class="mat-item-ico"><i class="ti ti-file-analytics"></i></div>
@@ -2922,7 +2919,8 @@ async function abrirEditEvento(ev) {
 
 async function eliminarEventoEdit() {
   if (!editEventoId) return;
-  await db.from('calendario_alumno').delete().eq('id', editEventoId);
+  const { error } = await db.from('calendario_alumno').delete().eq('id', editEventoId);
+  if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
   showToast('Entrada eliminada');
   cerrarModalEvento();
   await renderCalendario();
@@ -2973,7 +2971,8 @@ async function guardarEvento(e) {
 }
 
 async function eliminarEvento(id) {
-  await db.from('calendario_alumno').delete().eq('id', id);
+  const { error } = await db.from('calendario_alumno').delete().eq('id', id);
+  if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
   showToast('Entrada eliminada');
   cerrarModalEvento();
   await renderCalendario();

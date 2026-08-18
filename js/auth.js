@@ -69,6 +69,17 @@ function getInitials(nombre, apellidos) {
   return (n[0] + (a ? a[0] : '')).toUpperCase();
 }
 
+// Escapa texto para insertarlo en HTML. Cubre también el apóstrofo, que hace
+// falta cuando el texto acaba dentro de un onclick="fn('...')".
+function escHTML(s) {
+  return (s == null ? '' : String(s))
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function _fechaHoy() {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');

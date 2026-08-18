@@ -68,7 +68,7 @@
 <script src="js/config.js"></script>
 <script>
 function escHTML(s) {
-  return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return (s == null ? '' : String(s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 }
 const params  = new URLSearchParams(window.location.search);
 const sid     = params.get('id');

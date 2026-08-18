@@ -55,7 +55,9 @@ serve(async (req) => {
     const html = generarHtml(informe, ia, kpis, alumnoNombre)
 
     // ── Generar PDF con PDFShift ──────────────────────────────────
-    let realPdfUrl = ''
+    // Se guarda SOLO la ruta interna del bucket, nunca la URL pública:
+    // el PDF se sirve mediante enlace firmado desde ver-informe.
+    let pdfStoragePath = ''
     const pdfShiftKey = Deno.env.get('PDFSHIFT_API_KEY')
     if (pdfShiftKey) {
       try {
@@ -74,8 +76,7 @@ serve(async (req) => {
             .from('nexo-files')
             .upload(pdfPath, pdfBytes, { contentType: 'application/pdf', upsert: true })
           if (!storErr) {
-            const { data: pubData } = admin.storage.from('nexo-files').getPublicUrl(pdfPath)
-            realPdfUrl = pubData.publicUrl
+            pdfStoragePath = pdfPath
           } else {
             console.error('Storage upload error:', storErr.message)
           }
@@ -91,12 +92,18 @@ serve(async (req) => {
     const accessToken = crypto.randomUUID()
     const tokenExpira = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
 
+    // Enlace con token: es el único que se guarda y se difunde.
+    const baseUrl  = Deno.env.get('SUPABASE_URL')!.replace('.supabase.co', '.functions.supabase.co')
+    const viewUrl  = `${baseUrl}/ver-informe?id=${informe_id}&t=${accessToken}`
+    const pdfLink  = pdfStoragePath ? `${viewUrl}&pdf=1` : null
+
     const { error: updErr } = await admin.from('informes').update({
       estado: 'visible',
       visible: true,
       html_cache: html,
-      pdf_url: realPdfUrl || null,
-      archivo_url: realPdfUrl || null,
+      pdf_path: pdfStoragePath || null,
+      pdf_url: pdfLink,
+      archivo_url: viewUrl,
       token: accessToken,
       token_expira: tokenExpira,
       published_at: new Date().toISOString(),
@@ -104,12 +111,8 @@ serve(async (req) => {
     }).eq('id', informe_id)
     if (updErr) throw new Error('Error al publicar: ' + updErr.message)
 
-    // URL segura con token
-    const baseUrl = Deno.env.get('SUPABASE_URL')!.replace('.supabase.co', '.functions.supabase.co')
-    const viewUrl = `${baseUrl}/ver-informe?id=${informe_id}&t=${accessToken}`
-
     return new Response(
-      JSON.stringify({ success: true, pdf_url: realPdfUrl || null, view_url: viewUrl }),
+      JSON.stringify({ success: true, pdf_url: pdfLink, view_url: viewUrl }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
     )
 
