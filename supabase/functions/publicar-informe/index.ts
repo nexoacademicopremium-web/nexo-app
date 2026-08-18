@@ -772,7 +772,7 @@ ${ia.resumen_ejecutivo ? `<div class="wrap"><section class="resumen-mes" style="
   </section>
 </div>
 
-<footer>Nexo Académico · nexoacademico.com · nexoacademicopremium@gmail.com · 699 53 93 99<br>Informe generado el ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</footer>
+<footer>Nexo Académico · nexoacademico.com · nexoacademicopremium@gmail.com · 699 52 93 99<br>Informe generado el ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</footer>
 
 <script>
 ${chartInits.join('\n')}
