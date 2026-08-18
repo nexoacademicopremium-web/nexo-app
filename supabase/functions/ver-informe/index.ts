@@ -8,6 +8,27 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// ¿La petición trae la sesión de un administrador?
+// Solo se usa para dejar que el admin revise informes aún sin publicar.
+async function esAdmin(req: Request): Promise<boolean> {
+  const authHeader = req.headers.get('Authorization')
+  if (!authHeader) return false
+  try {
+    const caller = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_ANON_KEY')!,
+      { global: { headers: { Authorization: authHeader } } },
+    )
+    const { data: { user } } = await caller.auth.getUser()
+    if (!user) return false
+    const { data: perfil } = await caller
+      .from('usuarios').select('rol').eq('id', user.id).single()
+    return perfil?.rol === 'admin'
+  } catch {
+    return false
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
@@ -48,8 +69,17 @@ serve(async (req) => {
     return new Response('Este enlace ha caducado. Pide uno nuevo a Nexo Académico.', { status: 403, headers: corsHeaders })
   }
 
-  if (informe.eliminado || informe.estado !== 'visible') {
+  // El informe oculto solo lo abre el admin, para poder revisarlo antes de
+  // publicarlo. Para el resto, oculto equivale a no disponible.
+  if (informe.eliminado) {
     return new Response('Informe no disponible', { status: 403, headers: corsHeaders })
+  }
+
+  if (informe.estado !== 'visible' && !(await esAdmin(req))) {
+    return new Response(
+      'Este informe todavía no está publicado.',
+      { status: 403, headers: corsHeaders },
+    )
   }
 
   // ── Descarga del PDF: enlace firmado de corta duración ──────────

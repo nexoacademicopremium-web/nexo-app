@@ -4071,8 +4071,17 @@ function _matRenderPdfs(c) {
 async function descargarArchivo(url, nombre) {
   if (!url) return;
   try {
-    const resp = await fetch(url);
-    if (!resp.ok) throw new Error('Error al descargar');
+    // Los informes pasan por ver-informe. Se manda la sesión para que el
+    // admin pueda descargar también los que están todavía ocultos.
+    const opts = {};
+    if (url.includes('/ver-informe')) {
+      const session = (await db.auth.getSession()).data.session;
+      if (session?.access_token) {
+        opts.headers = { Authorization: `Bearer ${session.access_token}` };
+      }
+    }
+    const resp = await fetch(url, opts);
+    if (!resp.ok) throw new Error(await resp.text() || 'Error al descargar');
     const blob = await resp.blob();
     const ext = blob.type.includes('pdf') ? '.pdf'
       : blob.type.includes('png') ? '.png'
@@ -4088,7 +4097,7 @@ async function descargarArchivo(url, nombre) {
     setTimeout(() => URL.revokeObjectURL(a.href), 5000);
   } catch(e) {
     console.error('Descarga fallida:', e);
-    window.open(url, '_blank');
+    showToast(e.message || 'No se ha podido descargar el archivo', 'error');
   }
 }
 

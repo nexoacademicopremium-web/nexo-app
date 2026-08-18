@@ -699,6 +699,33 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
   .obs-item::before{content:'→';position:absolute;left:12px;top:8px;color:var(--blue-light);font-weight:700;font-size:.9rem}
   footer{text-align:center;margin-top:40px;padding:20px;font-size:.8rem;color:var(--blue);opacity:.6}
   @media(max-width:600px){.kpi-strip{flex-wrap:wrap}.tema-nombre{flex:0 0 120px}}
+
+  /* ── Paginación del PDF ───────────────────────────────────────
+     Sin esto el salto de página cae donde quiere y parte por la
+     mitad el calendario, las tarjetas y los bloques de conclusión. */
+  @page{size:A4;margin:0}
+
+  /* Bloques que nunca deben partirse entre dos hojas */
+  .cal-wrap, .kpi-card, .mini-kpi, .conclu-block, .plan-comparativa,
+  .plan-col, .aviso-examen, .mejora-item, .practica-casa, .puntos-grupo,
+  .evolucion-wrap, .prop-schedule, .obs-item, .tema-row, .resumen-mes,
+  .highlight-card, .mini-kpi-row, .kpi-strip, .cal-grid, .cal-legend,
+  footer{
+    break-inside:avoid;
+    page-break-inside:avoid;
+  }
+
+  /* Un título nunca se queda solo al pie de una hoja */
+  h1, h2, h3, .cal-titulo, .conclu-eyebrow{
+    break-after:avoid;
+    page-break-after:avoid;
+  }
+
+  /* Ni una línea suelta de un párrafo al cambiar de hoja */
+  p, li{orphans:3;widows:3}
+
+  /* El calendario y su título viajan juntos */
+  .cal-wrap{break-before:auto;page-break-before:auto}
 </style>
 </head>
 <body>
@@ -745,7 +772,7 @@ ${ia.resumen_ejecutivo ? `<div class="wrap"><section class="resumen-mes" style="
   </section>
 </div>
 
-<footer>Nexo Académico · nexoacademico.com · nexoacademicopremium@gmail.com · 611 49 25 92<br>Informe generado el ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</footer>
+<footer>Nexo Académico · nexoacademico.com · nexoacademicopremium@gmail.com · 699 53 93 99<br>Informe generado el ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</footer>
 
 <script>
 ${chartInits.join('\n')}
