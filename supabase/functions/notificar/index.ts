@@ -193,6 +193,13 @@ serve(async (req) => {
     res.dispositivos = (subs || []).length
     res.usuarios_distintos = new Set((subs || []).map(s => s.usuario_id)).size
     res.usuarios_con_avisos_apagados = (apagados || []).length
+    // El rol es la pieza clave: un aviso de material va al alumno, así que
+    // si en el móvil hay iniciada la sesión de admin, no llega nada.
+    const { data: perfiles } = await admin
+      .from('usuarios').select('id, rol')
+      .in('id', [...new Set((subs || []).map(s => s.usuario_id))])
+    const rolDe = Object.fromEntries((perfiles || []).map(u => [u.id, u.rol]))
+
     res.tipo_de_aparato = (subs || []).map(s => {
       const ua = s.user_agent || ''
       const movil = /Android|iPhone|iPad|Mobile/i.test(ua) ? 'móvil' : 'escritorio'
@@ -201,8 +208,15 @@ serve(async (req) => {
       const serv = s.endpoint.includes('fcm.googleapis') ? 'Google'
                  : s.endpoint.includes('mozilla') ? 'Mozilla'
                  : s.endpoint.includes('push.apple') ? 'Apple' : 'otro'
-      return `${movil} · ${nav} · vía ${serv}`
+      return `${movil} · ${nav} · vía ${serv} · sesión de ${rolDe[s.usuario_id] || '?'}`
     })
+
+    // Cuántos alumnos podrían recibir avisos, de todos los que hay
+    const { data: todosAlumnos } = await admin
+      .from('usuarios').select('id').eq('rol', 'alumno').eq('activo', true)
+    const conDispositivo = new Set((subs || []).map(s => s.usuario_id))
+    res.alumnos_totales = (todosAlumnos || []).length
+    res.alumnos_con_avisos = (todosAlumnos || []).filter(a => conDispositivo.has(a.id)).length
 
     // Envío real de prueba a todos los dispositivos. Va protegido por un
     // fragmento de la clave privada: solo lo dispara quien tiene acceso
