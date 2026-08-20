@@ -7,8 +7,8 @@ const corsHeaders = {
 }
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
-const APP_BASE_URL   = Deno.env.get('APP_BASE_URL') || 'https://app.nexoacademico.es'
-const FROM_EMAIL     = 'clases@nexoacademico.es'
+const APP_BASE_URL   = Deno.env.get('APP_BASE_URL') || 'https://app.nexoacademico.com'
+const FROM_EMAIL     = Deno.env.get('FROM_EMAIL') || 'clases@nexoacademico.es'
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })

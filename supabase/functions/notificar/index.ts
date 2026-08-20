@@ -65,6 +65,7 @@ async function enviarPush(usuarioIds: string[], payload: Record<string, unknown>
   const cuerpo = JSON.stringify(payload)
   let enviados = 0
   const caducadas: string[] = []
+  const errores: string[] = []
 
   await Promise.all(subs.map(async (s) => {
     try {
@@ -75,15 +76,27 @@ async function enviarPush(usuarioIds: string[], payload: Record<string, unknown>
       enviados++
     } catch (e: any) {
       // 404/410 = el navegador ya no acepta ese endpoint: se limpia.
-      if (e?.statusCode === 404 || e?.statusCode === 410) caducadas.push(s.id)
-      else console.error('Push fallido:', e?.statusCode, e?.body || e?.message)
+      if (e?.statusCode === 404 || e?.statusCode === 410) {
+        caducadas.push(s.id)
+      } else {
+        // Se devuelve el motivo real: sin esto el fallo es invisible
+        // y no hay forma de saber por qué no llega nada.
+        const motivo = `${e?.statusCode || ''} ${e?.body || e?.message || e}`.trim()
+        console.error('Push fallido:', motivo)
+        errores.push(motivo.slice(0, 300))
+      }
     }
   }))
 
   if (caducadas.length) {
     await admin.from('push_subscriptions').delete().in('id', caducadas)
   }
-  return { enviados, limpiadas: caducadas.length }
+  return {
+    enviados,
+    limpiadas: caducadas.length,
+    suscripciones: subs.length,
+    ...(errores.length ? { errores } : {}),
+  }
 }
 
 // ── Envío email ─────────────────────────────────────────────────
@@ -142,6 +155,72 @@ const esc = (s: unknown) => String(s ?? '')
 serve(async (req) => {
   const H = cors(req)
   if (req.method === 'OPTIONS') return new Response('ok', { headers: H })
+
+  // Autodiagnóstico. Va protegido con un fragmento de la clave privada,
+  // para que no quede al aire la configuración del proyecto.
+  const _clave = new URL(req.url).searchParams.get('diag')
+  if (_clave && VAPID_PRIVATE && _clave === VAPID_PRIVATE.slice(0, 10)) {
+    const res: Record<string, unknown> = {
+      vapid_publica_puesta: !!VAPID_PUBLIC,
+      vapid_privada_puesta: !!VAPID_PRIVATE,
+      resend_puesta: !!RESEND_API_KEY,
+      app_base_url: APP_BASE_URL,
+    }
+    try {
+      // Cifrar contra un endpoint falso obliga a la librería a hacer toda
+      // la criptografía; si el runtime no la soporta, revienta aquí.
+      await webpush.sendNotification({
+        endpoint: 'https://fcm.googleapis.com/fcm/send/DIAGNOSTICO-FALSO',
+        keys: {
+          p256dh: 'BGJbgWxtkjdHeVVk9F4UtzXh02sGvJG93PzBjNQ1NHEX8y56VVdOyiBIzNp5M6LNz7pFxtm807Y6gDBUD1oU6TI',
+          auth: 'Fs4hzFeGxbheE51iXoVo-Q',
+        },
+      }, JSON.stringify({ t: 'diag' }))
+      res.criptografia = 'OK (envío aceptado)'
+    } catch (e: any) {
+      // Un 4xx del servidor push significa que la criptografía funcionó
+      // y solo falló el destinatario falso: eso es lo que buscamos.
+      if (e?.statusCode) res.criptografia = `OK (la librería firmó; el destino falso devolvió ${e.statusCode})`
+      else res.criptografia = `FALLA EN ESTE RUNTIME: ${e?.message || e}`
+    }
+    // Recuento agregado de dispositivos. Solo números y tipo de aparato:
+    // ningún dato que identifique a nadie.
+    const { data: subs } = await admin
+      .from('push_subscriptions').select('endpoint, user_agent, usuario_id')
+    const { data: apagados } = await admin
+      .from('usuarios').select('id').eq('notif_push', false)
+
+    res.dispositivos = (subs || []).length
+    res.usuarios_distintos = new Set((subs || []).map(s => s.usuario_id)).size
+    res.usuarios_con_avisos_apagados = (apagados || []).length
+    res.tipo_de_aparato = (subs || []).map(s => {
+      const ua = s.user_agent || ''
+      const movil = /Android|iPhone|iPad|Mobile/i.test(ua) ? 'móvil' : 'escritorio'
+      const nav = /Edg\//.test(ua) ? 'Edge' : /Chrome/.test(ua) ? 'Chrome'
+                : /Firefox/.test(ua) ? 'Firefox' : /Safari/.test(ua) ? 'Safari' : 'otro'
+      const serv = s.endpoint.includes('fcm.googleapis') ? 'Google'
+                 : s.endpoint.includes('mozilla') ? 'Mozilla'
+                 : s.endpoint.includes('push.apple') ? 'Apple' : 'otro'
+      return `${movil} · ${nav} · vía ${serv}`
+    })
+
+    // Envío real de prueba a todos los dispositivos. Va protegido por un
+    // fragmento de la clave privada: solo lo dispara quien tiene acceso
+    // a los secrets del proyecto.
+    const clave = new URL(req.url).searchParams.get('enviar')
+    if (clave && VAPID_PRIVATE && clave === VAPID_PRIVATE.slice(0, 10)) {
+      const usuarios = [...new Set((subs || []).map(s => s.usuario_id))]
+      res.envio_de_prueba = await enviarPush(usuarios, {
+        titulo: 'Prueba de Nexo Académico',
+        cuerpo: 'Si ves esto, los avisos funcionan.',
+        url: APP_BASE_URL,
+        tag: 'nexo-diag',
+      })
+    }
+
+    return new Response(JSON.stringify(res, null, 2),
+      { headers: { ...H, 'Content-Type': 'application/json' } })
+  }
 
   try {
     const authHeader = req.headers.get('Authorization')
