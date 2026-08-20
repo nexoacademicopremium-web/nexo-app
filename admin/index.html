@@ -2742,11 +2742,11 @@ async function asignarProfesorFicha() {
   if (!profId) { showToast('Selecciona un profesor', 'error'); return; }
   const asigId = parseInt(document.getElementById('ficha-add-asig').value) || null;
 
-  const { error } = await db.from('alumno_profesor').insert({
+  const { data: rel, error } = await db.from('alumno_profesor').insert({
     alumno_id:    fichaAlumnoId,
     profesor_id:  profId,
     asignatura_id: asigId,
-  });
+  }).select('id').single();
 
   if (error) {
     const msg = error.code === '23505'
@@ -2754,6 +2754,12 @@ async function asignarProfesorFicha() {
       : 'Error al asignar: ' + error.message;
     showToast(msg, 'error');
     return;
+  }
+
+  // Avisar al alumno de quién será su profesor.
+  if (rel?.id) {
+    db.functions.invoke('notificar', { body: { evento: 'profesor_asignado', id: rel.id } })
+      .catch(e => console.warn('Aviso de profesor fallido:', e));
   }
 
   showToast('Profesor asignado correctamente');
@@ -4488,6 +4494,7 @@ async function guardarBono() {
       : document.getElementById('bono-alumno-sel').value;
     if (!alumnoId) { showToast('Selecciona un alumno', 'error'); btn.disabled = false; return; }
 
+    let bonoCreadoId = null;
     const horas = parseFloat(getBonoHoras());
     if (!horas || horas <= 0) { showToast('Indica las horas contratadas', 'error'); btn.disabled = false; return; }
 
@@ -4541,13 +4548,14 @@ async function guardarBono() {
       };
 
       const horasRestantesInicial = estado === 'activo' ? +horas.toFixed(2) : 0;
-      const { error } = await db.from('bonos').insert({
+      const { data: nuevoBono, error } = await db.from('bonos').insert({
         ...payload,
         alumno_id:        alumnoId,
         horas_consumidas: 0,
         horas_restantes:  horasRestantesInicial,
-      });
+      }).select('id').single();
       if (error) throw error;
+      bonoCreadoId = nuevoBono?.id || null;
 
       if (estado === 'activo') {
         // Aplica deuda pendiente y recalcula FIFO
@@ -4560,7 +4568,19 @@ async function guardarBono() {
     }
 
     cerrarModal('modal-bono');
-    showToast(editBonoId ? 'Bono actualizado' : 'Bono creado');
+
+    // Avisar al alumno de que tiene horas nuevas.
+    let sufijo = '';
+    if (bonoCreadoId) {
+      try {
+        const { data: r } = await db.functions.invoke('notificar', {
+          body: { evento: 'bono_actualizado', id: bonoCreadoId },
+        });
+        const n = r?.push?.enviados ?? 0;
+        sufijo = n > 0 ? ` · avisado en ${n} dispositivo${n === 1 ? '' : 's'}` : '';
+      } catch (e) { console.warn('Aviso de bono fallido:', e); }
+    }
+    showToast((editBonoId ? 'Bono actualizado' : 'Bono creado') + sufijo);
     await loadBonos();
   } catch (err) {
     showToast('Error: ' + err.message, 'error');

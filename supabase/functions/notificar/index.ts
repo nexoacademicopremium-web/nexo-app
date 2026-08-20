@@ -241,6 +241,113 @@ serve(async (req) => {
       url    = `${APP_BASE_URL}/profesor/`
       cta    = 'Ver la entrega'
 
+    // ── TEST ASIGNADO → al alumno ──────────────────────────────
+    } else if (evento === 'test_asignado') {
+      const { data: test } = await admin
+        .from('tests').select('id, titulo, alumno_id, creado_por, alumno:alumnos(usuario_id)')
+        .eq('id', id).single()
+      if (!test) return new Response(JSON.stringify({ error: 'Test no encontrado' }), { status: 404, headers: H })
+      if (rol !== 'admin' && test.creado_por !== user.id) {
+        return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403, headers: H })
+      }
+      const uid = (test.alumno as any)?.usuario_id
+      if (uid) destinatarios = [uid]
+      titulo = 'Tienes un test nuevo'
+      cuerpo = `${esc(quien)} te ha asignado el test "${esc(test.titulo)}".`
+      asunto = `Nuevo test: ${test.titulo}`
+      url    = `${APP_BASE_URL}/alumno/`
+      cta    = 'Hacer el test'
+
+    // ── TAREA ASIGNADA → al alumno ─────────────────────────────
+    } else if (evento === 'tarea_asignada') {
+      const { data: tarea } = await admin
+        .from('tareas').select('id, titulo, fecha_limite, profesor_id, alumno:alumnos(usuario_id)')
+        .eq('id', id).single()
+      if (!tarea) return new Response(JSON.stringify({ error: 'Tarea no encontrada' }), { status: 404, headers: H })
+      if (rol !== 'admin') {
+        const { data: prof } = await admin
+          .from('profesores').select('id').eq('usuario_id', user.id).single()
+        if (!prof || prof.id !== tarea.profesor_id) {
+          return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403, headers: H })
+        }
+      }
+      const uid = (tarea.alumno as any)?.usuario_id
+      if (uid) destinatarios = [uid]
+      const plazo = tarea.fecha_limite
+        ? ` Entrega antes del ${new Date(tarea.fecha_limite + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}.`
+        : ''
+      titulo = 'Tienes una tarea nueva'
+      cuerpo = `${esc(quien)} te ha puesto "${esc(tarea.titulo)}".${plazo}`
+      asunto = `Nueva tarea: ${tarea.titulo}`
+      url    = `${APP_BASE_URL}/alumno/`
+      cta    = 'Ver la tarea'
+
+    // ── TAREA CORREGIDA → al alumno ────────────────────────────
+    } else if (evento === 'tarea_corregida') {
+      const { data: tarea } = await admin
+        .from('tareas').select('id, titulo, nota, profesor_id, alumno:alumnos(usuario_id)')
+        .eq('id', id).single()
+      if (!tarea) return new Response(JSON.stringify({ error: 'Tarea no encontrada' }), { status: 404, headers: H })
+      if (rol !== 'admin') {
+        const { data: prof } = await admin
+          .from('profesores').select('id').eq('usuario_id', user.id).single()
+        if (!prof || prof.id !== tarea.profesor_id) {
+          return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 403, headers: H })
+        }
+      }
+      const uid = (tarea.alumno as any)?.usuario_id
+      if (uid) destinatarios = [uid]
+      const nota = tarea.nota != null ? ` Nota: ${tarea.nota}.` : ''
+      titulo = 'Tu tarea ya está corregida'
+      cuerpo = `${esc(quien)} ha corregido "${esc(tarea.titulo)}".${nota}`
+      asunto = `Tarea corregida: ${tarea.titulo}`
+      url    = `${APP_BASE_URL}/alumno/`
+      cta    = 'Ver la corrección'
+
+    // ── BONO NUEVO → al alumno ─────────────────────────────────
+    } else if (evento === 'bono_actualizado') {
+      if (rol !== 'admin') {
+        return new Response(JSON.stringify({ error: 'Solo el administrador' }), { status: 403, headers: H })
+      }
+      const { data: bono } = await admin
+        .from('bonos').select('id, horas_contratadas, estado, alumno:alumnos(usuario_id)')
+        .eq('id', id).single()
+      if (!bono) return new Response(JSON.stringify({ error: 'Bono no encontrado' }), { status: 404, headers: H })
+
+      const uid = (bono.alumno as any)?.usuario_id
+      if (uid) destinatarios = [uid]
+      titulo = bono.estado === 'activo' ? 'Tu bono ya está activo' : 'Tienes un bono nuevo'
+      cuerpo = bono.estado === 'activo'
+        ? `Se han añadido ${bono.horas_contratadas}h a tu bono. Ya puedes usarlas.`
+        : `Se ha registrado un bono de ${bono.horas_contratadas}h. Se activará cuando termines el actual.`
+      asunto = 'Tu bono de Nexo Académico'
+      url    = `${APP_BASE_URL}/alumno/`
+      cta    = 'Ver mis horas'
+
+    // ── PROFESOR ASIGNADO → al alumno ──────────────────────────
+    } else if (evento === 'profesor_asignado') {
+      if (rol !== 'admin') {
+        return new Response(JSON.stringify({ error: 'Solo el administrador' }), { status: 403, headers: H })
+      }
+      const { data: rel } = await admin
+        .from('alumno_profesor')
+        .select('id, alumno:alumnos(usuario_id), profesor:profesores(usuario:usuarios(nombre, apellidos)), asignaturas(nombre)')
+        .eq('id', id).single()
+      if (!rel) return new Response(JSON.stringify({ error: 'Asignación no encontrada' }), { status: 404, headers: H })
+
+      const uid = (rel.alumno as any)?.usuario_id
+      if (uid) destinatarios = [uid]
+      const pu   = (rel.profesor as any)?.usuario
+      const prof = pu ? `${pu.nombre || ''} ${pu.apellidos || ''}`.trim() : 'un profesor'
+      const asig = (rel as any).asignaturas?.nombre
+      titulo = 'Ya tienes profesor asignado'
+      cuerpo = asig
+        ? `${esc(prof)} será tu profesor de ${esc(asig)}.`
+        : `${esc(prof)} será tu profesor.`
+      asunto = 'Tu profesor en Nexo Académico'
+      url    = `${APP_BASE_URL}/alumno/`
+      cta    = 'Ver mi profesor'
+
     // ── MATERIAL ASIGNADO → a los alumnos que lo reciben ───────
     } else if (evento === 'material_asignado') {
       const { data: mat } = await admin

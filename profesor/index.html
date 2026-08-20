@@ -3445,8 +3445,31 @@ async function guardarTestProf(e) {
     const { error: eIns } = await db.from('preguntas_test').insert(pregs);
     if (eIns) { showToast('Test guardado pero error en preguntas: ' + eIns.message, 'error'); return; }
   }
+
+  // Avisar al alumno solo si el test es para él y se acaba de crear.
+  if (alumno_id && !_tpEditId) {
+    avisarAlumno('test_asignado', testId, 'Test guardado');
+  } else {
+    showToast(_tpEditId ? 'Test actualizado' : 'Test guardado');
+  }
+
   cerrarModalTestProf();
   loadTestsProf();
+}
+
+// Lanza el aviso y dice en pantalla si ha llegado. El recurso ya está
+// guardado, así que un fallo aquí no deshace nada.
+async function avisarAlumno(evento, id, textoBase) {
+  try {
+    const { data: r } = await db.functions.invoke('notificar', { body: { evento, id } });
+    const n = r?.push?.enviados ?? 0;
+    showToast(textoBase + (n > 0
+      ? ` · avisado en ${n} dispositivo${n === 1 ? '' : 's'}`
+      : ' · el alumno aún no ha activado los avisos'));
+  } catch (e) {
+    console.warn('Aviso fallido:', e);
+    showToast(textoBase + ' · no se pudo enviar el aviso');
+  }
 }
 
 function cerrarModalTestProf() {
@@ -3883,7 +3906,7 @@ async function guardarTarea(e) {
       archivoUrl = urlData.publicUrl;
     }
 
-    const { error } = await db.from('tareas').insert({
+    const { data: nuevaTarea, error } = await db.from('tareas').insert({
       profesor_id:          ctx.profesorData.id,
       alumno_id:            document.getElementById('nt-alumno').value,
       asignatura:           document.getElementById('nt-asignatura').value || null,
@@ -3892,10 +3915,11 @@ async function guardarTarea(e) {
       descripcion:          document.getElementById('nt-descripcion').value.trim() || null,
       archivo_enunciado_url: archivoUrl,
       fecha_limite:         document.getElementById('nt-fecha-limite').value || null,
-    });
+    }).select('id').single();
 
     if (error) throw error;
-    showToast('Tarea creada correctamente');
+    if (nuevaTarea?.id) await avisarAlumno('tarea_asignada', nuevaTarea.id, 'Tarea creada');
+    else showToast('Tarea creada correctamente');
     cerrarModalNuevaTarea();
     loadTareasProf();
   } catch(err) {
@@ -4096,7 +4120,7 @@ async function guardarCorreccion() {
     if (error) throw error;
     if (data && !data.success) throw new Error(data.error || 'Error al corregir');
 
-    showToast('Corrección guardada');
+    await avisarAlumno('tarea_corregida', _tareaActualId, 'Corrección guardada');
     cerrarModalTareaProf();
     loadTareasProf();
   } catch(err) {
