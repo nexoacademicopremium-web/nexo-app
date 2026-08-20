@@ -165,16 +165,31 @@ serve(async (req) => {
     const quien = `${perfil?.nombre || ''} ${perfil?.apellidos || ''}`.trim() || 'Alguien'
 
     const { evento, id } = await req.json()
-    if (!evento || !id) {
-      return new Response(JSON.stringify({ error: 'Faltan evento o id' }), { status: 400, headers: H })
+    if (!evento) {
+      return new Response(JSON.stringify({ error: 'Falta el evento' }), { status: 400, headers: H })
+    }
+    // 'prueba' es el único evento sin recurso: se envía a uno mismo.
+    if (!id && evento !== 'prueba') {
+      return new Response(JSON.stringify({ error: 'Falta el id' }), { status: 400, headers: H })
     }
 
     let destinatarios: string[] = []
     let titulo = '', cuerpo = '', url = APP_BASE_URL, cta = 'Abrir Nexo', asunto = '', tag = evento
     let importante = false
 
+    // ── PRUEBA → a uno mismo ───────────────────────────────────
+    // Sirve para comprobar que el canal funciona, sin depender de
+    // que haya un alumno, un material o una sesión de por medio.
+    if (evento === 'prueba') {
+      destinatarios = [user.id]
+      titulo = 'Los avisos funcionan'
+      cuerpo = 'Si estás leyendo esto en tu móvil, las notificaciones están bien configuradas.'
+      asunto = 'Prueba de avisos — Nexo Académico'
+      cta    = 'Abrir Nexo'
+      tag    = 'nexo-prueba'
+
     // ── SESIÓN REGISTRADA → al alumno ──────────────────────────
-    if (evento === 'sesion_registrada') {
+    } else if (evento === 'sesion_registrada') {
       const { data: ses } = await admin
         .from('sesiones')
         .select('id, asignatura, fecha, profesor_id, alumno:alumnos(usuario_id)')

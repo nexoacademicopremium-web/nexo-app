@@ -173,12 +173,30 @@ function _montarBannerPush() {
     btn.textContent = 'Activando…';
     const r = await activarNotificaciones();
     cerrar();
-    if (typeof showToast === 'function') {
-      showToast(r.ok ? 'Avisos activados en este dispositivo' : r.motivo, r.ok ? 'success' : 'error');
-    } else if (!r.ok) {
+    if (r.ok) {
+      // Aviso de prueba inmediato: así se ve que funciona de verdad,
+      // sin esperar a que ocurra nada en la plataforma.
+      enviarAvisoDePrueba();
+      if (typeof showToast === 'function') showToast('Avisos activados — te llega uno de prueba');
+    } else if (typeof showToast === 'function') {
+      showToast(r.motivo, 'error');
+    } else {
       alert(r.motivo);
     }
   };
+}
+
+// Se manda un push a uno mismo. Útil para comprobar el canal aislado
+// de la lógica de destinatarios.
+async function enviarAvisoDePrueba() {
+  try {
+    const { data, error } = await db.functions.invoke('notificar', { body: { evento: 'prueba' } });
+    if (error) throw error;
+    return data;
+  } catch (e) {
+    console.warn('Aviso de prueba fallido:', e);
+    return null;
+  }
 }
 
 async function _iniciarPush() {

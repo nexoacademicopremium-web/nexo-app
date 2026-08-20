@@ -4176,6 +4176,7 @@ async function guardarMaterial(e) {
     };
     if (newUrl) payload.archivo_url = newUrl;
 
+    let avisoTxt = '';
     if (editMaterialId) {
       const { error: updErr } = await db.from('material').update(payload).eq('id', editMaterialId);
       if (updErr) throw new Error('Error al guardar material: ' + updErr.message);
@@ -4195,11 +4196,23 @@ async function guardarMaterial(e) {
         if (maErr) console.warn('[Nexo] material_alumno insert:', maErr.message);
         // Avisar al alumno solo si se le ha asignado a él en concreto.
         else {
-          db.functions.invoke('notificar', { body: { evento: 'material_asignado', id: mat.id } })
-            .catch(e => console.warn('Aviso de material fallido:', e));
+          try {
+            const { data: r } = await db.functions.invoke('notificar', {
+              body: { evento: 'material_asignado', id: mat.id },
+            });
+            const n = r?.push?.enviados ?? 0;
+            avisoTxt = n > 0
+              ? ` · avisado en ${n} dispositivo${n === 1 ? '' : 's'}`
+              : ' · el alumno aún no ha activado los avisos';
+          } catch (e) {
+            console.warn('Aviso de material fallido:', e);
+            avisoTxt = ' · no se pudo enviar el aviso';
+          }
         }
+      } else if (mat?.id) {
+        avisoTxt = ' · sin avisos: no se asignó a ningún alumno concreto';
       }
-      showToast('Material añadido correctamente');
+      showToast('Material añadido correctamente' + avisoTxt);
     }
 
     cerrarModal('modal-material');

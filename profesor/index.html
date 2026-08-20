@@ -4558,13 +4558,25 @@ async function pMatGuardar(e) {
     }
 
     // Avisar al alumno de que tiene material nuevo. Accesorio: el
-    // material ya está guardado y asignado.
+    // material ya está guardado y asignado, así que un fallo aquí no
+    // deshace nada, pero sí se dice en pantalla para no fallar en silencio.
+    let avisoTxt = '';
     if (mat?.id) {
-      db.functions.invoke('notificar', { body: { evento: 'material_asignado', id: mat.id } })
-        .catch(e => console.warn('Aviso de material fallido:', e));
+      try {
+        const { data: r } = await db.functions.invoke('notificar', {
+          body: { evento: 'material_asignado', id: mat.id },
+        });
+        const n = r?.push?.enviados ?? 0;
+        avisoTxt = n > 0
+          ? ` · avisado en ${n} dispositivo${n === 1 ? '' : 's'}`
+          : ' · el alumno aún no ha activado los avisos';
+      } catch (e) {
+        console.warn('Aviso de material fallido:', e);
+        avisoTxt = ' · no se pudo enviar el aviso';
+      }
     }
 
-    showToast('Material subido correctamente');
+    showToast('Material subido correctamente' + avisoTxt);
     document.getElementById('pmodal-material').classList.remove('open');
     await loadProfMaterial();
   } catch (err) {
