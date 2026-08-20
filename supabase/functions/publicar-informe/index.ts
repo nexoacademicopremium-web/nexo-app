@@ -615,7 +615,7 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{background:var(--white)}
   body{font-family:'Lora',serif;color:var(--navy-deep);line-height:1.65}
-  .wrap{max-width:900px;margin:0 auto;padding:0 40px 40px}
+  .wrap{max-width:900px;margin:0 auto;padding:0 40px 16px}
   .wrap-inner{max-width:900px;margin:0 auto;padding:0 40px}
   .logo-top{text-align:center;background:var(--navy-deep);padding:34px 24px 30px;margin-bottom:0}
   .logo-top img{height:62px;max-width:70%;object-fit:contain}
@@ -707,7 +707,9 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
   .obs-lista{list-style:none;margin:0 0 20px 0;padding:0;display:flex;flex-direction:column;gap:7px}
   .obs-item{font-size:.93rem;padding:8px 12px 8px 34px;background:rgba(21,76,169,.06);border-radius:8px;position:relative;line-height:1.5}
   .obs-item::before{content:'→';position:absolute;left:12px;top:8px;color:var(--blue-light);font-weight:700;font-size:.9rem}
-  footer{text-align:center;margin-top:40px;padding:20px;font-size:.8rem;color:var(--blue);opacity:.6}
+  /* El pie se queda con lo anterior: nunca abre hoja para él solo. */
+  footer{text-align:center;margin-top:26px;padding:14px 20px;font-size:.8rem;color:var(--blue);opacity:.6;
+         break-before:avoid;page-break-before:avoid}
   @media(max-width:600px){.kpi-strip{flex-wrap:wrap}.tema-nombre{flex:0 0 120px}}
 
   /* ── Paginación del PDF ───────────────────────────────────────
@@ -715,6 +717,9 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
      TODAS las hojas, incluidas las que nacen de un desbordamiento.
      El margen lateral es 0 para que las bandas de color sangren. */
   @page{size:A4;margin:14mm 0}
+  /* La portada no lleva margen superior: la banda del logo va a sangre
+     hasta el borde del papel. El resto de hojas sí respiran arriba. */
+  @page:first{margin-top:0}
 
   /* Cada sección grande abre hoja propia. Es lo que evita que un
      título quede al pie con su contenido en la hoja siguiente. */
@@ -736,14 +741,22 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
     color:var(--blue);opacity:.75;
   }
 
-  /* Bloques que nunca deben partirse entre dos hojas */
-  .cal-wrap, .kpi-card, .mini-kpi, .conclu-block, .plan-comparativa,
-  .plan-col, .aviso-examen, .mejora-item, .practica-casa, .puntos-grupo,
-  .evolucion-wrap, .prop-schedule, .obs-item, .tema-row, .resumen-mes,
+  /* Bloques visuales: partirlos queda mal, así que saltan enteros. */
+  .cal-wrap, .kpi-card, .mini-kpi, .plan-comparativa,
+  .plan-col, .aviso-examen, .mejora-item, .practica-casa,
+  .evolucion-wrap, .obs-item, .tema-row,
   .highlight-card, .mini-kpi-row, .kpi-strip, .cal-grid, .cal-legend,
-  .subj-banner, .temas-tabla, .cabecera-cont, footer{
+  .subj-banner, .cabecera-cont{
     break-inside:avoid;
     page-break-inside:avoid;
+  }
+
+  /* Los bloques de texto corrido SÍ pueden partirse: si se les prohíbe,
+     saltan enteros y dejan media hoja vacía, o una frase suelta al final.
+     Con orphans/widows nunca queda una línea descolgada. */
+  .conclu-block, .puntos-grupo, .prop-schedule, .resumen-mes, .temas-tabla{
+    break-inside:auto;
+    page-break-inside:auto;
   }
 
   /* El banner de la asignatura nunca se separa de sus datos */
