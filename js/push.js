@@ -177,6 +177,7 @@ function _montarBannerPush() {
       // Aviso de prueba inmediato: así se ve que funciona de verdad,
       // sin esperar a que ocurra nada en la plataforma.
       enviarAvisoDePrueba();
+      _pintarEstadoPush();
       if (typeof showToast === 'function') showToast('Avisos activados — te llega uno de prueba');
     } else if (typeof showToast === 'function') {
       showToast(r.motivo, 'error');
@@ -184,6 +185,57 @@ function _montarBannerPush() {
       alert(r.motivo);
     }
   };
+}
+
+// Control permanente de los avisos, accesible desde el menú. Hace falta
+// porque el aviso automático solo sale una vez: quien pulsó "ahora no"
+// se quedaba sin forma de activarlos.
+async function gestionarNotificaciones() {
+  const estado = await estadoNotificaciones();
+
+  if (estado === 'no-soportado') {
+    alert(esIOSSinInstalar()
+      ? 'Para recibir avisos en el iPhone, primero añade Nexo a la pantalla de inicio:\n\n'
+        + 'Pulsa el botón Compartir (el cuadrado con la flecha) y elige "Añadir a pantalla de inicio".\n\n'
+        + 'Luego abre Nexo desde ese icono y vuelve a intentarlo.'
+      : 'Este navegador no admite avisos.');
+    return;
+  }
+
+  if (estado === 'bloqueado') {
+    alert('Los avisos están bloqueados en este navegador.\n\n'
+      + 'Para permitirlos: pulsa el candado (o el icono de ajustes) junto a la dirección web, '
+      + 'busca "Notificaciones" y cámbialo a "Permitir". Después recarga la página.');
+    return;
+  }
+
+  if (estado === 'activo') {
+    if (confirm('Los avisos ya están activados en este dispositivo.\n\n'
+              + '¿Quieres enviarte uno de prueba?\n\n'
+              + '(Para desactivarlos, pulsa Cancelar y luego confirma)')) {
+      const r = await enviarAvisoDePrueba();
+      const n = r?.push?.enviados ?? 0;
+      if (typeof showToast === 'function') {
+        showToast(n > 0 ? 'Aviso de prueba enviado' : 'No se pudo enviar el aviso', n > 0 ? 'success' : 'error');
+      }
+    } else if (confirm('¿Desactivar los avisos en este dispositivo?')) {
+      await desactivarNotificaciones();
+      if (typeof showToast === 'function') showToast('Avisos desactivados en este dispositivo');
+      _pintarEstadoPush();
+    }
+    return;
+  }
+
+  // Estado 'sin-pedir': se activa
+  const r = await activarNotificaciones();
+  if (r.ok) {
+    localStorage.removeItem(_PUSH_DESCARTADO);
+    enviarAvisoDePrueba();
+    if (typeof showToast === 'function') showToast('Avisos activados — te llega uno de prueba');
+    _pintarEstadoPush();
+  } else {
+    alert(r.motivo);
+  }
 }
 
 // Se manda un push a uno mismo. Útil para comprobar el canal aislado
@@ -199,8 +251,27 @@ async function enviarAvisoDePrueba() {
   }
 }
 
+// Pinta en el menú si los avisos están puestos o no, para que se vea de
+// un vistazo sin tener que entrar a mirar.
+async function _pintarEstadoPush() {
+  const pill = document.getElementById('notif-estado-pill');
+  if (!pill) return;
+  const estado = await estadoNotificaciones();
+  const mapa = {
+    'activo':       ['Activos',  '#0d2d1e', '#34d399'],
+    'sin-pedir':    ['Activar',  '#3a2a00', '#fbbf24'],
+    'bloqueado':    ['Bloqueado','#2d0d0d', '#f87171'],
+    'no-soportado': ['No dispo', '#1a1a1a', '#888888'],
+  };
+  const [txt, bg, col] = mapa[estado] || mapa['sin-pedir'];
+  pill.textContent = txt;
+  pill.style.background = bg;
+  pill.style.color = col;
+}
+
 async function _iniciarPush() {
   try {
+    _pintarEstadoPush();
     if (!pushSoportado()) return;
     // Sin sesión no hay a quién asociar el dispositivo.
     const { data: { user } } = await db.auth.getUser();
