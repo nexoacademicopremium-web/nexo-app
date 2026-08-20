@@ -349,7 +349,12 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
       : '—'
 
     return `
-  <div class="subj-banner" style="background:${color};margin-top:46px;border-radius:16px;padding:30px 34px;color:#fff">
+  <div class="pagina">
+  <div class="cabecera-cont">
+    <span class="cc-nombre">${escHtml(alumnoNombre)}</span>
+    <span class="cc-meta">${escHtml(mesLabel)}</span>
+  </div>
+  <div class="subj-banner" style="background:${color};margin-top:0;border-radius:16px;padding:30px 34px;color:#fff">
     <div class="subj-banner-inner">
       <h2 style="font-family:'Playfair Display',serif;font-size:2.1rem;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px">${escHtml(subj.nombre)}</h2>
       ${subj.profesor ? `<div class="subj-meta">${escHtml(subj.profesor)}</div>` : ''}
@@ -370,6 +375,7 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
       <div class="subtitulo">Evolución de autonomía en el periodo (escala 0–100)</div>
       <canvas class="evolucion-chart" id="${chartId}"></canvas>
     </div>
+  </div>
   </div>`
   }).join('')
 
@@ -609,11 +615,11 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
   *{box-sizing:border-box;margin:0;padding:0}
   html,body{background:var(--white)}
   body{font-family:'Lora',serif;color:var(--navy-deep);line-height:1.65}
-  .wrap{max-width:900px;margin:0 auto;padding:0 24px 60px}
-  .wrap-inner{max-width:900px;margin:0 auto;padding:0 24px}
-  .logo-top{text-align:center;background:var(--navy-deep);padding:28px 24px 22px;margin-bottom:0}
-  .logo-top img{height:64px}
-  .titulo-block{text-align:center;padding:30px 24px 8px}
+  .wrap{max-width:900px;margin:0 auto;padding:0 40px 40px}
+  .wrap-inner{max-width:900px;margin:0 auto;padding:0 40px}
+  .logo-top{text-align:center;background:var(--navy-deep);padding:34px 24px 30px;margin-bottom:0}
+  .logo-top img{height:58px;max-width:78%;object-fit:contain}
+  .titulo-block{text-align:center;padding:44px 24px 10px}
   .titulo-block .eyebrow{font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);font-weight:600;margin-bottom:10px}
   .titulo-block h1{font-family:'Playfair Display',serif;font-weight:700;font-size:2.15rem;color:var(--navy-deep);margin-bottom:8px}
   .titulo-block .periodo{font-size:1rem;color:var(--navy-deep);opacity:.6}
@@ -628,7 +634,11 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
   .highlight-card .txt .valor{font-family:'Playfair Display',serif;font-size:1.25rem;font-weight:700}
   .highlight-card .txt .valor span{color:var(--blue-light)}
   section{background:var(--white);border:1px solid var(--cream);border-radius:12px;padding:30px;margin-top:24px;box-shadow:0 3px 20px rgba(4,7,27,.05)}
-  h2{font-family:'Playfair Display',serif;font-size:1.35rem;color:var(--navy-deep);margin-bottom:14px}
+  h2{font-family:'Playfair Display',serif;font-size:1.35rem;color:var(--navy-deep);margin:34px 0 16px}
+  h3{margin-top:26px}
+  /* Separación entre bloques de conclusión, para que no se amontonen */
+  .conclu-block, .puntos-grupo, .aviso-examen, .plan-comparativa,
+  .prop-schedule, .evolucion-wrap{margin-top:22px}
   p{margin-bottom:10px;font-size:.97rem}
   .subj-meta{font-size:.92rem;opacity:.85}
   .subj-content{border:1px solid var(--cream);border-top:none;border-radius:0 0 12px 12px;padding:30px 34px 34px;margin-top:-2px;box-shadow:0 3px 20px rgba(4,7,27,.05)}
@@ -701,31 +711,52 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
   @media(max-width:600px){.kpi-strip{flex-wrap:wrap}.tema-nombre{flex:0 0 120px}}
 
   /* ── Paginación del PDF ───────────────────────────────────────
-     Sin esto el salto de página cae donde quiere y parte por la
-     mitad el calendario, las tarjetas y los bloques de conclusión. */
-  @page{size:A4;margin:0}
+     El margen vertical de @page garantiza aire arriba y abajo en
+     TODAS las hojas, incluidas las que nacen de un desbordamiento.
+     El margen lateral es 0 para que las bandas de color sangren. */
+  @page{size:A4;margin:14mm 0}
+
+  /* Cada sección grande abre hoja propia. Es lo que evita que un
+     título quede al pie con su contenido en la hoja siguiente. */
+  .pagina{break-before:page;page-break-before:always}
+
+  /* Cabecera de continuación: en las hojas 2+ recuerda de quién es
+     el informe, para que ninguna hoja suelta quede huérfana. */
+  .cabecera-cont{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 40px 14px;margin-bottom:26px;
+    border-bottom:1px solid rgba(4,7,27,.10);
+  }
+  .cabecera-cont .cc-nombre{
+    font-family:'Playfair Display',serif;font-size:1rem;
+    font-weight:700;color:var(--navy-deep);
+  }
+  .cabecera-cont .cc-meta{
+    font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--blue);opacity:.75;
+  }
 
   /* Bloques que nunca deben partirse entre dos hojas */
   .cal-wrap, .kpi-card, .mini-kpi, .conclu-block, .plan-comparativa,
   .plan-col, .aviso-examen, .mejora-item, .practica-casa, .puntos-grupo,
   .evolucion-wrap, .prop-schedule, .obs-item, .tema-row, .resumen-mes,
   .highlight-card, .mini-kpi-row, .kpi-strip, .cal-grid, .cal-legend,
-  footer{
+  .subj-banner, .temas-tabla, .cabecera-cont, footer{
     break-inside:avoid;
     page-break-inside:avoid;
   }
 
+  /* El banner de la asignatura nunca se separa de sus datos */
+  .subj-banner{break-after:avoid;page-break-after:avoid}
+
   /* Un título nunca se queda solo al pie de una hoja */
-  h1, h2, h3, .cal-titulo, .conclu-eyebrow{
+  h1, h2, h3, .cal-titulo, .conclu-eyebrow, .subtitulo{
     break-after:avoid;
     page-break-after:avoid;
   }
 
   /* Ni una línea suelta de un párrafo al cambiar de hoja */
   p, li{orphans:3;widows:3}
-
-  /* El calendario y su título viajan juntos */
-  .cal-wrap{break-before:auto;page-break-before:auto}
 </style>
 </head>
 <body>
@@ -755,21 +786,27 @@ ${ia.resumen_ejecutivo ? `<div class="wrap"><section class="resumen-mes" style="
 <div class="wrap">
   ${subjectHtml}
 
-  <section style="margin-top:46px">
-    <h2>Conclusiones del periodo</h2>
+  <div class="pagina">
+    <div class="cabecera-cont">
+      <span class="cc-nombre">${escHtml(alumnoNombre)}</span>
+      <span class="cc-meta">${escHtml(mesLabel)}</span>
+    </div>
+    <section>
+      <h2 style="margin-top:0">Conclusiones del periodo</h2>
 
-    ${examenesHtml}
+      ${examenesHtml}
 
-    ${calendariosConclusionHtml}
+      ${calendariosConclusionHtml}
 
-    ${puntosFuertesHtml}
+      ${puntosFuertesHtml}
 
-    ${ia.patron_trabajo ? `<div class="conclu-block"><div class="conclu-eyebrow">Patrón de trabajo</div><p>${escHtml(ia.patron_trabajo)}</p></div>` : ''}
+      ${ia.patron_trabajo ? `<div class="conclu-block"><div class="conclu-eyebrow">Patrón de trabajo</div><p>${escHtml(ia.patron_trabajo)}</p></div>` : ''}
 
-    ${objetivosHtml}
+      ${objetivosHtml}
 
-    ${propuestaDetalladaHtml}
-  </section>
+      ${propuestaDetalladaHtml}
+    </section>
+  </div>
 </div>
 
 <footer>Nexo Académico · nexoacademico.com · nexoacademicopremium@gmail.com · 699 52 93 99<br>Informe generado el ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</footer>
