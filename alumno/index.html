@@ -480,14 +480,14 @@
   <div class="nav-section">Mi área</div>
   <div class="nav-item active" id="nav-inicio" onclick="showSection('inicio')"><i class="ti ti-layout-dashboard"></i> Inicio</div>
   <div class="nav-item" id="nav-sesiones" onclick="showSection('sesiones')"><i class="ti ti-calendar-check"></i> Sesiones<span class="badge-nav" id="badge-sesiones" style="display:none">!</span></div>
-  <div class="nav-item" id="nav-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i> Informes</div>
+  <div class="nav-item" id="nav-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i> Informes<span class="badge-nav" id="badge-informes" style="display:none"></span></div>
   <div class="nav-item" id="nav-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i> Bonos</div>
   <div class="nav-item" id="nav-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i> Calendario</div>
   <div class="nav-item" id="nav-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i> Mi Profesor</div>
   <div class="nav-section" style="padding-top:16px">Estudiar</div>
-  <div class="nav-item" id="nav-estudiar" onclick="showSection('estudiar')"><i class="ti ti-files"></i> Material</div>
+  <div class="nav-item" id="nav-estudiar" onclick="showSection('estudiar')"><i class="ti ti-files"></i> Material<span class="badge-nav" id="badge-estudiar" style="display:none"></span></div>
   <div class="nav-item" id="nav-tareas" onclick="showSection('tareas')"><i class="ti ti-clipboard-check"></i> Tareas<span class="badge-nav" id="badge-tareas" style="display:none">!</span></div>
-  <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i> Tests</div>
+  <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i> Tests<span class="badge-nav" id="badge-tests" style="display:none"></span></div>
   <div class="nav-section" style="padding-top:16px">Avisos</div>
   <div class="nav-item" id="nav-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i> Avisos<span class="badge-nav" id="badge-avisos" style="display:none">!</span></div>
   <div class="nav-item" id="nav-notif-push" onclick="gestionarNotificaciones()"><i class="ti ti-device-mobile-message"></i> Avisos al móvil<span id="notif-estado-pill" style="margin-left:auto;font-size:10px;padding:2px 7px;border-radius:20px;background:var(--border2);color:var(--muted)">…</span></div>
@@ -823,7 +823,29 @@
 <div class="section" id="section-avisos">
   <h1 class="page-title">Avisos</h1>
   <p class="page-sub">Comunicaciones del equipo de Nexo Académico</p>
-  <div class="card" style="margin-bottom:16px"><div id="tutorial-instalar"></div></div>
+  <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#231a06,#2e2409);border:1px solid #c9973a;position:relative;overflow:hidden">
+    <div style="position:absolute;top:0;left:0;bottom:0;width:3px;background:linear-gradient(180deg,#f0c674,#c9973a)"></div>
+    <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
+      <div style="width:42px;height:42px;border-radius:11px;background:rgba(240,198,116,.14);border:1px solid rgba(240,198,116,.35);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="ti ti-device-mobile-down" style="color:#f0c674;font-size:21px"></i>
+      </div>
+      <div style="flex:1;min-width:220px">
+        <div style="color:#f0c674;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:700;margin-bottom:4px">Recomendado</div>
+        <div style="color:#fff;font-size:15px;font-weight:700;margin-bottom:5px">Instala Nexo en tu móvil</div>
+        <div style="color:#d9c9a8;font-size:12.5px;line-height:1.55;margin-bottom:14px">
+          Añádela a tu pantalla de inicio y recibirás un aviso cuando tengas una sesión que confirmar, material nuevo, una tarea o el informe del mes. En iPhone es imprescindible: sin instalarla no llega ninguno.
+        </div>
+        <div style="display:flex;gap:9px;flex-wrap:wrap">
+          <a href="../assets/guia-instalar-nexo.pdf" target="_blank" style="display:inline-flex;align-items:center;gap:7px;background:#f0c674;color:#231a06;text-decoration:none;border-radius:9px;padding:10px 16px;font-size:12.5px;font-weight:700">
+            <i class="ti ti-file-download" style="font-size:15px"></i> Ver la guía
+          </a>
+          <button onclick="gestionarNotificaciones()" style="display:inline-flex;align-items:center;gap:7px;background:transparent;color:#f0c674;border:1px solid rgba(240,198,116,.45);border-radius:9px;padding:10px 16px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit">
+            <i class="ti ti-bell" style="font-size:15px"></i> Activar los avisos
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
   <div class="card">
     <div id="avisos-lista">
       <div class="loading-section"><div class="spinner"></div></div>
@@ -952,6 +974,10 @@ let editEventoId = null;
     checkPendingSessions()
   ]);
 
+  // Contadores de novedades del menú. No se espera a que termine:
+  // la app ya es usable mientras se calculan.
+  cargarNovedades();
+
   // Check URL params for email confirmation, else restore last section
   const p = new URLSearchParams(window.location.search);
   if (p.get('seccion') === 'sesiones') {
@@ -979,6 +1005,85 @@ function closeSidebar() {
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
   document.getElementById('mobile-menu').classList.remove('open');
+}
+
+// ============================================================
+// NOVEDADES POR SECCIÓN
+// El contador del menú dice cuántas cosas han llegado desde la
+// última vez que el alumno entró en esa sección. Al entrar, se
+// marca como vista y el contador desaparece.
+// ============================================================
+let _vistas = {};
+
+async function cargarNovedades() {
+  if (!ctx?.alumnoData) return;
+  const alumnoId = ctx.alumnoData.id;
+
+  const { data: filas } = await db.from('secciones_vistas')
+    .select('seccion, visto_at').eq('usuario_id', ctx.usuario.id);
+  _vistas = Object.fromEntries((filas || []).map(f => [f.seccion, f.visto_at]));
+
+  // Para quien entra por primera vez se toma una fecha muy antigua,
+  // de modo que vea marcado todo lo que ya tiene.
+  const desde = s => _vistas[s] || '1970-01-01T00:00:00Z';
+  const contar = r => (r?.count ?? 0);
+  const C = { count: 'exact', head: true };
+
+  // Las sesiones pendientes las lleva checkPendingSessions, que además
+  // saca el aviso grande de la portada. No se tocan aquí.
+  const [material, tareas, tests, informes, avisos] = await Promise.all([
+    db.from('material_alumno').select('material_id', C)
+      .eq('alumno_id', alumnoId).gt('asignado_at', desde('estudiar')),
+
+    db.from('tareas').select('id', C)
+      .eq('alumno_id', alumnoId).gt('created_at', desde('tareas')),
+
+    db.from('tests').select('id', C)
+      .eq('alumno_id', alumnoId).eq('visible', true).gt('created_at', desde('tests')),
+
+    db.from('informes').select('id', C)
+      .eq('alumno_id', alumnoId).eq('estado', 'visible')
+      .not('eliminado', 'is', true).gt('published_at', desde('informes')),
+
+    db.from('avisos').select('id', C)
+      .eq('visible', true).gt('created_at', desde('avisos'))
+      .or(`destinatario_id.eq.${ctx.usuario.id},destinatario_rol.eq.alumno,destinatario_rol.eq.todos`),
+  ]);
+
+  pintarBadge('estudiar', contar(material));
+  pintarBadge('tareas',   contar(tareas));
+  pintarBadge('tests',    contar(tests));
+  pintarBadge('informes', contar(informes));
+  pintarBadge('avisos',   contar(avisos));
+}
+
+// Pinta el número en el menú lateral y en el menú de móvil, para que
+// se vea esté donde esté el usuario.
+function pintarBadge(seccion, n) {
+  const sitios = [
+    document.getElementById('badge-' + seccion),
+    document.getElementById('mmenu-badge-' + seccion),
+  ];
+  for (const el of sitios) {
+    if (!el) continue;
+    if (n > 0) { el.textContent = n > 9 ? '9+' : n; el.style.display = 'inline-block'; }
+    else       { el.style.display = 'none'; }
+  }
+  const punto = document.getElementById('bn-dot-' + seccion);
+  if (punto) punto.classList.toggle('show', n > 0);
+}
+
+async function marcarSeccionVista(seccion) {
+  if (!ctx?.usuario) return;
+  // Las sesiones pendientes no se "leen": siguen ahí hasta confirmarlas.
+  if (seccion === 'sesiones' || seccion === 'inicio') return;
+  _vistas[seccion] = new Date().toISOString();
+  pintarBadge(seccion, 0);
+  await db.from('secciones_vistas').upsert({
+    usuario_id: ctx.usuario.id,
+    seccion,
+    visto_at: _vistas[seccion],
+  }, { onConflict: 'usuario_id,seccion' });
 }
 
 function showSection(id) {
@@ -1011,6 +1116,7 @@ function showSection(id) {
     avisos:     loadAvisosAlumno,
   };
   if (loaders[id]) loaders[id]();
+  marcarSeccionVista(id);
 }
 
 function toggleAvatarMenu() {
@@ -2653,7 +2759,6 @@ async function loadAvisosAlumno() {
     .or(`destinatario_id.eq.${ctx.usuario.id},destinatario_rol.eq.alumno,destinatario_rol.eq.todos`)
     .order('created_at', { ascending: false });
 
-  montarTutorialInstalacion("tutorial-instalar");
 
   const el = document.getElementById('avisos-lista');
   if (!avisos || avisos.length === 0) {
