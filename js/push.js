@@ -187,6 +187,164 @@ function _montarBannerPush() {
   };
 }
 
+// ── Tutorial de instalación ─────────────────────────────────────
+// Reconoce el aparato para enseñar los pasos que tocan, y deja ver
+// los del resto: mucha gente instala en un sitio y pregunta por otro.
+
+function _detectarAparato() {
+  const ua = navigator.userAgent;
+  const iOS = /iPad|iPhone|iPod/.test(ua)
+    // El iPad moderno se presenta como Mac; el táctil lo delata.
+    || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const android = /Android/.test(ua);
+  const mac  = /Macintosh/.test(ua) && !iOS;
+  const win  = /Windows/.test(ua);
+  const esEdge = /Edg\//.test(ua);
+  const esChrome = /Chrome|CriOS/.test(ua) && !esEdge;
+  const esFirefox = /Firefox|FxiOS/.test(ua);
+  const esSamsung = /SamsungBrowser/.test(ua);
+  const esSafari = /Safari/.test(ua) && !esChrome && !esEdge && !esFirefox && !esSamsung;
+
+  const instalada = window.navigator.standalone === true
+    || window.matchMedia('(display-mode: standalone)').matches;
+
+  let clave = 'otro';
+  if (iOS)          clave = 'ios';
+  else if (android) clave = esSamsung ? 'samsung' : 'android';
+  else if (mac)     clave = esSafari ? 'mac-safari' : 'escritorio';
+  else if (win)     clave = 'escritorio';
+
+  return { clave, instalada, esSafari, esChrome, iOS, android };
+}
+
+const _GUIAS = {
+  ios: {
+    titulo: 'iPhone o iPad',
+    nota: 'Es imprescindible: en iPhone y iPad los avisos <b>solo</b> llegan si Nexo está en la pantalla de inicio.',
+    reqSafari: true,
+    pasos: [
+      'Abre Nexo en <b>Safari</b> (no vale Chrome en iPhone).',
+      'Pulsa el botón <b>Compartir</b>: el cuadrado con una flecha hacia arriba, abajo en el centro.',
+      'Baja por la lista y elige <b>Añadir a pantalla de inicio</b>.',
+      'Pulsa <b>Añadir</b> arriba a la derecha.',
+      'Cierra Safari y abre Nexo desde el icono nuevo.',
+    ],
+  },
+  android: {
+    titulo: 'Móvil o tablet Android',
+    nota: 'Vale para Oppo, Xiaomi, Google Pixel, Motorola y cualquier Android con Chrome.',
+    pasos: [
+      'Abre Nexo en <b>Chrome</b>.',
+      'Pulsa los <b>tres puntos</b> ⋮ de arriba a la derecha.',
+      'Elige <b>Instalar aplicación</b> o <b>Añadir a pantalla de inicio</b>.',
+      'Confirma pulsando <b>Instalar</b>.',
+    ],
+  },
+  samsung: {
+    titulo: 'Samsung con Internet',
+    nota: 'Si usas el navegador propio de Samsung en vez de Chrome.',
+    pasos: [
+      'Pulsa las <b>tres rayas</b> ☰ de abajo a la derecha.',
+      'Elige <b>Añadir página a</b>.',
+      'Selecciona <b>Pantalla de inicio</b>.',
+    ],
+  },
+  'mac-safari': {
+    titulo: 'Mac con Safari',
+    nota: 'Necesitas macOS Sonoma o posterior.',
+    pasos: [
+      'Con Nexo abierto, ve al menú <b>Archivo</b>.',
+      'Elige <b>Añadir al Dock</b>.',
+      'Nexo aparecerá en el Dock como una aplicación más.',
+    ],
+  },
+  escritorio: {
+    titulo: 'Ordenador con Chrome o Edge',
+    nota: 'Sirve igual en Windows y en Mac.',
+    pasos: [
+      'Mira a la derecha de la barra de direcciones.',
+      'Pulsa el icono de <b>instalar</b>: una pantalla con una flecha hacia abajo.',
+      'Confirma con <b>Instalar</b>. Si no ves el icono, entra en los tres puntos ⋮ y busca <b>Instalar Nexo</b>.',
+    ],
+  },
+};
+
+function _htmlGuia(g, abierta) {
+  const pasos = g.pasos.map(p => `<li style="margin-bottom:9px;line-height:1.55">${p}</li>`).join('');
+  const nota = g.nota
+    ? `<p style="color:var(--muted);font-size:12.5px;margin:0 0 12px;line-height:1.5">${g.nota}</p>` : '';
+  if (abierta) {
+    return `${nota}<ol style="margin:0;padding-left:20px;color:var(--soft);font-size:13.5px">${pasos}</ol>`;
+  }
+  return `<details style="border-top:.5px solid var(--border2);padding:10px 0 2px">
+    <summary style="cursor:pointer;color:var(--soft);font-size:13px;font-weight:500;list-style:revert">${g.titulo}</summary>
+    <div style="padding:10px 0 6px">${nota}
+      <ol style="margin:0;padding-left:20px;color:var(--soft);font-size:13.5px">${pasos}</ol>
+    </div>
+  </details>`;
+}
+
+async function montarTutorialInstalacion(idContenedor) {
+  const cont = document.getElementById(idContenedor);
+  if (!cont) return;
+
+  const ap = _detectarAparato();
+  const estado = await estadoNotificaciones();
+  const guia = _GUIAS[ap.clave] || _GUIAS.escritorio;
+
+  // Aviso de Safari: en iPhone, Chrome no puede instalar ni recibir avisos.
+  const avisoNavegador = (ap.clave === 'ios' && !ap.esSafari)
+    ? `<div style="background:#3a2a00;border:.5px solid #7a5a00;border-radius:9px;padding:12px 14px;margin-bottom:14px;color:#fbbf24;font-size:12.5px;line-height:1.5">
+         Estás usando un navegador que en iPhone no puede instalar la app. Abre Nexo en <b>Safari</b> para poder hacerlo.
+       </div>` : '';
+
+  const estadoAvisos = {
+    'activo':       ['Avisos activados en este dispositivo', 'var(--green)', 'ti-circle-check'],
+    'sin-pedir':    ['Los avisos no están activados todavía', '#fbbf24', 'ti-alert-circle'],
+    'bloqueado':    ['Los avisos están bloqueados en este navegador', 'var(--red)', 'ti-ban'],
+    'no-soportado': ['Este navegador no admite avisos', 'var(--muted)', 'ti-info-circle'],
+  }[estado] || ['—', 'var(--muted)', 'ti-info-circle'];
+
+  const yaInstalada = ap.instalada
+    ? `<div style="display:flex;align-items:center;gap:9px;background:#0d2d1e;border:.5px solid #1a7f5e;border-radius:9px;padding:12px 14px;margin-bottom:16px">
+         <i class="ti ti-circle-check" style="color:var(--green);font-size:17px"></i>
+         <span style="color:var(--green);font-size:13px;font-weight:500">Ya tienes Nexo instalado en este dispositivo</span>
+       </div>` : '';
+
+  cont.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px">
+      <h2 style="color:#fff;font-size:15px;font-weight:700;margin:0">Recibir avisos en este dispositivo</h2>
+      <span style="display:inline-flex;align-items:center;gap:6px;color:${estadoAvisos[1]};font-size:12px">
+        <i class="ti ${estadoAvisos[2]}" style="font-size:15px"></i>${estadoAvisos[0]}
+      </span>
+    </div>
+    <p style="color:var(--muted);font-size:12.5px;margin:0 0 16px;line-height:1.55">
+      Instala Nexo como una aplicación para que los avisos de sesiones, tareas e informes te lleguen al momento.
+    </p>
+
+    ${yaInstalada}
+    ${avisoNavegador}
+
+    ${estado !== 'activo' && estado !== 'no-soportado' ? `
+      <button onclick="gestionarNotificaciones()" style="background:var(--blue);color:#fff;border:none;border-radius:9px;padding:11px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:18px">
+        <i class="ti ti-bell"></i> Activar los avisos
+      </button>` : ''}
+
+    ${!ap.instalada ? `
+      <div style="background:rgba(255,255,255,.03);border:.5px solid var(--border2);border-radius:11px;padding:16px 18px;margin-bottom:14px">
+        <div style="color:var(--blue);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:4px">Tu dispositivo</div>
+        <div style="color:#fff;font-size:14px;font-weight:600;margin-bottom:10px">${guia.titulo}</div>
+        ${_htmlGuia(guia, true)}
+      </div>` : ''}
+
+    <div style="margin-top:6px">
+      <div style="color:var(--muted);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px">Otros dispositivos</div>
+      ${Object.entries(_GUIAS)
+          .filter(([k]) => k !== ap.clave || ap.instalada)
+          .map(([, g]) => _htmlGuia(g, false)).join('')}
+    </div>`;
+}
+
 // Control permanente de los avisos, accesible desde el menú. Hace falta
 // porque el aviso automático solo sale una vez: quien pulsó "ahora no"
 // se quedaba sin forma de activarlos.

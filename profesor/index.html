@@ -872,6 +872,7 @@
 <div class="section" id="section-avisos">
   <h1 class="page-title">Avisos</h1>
   <p class="page-sub">Comunicaciones del equipo de Nexo Académico</p>
+  <div class="card" style="margin-bottom:16px"><div id="tutorial-instalar"></div></div>
   <div class="card">
     <div id="avisos-lista">
       <div class="loading-section"><div class="spinner"></div></div>
@@ -2343,6 +2344,8 @@ async function loadAvisos() {
   const { data: avisos } = await db.from('avisos').select('*').eq('visible', true)
     .or(`destinatario_id.eq.${ctx.usuario.id},destinatario_rol.eq.profesor,destinatario_rol.eq.todos`)
     .order('created_at', { ascending: false });
+
+  montarTutorialInstalacion("tutorial-instalar");
 
   const el = document.getElementById('avisos-lista');
   if (!avisos || avisos.length === 0) {
