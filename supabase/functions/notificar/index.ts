@@ -196,9 +196,10 @@ serve(async (req) => {
     // El rol es la pieza clave: un aviso de material va al alumno, así que
     // si en el móvil hay iniciada la sesión de admin, no llega nada.
     const { data: perfiles } = await admin
-      .from('usuarios').select('id, rol')
+      .from('usuarios').select('id, rol, nombre, apellidos')
       .in('id', [...new Set((subs || []).map(s => s.usuario_id))])
-    const rolDe = Object.fromEntries((perfiles || []).map(u => [u.id, u.rol]))
+    const rolDe = Object.fromEntries((perfiles || []).map(u =>
+      [u.id, `${u.rol} ${u.nombre || ''} ${u.apellidos || ''}`.trim()]))
 
     res.tipo_de_aparato = (subs || []).map(s => {
       const ua = s.user_agent || ''
