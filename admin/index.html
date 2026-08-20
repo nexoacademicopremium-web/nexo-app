@@ -2131,10 +2131,22 @@ async function publicarInformeIA() {
     if (!res.ok || result.error) throw new Error(result.error || 'Error desconocido');
 
     // Avisar a la familia de que ya pueden descargarlo.
-    db.functions.invoke('notificar', { body: { evento: 'informe_publicado', id: _infRevisionId } })
-      .catch(err => console.warn('Aviso de informe fallido:', err));
+    let sufijo = '';
+    try {
+      const { data: r, error: eNotif } = await db.functions.invoke('notificar', {
+        body: { evento: 'informe_publicado', id: _infRevisionId },
+      });
+      if (eNotif) throw eNotif;
+      const n = r?.push?.enviados ?? 0;
+      if (n > 0)                 sufijo = ` · avisado al alumno en ${n} dispositivo${n === 1 ? '' : 's'}`;
+      else if (r?.push?.errores) sufijo = ' · fallo al avisar: ' + r.push.errores[0];
+      else                       sufijo = ' · el alumno aún no ha activado los avisos';
+    } catch (err) {
+      console.warn('Aviso de informe fallido:', err);
+      sufijo = ' · no se pudo enviar el aviso';
+    }
 
-    showToast('Informe publicado y visible para el alumno');
+    showToast('Informe publicado y visible para el alumno' + sufijo);
     btn.style.display = 'none';
     document.getElementById('inf-rev-sub').textContent =
       document.getElementById('inf-rev-sub').textContent.replace('oculto', 'visible');
@@ -2152,21 +2164,22 @@ async function toggleEstadoInforme(informeId, esVisible) {
   }).eq('id', informeId);
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
 
-  // Al hacerlo visible se avisa al alumno. La función no reenvía si ya
-  // se avisó antes, así que ocultar y volver a publicar no le llena el
-  // móvil de avisos repetidos.
+  // Al hacerlo visible se avisa al alumno, todas las veces que se pulse
+  // publicar: es preferible repetir el aviso a que no se entere.
   let sufijo = '';
   if (!esVisible) {
     try {
-      const { data: r } = await db.functions.invoke('notificar', {
+      const { data: r, error: eNotif } = await db.functions.invoke('notificar', {
         body: { evento: 'informe_publicado', id: informeId },
       });
-      if (r?.repetido)          sufijo = ' · ya se le avisó antes';
-      else if (r?.push?.enviados > 0) sufijo = ` · avisado en ${r.push.enviados} dispositivo${r.push.enviados === 1 ? '' : 's'}`;
-      else                      sufijo = ' · el alumno aún no ha activado los avisos';
+      if (eNotif) throw eNotif;
+      const n = r?.push?.enviados ?? 0;
+      if (n > 0)                     sufijo = ` · avisado al alumno en ${n} dispositivo${n === 1 ? '' : 's'}`;
+      else if (r?.push?.errores)     sufijo = ' · fallo al avisar: ' + r.push.errores[0];
+      else                           sufijo = ' · el alumno aún no ha activado los avisos';
     } catch (e) {
       console.warn('Aviso de informe fallido:', e);
-      sufijo = ' · no se pudo enviar el aviso';
+      sufijo = ' · no se pudo enviar el aviso: ' + (e.message || e);
     }
   }
 
