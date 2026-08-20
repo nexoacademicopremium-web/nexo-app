@@ -2151,7 +2151,26 @@ async function toggleEstadoInforme(informeId, esVisible) {
     estado: nuevoEstado, visible: !esVisible, updated_at: new Date().toISOString(),
   }).eq('id', informeId);
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
-  showToast(esVisible ? 'Informe ocultado' : 'Informe visible para el alumno');
+
+  // Al hacerlo visible se avisa al alumno. La función no reenvía si ya
+  // se avisó antes, así que ocultar y volver a publicar no le llena el
+  // móvil de avisos repetidos.
+  let sufijo = '';
+  if (!esVisible) {
+    try {
+      const { data: r } = await db.functions.invoke('notificar', {
+        body: { evento: 'informe_publicado', id: informeId },
+      });
+      if (r?.repetido)          sufijo = ' · ya se le avisó antes';
+      else if (r?.push?.enviados > 0) sufijo = ` · avisado en ${r.push.enviados} dispositivo${r.push.enviados === 1 ? '' : 's'}`;
+      else                      sufijo = ' · el alumno aún no ha activado los avisos';
+    } catch (e) {
+      console.warn('Aviso de informe fallido:', e);
+      sufijo = ' · no se pudo enviar el aviso';
+    }
+  }
+
+  showToast((esVisible ? 'Informe ocultado' : 'Informe visible para el alumno') + sufijo);
   const inf = _infData?.find(x => x.id === informeId);
   if (inf) { inf.estado = nuevoEstado; _renderInformes(); }
 }

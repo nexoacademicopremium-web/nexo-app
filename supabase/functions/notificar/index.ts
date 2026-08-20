@@ -405,8 +405,17 @@ serve(async (req) => {
         return new Response(JSON.stringify({ error: 'Solo el administrador' }), { status: 403, headers: H })
       }
       const { data: inf } = await admin
-        .from('informes').select('id, titulo, alumno:alumnos(usuario_id)').eq('id', id).single()
+        .from('informes').select('id, titulo, notificado_at, alumno:alumnos(usuario_id)')
+        .eq('id', id).single()
       if (!inf) return new Response(JSON.stringify({ error: 'Informe no encontrado' }), { status: 404, headers: H })
+
+      // Ocultar y volver a publicar no debe avisar otra vez.
+      if (inf.notificado_at) {
+        return new Response(JSON.stringify({ ok: true, repetido: true }),
+          { headers: { ...H, 'Content-Type': 'application/json' } })
+      }
+      await admin.from('informes')
+        .update({ notificado_at: new Date().toISOString() }).eq('id', id)
 
       const uid = (inf.alumno as any)?.usuario_id
       if (uid) destinatarios = [uid]
