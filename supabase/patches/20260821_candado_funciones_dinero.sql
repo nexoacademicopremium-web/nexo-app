@@ -360,6 +360,19 @@ BEGIN
 END;
 $$;
 
+-- ── Versión huérfana de _activar_siguiente_bono ─────────────
+-- En la base de datos conviven dos:
+--   _activar_siguiente_bono(uuid)                  sin candado
+--   _activar_siguiente_bono(uuid, timestamptz)     con candado
+-- La de un solo parámetro es la antigua. Al crear la nueva con otra
+-- firma, CREATE OR REPLACE no la sustituyó: dejó las dos vivas. Como
+-- PostgreSQL elige según los argumentos, una llamada con un solo
+-- parámetro se saltaría el candado.
+--
+-- Ninguna función vigente la llama así (solo lo hacía la versión de
+-- junio de _consumir_horas_sesion, ya reemplazada), así que se retira.
+DROP FUNCTION IF EXISTS public._activar_siguiente_bono(UUID);
+
 -- Permisos: se mantienen los que ya tenían.
 GRANT EXECUTE ON FUNCTION public.recalcular_bonos_alumno(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.eliminar_bono(UUID)           TO authenticated;
