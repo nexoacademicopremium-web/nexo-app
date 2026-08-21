@@ -100,58 +100,144 @@ async function enviarPush(usuarioIds: string[], payload: Record<string, unknown>
 }
 
 // ── Envío email ─────────────────────────────────────────────────
-function plantillaEmail(titulo: string, cuerpo: string, url: string, cta: string) {
+// Cada tipo de aviso tiene su propia identidad en el correo: color,
+// icono y antetítulo. Así la familia reconoce de un vistazo de qué va
+// antes de leerlo.
+const ESTILO_EVENTO: Record<string, { color: string; suave: string; etiqueta: string; icono: string }> = {
+  sesion_registrada: {
+    color: '#c9973a', suave: '#2e2409', etiqueta: 'Pendiente de confirmar',
+    icono: '<path d="M3 9h18M7 3v4M17 3v4"/><rect x="3" y="5" width="18" height="16" rx="2"/><path d="m9 14 2 2 4-4"/>',
+  },
+  informe_publicado: {
+    color: '#6eaef0', suave: '#0f2240', etiqueta: 'Informe del periodo',
+    icono: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/>',
+  },
+  test_asignado: {
+    color: '#9b7ef0', suave: '#1a0f35', etiqueta: 'Nuevo test',
+    icono: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  },
+  tarea_asignada: {
+    color: '#f0a14a', suave: '#2e1c07', etiqueta: 'Nueva tarea',
+    icono: '<rect x="4" y="4" width="16" height="17" rx="2"/><path d="M9 2h6v4H9z"/><path d="M8 12h8M8 16h5"/>',
+  },
+  tarea_corregida: {
+    color: '#34d399', suave: '#0d2d1e', etiqueta: 'Tarea corregida',
+    icono: '<path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4 12 14.01l-3-3"/>',
+  },
+  material_asignado: {
+    color: '#6eaef0', suave: '#0f2240', etiqueta: 'Material nuevo',
+    icono: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  },
+  bono_actualizado: {
+    color: '#f0c674', suave: '#2e2409', etiqueta: 'Tus horas',
+    icono: '<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+  },
+  aviso_admin: {
+    color: '#6eaef0', suave: '#0f2240', etiqueta: 'Aviso de Nexo',
+    icono: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+  },
+  test_entregado: {
+    color: '#34d399', suave: '#0d2d1e', etiqueta: 'Test completado',
+    icono: '<path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
+  },
+  tarea_entregada: {
+    color: '#34d399', suave: '#0d2d1e', etiqueta: 'Entrega recibida',
+    icono: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+  },
+  profesor_asignado: {
+    color: '#9b7ef0', suave: '#1a0f35', etiqueta: 'Tu profesor',
+    icono: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  },
+  prueba: {
+    color: '#6eaef0', suave: '#0f2240', etiqueta: 'Prueba',
+    icono: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
+  },
+}
+
+const ESTILO_POR_DEFECTO = ESTILO_EVENTO.aviso_admin
+
+function plantillaEmailPorEvento(
+  evento: string, titulo: string, cuerpo: string, url: string, cta: string, nombre: string,
+) {
+  const e = ESTILO_EVENTO[evento] || ESTILO_POR_DEFECTO
+  const saludo = nombre ? `Hola, <b style="color:#fff">${nombre}</b>.` : ''
+
   return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>${titulo}</title></head>
 <body style="margin:0;padding:0;background:#060d20;font-family:'Helvetica Neue',Arial,sans-serif">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#060d20;padding:40px 20px"><tr><td align="center">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px">
-<tr><td align="center" style="padding-bottom:32px">
-  <span style="color:#fff;font-size:22px;font-weight:700;letter-spacing:2px">NEXO</span>
-  <span style="color:#6eaef0;font-size:11px;letter-spacing:3px;text-transform:uppercase;display:block;margin-top:2px">Académico</span>
-</td></tr>
-<tr><td style="background:#0a1530;border:1px solid #1a2a4a;border-radius:14px;padding:36px">
-  <h1 style="color:#fff;font-size:20px;font-weight:700;margin:0 0 14px">${titulo}</h1>
-  <p style="color:#a8c8f0;font-size:14px;margin:0 0 28px;line-height:1.6">${cuerpo}</p>
-  <a href="${url}" style="display:block;background:#154ca9;color:#fff;text-decoration:none;padding:14px;border-radius:8px;font-size:14px;font-weight:700;text-align:center">${cta}</a>
-</td></tr>
-<tr><td align="center" style="padding-top:24px">
-  <p style="color:#4a6080;font-size:11px;margin:0;line-height:1.8">Nexo Académico · Valencia<br>
-  <a href="https://nexoacademico.com" style="color:#6eaef0;text-decoration:none">nexoacademico.com</a></p>
-</td></tr>
+
+  <tr><td align="center" style="padding-bottom:30px">
+    <span style="color:#fff;font-size:21px;font-weight:700;letter-spacing:3px">NEXO</span>
+    <span style="color:#6eaef0;font-size:10px;letter-spacing:4px;text-transform:uppercase;display:block;margin-top:3px">Académico</span>
+  </td></tr>
+
+  <tr><td style="background:#0a1530;border:1px solid #1a2a4a;border-top:3px solid ${e.color};border-radius:14px;padding:34px">
+
+    <table cellpadding="0" cellspacing="0" style="margin-bottom:18px"><tr>
+      <td width="44" style="vertical-align:middle">
+        <div style="width:44px;height:44px;border-radius:11px;background:${e.suave};text-align:center;line-height:44px">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="${e.color}" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">${e.icono}</svg>
+        </div>
+      </td>
+      <td style="padding-left:13px;vertical-align:middle">
+        <div style="color:${e.color};font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700">${e.etiqueta}</div>
+      </td>
+    </tr></table>
+
+    <h1 style="color:#fff;font-size:20px;font-weight:700;margin:0 0 12px;line-height:1.3">${titulo}</h1>
+    ${saludo ? `<p style="color:#a8c8f0;font-size:14px;margin:0 0 8px">${saludo}</p>` : ''}
+    <p style="color:#a8c8f0;font-size:14px;margin:0 0 26px;line-height:1.6">${cuerpo}</p>
+
+    <a href="${url}" style="display:block;background:${e.color};color:#04071b;text-decoration:none;padding:14px;border-radius:9px;font-size:14px;font-weight:700;text-align:center">${cta}</a>
+  </td></tr>
+
+  <tr><td align="center" style="padding-top:22px">
+    <p style="color:#4a6080;font-size:11px;margin:0;line-height:1.8">
+      Nexo Académico · Valencia · 699 52 93 99<br>
+      <a href="https://nexoacademico.com" style="color:#6eaef0;text-decoration:none">nexoacademico.com</a>
+    </p>
+  </td></tr>
+
 </table></td></tr></table></body></html>`
 }
 
-async function enviarEmail(usuarioIds: string[], asunto: string, titulo: string, cuerpo: string, url: string, cta: string) {
+
+async function enviarEmail(
+  usuarioIds: string[], asunto: string, titulo: string,
+  cuerpo: string, url: string, cta: string, evento: string,
+) {
   if (!RESEND_API_KEY || usuarioIds.length === 0) return { enviados: 0 }
 
   const { data: destinatarios } = await admin
-    .from('usuarios').select('email').in('id', usuarioIds).eq('notif_email', true)
+    .from('usuarios').select('email, nombre').in('id', usuarioIds).eq('notif_email', true)
 
   // Al dar de alta se asigna un correo interno (@nexo.internal) que solo
   // sirve para entrar. No es una dirección real: enviarle rebota, y los
   // rebotes queman la reputación del dominio remitente.
-  const correos = (destinatarios || [])
-    .map(u => u.email)
-    .filter(e => e && !e.endsWith('@nexo.internal'))
-  if (!correos.length) return { enviados: 0, motivo: 'sin correo real' }
+  const validos = (destinatarios || [])
+    .filter(u => u.email && !u.email.endsWith('@nexo.internal'))
+  if (!validos.length) return { enviados: 0, motivo: 'sin correo real' }
 
-  const html = plantillaEmail(titulo, cuerpo, url, cta)
   let enviados = 0
 
-  await Promise.all(correos.map(async (to) => {
+  await Promise.all(validos.map(async (u) => {
     try {
+      // El correo se compone por destinatario: cada uno lleva su nombre.
+      const html = plantillaEmailPorEvento(evento, titulo, cuerpo, url, cta, u.nombre || '')
       const r = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: `Nexo Académico <${FROM_EMAIL}>`, to: [to], subject: asunto, html }),
+        body: JSON.stringify({ from: `Nexo Académico <${FROM_EMAIL}>`, to: [u.email], subject: asunto, html }),
       })
       if (r.ok) enviados++
       else console.error('Resend:', await r.text())
     } catch (e) { console.error('Email fallido:', e) }
   }))
 
-  return { enviados }
+  return { enviados, destinatarios_con_correo: validos.length }
 }
 
 const esc = (s: unknown) => String(s ?? '')
@@ -529,7 +615,7 @@ serve(async (req) => {
 
     const [push, email] = await Promise.all([
       enviarPush(destinatarios, { titulo, cuerpo, url, tag, importante }),
-      enviarEmail(destinatarios, asunto, titulo, cuerpo, url, cta),
+      enviarEmail(destinatarios, asunto, titulo, cuerpo, url, cta, evento),
     ])
 
     return new Response(JSON.stringify({ ok: true, push, email }),
