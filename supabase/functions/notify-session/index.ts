@@ -74,8 +74,13 @@ serve(async (req) => {
     const alumnoUser  = sesion.alumno?.usuario
     const profesorUser = sesion.profesor?.usuario
 
-    if (!alumnoUser?.email) {
-      return new Response(JSON.stringify({ error: 'El alumno no tiene email' }), { status: 400, headers: corsHeaders })
+    // El correo interno (@nexo.internal) es solo la credencial de acceso,
+    // no una dirección real. Enviarle rebota y quema el dominio remitente.
+    if (!alumnoUser?.email || alumnoUser.email.endsWith('@nexo.internal')) {
+      return new Response(JSON.stringify({
+        error: 'El alumno no tiene un correo real. Añádelo en su ficha para que pueda confirmar las clases por email.',
+        sin_correo: true,
+      }), { status: 400, headers: corsHeaders })
     }
 
     const token     = sesion.confirmation_token

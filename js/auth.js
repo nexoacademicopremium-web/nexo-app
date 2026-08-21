@@ -80,6 +80,23 @@ function escHTML(s) {
     .replace(/'/g, '&#39;');
 }
 
+// Envuelve un manejador de formulario para que no pueda ejecutarse dos
+// veces a la vez. Sin esto, un doble clic en "Guardar" llega a crear el
+// registro por duplicado — y en el caso de las clases con repetición,
+// dos series enteras.
+function unaVez(fn) {
+  let enCurso = false;
+  return async function (...args) {
+    if (enCurso) return;
+    enCurso = true;
+    try {
+      return await fn.apply(this, args);
+    } finally {
+      enCurso = false;
+    }
+  };
+}
+
 function _fechaHoy() {
   const d = new Date();
   return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');

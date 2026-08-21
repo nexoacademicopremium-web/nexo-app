@@ -3179,6 +3179,10 @@ async function eliminarEvento(id) {
   window.addEventListener('load', checkUpdate);
   window.addEventListener('pageshow', e => { if (e.persisted) checkUpdate(); });
 })();
+
+// Protección contra doble envío: si se pulsa Guardar dos veces, el
+// segundo clic no vuelve a ejecutar el manejador.
+guardarEvento = unaVez(guardarEvento);
 </script>
 </body>
 </html>

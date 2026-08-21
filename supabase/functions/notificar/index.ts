@@ -128,8 +128,13 @@ async function enviarEmail(usuarioIds: string[], asunto: string, titulo: string,
   const { data: destinatarios } = await admin
     .from('usuarios').select('email').in('id', usuarioIds).eq('notif_email', true)
 
-  const correos = (destinatarios || []).map(u => u.email).filter(Boolean)
-  if (!correos.length) return { enviados: 0 }
+  // Al dar de alta se asigna un correo interno (@nexo.internal) que solo
+  // sirve para entrar. No es una dirección real: enviarle rebota, y los
+  // rebotes queman la reputación del dominio remitente.
+  const correos = (destinatarios || [])
+    .map(u => u.email)
+    .filter(e => e && !e.endsWith('@nexo.internal'))
+  if (!correos.length) return { enviados: 0, motivo: 'sin correo real' }
 
   const html = plantillaEmail(titulo, cuerpo, url, cta)
   let enviados = 0

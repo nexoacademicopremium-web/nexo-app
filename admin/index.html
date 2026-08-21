@@ -5318,6 +5318,13 @@ async function ocultarAviso(id) {
   showToast('Aviso ocultado');
   await loadTablaAvisos();
 }
+
+// Protección contra doble envío: si se pulsa Guardar dos veces, el
+// segundo clic no vuelve a ejecutar el manejador.
+guardarCambiosInforme = unaVez(guardarCambiosInforme);
+guardarTarifa = unaVez(guardarTarifa);
+guardarTest = unaVez(guardarTest);
+guardarAviso = unaVez(guardarAviso);
 </script>
 </body>
 </html>

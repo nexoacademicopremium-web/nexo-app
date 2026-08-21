@@ -1683,7 +1683,12 @@ async function _submitSesion(excedeBono = false) {
   // el push es el aviso corto al móvil. Si alguno falla, la sesión ya
   // está guardada: no se bloquea al profesor por eso.
   try {
-    await db.functions.invoke('notify-session', { body: { session_id: newSes.id } });
+    const { data: rMail } = await db.functions.invoke('notify-session', { body: { session_id: newSes.id } });
+    // Si el alumno no tiene correo real, la familia no recibe el enlace de
+    // confirmación: hay que decirlo, no callarlo.
+    if (rMail?.sin_correo) {
+      showToast('Sesión registrada, pero el alumno no tiene correo: no recibirá el email para confirmarla.', 'error');
+    }
   } catch (err) {
     console.warn('Email de confirmación fallido:', err);
   }
@@ -2282,10 +2287,13 @@ async function loadActividad() {
     }
   }
 
+  // Historial: crece sin techo curso tras curso. Se traen las 200 más
+  // recientes, que es de sobra para lo que se consulta desde aquí.
   let query = db.from('sesiones')
     .select('*, alumno:alumnos(usuario:usuarios(nombre, apellidos))')
     .eq('profesor_id', profId)
-    .order('fecha', { ascending: false });
+    .order('fecha', { ascending: false })
+    .limit(200);
 
   const mesVal = document.getElementById('act-filtro-mes').value;
   if (mesVal) {
@@ -4725,6 +4733,11 @@ async function pMatEliminar(id) {
   window.addEventListener('load', checkUpdate);
   window.addEventListener('pageshow', e => { if (e.persisted) checkUpdate(); });
 })();
+
+// Protección contra doble envío: si se pulsa Guardar dos veces, el
+// segundo clic no vuelve a ejecutar el manejador.
+guardarClase = unaVez(guardarClase);
+guardarTestProf = unaVez(guardarTestProf);
 </script>
 </body>
 </html>
