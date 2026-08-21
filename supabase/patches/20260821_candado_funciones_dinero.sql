@@ -373,6 +373,20 @@ $$;
 -- junio de _consumir_horas_sesion, ya reemplazada), así que se retira.
 DROP FUNCTION IF EXISTS public._activar_siguiente_bono(UUID);
 
+-- ── Versión huérfana de corregir_tarea ──────────────────────
+-- Mismo caso: al añadirle el archivo de corrección se creó una segunda
+-- función en vez de sustituir la anterior.
+--   corregir_tarea(uuid, numeric, text, jsonb)         3 de agosto
+--   corregir_tarea(uuid, numeric, text, jsonb, text)   5 de agosto
+--
+-- Aquí además todos los parámetros tienen valor por defecto, así que una
+-- llamada con cuatro argumentos encaja con las dos y PostgreSQL responde
+-- "function is not unique". El panel llama con los cinco, por eso no ha
+-- dado la cara todavía.
+--
+-- La antigua ni siquiera guarda el archivo de corrección: se retira.
+DROP FUNCTION IF EXISTS public.corregir_tarea(uuid, numeric, text, jsonb);
+
 -- Permisos: se mantienen los que ya tenían.
 GRANT EXECUTE ON FUNCTION public.recalcular_bonos_alumno(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.eliminar_bono(UUID)           TO authenticated;
