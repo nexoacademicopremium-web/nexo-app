@@ -30,7 +30,12 @@ function cors(req: Request) {
 }
 
 const APP_BASE_URL   = Deno.env.get('APP_BASE_URL')   || 'https://app.nexoacademico.com'
-const FROM_EMAIL     = Deno.env.get('FROM_EMAIL')     || 'clases@nexoacademico.es'
+// El remitente debe pertenecer a un dominio verificado en Resend. No
+// puede ser una dirección de Gmail: Google rechaza que otro servicio
+// envíe en su nombre.
+const FROM_EMAIL     = Deno.env.get('FROM_EMAIL')     || 'clases@nexoacademico.com'
+// Si una familia responde al aviso, la respuesta va al correo de Nexo.
+const REPLY_TO       = Deno.env.get('REPLY_TO')       || 'nexoacademicopremium@gmail.com'
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
 const VAPID_PUBLIC   = Deno.env.get('VAPID_PUBLIC_KEY')
 const VAPID_PRIVATE  = Deno.env.get('VAPID_PRIVATE_KEY')
@@ -230,7 +235,7 @@ async function enviarEmail(
       const r = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ from: `Nexo Académico <${FROM_EMAIL}>`, to: [u.email], subject: asunto, html }),
+        body: JSON.stringify({ from: `Nexo Académico <${FROM_EMAIL}>`, reply_to: REPLY_TO, to: [u.email], subject: asunto, html }),
       })
       if (r.ok) enviados++
       else console.error('Resend:', await r.text())
@@ -322,6 +327,38 @@ serve(async (req) => {
         url: APP_BASE_URL,
         tag: 'nexo-diag',
       })
+    }
+
+    // Estado de los correos: quién tiene dirección real y quién no.
+    const { data: todos } = await admin
+      .from('usuarios').select('rol, email, notif_email').eq('activo', true)
+    const reales = (todos || []).filter(u => u.email && !u.email.endsWith('@nexo.internal'))
+    res.remitente = FROM_EMAIL
+    res.usuarios_con_correo_real = reales.length
+    res.usuarios_con_correo_interno = (todos || []).length - reales.length
+    res.usuarios_con_email_apagado = (todos || []).filter(u => !u.notif_email).length
+
+    // Envío real de prueba, para ver qué responde Resend palabra por palabra.
+    const destino = new URL(req.url).searchParams.get('email')
+    if (destino && RESEND_API_KEY) {
+      try {
+        const r = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            from: `Nexo Académico <${FROM_EMAIL}>`,
+            reply_to: REPLY_TO,
+            to: [destino],
+            subject: 'Prueba de correo — Nexo Académico',
+            html: plantillaEmailPorEvento('prueba', 'Los correos funcionan',
+              'Si estás leyendo esto, el envío de correos está bien configurado.',
+              APP_BASE_URL, 'Abrir Nexo', ''),
+          }),
+        })
+        res.prueba_email = { estado: r.status, respuesta: (await r.text()).slice(0, 400) }
+      } catch (e: any) {
+        res.prueba_email = { error: e?.message || String(e) }
+      }
     }
 
     return new Response(JSON.stringify(res, null, 2),

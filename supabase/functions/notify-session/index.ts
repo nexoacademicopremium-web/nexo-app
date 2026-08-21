@@ -8,7 +8,8 @@ const corsHeaders = {
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
 const APP_BASE_URL   = Deno.env.get('APP_BASE_URL') || 'https://app.nexoacademico.com'
-const FROM_EMAIL     = Deno.env.get('FROM_EMAIL') || 'clases@nexoacademico.es'
+const FROM_EMAIL     = Deno.env.get("FROM_EMAIL") || "clases@nexoacademico.com"
+const REPLY_TO       = Deno.env.get("REPLY_TO")   || "nexoacademicopremium@gmail.com"
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -186,6 +187,7 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         from: `Nexo Académico <${FROM_EMAIL}>`,
+        reply_to: REPLY_TO,
         to:   [alumnoUser.email],
         subject: `Confirma tu clase de ${sesion.asignatura} — ${fechaStr}`,
         html,
