@@ -74,13 +74,14 @@ serve(async (req) => {
     const alumnoUser  = sesion.alumno?.usuario
     const profesorUser = sesion.profesor?.usuario
 
-    // El correo interno (@nexo.internal) es solo la credencial de acceso,
-    // no una dirección real. Enviarle rebota y quema el dominio remitente.
+    // El correo interno (@nexo.internal) es solo la credencial de acceso.
+    // Que un alumno no tenga correo real es lo habitual y deliberado: no es
+    // un error, simplemente no hay email que enviar. El aviso le llega al
+    // móvil, que es el canal principal. Enviar ahí rebotaría y quemaría la
+    // reputación del dominio remitente.
     if (!alumnoUser?.email || alumnoUser.email.endsWith('@nexo.internal')) {
-      return new Response(JSON.stringify({
-        error: 'El alumno no tiene un correo real. Añádelo en su ficha para que pueda confirmar las clases por email.',
-        sin_correo: true,
-      }), { status: 400, headers: corsHeaders })
+      return new Response(JSON.stringify({ ok: true, email_omitido: 'sin correo real' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     const token     = sesion.confirmation_token

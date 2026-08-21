@@ -1683,12 +1683,9 @@ async function _submitSesion(excedeBono = false) {
   // el push es el aviso corto al móvil. Si alguno falla, la sesión ya
   // está guardada: no se bloquea al profesor por eso.
   try {
-    const { data: rMail } = await db.functions.invoke('notify-session', { body: { session_id: newSes.id } });
-    // Si el alumno no tiene correo real, la familia no recibe el enlace de
-    // confirmación: hay que decirlo, no callarlo.
-    if (rMail?.sin_correo) {
-      showToast('Sesión registrada, pero el alumno no tiene correo: no recibirá el email para confirmarla.', 'error');
-    }
+    await db.functions.invoke('notify-session', { body: { session_id: newSes.id } });
+    // Muchos alumnos no tienen correo a propósito: el aviso al móvil es el
+    // canal principal, así que no llevar correo no es un fallo que reportar.
   } catch (err) {
     console.warn('Email de confirmación fallido:', err);
   }
