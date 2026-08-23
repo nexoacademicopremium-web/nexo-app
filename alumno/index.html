@@ -465,11 +465,11 @@
   </div>
   <div class="topbar-right">
     <span class="topbar-name" id="topbar-name">—</span>
-    <button class="refresh-btn" id="refresh-btn" onclick="refreshApp()" title="Actualizar"><i class="ti ti-refresh"></i></button>
+    <button class="refresh-btn" id="refresh-btn" onclick="refreshApp()" data-i18n-title="alumno.actualizar" title="Actualizar"><i class="ti ti-refresh"></i></button>
     <div class="avatar" id="avatar-btn" onclick="toggleAvatarMenu()">
       <span id="avatar-initials">?</span>
       <div class="avatar-menu" id="avatar-menu">
-        <a onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</a>
+        <a onclick="logout()"><i class="ti ti-logout"></i> <span data-i18n="alumno.cerrar_sesion">Cerrar sesión</span></a>
       </div>
     </div>
   </div>
@@ -477,23 +477,27 @@
 
 <!-- SIDEBAR -->
 <nav class="sidebar" id="sidebar">
-  <div class="nav-section">Mi área</div>
-  <div class="nav-item active" id="nav-inicio" onclick="showSection('inicio')"><i class="ti ti-layout-dashboard"></i> Inicio</div>
-  <div class="nav-item" id="nav-sesiones" onclick="showSection('sesiones')"><i class="ti ti-calendar-check"></i> Sesiones<span class="badge-nav" id="badge-sesiones" style="display:none">!</span></div>
-  <div class="nav-item" id="nav-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i> Informes<span class="badge-nav" id="badge-informes" style="display:none"></span></div>
-  <div class="nav-item" id="nav-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i> Bonos</div>
-  <div class="nav-item" id="nav-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i> Calendario</div>
-  <div class="nav-item" id="nav-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i> Mi Profesor</div>
-  <div class="nav-section" style="padding-top:16px">Estudiar</div>
-  <div class="nav-item" id="nav-estudiar" onclick="showSection('estudiar')"><i class="ti ti-files"></i> Material<span class="badge-nav" id="badge-estudiar" style="display:none"></span></div>
-  <div class="nav-item" id="nav-tareas" onclick="showSection('tareas')"><i class="ti ti-clipboard-check"></i> Tareas<span class="badge-nav" id="badge-tareas" style="display:none">!</span></div>
-  <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i> Tests<span class="badge-nav" id="badge-tests" style="display:none"></span></div>
-  <div class="nav-section" style="padding-top:16px">Avisos</div>
-  <div class="nav-item" id="nav-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i> Avisos<span class="badge-nav" id="badge-avisos" style="display:none">!</span></div>
+  <div class="nav-section" data-i18n="alumno.mi_area">Mi área</div>
+  <div class="nav-item active" id="nav-inicio" onclick="showSection('inicio')"><i class="ti ti-layout-dashboard"></i> <span data-i18n="alumno.inicio">Inicio</span></div>
+  <div class="nav-item" id="nav-sesiones" onclick="showSection('sesiones')"><i class="ti ti-calendar-check"></i> <span data-i18n="alumno.sesiones">Sesiones</span><span class="badge-nav" id="badge-sesiones" style="display:none">!</span></div>
+  <div class="nav-item" id="nav-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i> <span data-i18n="alumno.informes">Informes</span><span class="badge-nav" id="badge-informes" style="display:none"></span></div>
+  <div class="nav-item" id="nav-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i> <span data-i18n="alumno.bonos">Bonos</span></div>
+  <div class="nav-item" id="nav-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i> <span data-i18n="alumno.calendario">Calendario</span></div>
+  <div class="nav-item" id="nav-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i> <span data-i18n="alumno.mi_profesor">Mi Profesor</span></div>
+  <div class="nav-section" style="padding-top:16px" data-i18n="alumno.estudiar">Estudiar</div>
+  <div class="nav-item" id="nav-estudiar" onclick="showSection('estudiar')"><i class="ti ti-files"></i> <span data-i18n="alumno.material">Material</span><span class="badge-nav" id="badge-estudiar" style="display:none"></span></div>
+  <div class="nav-item" id="nav-tareas" onclick="showSection('tareas')"><i class="ti ti-clipboard-check"></i> <span data-i18n="alumno.tareas">Tareas</span><span class="badge-nav" id="badge-tareas" style="display:none">!</span></div>
+  <div class="nav-item" id="nav-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i> <span data-i18n="alumno.tests">Tests</span><span class="badge-nav" id="badge-tests" style="display:none"></span></div>
+  <div class="nav-section" style="padding-top:16px" data-i18n="alumno.avisos">Avisos</div>
+  <div class="nav-item" id="nav-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i> <span data-i18n="alumno.avisos">Avisos</span><span class="badge-nav" id="badge-avisos" style="display:none">!</span></div>
   <div class="nav-divider"></div>
   <div class="nav-bottom">
-    <a href="https://nexoacademico.com" class="nav-item"><i class="ti ti-arrow-left"></i> Web principal</a>
-    <div class="nav-item" onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</div>
+    <a href="https://nexoacademico.com" class="nav-item"><i class="ti ti-arrow-left"></i> <span data-i18n="alumno.web_principal">Web principal</span></a>
+    <div style="padding:10px 16px 4px">
+      <div style="color:var(--muted);font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:7px">Idioma / Language</div>
+      <div id="selector-idioma" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <div class="nav-item" onclick="logout()"><i class="ti ti-logout"></i> <span data-i18n="alumno.cerrar_sesion">Cerrar sesión</span></div>
   </div>
 </nav>
 
@@ -507,23 +511,23 @@
       <button class="mobile-menu-close" onclick="closeSidebar()"><i class="ti ti-x"></i></button>
     </div>
     <div class="mobile-menu-nav">
-      <div class="mmenu-section">Mi área</div>
-      <div class="mobile-menu-item active" id="mmenu-inicio" onclick="showSection('inicio')"><i class="ti ti-layout-dashboard"></i><span>Inicio</span></div>
-      <div class="mobile-menu-item" id="mmenu-sesiones" onclick="showSection('sesiones')"><i class="ti ti-calendar-check"></i><span>Sesiones</span><span class="badge-nav" id="mmenu-badge-sesiones" style="display:none;margin-left:auto;font-size:11px;background:var(--navy);color:var(--blue);padding:2px 7px;border-radius:20px"></span></div>
-      <div class="mobile-menu-item" id="mmenu-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i><span>Informes</span></div>
-      <div class="mobile-menu-item" id="mmenu-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i><span>Bonos</span></div>
-      <div class="mobile-menu-item" id="mmenu-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i><span>Calendario</span></div>
-      <div class="mobile-menu-item" id="mmenu-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i><span>Mi Profesor</span></div>
-      <div class="mmenu-section">Estudiar</div>
-      <div class="mobile-menu-item" id="mmenu-estudiar" onclick="showSection('estudiar')"><i class="ti ti-files"></i><span>Material</span></div>
-      <div class="mobile-menu-item" id="mmenu-tareas" onclick="showSection('tareas')"><i class="ti ti-clipboard-check"></i><span>Tareas</span></div>
-      <div class="mobile-menu-item" id="mmenu-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i><span>Tests</span></div>
-      <div class="mmenu-section">Avisos</div>
-      <div class="mobile-menu-item" id="mmenu-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i><span>Avisos</span></div>
+      <div class="mmenu-section" data-i18n="alumno.mi_area">Mi área</div>
+      <div class="mobile-menu-item active" id="mmenu-inicio" onclick="showSection('inicio')"><i class="ti ti-layout-dashboard"></i><span data-i18n="alumno.inicio">Inicio</span></div>
+      <div class="mobile-menu-item" id="mmenu-sesiones" onclick="showSection('sesiones')"><i class="ti ti-calendar-check"></i><span data-i18n="alumno.sesiones">Sesiones</span><span class="badge-nav" id="mmenu-badge-sesiones" style="display:none;margin-left:auto;font-size:11px;background:var(--navy);color:var(--blue);padding:2px 7px;border-radius:20px"></span></div>
+      <div class="mobile-menu-item" id="mmenu-informes" onclick="showSection('informes')"><i class="ti ti-file-analytics"></i><span data-i18n="alumno.informes">Informes</span></div>
+      <div class="mobile-menu-item" id="mmenu-bonos" onclick="showSection('bonos')"><i class="ti ti-credit-card"></i><span data-i18n="alumno.bonos">Bonos</span></div>
+      <div class="mobile-menu-item" id="mmenu-calendario" onclick="showSection('calendario')"><i class="ti ti-calendar"></i><span data-i18n="alumno.calendario">Calendario</span></div>
+      <div class="mobile-menu-item" id="mmenu-profesor" onclick="showSection('profesor')"><i class="ti ti-user-check"></i><span data-i18n="alumno.mi_profesor">Mi Profesor</span></div>
+      <div class="mmenu-section" data-i18n="alumno.estudiar">Estudiar</div>
+      <div class="mobile-menu-item" id="mmenu-estudiar" onclick="showSection('estudiar')"><i class="ti ti-files"></i><span data-i18n="alumno.material">Material</span></div>
+      <div class="mobile-menu-item" id="mmenu-tareas" onclick="showSection('tareas')"><i class="ti ti-clipboard-check"></i><span data-i18n="alumno.tareas">Tareas</span></div>
+      <div class="mobile-menu-item" id="mmenu-tests" onclick="showSection('tests')"><i class="ti ti-list-check"></i><span data-i18n="alumno.tests">Tests</span></div>
+      <div class="mmenu-section" data-i18n="alumno.avisos">Avisos</div>
+      <div class="mobile-menu-item" id="mmenu-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i><span data-i18n="alumno.avisos">Avisos</span></div>
     </div>
     <div class="mobile-menu-footer">
       <div class="mobile-menu-user" id="mmenu-user"></div>
-      <div class="mobile-menu-item" onclick="logout()" style="color:#f08080;border-bottom:none;padding-top:12px"><i class="ti ti-logout"></i><span>Cerrar sesión</span></div>
+      <div class="mobile-menu-item" onclick="logout()" style="color:#f08080;border-bottom:none;padding-top:12px"><i class="ti ti-logout"></i><span data-i18n="alumno.cerrar_sesion">Cerrar sesión</span></div>
     </div>
   </div>
 </div>
@@ -531,61 +535,61 @@
 <!-- BOTTOM NAV (móvil) -->
 <nav class="bottom-nav" id="bottom-nav">
   <div class="bn-item active" id="bn-inicio" onclick="showSection('inicio')">
-    <i class="ti ti-home"></i><span>Inicio</span>
+    <i class="ti ti-home"></i><span data-i18n="alumno.inicio">Inicio</span>
   </div>
   <div class="bn-item" id="bn-sesiones" onclick="showSection('sesiones')">
     <i class="ti ti-calendar-check"></i>
     <div class="bn-dot" id="bn-dot-sesiones"></div>
-    <span>Sesiones</span>
+    <span data-i18n="alumno.sesiones">Sesiones</span>
   </div>
   <div class="bn-item" id="bn-bonos" onclick="showSection('bonos')">
-    <i class="ti ti-credit-card"></i><span>Mi Bono</span>
+    <i class="ti ti-credit-card"></i><span data-i18n="alumno.mi_bono">Mi Bono</span>
   </div>
   <div class="bn-item" id="bn-estudiar" onclick="showSection('estudiar')">
-    <i class="ti ti-files"></i><span>Material</span>
+    <i class="ti ti-files"></i><span data-i18n="alumno.material">Material</span>
   </div>
   <div class="bn-item" id="bn-tests" onclick="showSection('tests')">
-    <i class="ti ti-list-check"></i><span>Tests</span>
+    <i class="ti ti-list-check"></i><span data-i18n="alumno.tests">Tests</span>
   </div>
   <div class="bn-item" id="bn-tareas" onclick="showSection('tareas')">
     <i class="ti ti-clipboard-check"></i>
     <div class="bn-dot" id="bn-dot-tareas"></div>
-    <span>Tareas</span>
+    <span data-i18n="alumno.tareas">Tareas</span>
   </div>
 </nav>
 
 <!-- ═══ INICIO ═══ -->
 <div class="main">
 <div class="section active" id="section-inicio">
-  <h1 class="page-title" id="greeting">Hola</h1>
+  <h1 class="page-title" id="greeting" data-i18n="alumno.hola">Hola</h1>
   <p class="page-sub" id="greeting-sub">—</p>
 
   <div id="alerta-bono" style="display:none" class="alerta">
     <i class="ti ti-alert-triangle"></i>
-    <div class="alerta-txt"><b id="alerta-bono-txt">Bono bajo.</b> Contacta con Nexo para renovar.</div>
-    <a id="alerta-bono-btn" href="#" target="_blank" class="alerta-btn">Renovar bono ↗</a>
+    <div class="alerta-txt"><b id="alerta-bono-txt" data-i18n="alumno.bono_bajo">Bono bajo.</b> Contacta con Nexo para renovar.</div>
+    <a id="alerta-bono-btn" href="#" target="_blank" class="alerta-btn" data-i18n="alumno.renovar_bono">Renovar bono ↗</a>
   </div>
 
   <div id="alerta-sesiones" style="display:none" class="alerta" style="background:var(--navy);border-color:var(--blue)">
     <i class="ti ti-bell" style="color:var(--blue)"></i>
-    <div class="alerta-txt" style="color:var(--soft)"><b id="alerta-sesiones-txt">Tienes sesiones pendientes de confirmar.</b></div>
-    <button class="alerta-btn" style="background:var(--navy);border:.5px solid var(--blue)" onclick="showSection('sesiones')">Revisar →</button>
+    <div class="alerta-txt" style="color:var(--soft)"><b id="alerta-sesiones-txt" data-i18n="alumno.tienes_sesiones_pendientes_de_confirmar">Tienes sesiones pendientes de confirmar.</b></div>
+    <button class="alerta-btn" style="background:var(--navy);border:.5px solid var(--blue)" onclick="showSection('sesiones')" data-i18n="alumno.revisar">Revisar →</button>
   </div>
 
   <div class="kpi-grid" id="kpi-grid">
     <div class="kpi blue">
-      <div class="kpi-label">Horas restantes bono</div>
+      <div class="kpi-label" data-i18n="alumno.horas_restantes_bono">Horas restantes bono</div>
       <div class="kpi-val" id="kpi-horas-rest">—</div>
       <div class="kpi-sub" id="kpi-bono-total">—</div>
       <div class="prog-bg"><div class="prog-bar" id="prog-bono" style="width:0%;background:var(--blue)"></div></div>
     </div>
     <div class="kpi amber">
-      <div class="kpi-label">Sesiones este mes</div>
+      <div class="kpi-label" data-i18n="alumno.sesiones_este_mes">Sesiones este mes</div>
       <div class="kpi-val" id="kpi-sesiones-mes">—</div>
       <div class="kpi-sub" id="kpi-sesiones-sub">—</div>
     </div>
     <div class="kpi green">
-      <div class="kpi-label">Próxima clase</div>
+      <div class="kpi-label" data-i18n="alumno.proxima_clase">Próxima clase</div>
       <div class="kpi-val" id="kpi-proxima-fecha" style="font-size:16px;margin-top:4px">—</div>
       <div class="kpi-sub" id="kpi-proxima-sub">—</div>
     </div>
@@ -595,8 +599,8 @@
     <div class="col-stack">
       <div class="card">
         <div class="card-head">
-          <div class="card-title"><i class="ti ti-file-analytics"></i> Informes recientes</div>
-          <button onclick="showSection('informes')" style="background:transparent;color:var(--blue);border:.5px solid var(--border);border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit">Ver todos</button>
+          <div class="card-title"><i class="ti ti-file-analytics"></i> <span data-i18n="alumno.informes_recientes">Informes recientes</span></div>
+          <button onclick="showSection('informes')" style="background:transparent;color:var(--blue);border:.5px solid var(--border);border-radius:6px;padding:5px 12px;font-size:11px;cursor:pointer;font-family:inherit" data-i18n="alumno.ver_todos">Ver todos</button>
         </div>
         <div class="card-body" style="padding:8px 14px" id="informes-recientes">
           <div class="loading-section"><div class="spinner"></div></div>
@@ -610,8 +614,8 @@
               <i class="ti ti-folder-open" style="color:var(--blue);font-size:18px"></i>
             </div>
             <div>
-              <div style="color:var(--txt);font-size:14px;font-weight:600">Material</div>
-              <div style="color:var(--muted);font-size:11px;margin-top:1px">Fichas y recursos de estudio</div>
+              <div style="color:var(--txt);font-size:14px;font-weight:600" data-i18n="alumno.material">Material</div>
+              <div style="color:var(--muted);font-size:11px;margin-top:1px" data-i18n="alumno.fichas_y_recursos_de_estudio">Fichas y recursos de estudio</div>
             </div>
           </div>
           <i class="ti ti-arrow-right" style="color:var(--blue);font-size:16px"></i>
@@ -625,8 +629,8 @@
               <i class="ti ti-list-check" style="color:var(--green);font-size:18px"></i>
             </div>
             <div>
-              <div style="color:var(--txt);font-size:14px;font-weight:600">Tests</div>
-              <div style="color:var(--muted);font-size:11px;margin-top:1px">Pon a prueba lo aprendido</div>
+              <div style="color:var(--txt);font-size:14px;font-weight:600" data-i18n="alumno.tests">Tests</div>
+              <div style="color:var(--muted);font-size:11px;margin-top:1px" data-i18n="alumno.pon_a_prueba_lo_aprendido">Pon a prueba lo aprendido</div>
             </div>
           </div>
           <i class="ti ti-arrow-right" style="color:var(--green);font-size:16px"></i>
@@ -636,7 +640,7 @@
     <div class="col-stack">
       <div class="card">
         <div class="card-head">
-          <div class="card-title"><i class="ti ti-coin"></i> Estado del bono</div>
+          <div class="card-title"><i class="ti ti-coin"></i> <span data-i18n="alumno.estado_del_bono">Estado del bono</span></div>
         </div>
         <div class="card-body" id="bono-card">
           <div class="loading-section"><div class="spinner"></div></div>
@@ -644,7 +648,7 @@
       </div>
       <div class="card">
         <div class="card-head">
-          <div class="card-title"><i class="ti ti-calendar"></i> Próximas clases</div>
+          <div class="card-title"><i class="ti ti-calendar"></i> <span data-i18n="alumno.proximas_clases">Próximas clases</span></div>
         </div>
         <div class="card-body" style="padding:8px 14px" id="proximas-clases">
           <div class="loading-section"><div class="spinner"></div></div>
@@ -656,11 +660,11 @@
 
 <!-- ═══ SESIONES PENDIENTES ═══ -->
 <div class="section" id="section-sesiones">
-  <h1 class="page-title">Sesiones</h1>
-  <p class="page-sub">Confirma o rechaza las clases registradas por tu profesor</p>
+  <h1 class="page-title" data-i18n="alumno.sesiones">Sesiones</h1>
+  <p class="page-sub" data-i18n="alumno.confirma_o_rechaza_las_clases">Confirma o rechaza las clases registradas por tu profesor</p>
   <div id="sesiones-pendientes-list"></div>
   <div class="card" style="margin-top:8px">
-    <div class="card-head"><div class="card-title"><i class="ti ti-history"></i> Historial de sesiones</div></div>
+    <div class="card-head"><div class="card-title"><i class="ti ti-history"></i> <span data-i18n="alumno.historial_de_sesiones">Historial de sesiones</span></div></div>
     <div id="sesiones-historial" style="padding:0">
       <div class="loading-section"><div class="spinner"></div></div>
     </div>
@@ -669,8 +673,8 @@
 
 <!-- ═══ INFORMES ═══ -->
 <div class="section" id="section-informes">
-  <h1 class="page-title">Informes</h1>
-  <p class="page-sub">Informes de seguimiento elaborados por Nexo Académico</p>
+  <h1 class="page-title" data-i18n="alumno.informes">Informes</h1>
+  <p class="page-sub" data-i18n="alumno.informes_de_seguimiento_elaborados_por">Informes de seguimiento elaborados por Nexo Académico</p>
   <div id="informes-container">
     <div class="loading-section"><div class="spinner"></div></div>
   </div>
@@ -678,8 +682,8 @@
 
 <!-- ═══ MI PROFESOR ═══ -->
 <div class="section" id="section-profesor">
-  <h1 class="page-title">Mi Profesor</h1>
-  <p class="page-sub">Información de tu profesor asignado</p>
+  <h1 class="page-title" data-i18n="alumno.mi_profesor">Mi Profesor</h1>
+  <p class="page-sub" data-i18n="alumno.informacion_de_tu_profesor_asignado">Información de tu profesor asignado</p>
   <div id="profesor-content">
     <div class="loading-section"><div class="spinner"></div></div>
   </div>
@@ -687,8 +691,8 @@
 
 <!-- ═══ ESTUDIAR ═══ -->
 <div class="section" id="section-estudiar">
-  <h1 class="page-title">Material</h1>
-  <p class="page-sub" id="estudiar-sub">Fichas, PDFs y tests de tus asignaturas</p>
+  <h1 class="page-title" data-i18n="alumno.material">Material</h1>
+  <p class="page-sub" id="estudiar-sub" data-i18n="alumno.fichas_pdfs_y_tests_de">Fichas, PDFs y tests de tus asignaturas</p>
 
   <div id="estudiar-asignaturas">
     <div class="loading-section"><div class="spinner"></div></div>
@@ -702,8 +706,8 @@
 
 <!-- ═══ TESTS LISTA ═══ -->
 <div class="section" id="section-tests">
-  <h1 class="page-title">Tests</h1>
-  <p class="page-sub" id="tests-sub">Tests de autoevaluación por asignatura</p>
+  <h1 class="page-title" data-i18n="alumno.tests">Tests</h1>
+  <p class="page-sub" id="tests-sub" data-i18n="alumno.tests_de_autoevaluacion_por_asignatura">Tests de autoevaluación por asignatura</p>
 
   <div id="tests-lista-asignaturas">
     <div class="loading-section"><div class="spinner"></div></div>
@@ -722,17 +726,17 @@
 <div class="section" id="section-test">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
     <button onclick="showSection(_testOriginSection||'estudiar')" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:20px">←</button>
-    <h1 class="page-title" id="test-titulo" style="margin:0">Test</h1>
+    <h1 class="page-title" id="test-titulo" style="margin:0" data-i18n="alumno.test">Test</h1>
   </div>
   <div id="test-content"></div>
 </div>
 
 <!-- ═══ CALENDARIO ═══ -->
 <div class="section" id="section-calendario">
-  <h1 class="page-title">Calendario</h1>
-  <p class="page-sub">Tu agenda personal de clases</p>
+  <h1 class="page-title" data-i18n="alumno.calendario">Calendario</h1>
+  <p class="page-sub" data-i18n="alumno.tu_agenda_personal_de_clases">Tu agenda personal de clases</p>
   <div style="display:flex;justify-content:flex-end;margin-bottom:16px">
-    <button class="btn-primary" onclick="abrirModalEvento()"><i class="ti ti-plus" style="font-size:15px"></i> Añadir entrada</button>
+    <button class="btn-primary" onclick="abrirModalEvento()"><i class="ti ti-plus" style="font-size:15px"></i> <span data-i18n="alumno.anadir_entrada">Añadir entrada</span></button>
   </div>
   <div class="card">
     <div class="card-body">
@@ -751,8 +755,8 @@
 </div>
 <!-- ═══ BONOS ═══ -->
 <div class="section" id="section-bonos">
-  <h1 class="page-title">Bonos</h1>
-  <p class="page-sub">Horas contratadas y disponibles</p>
+  <h1 class="page-title" data-i18n="alumno.bonos">Bonos</h1>
+  <p class="page-sub" data-i18n="alumno.horas_contratadas_y_disponibles">Horas contratadas y disponibles</p>
 
   <!-- Bono activo -->
   <div id="bono-activo-wrap">
@@ -761,13 +765,13 @@
 
   <!-- Bonos en espera -->
   <div class="card" id="bonos-enespera-card" style="display:none;margin-top:12px">
-    <div class="card-head"><div class="card-title"><i class="ti ti-clock"></i> Bonos en espera</div></div>
+    <div class="card-head"><div class="card-title"><i class="ti ti-clock"></i> <span data-i18n="alumno.bonos_en_espera">Bonos en espera</span></div></div>
     <div id="bonos-enespera-lista" style="padding:0 16px"></div>
   </div>
 
   <!-- Historial -->
   <div class="card" id="bonos-historial-card" style="display:none;margin-top:12px">
-    <div class="card-head"><div class="card-title"><i class="ti ti-history"></i> Historial de bonos</div></div>
+    <div class="card-head"><div class="card-title"><i class="ti ti-history"></i> <span data-i18n="alumno.historial_de_bonos">Historial de bonos</span></div></div>
     <div id="bonos-historial-lista" style="padding:0 16px"></div>
   </div>
 
@@ -775,14 +779,14 @@
   <div style="margin-top:14px" id="contratar-wrap">
     <div class="card">
       <div class="card-head">
-        <div class="card-title"><i class="ti ti-brand-whatsapp"></i> Contratar bono</div>
+        <div class="card-title"><i class="ti ti-brand-whatsapp"></i> <span data-i18n="alumno.contratar_bono">Contratar bono</span></div>
       </div>
       <div style="padding:16px">
-        <p style="color:var(--soft);font-size:12px;margin-bottom:12px">Elige el bono que quieres contratar y contacta con Nexo directamente por WhatsApp.</p>
+        <p style="color:var(--soft);font-size:12px;margin-bottom:12px" data-i18n="alumno.elige_el_bono_que_quieres">Elige el bono que quieres contratar y contacta con Nexo directamente por WhatsApp.</p>
         <div id="mod-toggle-wa" style="text-align:center;margin-bottom:12px;display:none">
           <div class="mod-toggle">
-            <button class="mod-btn active" id="mod-btn-wa-pre" onclick="setModTarifaWA('Presencial')">Presencial</button>
-            <button class="mod-btn" id="mod-btn-wa-onl" onclick="setModTarifaWA('Online')">Online</button>
+            <button class="mod-btn active" id="mod-btn-wa-pre" onclick="setModTarifaWA('Presencial')" data-i18n="alumno.presencial">Presencial</button>
+            <button class="mod-btn" id="mod-btn-wa-onl" onclick="setModTarifaWA('Online')" data-i18n="alumno.online">Online</button>
           </div>
         </div>
         <div class="tarifa-grid" id="tarifas-wa-cards"></div>
@@ -795,33 +799,33 @@
 <div class="section" id="section-tareas">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
     <div>
-      <h1 class="page-title" style="margin:0">Tareas</h1>
-      <p class="page-sub" style="margin:4px 0 0">Tareas enviadas por tu profesor</p>
+      <h1 class="page-title" style="margin:0" data-i18n="alumno.tareas">Tareas</h1>
+      <p class="page-sub" style="margin:4px 0 0" data-i18n="alumno.tareas_enviadas_por_tu_profesor">Tareas enviadas por tu profesor</p>
     </div>
   </div>
 
   <div id="tareas-pendientes-wrap">
-    <div class="tareas-section-titulo"><i class="ti ti-clock" style="font-size:14px;color:var(--blue)"></i> Por entregar</div>
+    <div class="tareas-section-titulo"><i class="ti ti-clock" style="font-size:14px;color:var(--blue)"></i> <span data-i18n="alumno.por_entregar">Por entregar</span></div>
     <div id="tareas-pendientes-list">
       <div class="loading-section"><div class="spinner"></div></div>
     </div>
   </div>
 
   <div id="tareas-entregadas-wrap" style="margin-top:32px;display:none">
-    <div class="tareas-section-titulo"><i class="ti ti-send" style="font-size:14px;color:var(--yellow,#f59e0b)"></i> Entregadas — esperando corrección</div>
+    <div class="tareas-section-titulo"><i class="ti ti-send" style="font-size:14px;color:var(--yellow,#f59e0b)"></i> <span data-i18n="alumno.entregadas_esperando_correccion">Entregadas — esperando corrección</span></div>
     <div id="tareas-entregadas-list"></div>
   </div>
 
   <div id="tareas-corregidas-wrap" style="margin-top:32px;display:none">
-    <div class="tareas-section-titulo"><i class="ti ti-circle-check" style="font-size:14px;color:var(--green)"></i> Corregidas</div>
+    <div class="tareas-section-titulo"><i class="ti ti-circle-check" style="font-size:14px;color:var(--green)"></i> <span data-i18n="alumno.corregidas">Corregidas</span></div>
     <div id="tareas-corregidas-list"></div>
   </div>
 </div>
 
 <!-- ═══ AVISOS ═══ -->
 <div class="section" id="section-avisos">
-  <h1 class="page-title">Avisos</h1>
-  <p class="page-sub">Comunicaciones del equipo de Nexo Académico</p>
+  <h1 class="page-title" data-i18n="alumno.avisos">Avisos</h1>
+  <p class="page-sub" data-i18n="alumno.comunicaciones_del_equipo_de_nexo">Comunicaciones del equipo de Nexo Académico</p>
   <div class="card" style="margin-bottom:16px;background:linear-gradient(135deg,#231a06,#2e2409);border:1px solid #c9973a;position:relative;overflow:hidden">
     <div style="position:absolute;top:0;left:0;bottom:0;width:3px;background:linear-gradient(180deg,#f0c674,#c9973a)"></div>
     <div style="display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap">
@@ -829,18 +833,16 @@
         <i class="ti ti-device-mobile-down" style="color:#f0c674;font-size:21px"></i>
       </div>
       <div style="flex:1;min-width:220px">
-        <div style="color:#f0c674;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:700;margin-bottom:4px">Recomendado</div>
-        <div style="color:#fff;font-size:15px;font-weight:700;margin-bottom:5px">Instala Nexo en tu móvil</div>
+        <div style="color:#f0c674;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:700;margin-bottom:4px" data-i18n="alumno.recomendado">Recomendado</div>
+        <div style="color:#fff;font-size:15px;font-weight:700;margin-bottom:5px" data-i18n="alumno.instala_nexo_en_tu_movil">Instala Nexo en tu móvil</div>
         <div style="color:#d9c9a8;font-size:12.5px;line-height:1.55;margin-bottom:14px">
           Añádela a tu pantalla de inicio y recibirás un aviso cuando tengas una sesión que confirmar, material nuevo, una tarea o el informe del mes. En iPhone es imprescindible: sin instalarla no llega ninguno.
         </div>
         <div style="display:flex;gap:9px;flex-wrap:wrap">
           <a href="../assets/guia-instalar-nexo.pdf" target="_blank" style="display:inline-flex;align-items:center;gap:7px;background:#f0c674;color:#231a06;text-decoration:none;border-radius:9px;padding:10px 16px;font-size:12.5px;font-weight:700">
-            <i class="ti ti-file-download" style="font-size:15px"></i> Ver la guía
-          </a>
+            <i class="ti ti-file-download" style="font-size:15px"></i> <span data-i18n="alumno.ver_la_guia">Ver la guía</span></a>
           <button onclick="gestionarNotificaciones()" style="display:inline-flex;align-items:center;gap:7px;background:transparent;color:#f0c674;border:1px solid rgba(240,198,116,.45);border-radius:9px;padding:10px 16px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit">
-            <i class="ti ti-bell" style="font-size:15px"></i> Activar los avisos
-          </button>
+            <i class="ti ti-bell" style="font-size:15px"></i> <span data-i18n="alumno.activar_los_avisos">Activar los avisos</span></button>
         </div>
       </div>
     </div>
@@ -858,7 +860,7 @@
 <div class="modal-overlay" id="modal-tarea-alumno">
   <div class="modal-box" style="max-width:520px;width:95%;max-height:90vh;display:flex;flex-direction:column">
     <div class="modal-title" style="flex-shrink:0">
-      <span>Tarea</span>
+      <span data-i18n="alumno.tarea">Tarea</span>
       <button class="modal-close" onclick="cerrarModalTareaAlumno()">×</button>
     </div>
     <div id="tarea-alumno-content" style="overflow-y:auto;flex:1;padding:0 0 4px"></div>
@@ -870,58 +872,58 @@
 <div class="modal-overlay" id="modal-evento">
   <div class="modal-box">
     <div class="modal-title">
-      <span id="modal-evento-title">Nueva entrada</span>
+      <span id="modal-evento-title" data-i18n="alumno.nueva_entrada">Nueva entrada</span>
       <button class="modal-close" onclick="cerrarModalEvento()">×</button>
     </div>
     <form id="form-evento" onsubmit="guardarEvento(event)">
       <input type="hidden" id="ev-titulo">
       <input type="hidden" id="ev-fecha">
-      <label class="field-label">Profesor</label>
+      <label class="field-label" data-i18n="alumno.profesor">Profesor</label>
       <select class="field-input" id="ev-profesor" onchange="actualizarAsigPorProf()">
-        <option value="">— Todos —</option>
+        <option value="" data-i18n="alumno.todos">— Todos —</option>
       </select>
-      <label class="field-label">Asignatura</label>
+      <label class="field-label" data-i18n="alumno.asignatura">Asignatura</label>
       <select class="field-input" id="ev-asignatura">
-        <option value="">— Sin asignatura —</option>
+        <option value="" data-i18n="alumno.sin_asignatura">— Sin asignatura —</option>
       </select>
-      <label class="field-label">Hora de inicio</label>
+      <label class="field-label" data-i18n="alumno.hora_de_inicio">Hora de inicio</label>
       <input class="field-input" id="ev-hora" type="time">
-      <label class="field-label">Duración</label>
+      <label class="field-label" data-i18n="alumno.duracion">Duración</label>
       <select class="field-input" id="ev-duracion">
         <option value="60">1h</option>
         <option value="90">1,5h</option>
         <option value="120">2h</option>
       </select>
-      <label class="field-label">Notas</label>
-      <textarea class="field-input" id="ev-notas" rows="3" style="resize:vertical" placeholder="Opcional"></textarea>
+      <label class="field-label" data-i18n="alumno.notas">Notas</label>
+      <textarea class="field-input" id="ev-notas" rows="3" style="resize:vertical" data-i18n-ph="alumno.ph.opcional" placeholder="Opcional"></textarea>
       <div id="ev-recurrente-wrap" style="margin-top:14px;padding-top:14px;border-top:.5px solid var(--border2)">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;color:var(--soft);font-size:12px;font-weight:500">
           <input type="checkbox" id="ev-recurrente" onchange="toggleRecurrenteAlumno()" style="accent-color:var(--blue);cursor:pointer">
           Repetir semanalmente
         </label>
         <div id="ev-recurrente-opts" style="display:none;margin-top:10px;background:var(--border2);border-radius:8px;padding:12px">
-          <label class="field-label" style="margin-top:0">Día de la semana</label>
+          <label class="field-label" style="margin-top:0" data-i18n="alumno.dia_de_la_semana">Día de la semana</label>
           <select class="field-input" id="ev-diasemana">
-            <option value="1">Lunes</option>
-            <option value="2">Martes</option>
-            <option value="3">Miércoles</option>
-            <option value="4">Jueves</option>
-            <option value="5">Viernes</option>
-            <option value="6">Sábado</option>
-            <option value="0">Domingo</option>
+            <option value="1" data-i18n="alumno.lunes">Lunes</option>
+            <option value="2" data-i18n="alumno.martes">Martes</option>
+            <option value="3" data-i18n="alumno.miercoles">Miércoles</option>
+            <option value="4" data-i18n="alumno.jueves">Jueves</option>
+            <option value="5" data-i18n="alumno.viernes">Viernes</option>
+            <option value="6" data-i18n="alumno.sabado">Sábado</option>
+            <option value="0" data-i18n="alumno.domingo">Domingo</option>
           </select>
-          <label class="field-label">Repetir hasta</label>
+          <label class="field-label" data-i18n="alumno.repetir_hasta">Repetir hasta</label>
           <input class="field-input" id="ev-hasta" type="date">
           <div style="display:flex;gap:6px;margin-top:8px">
-            <button type="button" style="flex:1;background:var(--dark);border:.5px solid var(--border);color:var(--soft);border-radius:6px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit" onclick="setFinMesEv()">Fin de mes</button>
-            <button type="button" style="flex:1;background:var(--dark);border:.5px solid var(--border);color:var(--soft);border-radius:6px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit" onclick="setFinTrimEv()">Fin de trimestre</button>
+            <button type="button" style="flex:1;background:var(--dark);border:.5px solid var(--border);color:var(--soft);border-radius:6px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit" onclick="setFinMesEv()" data-i18n="alumno.fin_de_mes">Fin de mes</button>
+            <button type="button" style="flex:1;background:var(--dark);border:.5px solid var(--border);color:var(--soft);border-radius:6px;padding:6px;font-size:11px;cursor:pointer;font-family:inherit" onclick="setFinTrimEv()" data-i18n="alumno.fin_de_trimestre">Fin de trimestre</button>
           </div>
         </div>
       </div>
       <div class="modal-footer" style="display:flex;gap:8px">
-        <button type="button" id="btn-eliminar-evento" class="btn-danger" onclick="eliminarEventoEdit()" style="display:none;margin-right:auto"><i class="ti ti-trash"></i> Eliminar</button>
-        <button type="button" class="btn-ghost" onclick="cerrarModalEvento()">Cancelar</button>
-        <button type="submit" class="btn-primary">Guardar</button>
+        <button type="button" id="btn-eliminar-evento" class="btn-danger" onclick="eliminarEventoEdit()" style="display:none;margin-right:auto"><i class="ti ti-trash"></i> <span data-i18n="alumno.eliminar">Eliminar</span></button>
+        <button type="button" class="btn-ghost" onclick="cerrarModalEvento()" data-i18n="alumno.cancelar">Cancelar</button>
+        <button type="submit" class="btn-primary" data-i18n="alumno.guardar">Guardar</button>
       </div>
     </form>
   </div>
@@ -930,6 +932,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
+<script src="../js/i18n.js"></script>
 <script src="../js/push.js"></script>
 <script>
 // escHTML() vive en js/auth.js
@@ -3153,9 +3156,9 @@ async function eliminarEvento(id) {
 
 <!-- UPDATE BANNER -->
 <div id="update-banner">
-  <div class="upd-txt"><b>Nueva versión disponible</b>Hay una actualización de la app lista para instalar.</div>
-  <button class="upd-btn" onclick="doUpdate()">Actualizar</button>
-  <button class="upd-close" onclick="document.getElementById('update-banner').classList.remove('show')" title="Cerrar">×</button>
+  <div class="upd-txt"><b data-i18n="alumno.nueva_version_disponible">Nueva versión disponible</b>Hay una actualización de la app lista para instalar.</div>
+  <button class="upd-btn" onclick="doUpdate()" data-i18n="alumno.actualizar">Actualizar</button>
+  <button class="upd-close" onclick="document.getElementById('update-banner').classList.remove('show')" data-i18n-title="alumno.ph.cerrar" title="Cerrar">×</button>
 </div>
 <script>
 (function(){
@@ -3195,6 +3198,11 @@ guardarEvento = unaVez(guardarEvento);
 // Límites en los campos de fecha, para que no se puedan meter
 // fechas absurdas que luego descuentan horas del bono.
 aplicarLimitesFecha();
+
+// ── Idiomas ──────────────────────────────────────────────
+registrarTraducciones("es", {"alumno.mi_area":"Mi área","alumno.estudiar":"Estudiar","alumno.avisos":"Avisos","alumno.inicio":"Inicio","alumno.sesiones":"Sesiones","alumno.informes":"Informes","alumno.bonos":"Bonos","alumno.calendario":"Calendario","alumno.mi_profesor":"Mi Profesor","alumno.material":"Material","alumno.tareas":"Tareas","alumno.tests":"Tests","alumno.cerrar_sesion":"Cerrar sesión","alumno.mi_bono":"Mi Bono","alumno.hola":"Hola","alumno.bono_bajo":"Bono bajo.","alumno.renovar_bono":"Renovar bono ↗","alumno.tienes_sesiones_pendientes_de_confirmar":"Tienes sesiones pendientes de confirmar.","alumno.revisar":"Revisar →","alumno.horas_restantes_bono":"Horas restantes bono","alumno.sesiones_este_mes":"Sesiones este mes","alumno.proxima_clase":"Próxima clase","alumno.ver_todos":"Ver todos","alumno.fichas_y_recursos_de_estudio":"Fichas y recursos de estudio","alumno.pon_a_prueba_lo_aprendido":"Pon a prueba lo aprendido","alumno.confirma_o_rechaza_las_clases":"Confirma o rechaza las clases registradas por tu profesor","alumno.informes_de_seguimiento_elaborados_por":"Informes de seguimiento elaborados por Nexo Académico","alumno.informacion_de_tu_profesor_asignado":"Información de tu profesor asignado","alumno.fichas_pdfs_y_tests_de":"Fichas, PDFs y tests de tus asignaturas","alumno.tests_de_autoevaluacion_por_asignatura":"Tests de autoevaluación por asignatura","alumno.test":"Test","alumno.tu_agenda_personal_de_clases":"Tu agenda personal de clases","alumno.horas_contratadas_y_disponibles":"Horas contratadas y disponibles","alumno.elige_el_bono_que_quieres":"Elige el bono que quieres contratar y contacta con Nexo directamente por WhatsApp.","alumno.presencial":"Presencial","alumno.online":"Online","alumno.tareas_enviadas_por_tu_profesor":"Tareas enviadas por tu profesor","alumno.comunicaciones_del_equipo_de_nexo":"Comunicaciones del equipo de Nexo Académico","alumno.recomendado":"Recomendado","alumno.instala_nexo_en_tu_movil":"Instala Nexo en tu móvil","alumno.tarea":"Tarea","alumno.nueva_entrada":"Nueva entrada","alumno.profesor":"Profesor","alumno.todos":"— Todos —","alumno.asignatura":"Asignatura","alumno.sin_asignatura":"— Sin asignatura —","alumno.hora_de_inicio":"Hora de inicio","alumno.duracion":"Duración","alumno.notas":"Notas","alumno.dia_de_la_semana":"Día de la semana","alumno.lunes":"Lunes","alumno.martes":"Martes","alumno.miercoles":"Miércoles","alumno.jueves":"Jueves","alumno.viernes":"Viernes","alumno.sabado":"Sábado","alumno.domingo":"Domingo","alumno.repetir_hasta":"Repetir hasta","alumno.fin_de_mes":"Fin de mes","alumno.fin_de_trimestre":"Fin de trimestre","alumno.cancelar":"Cancelar","alumno.guardar":"Guardar","alumno.nueva_version_disponible":"Nueva versión disponible","alumno.actualizar":"Actualizar","alumno.web_principal":"Web principal","alumno.informes_recientes":"Informes recientes","alumno.estado_del_bono":"Estado del bono","alumno.proximas_clases":"Próximas clases","alumno.historial_de_sesiones":"Historial de sesiones","alumno.anadir_entrada":"Añadir entrada","alumno.bonos_en_espera":"Bonos en espera","alumno.historial_de_bonos":"Historial de bonos","alumno.contratar_bono":"Contratar bono","alumno.por_entregar":"Por entregar","alumno.entregadas_esperando_correccion":"Entregadas — esperando corrección","alumno.corregidas":"Corregidas","alumno.ver_la_guia":"Ver la guía","alumno.activar_los_avisos":"Activar los avisos","alumno.eliminar":"Eliminar","alumno.ph.opcional":"Opcional","alumno.ph.cerrar":"Cerrar"});
+registrarTraducciones("en", {"alumno.mi_area":"My area","alumno.estudiar":"Study","alumno.avisos":"Notices","alumno.inicio":"Home","alumno.sesiones":"Sessions","alumno.informes":"Reports","alumno.bonos":"Hour packs","alumno.calendario":"Calendar","alumno.mi_profesor":"My tutor","alumno.material":"Materials","alumno.tareas":"Assignments","alumno.tests":"Quizzes","alumno.cerrar_sesion":"Log out","alumno.mi_bono":"My hour pack","alumno.hola":"Hello","alumno.bono_bajo":"Running low on hours.","alumno.renovar_bono":"Top up hours ↗","alumno.tienes_sesiones_pendientes_de_confirmar":"You have sessions waiting to be confirmed.","alumno.revisar":"Review →","alumno.horas_restantes_bono":"Hours left","alumno.sesiones_este_mes":"Sessions this month","alumno.proxima_clase":"Next lesson","alumno.ver_todos":"See all","alumno.fichas_y_recursos_de_estudio":"Worksheets and study resources","alumno.pon_a_prueba_lo_aprendido":"Test what you have learned","alumno.confirma_o_rechaza_las_clases":"Confirm or reject the lessons logged by your tutor","alumno.informes_de_seguimiento_elaborados_por":"Progress reports written by Nexo Académico","alumno.informacion_de_tu_profesor_asignado":"Details of your assigned tutor","alumno.fichas_pdfs_y_tests_de":"Worksheets, PDFs and quizzes for your subjects","alumno.tests_de_autoevaluacion_por_asignatura":"Self-assessment quizzes by subject","alumno.test":"Quiz","alumno.tu_agenda_personal_de_clases":"Your personal lesson diary","alumno.horas_contratadas_y_disponibles":"Hours purchased and available","alumno.elige_el_bono_que_quieres":"Choose the hour pack you want and message Nexo directly on WhatsApp.","alumno.presencial":"In person","alumno.online":"Online","alumno.tareas_enviadas_por_tu_profesor":"Assignments set by your tutor","alumno.comunicaciones_del_equipo_de_nexo":"Messages from the Nexo Académico team","alumno.recomendado":"Recommended","alumno.instala_nexo_en_tu_movil":"Install Nexo on your phone","alumno.tarea":"Assignment","alumno.nueva_entrada":"New entry","alumno.profesor":"Tutor","alumno.todos":"— All —","alumno.asignatura":"Subject","alumno.sin_asignatura":"— No subject —","alumno.hora_de_inicio":"Start time","alumno.duracion":"Duration","alumno.notas":"Notes","alumno.dia_de_la_semana":"Day of the week","alumno.lunes":"Monday","alumno.martes":"Tuesday","alumno.miercoles":"Wednesday","alumno.jueves":"Thursday","alumno.viernes":"Friday","alumno.sabado":"Saturday","alumno.domingo":"Sunday","alumno.repetir_hasta":"Repeat until","alumno.fin_de_mes":"End of month","alumno.fin_de_trimestre":"End of term","alumno.cancelar":"Cancel","alumno.guardar":"Save","alumno.nueva_version_disponible":"New version available","alumno.actualizar":"Update","alumno.web_principal":"Main website","alumno.informes_recientes":"Recent reports","alumno.estado_del_bono":"Hour pack status","alumno.proximas_clases":"Upcoming lessons","alumno.historial_de_sesiones":"Session history","alumno.anadir_entrada":"Add entry","alumno.bonos_en_espera":"Hour packs on hold","alumno.historial_de_bonos":"Hour pack history","alumno.contratar_bono":"Buy hours","alumno.por_entregar":"To hand in","alumno.entregadas_esperando_correccion":"Handed in — awaiting marking","alumno.corregidas":"Marked","alumno.ver_la_guia":"View the guide","alumno.activar_los_avisos":"Turn on notifications","alumno.eliminar":"Delete","alumno.ph.opcional":"Optional","alumno.ph.cerrar":"Close"});
+iniciarIdioma().then(() => montarSelectorIdioma("selector-idioma"));
 </script>
 </body>
 </html>
