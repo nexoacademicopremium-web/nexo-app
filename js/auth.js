@@ -80,6 +80,97 @@ function escHTML(s) {
     .replace(/'/g, '&#39;');
 }
 
+// ── Límites en los campos de fecha ──────────────────────────────
+// Sin ellos se puede registrar una clase en 1900 o en 3025, y esa
+// sesión descuenta horas del bono igual que cualquier otra. Un dedo
+// torpe en el móvil basta para provocarlo.
+//
+// Se aplica al cargar cada panel, sobre todos los campos de fecha:
+// no hace falta acordarse de ponerlo al añadir uno nuevo.
+
+// Campos donde una fecha pasada no tiene sentido: una tarea no puede
+// nacer vencida, ni una serie de clases repetirse hacia atrás.
+const FECHAS_SIN_PASADO = ['nt-fecha-limite', 'mc-hasta', 'ev-hasta'];
+
+// Tope de la repetición: un año por delante es de sobra para un curso.
+const FECHAS_MAX_UN_ANIO = ['mc-hasta', 'ev-hasta'];
+
+function aplicarLimitesFecha() {
+  const hoy  = new Date();
+  const suelo = _fechaLocal(new Date(hoy.getFullYear() - 1, 0, 1));
+  const techo = _fechaLocal(new Date(hoy.getFullYear() + 1, 11, 31));
+
+  document.querySelectorAll('input[type="date"]').forEach(el => {
+    if (!el.min) el.min = suelo;
+    if (!el.max) el.max = techo;
+  });
+
+  const hoyStr = _fechaHoy();
+  FECHAS_SIN_PASADO.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.min = hoyStr;
+  });
+
+  const dentroDeUnAnio = _fechaLocal(new Date(hoy.getFullYear() + 1, hoy.getMonth(), hoy.getDate()));
+  FECHAS_MAX_UN_ANIO.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.max = dentroDeUnAnio;
+  });
+}
+
+// Comprueba que un rango de fechas tenga sentido. Devuelve el motivo
+// si no lo tiene, o null si está bien.
+function revisarRangoFechas(desde, hasta) {
+  if (!desde || !hasta) return 'Faltan fechas por indicar.';
+  if (hasta < desde) return 'La fecha de fin es anterior a la de inicio.';
+  const dias = (new Date(hasta) - new Date(desde)) / 86400000;
+  if (dias > 400) return 'El periodo no puede superar un año.';
+  return null;
+}
+
+// ── Subida de archivos ──────────────────────────────────────────
+// Comprueba tamaño y tipo antes de subir, y construye una ruta única.
+//
+// El tamaño importa porque el almacén es compartido: un archivo enorme
+// subido por error lo llena, y a partir de ahí fallan las subidas de
+// todo el mundo, incluidas las entregas de los alumnos.
+//
+// El nombre se genera con un identificador aleatorio y no con la hora:
+// dos subidas en el mismo milisegundo se sobrescribían.
+
+const EXTENSIONES_PERMITIDAS = [
+  'pdf', 'doc', 'docx', 'odt', 'ppt', 'pptx', 'xls', 'xlsx', 'csv', 'txt',
+  'png', 'jpg', 'jpeg', 'webp', 'heic', 'gif', 'zip',
+];
+
+function prepararSubida(file, carpeta, maxMB) {
+  if (!file) {
+    return { ok: false, error: 'No has elegido ningún archivo.' };
+  }
+
+  if (file.size > maxMB * 1024 * 1024) {
+    const pesa = (file.size / 1024 / 1024).toFixed(1);
+    return { ok: false, error: `El archivo pesa ${pesa} MB y el máximo son ${maxMB} MB. Comprímelo o divídelo en varios.` };
+  }
+
+  if (file.size === 0) {
+    return { ok: false, error: 'El archivo está vacío.' };
+  }
+
+  // Sin punto en el nombre, pop() devolvería el nombre entero como extensión.
+  const partes = file.name.split('.');
+  const ext = partes.length > 1 ? partes.pop().toLowerCase().trim() : '';
+
+  if (!ext || !EXTENSIONES_PERMITIDAS.includes(ext)) {
+    return { ok: false, error: `No se admiten archivos «.${ext || 'sin extensión'}». Usa PDF, Word, imagen o ZIP.` };
+  }
+
+  const id = (crypto.randomUUID && crypto.randomUUID())
+    || (Date.now() + '-' + Math.random().toString(36).slice(2));
+
+  return { ok: true, ruta: `${carpeta}/${id}.${ext}`, ext };
+}
+
 // Envuelve un manejador de formulario para que no pueda ejecutarse dos
 // veces a la vez. Sin esto, un doble clic en "Guardar" llega a crear el
 // registro por duplicado — y en el caso de las clases con repetición,

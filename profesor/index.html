@@ -2139,12 +2139,17 @@ function setFinTrimestreCal() {
   document.getElementById('mc-hasta').value = _fechaLocal(fin);
 }
 
+// Tope de seguridad: son clases semanales, así que 100 cubre casi dos
+// cursos. Sin él, una fecha "hasta" lejana genera miles de filas de una
+// tacada y no hay forma cómoda de deshacerlo.
+const MAX_CLASES_RECURRENTES = 100;
+
 function generarFechasRecurrentes(desdeStr, jsDay, hastaStr) {
   const hasta = new Date(hastaStr + 'T12:00:00');
   const fechas = [];
   let cur = new Date(desdeStr + 'T12:00:00');
   while (cur.getDay() !== parseInt(jsDay)) cur.setDate(cur.getDate() + 1);
-  while (cur <= hasta) {
+  while (cur <= hasta && fechas.length < MAX_CLASES_RECURRENTES) {
     fechas.push(_fechaLocal(cur));
     cur.setDate(cur.getDate() + 7);
   }
@@ -3418,10 +3423,10 @@ function addPreguntaProf(data = null) {
     <label class="field-label" style="margin-top:0">Enunciado *</label>
     <textarea class="field-input" id="tp-pe-${i}" rows="2" required style="resize:vertical">${escHTML(data?.enunciado || '')}</textarea>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-      <div><label class="field-label" style="margin-top:0">Opción A *</label><input class="field-input" id="tp-pa-${i}" value="${data?.opcion_a || ''}" required></div>
-      <div><label class="field-label" style="margin-top:0">Opción B *</label><input class="field-input" id="tp-pb-${i}" value="${data?.opcion_b || ''}" required></div>
-      <div><label class="field-label" style="margin-top:0">Opción C *</label><input class="field-input" id="tp-pc-${i}" value="${data?.opcion_c || ''}" required></div>
-      <div><label class="field-label" style="margin-top:0">Opción D *</label><input class="field-input" id="tp-pd-${i}" value="${data?.opcion_d || ''}" required></div>
+      <div><label class="field-label" style="margin-top:0">Opción A *</label><input class="field-input" id="tp-pa-${i}" value="${escHTML(data?.opcion_a || '')}" required></div>
+      <div><label class="field-label" style="margin-top:0">Opción B *</label><input class="field-input" id="tp-pb-${i}" value="${escHTML(data?.opcion_b || '')}" required></div>
+      <div><label class="field-label" style="margin-top:0">Opción C *</label><input class="field-input" id="tp-pc-${i}" value="${escHTML(data?.opcion_c || '')}" required></div>
+      <div><label class="field-label" style="margin-top:0">Opción D *</label><input class="field-input" id="tp-pd-${i}" value="${escHTML(data?.opcion_d || '')}" required></div>
     </div>
     <label class="field-label">Respuesta correcta *</label>
     <select class="field-input" id="tp-pr-${i}" required>
@@ -3927,8 +3932,9 @@ async function guardarTarea(e) {
     const fileInput = document.getElementById('nt-archivo');
     if (fileInput?.files[0]) {
       const file = fileInput.files[0];
-      const ext  = file.name.split('.').pop();
-      const path = `tareas/enunciados/${Date.now()}.${ext}`;
+      const prep = prepararSubida(file, 'tareas/enunciados', 25);
+      if (!prep.ok) throw new Error(prep.error);
+      const path = prep.ruta;
       const { error: upErr } = await db.storage.from('nexo-files').upload(path, file);
       if (upErr) throw new Error('Error al subir archivo: ' + upErr.message);
       const { data: urlData } = db.storage.from('nexo-files').getPublicUrl(path);
@@ -4130,8 +4136,9 @@ async function guardarCorreccion() {
     let corrUrl = null;
     const corrFile = document.getElementById('corr-archivo')?.files?.[0];
     if (corrFile) {
-      const ext = corrFile.name.split('.').pop();
-      const path = `tareas/correcciones/${Date.now()}.${ext}`;
+      const prep = prepararSubida(corrFile, 'tareas/correcciones', 25);
+      if (!prep.ok) throw new Error(prep.error);
+      const path = prep.ruta;
       const { error: upErr } = await db.storage.from('nexo-files').upload(path, corrFile);
       if (upErr) throw new Error('Error al subir el archivo: ' + upErr.message);
       const { data: urlData } = db.storage.from('nexo-files').getPublicUrl(path);
@@ -4574,8 +4581,9 @@ async function pMatGuardar(e) {
     const file = document.getElementById('pmat-archivo').files[0];
     if (!file) throw new Error('Añade un archivo para continuar');
 
-    const ext  = file.name.split('.').pop();
-    const path = `material/${Date.now()}.${ext}`;
+    const prep = prepararSubida(file, 'material', 25);
+    if (!prep.ok) throw new Error(prep.error);
+    const path = prep.ruta;
     const { error: upErr } = await db.storage.from('nexo-files').upload(path, file);
     if (upErr) throw new Error('Error al subir archivo: ' + upErr.message);
     const { data: urlData } = db.storage.from('nexo-files').getPublicUrl(path);
@@ -4735,6 +4743,10 @@ async function pMatEliminar(id) {
 // segundo clic no vuelve a ejecutar el manejador.
 guardarClase = unaVez(guardarClase);
 guardarTestProf = unaVez(guardarTestProf);
+
+// Límites en los campos de fecha, para que no se puedan meter
+// fechas absurdas que luego descuentan horas del bono.
+aplicarLimitesFecha();
 </script>
 </body>
 </html>

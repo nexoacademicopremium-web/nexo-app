@@ -2562,13 +2562,13 @@ async function subirEntrega() {
 
   try {
     const file = fileInput.files[0];
-    if (file.size > 10 * 1024 * 1024) {
-      showToast('El archivo es demasiado grande. Máximo 10 MB.', 'error');
+    const prep = prepararSubida(file, 'tareas/entregas', 10);
+    if (!prep.ok) {
+      showToast(prep.error, 'error');
       btn.disabled = false; btn.textContent = 'Subir entrega';
       return;
     }
-    const ext  = file.name.split('.').pop();
-    const path = `tareas/entregas/${Date.now()}.${ext}`;
+    const path = prep.ruta;
     const { error: upErr } = await db.storage.from('nexo-files').upload(path, file);
     if (upErr) throw new Error('Error al subir el archivo: ' + upErr.message);
     const { data: urlData } = db.storage.from('nexo-files').getPublicUrl(path);
@@ -2880,12 +2880,17 @@ function setFinTrimEv() {
   document.getElementById('ev-hasta').value = _fechaLocal(fin);
 }
 
+// Tope de seguridad: son entradas semanales, así que 100 cubre casi dos
+// cursos. Sin él, una fecha "hasta" lejana llena el calendario de miles
+// de entradas de una sola vez.
+const MAX_EVENTOS_RECURRENTES = 100;
+
 function generarFechasEv(desdeStr, jsDay, hastaStr) {
   const hasta = new Date(hastaStr + 'T12:00:00');
   const fechas = [];
   let cur = new Date(desdeStr + 'T12:00:00');
   while (cur.getDay() !== parseInt(jsDay)) cur.setDate(cur.getDate() + 1);
-  while (cur <= hasta) {
+  while (cur <= hasta && fechas.length < MAX_EVENTOS_RECURRENTES) {
     fechas.push(_fechaLocal(cur));
     cur.setDate(cur.getDate() + 7);
   }
@@ -3183,6 +3188,10 @@ async function eliminarEvento(id) {
 // Protección contra doble envío: si se pulsa Guardar dos veces, el
 // segundo clic no vuelve a ejecutar el manejador.
 guardarEvento = unaVez(guardarEvento);
+
+// Límites en los campos de fecha, para que no se puedan meter
+// fechas absurdas que luego descuentan horas del bono.
+aplicarLimitesFecha();
 </script>
 </body>
 </html>

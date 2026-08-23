@@ -1951,8 +1951,8 @@ async function generarInformeIA() {
 
   errEl.style.display = 'none';
   if (!alumnoId) { errEl.textContent = 'Selecciona un alumno.'; errEl.style.display = ''; return; }
-  if (!inicio || !fin) { errEl.textContent = 'Indica las fechas de inicio y fin.'; errEl.style.display = ''; return; }
-  if (fin < inicio) { errEl.textContent = 'La fecha de fin debe ser posterior a la de inicio.'; errEl.style.display = ''; return; }
+  const problemaRango = revisarRangoFechas(inicio, fin);
+  if (problemaRango) { errEl.textContent = problemaRango; errEl.style.display = ''; return; }
 
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Generando… (puede tardar hasta 30 s)';
@@ -4191,8 +4191,9 @@ async function guardarMaterial(e) {
     let newUrl = null;
 
     if (file) {
-      const ext  = file.name.split('.').pop();
-      const path = `material/${Date.now()}.${ext}`;
+      const prep = prepararSubida(file, 'material', 25);
+      if (!prep.ok) throw new Error(prep.error);
+      const path = prep.ruta;
       const { error: upErr } = await db.storage.from('nexo-files').upload(path, file);
       if (upErr) throw new Error('Error al subir archivo: ' + upErr.message);
       const { data: urlData } = db.storage.from('nexo-files').getPublicUrl(path);
@@ -5165,10 +5166,10 @@ function addPregunta(data = null) {
     <label class="fl" style="margin-top:0">Enunciado *</label>
     <textarea class="fi" id="preg-enunciado-${i}" rows="2" required style="resize:vertical">${escHTML(data?.enunciado || '')}</textarea>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
-      <div><label class="fl" style="margin-top:0">Opción A *</label><input class="fi" id="preg-a-${i}" value="${data?.opcion_a || ''}" required></div>
-      <div><label class="fl" style="margin-top:0">Opción B *</label><input class="fi" id="preg-b-${i}" value="${data?.opcion_b || ''}" required></div>
-      <div><label class="fl" style="margin-top:0">Opción C *</label><input class="fi" id="preg-c-${i}" value="${data?.opcion_c || ''}" required></div>
-      <div><label class="fl" style="margin-top:0">Opción D *</label><input class="fi" id="preg-d-${i}" value="${data?.opcion_d || ''}" required></div>
+      <div><label class="fl" style="margin-top:0">Opción A *</label><input class="fi" id="preg-a-${i}" value="${escHTML(data?.opcion_a || '')}" required></div>
+      <div><label class="fl" style="margin-top:0">Opción B *</label><input class="fi" id="preg-b-${i}" value="${escHTML(data?.opcion_b || '')}" required></div>
+      <div><label class="fl" style="margin-top:0">Opción C *</label><input class="fi" id="preg-c-${i}" value="${escHTML(data?.opcion_c || '')}" required></div>
+      <div><label class="fl" style="margin-top:0">Opción D *</label><input class="fi" id="preg-d-${i}" value="${escHTML(data?.opcion_d || '')}" required></div>
     </div>
     <label class="fl">Respuesta correcta *</label>
     <select class="fi" id="preg-correct-${i}" required>
@@ -5325,6 +5326,10 @@ guardarCambiosInforme = unaVez(guardarCambiosInforme);
 guardarTarifa = unaVez(guardarTarifa);
 guardarTest = unaVez(guardarTest);
 guardarAviso = unaVez(guardarAviso);
+
+// Límites en los campos de fecha, para que no se puedan meter
+// fechas absurdas que luego descuentan horas del bono.
+aplicarLimitesFecha();
 </script>
 </body>
 </html>
