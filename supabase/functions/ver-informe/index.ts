@@ -13,7 +13,12 @@ const ORIGENES = [
 
 function cors(req: Request) {
   const origin = req.headers.get('Origin') || ''
-  const permitido = ORIGENES.includes(origin) || origin.endsWith('.netlify.app')
+  // Se admite el dominio propio y las direcciones de vista previa de
+  // ESTE proyecto. Antes valía cualquier subdominio de netlify.app, lo
+  // que dejaba entrar a sitios de terceros.
+  const permitido = ORIGENES.includes(origin)
+    || /^https:\/\/([a-z0-9-]+\.)?nexo-app-64p\.pages\.dev$/.test(origin)
+    || /^https:\/\/([a-z0-9-]+--)?nexoacademico-app\.netlify\.app$/.test(origin)
   return {
     'Access-Control-Allow-Origin': permitido ? origin : 'https://app.nexoacademico.com',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
