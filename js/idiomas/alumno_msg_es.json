@@ -1,0 +1,23 @@
+{
+  "alumno.msg.selecciona_un_archivo_para_entregar": "Selecciona un archivo para entregar",
+  "alumno.msg.tarea_entregada": "¡Tarea entregada!",
+  "alumno.msg.sesion_eliminada": "Sesión eliminada",
+  "alumno.msg.error_al_eliminar": "Error al eliminar: ",
+  "alumno.msg.entrada_eliminada": "Entrada eliminada",
+  "alumno.msg.elige_hasta_que_fecha_repetir": "Elige hasta qué fecha repetir",
+  "alumno.msg.no_hay_fechas_en_ese_rango": "No hay fechas en ese rango para el día seleccionado",
+  "alumno.msg.error_al_crear_entradas": "Error al crear entradas",
+  "alumno.msg.error_al_guardar": "Error al guardar",
+  "alumno.msg.entrada_guardada": "Entrada guardada",
+  "alumno.msg.eliminar_esta_sesion_cancelada_no_se": "¿Eliminar esta sesión cancelada? No se puede deshacer.",
+  "alumno.msg.hola": "Hola, ",
+  "alumno.msg.de_0h_contratadas": "de {0}h contratadas",
+  "alumno.msg.has_consumido_mas_del_75_de": "Has consumido más del 75% de tu bono. Renueva para no interrumpir las clases.",
+  "alumno.msg.sin_clases_programadas": "Sin clases programadas",
+  "alumno.msg.enviando": "Enviando…",
+  "alumno.msg.enviar_respuestas": "Enviar respuestas",
+  "alumno.msg.subiendo": "Subiendo…",
+  "alumno.msg.subir_entrega": "Subir entrega",
+  "alumno.msg.nueva_entrada": "Nueva entrada",
+  "alumno.msg.editar_entrada": "Editar entrada"
+}

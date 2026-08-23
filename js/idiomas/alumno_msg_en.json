@@ -1,0 +1,23 @@
+{
+  "alumno.msg.selecciona_un_archivo_para_entregar": "Choose a file to hand in",
+  "alumno.msg.tarea_entregada": "Assignment handed in!",
+  "alumno.msg.sesion_eliminada": "Session deleted",
+  "alumno.msg.error_al_eliminar": "Could not delete: ",
+  "alumno.msg.entrada_eliminada": "Entry deleted",
+  "alumno.msg.elige_hasta_que_fecha_repetir": "Choose the date to repeat until",
+  "alumno.msg.no_hay_fechas_en_ese_rango": "There are no dates in that range for the day you chose",
+  "alumno.msg.error_al_crear_entradas": "Could not create the entries",
+  "alumno.msg.error_al_guardar": "Could not save",
+  "alumno.msg.entrada_guardada": "Entry saved",
+  "alumno.msg.eliminar_esta_sesion_cancelada_no_se": "Delete this cancelled session? This cannot be undone.",
+  "alumno.msg.hola": "Hello, ",
+  "alumno.msg.de_0h_contratadas": "of {0}h purchased",
+  "alumno.msg.has_consumido_mas_del_75_de": "You have used more than 75% of your hours. Top up so your lessons are not interrupted.",
+  "alumno.msg.sin_clases_programadas": "No lessons scheduled",
+  "alumno.msg.enviando": "Sending…",
+  "alumno.msg.enviar_respuestas": "Submit answers",
+  "alumno.msg.subiendo": "Uploading…",
+  "alumno.msg.subir_entrega": "Hand in work",
+  "alumno.msg.nueva_entrada": "New entry",
+  "alumno.msg.editar_entrada": "Edit entry"
+}

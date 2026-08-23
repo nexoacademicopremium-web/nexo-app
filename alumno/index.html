@@ -957,7 +957,7 @@ let editEventoId = null;
   document.getElementById('avatar-initials').textContent = getInitials(usuario.nombre, usuario.apellidos);
   const mmUser = document.getElementById('mmenu-user');
   if (mmUser) mmUser.textContent = (usuario.nombre || '') + (usuario.apellidos ? ' ' + usuario.apellidos : '');
-  document.getElementById('greeting').textContent = 'Hola, ' + usuario.nombre;
+  document.getElementById('greeting').textContent = t('alumno.msg.hola') + usuario.nombre;
 
   if (alumnoData) {
     const [{ data: _aAsigs }, { data: _aCatalog }] = await Promise.all([
@@ -1151,7 +1151,7 @@ async function loadDashboard() {
   const pct    = hTotal > 0 ? Math.round((hRest / hTotal) * 100) : 0;
 
   document.getElementById('kpi-horas-rest').textContent = hRest.toFixed(1) + 'h';
-  document.getElementById('kpi-bono-total').textContent = `de ${hTotal}h contratadas`;
+  document.getElementById('kpi-bono-total').textContent = t('alumno.msg.de_0h_contratadas', { 0: hTotal });
   const barColor = hRest <= 2 ? 'var(--red)' : hRest <= 3 ? 'var(--amber)' : 'var(--blue)';
   document.getElementById('prog-bono').style.width = pct + '%';
   document.getElementById('prog-bono').style.background = barColor;
@@ -1160,7 +1160,7 @@ async function loadDashboard() {
     const a = document.getElementById('alerta-bono');
     a.style.display = 'flex';
     document.getElementById('alerta-bono-txt').textContent =
-      `Has consumido más del 75% de tu bono. Renueva para no interrumpir las clases.`;
+      t('alumno.msg.has_consumido_mas_del_75_de');
     document.getElementById('alerta-bono-btn').href =
       `https://wa.me/${WHATSAPP_MANU}?text=Hola%20Manu%2C%20quiero%20renovar%20el%20bono%20de%20${encodeURIComponent(ctx.usuario.nombre)}.`;
   }
@@ -1195,7 +1195,7 @@ async function loadDashboard() {
   if (!proximas || proximas.length === 0) {
     proxEl.innerHTML = `<div class="empty-state"><i class="ti ti-calendar"></i><p>Sin clases programadas</p></div>`;
     document.getElementById('kpi-proxima-fecha').textContent = '—';
-    document.getElementById('kpi-proxima-sub').textContent = 'Sin clases programadas';
+    document.getElementById('kpi-proxima-sub').textContent = t('alumno.msg.sin_clases_programadas');
   } else {
     const p = proximas[0];
     const dp = new Date(p.fecha + 'T00:00:00');
@@ -2241,7 +2241,7 @@ async function enviarTest() {
   testState.enviado = true;
 
   const btn = document.querySelector('#test-content button[onclick="enviarTest()"]');
-  if (btn) { btn.disabled = true; btn.textContent = 'Enviando…'; }
+  if (btn) { btn.disabled = true; btn.textContent = t('alumno.msg.enviando'); }
 
   const { data: resultado, error } = await db.rpc('corregir_test', {
     p_test_id:   testId,
@@ -2249,7 +2249,7 @@ async function enviarTest() {
   });
 
   if (error || !resultado) {
-    if (btn) { btn.disabled = false; btn.textContent = 'Enviar respuestas'; }
+    if (btn) { btn.disabled = false; btn.textContent = t('alumno.msg.enviar_respuestas'); }
     const msg = error?.message?.includes('ya completado') ? 'Ya has completado este test.' : (error?.message || 'Error al enviar. Inténtalo de nuevo.');
     showToast(msg, 'error');
     return;
@@ -2557,11 +2557,11 @@ function _renderTareaAlumnoModal(t) {
 async function subirEntrega() {
   const fileInput = document.getElementById('alumno-entrega-file');
   if (!fileInput?.files[0]) {
-    showToast('Selecciona un archivo para entregar', 'error');
+    showToast(t('alumno.msg.selecciona_un_archivo_para_entregar'), 'error');
     return;
   }
   const btn = document.getElementById('btn-entregar');
-  btn.disabled = true; btn.textContent = 'Subiendo…';
+  btn.disabled = true; btn.textContent = t('alumno.msg.subiendo');
 
   try {
     const file = fileInput.files[0];
@@ -2571,7 +2571,7 @@ async function subirEntrega() {
     const prep = prepararSubida(file, `tareas/entregas/${ctx.alumnoData.id}`, 10);
     if (!prep.ok) {
       showToast(prep.error, 'error');
-      btn.disabled = false; btn.textContent = 'Subir entrega';
+      btn.disabled = false; btn.textContent = t('alumno.msg.subir_entrega');
       return;
     }
     const path = prep.ruta;
@@ -2591,7 +2591,7 @@ async function subirEntrega() {
     db.functions.invoke('notificar', { body: { evento: 'tarea_entregada', id: _tareaAlumnoActId } })
       .catch(e => console.warn('Aviso al profesor fallido:', e));
 
-    showToast('¡Tarea entregada!');
+    showToast(t('alumno.msg.tarea_entregada'));
     cerrarModalTareaAlumno();
     loadTareasAlumno();
   } catch(err) {
@@ -2741,10 +2741,10 @@ function volverTestsAsignaturas() {
 }
 
 async function eliminarSesionAlumno(sesionId) {
-  if (!confirm('¿Eliminar esta sesión cancelada? No se puede deshacer.')) return;
+  if (!confirm(t('alumno.msg.eliminar_esta_sesion_cancelada_no_se'))) return;
   const { data, error } = await db.rpc('eliminar_sesion_cancelada', { p_session_id: sesionId });
   if (error || !data?.success) { showToast(data?.error || 'Error al eliminar', 'error'); return; }
-  showToast('Sesión eliminada');
+  showToast(t('alumno.msg.sesion_eliminada'));
   await loadSesiones();
 }
 
@@ -2914,7 +2914,7 @@ async function prepararNuevoEvento(dateStr) {
   if (list) list.remove();
   document.getElementById('form-evento').reset();
   document.getElementById('form-evento').style.display = 'block';
-  document.getElementById('modal-evento-title').textContent = 'Nueva entrada';
+  document.getElementById('modal-evento-title').textContent = t('alumno.msg.nueva_entrada');
   document.getElementById('ev-fecha').value = dateStr;
   const _n = new Date();
   document.getElementById('ev-hora').value = String(_n.getHours()).padStart(2,'0') + ':' + String(_n.getMinutes()).padStart(2,'0');
@@ -3006,7 +3006,7 @@ async function abrirModalEvento() {
   const list = document.getElementById('modal-ev-list');
   if (list) list.remove();
   document.getElementById('form-evento').style.display = 'block';
-  document.getElementById('modal-evento-title').textContent = 'Nueva entrada';
+  document.getElementById('modal-evento-title').textContent = t('alumno.msg.nueva_entrada');
   document.getElementById('btn-eliminar-evento').style.display = 'none';
   _resetRecurrenteEv();
   editEventoId = null;
@@ -3031,7 +3031,7 @@ async function abrirEditEvento(ev) {
   if (list) list.remove();
   document.getElementById('form-evento').reset();
   document.getElementById('form-evento').style.display = 'block';
-  document.getElementById('modal-evento-title').textContent = 'Editar entrada';
+  document.getElementById('modal-evento-title').textContent = t('alumno.msg.editar_entrada');
   document.getElementById('ev-recurrente-wrap').style.display = 'none';
   document.getElementById('ev-recurrente-opts').style.display = 'none';
   document.getElementById('btn-eliminar-evento').style.display = 'inline-flex';
@@ -3049,8 +3049,8 @@ async function abrirEditEvento(ev) {
 async function eliminarEventoEdit() {
   if (!editEventoId) return;
   const { error } = await db.from('calendario_alumno').delete().eq('id', editEventoId);
-  if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
-  showToast('Entrada eliminada');
+  if (error) { showToast(t('alumno.msg.error_al_eliminar') + error.message, 'error'); return; }
+  showToast(t('alumno.msg.entrada_eliminada'));
   cerrarModalEvento();
   await renderCalendario();
 }
@@ -3077,12 +3077,12 @@ async function guardarEvento(e) {
   if (esRecurrente) {
     const jsDay = parseInt(document.getElementById('ev-diasemana').value);
     const hasta = document.getElementById('ev-hasta').value;
-    if (!hasta) { showToast('Elige hasta qué fecha repetir', 'error'); return; }
+    if (!hasta) { showToast(t('alumno.msg.elige_hasta_que_fecha_repetir'), 'error'); return; }
     const fechas = generarFechasEv(ev.fecha, jsDay, hasta);
-    if (fechas.length === 0) { showToast('No hay fechas en ese rango para el día seleccionado', 'error'); return; }
+    if (fechas.length === 0) { showToast(t('alumno.msg.no_hay_fechas_en_ese_rango'), 'error'); return; }
     const entradas = fechas.map(f => ({ ...ev, fecha: f }));
     const { error } = await db.from('calendario_alumno').insert(entradas);
-    if (error) { showToast('Error al crear entradas', 'error'); return; }
+    if (error) { showToast(t('alumno.msg.error_al_crear_entradas'), 'error'); return; }
     showToast(`${fechas.length} entrada${fechas.length !== 1 ? 's' : ''} creada${fechas.length !== 1 ? 's' : ''}`);
     cerrarModalEvento();
     await renderCalendario();
@@ -3093,16 +3093,16 @@ async function guardarEvento(e) {
     ? await db.from('calendario_alumno').update(ev).eq('id', editEventoId)
     : await db.from('calendario_alumno').insert(ev);
 
-  if (error) { showToast('Error al guardar', 'error'); return; }
-  showToast('Entrada guardada');
+  if (error) { showToast(t('alumno.msg.error_al_guardar'), 'error'); return; }
+  showToast(t('alumno.msg.entrada_guardada'));
   cerrarModalEvento();
   await renderCalendario();
 }
 
 async function eliminarEvento(id) {
   const { error } = await db.from('calendario_alumno').delete().eq('id', id);
-  if (error) { showToast('Error al eliminar: ' + error.message, 'error'); return; }
-  showToast('Entrada eliminada');
+  if (error) { showToast(t('alumno.msg.error_al_eliminar') + error.message, 'error'); return; }
+  showToast(t('alumno.msg.entrada_eliminada'));
   cerrarModalEvento();
   await renderCalendario();
 }
@@ -3202,6 +3202,8 @@ aplicarLimitesFecha();
 // ── Idiomas ──────────────────────────────────────────────
 registrarTraducciones("es", {"alumno.mi_area":"Mi área","alumno.estudiar":"Estudiar","alumno.avisos":"Avisos","alumno.inicio":"Inicio","alumno.sesiones":"Sesiones","alumno.informes":"Informes","alumno.bonos":"Bonos","alumno.calendario":"Calendario","alumno.mi_profesor":"Mi Profesor","alumno.material":"Material","alumno.tareas":"Tareas","alumno.tests":"Tests","alumno.cerrar_sesion":"Cerrar sesión","alumno.mi_bono":"Mi Bono","alumno.hola":"Hola","alumno.bono_bajo":"Bono bajo.","alumno.renovar_bono":"Renovar bono ↗","alumno.tienes_sesiones_pendientes_de_confirmar":"Tienes sesiones pendientes de confirmar.","alumno.revisar":"Revisar →","alumno.horas_restantes_bono":"Horas restantes bono","alumno.sesiones_este_mes":"Sesiones este mes","alumno.proxima_clase":"Próxima clase","alumno.ver_todos":"Ver todos","alumno.fichas_y_recursos_de_estudio":"Fichas y recursos de estudio","alumno.pon_a_prueba_lo_aprendido":"Pon a prueba lo aprendido","alumno.confirma_o_rechaza_las_clases":"Confirma o rechaza las clases registradas por tu profesor","alumno.informes_de_seguimiento_elaborados_por":"Informes de seguimiento elaborados por Nexo Académico","alumno.informacion_de_tu_profesor_asignado":"Información de tu profesor asignado","alumno.fichas_pdfs_y_tests_de":"Fichas, PDFs y tests de tus asignaturas","alumno.tests_de_autoevaluacion_por_asignatura":"Tests de autoevaluación por asignatura","alumno.test":"Test","alumno.tu_agenda_personal_de_clases":"Tu agenda personal de clases","alumno.horas_contratadas_y_disponibles":"Horas contratadas y disponibles","alumno.elige_el_bono_que_quieres":"Elige el bono que quieres contratar y contacta con Nexo directamente por WhatsApp.","alumno.presencial":"Presencial","alumno.online":"Online","alumno.tareas_enviadas_por_tu_profesor":"Tareas enviadas por tu profesor","alumno.comunicaciones_del_equipo_de_nexo":"Comunicaciones del equipo de Nexo Académico","alumno.recomendado":"Recomendado","alumno.instala_nexo_en_tu_movil":"Instala Nexo en tu móvil","alumno.tarea":"Tarea","alumno.nueva_entrada":"Nueva entrada","alumno.profesor":"Profesor","alumno.todos":"— Todos —","alumno.asignatura":"Asignatura","alumno.sin_asignatura":"— Sin asignatura —","alumno.hora_de_inicio":"Hora de inicio","alumno.duracion":"Duración","alumno.notas":"Notas","alumno.dia_de_la_semana":"Día de la semana","alumno.lunes":"Lunes","alumno.martes":"Martes","alumno.miercoles":"Miércoles","alumno.jueves":"Jueves","alumno.viernes":"Viernes","alumno.sabado":"Sábado","alumno.domingo":"Domingo","alumno.repetir_hasta":"Repetir hasta","alumno.fin_de_mes":"Fin de mes","alumno.fin_de_trimestre":"Fin de trimestre","alumno.cancelar":"Cancelar","alumno.guardar":"Guardar","alumno.nueva_version_disponible":"Nueva versión disponible","alumno.actualizar":"Actualizar","alumno.web_principal":"Web principal","alumno.informes_recientes":"Informes recientes","alumno.estado_del_bono":"Estado del bono","alumno.proximas_clases":"Próximas clases","alumno.historial_de_sesiones":"Historial de sesiones","alumno.anadir_entrada":"Añadir entrada","alumno.bonos_en_espera":"Bonos en espera","alumno.historial_de_bonos":"Historial de bonos","alumno.contratar_bono":"Contratar bono","alumno.por_entregar":"Por entregar","alumno.entregadas_esperando_correccion":"Entregadas — esperando corrección","alumno.corregidas":"Corregidas","alumno.ver_la_guia":"Ver la guía","alumno.activar_los_avisos":"Activar los avisos","alumno.eliminar":"Eliminar","alumno.ph.opcional":"Opcional","alumno.ph.cerrar":"Cerrar"});
 registrarTraducciones("en", {"alumno.mi_area":"My area","alumno.estudiar":"Study","alumno.avisos":"Notices","alumno.inicio":"Home","alumno.sesiones":"Sessions","alumno.informes":"Reports","alumno.bonos":"Hour packs","alumno.calendario":"Calendar","alumno.mi_profesor":"My tutor","alumno.material":"Materials","alumno.tareas":"Assignments","alumno.tests":"Quizzes","alumno.cerrar_sesion":"Log out","alumno.mi_bono":"My hour pack","alumno.hola":"Hello","alumno.bono_bajo":"Running low on hours.","alumno.renovar_bono":"Top up hours ↗","alumno.tienes_sesiones_pendientes_de_confirmar":"You have sessions waiting to be confirmed.","alumno.revisar":"Review →","alumno.horas_restantes_bono":"Hours left","alumno.sesiones_este_mes":"Sessions this month","alumno.proxima_clase":"Next lesson","alumno.ver_todos":"See all","alumno.fichas_y_recursos_de_estudio":"Worksheets and study resources","alumno.pon_a_prueba_lo_aprendido":"Test what you have learned","alumno.confirma_o_rechaza_las_clases":"Confirm or reject the lessons logged by your tutor","alumno.informes_de_seguimiento_elaborados_por":"Progress reports written by Nexo Académico","alumno.informacion_de_tu_profesor_asignado":"Details of your assigned tutor","alumno.fichas_pdfs_y_tests_de":"Worksheets, PDFs and quizzes for your subjects","alumno.tests_de_autoevaluacion_por_asignatura":"Self-assessment quizzes by subject","alumno.test":"Quiz","alumno.tu_agenda_personal_de_clases":"Your personal lesson diary","alumno.horas_contratadas_y_disponibles":"Hours purchased and available","alumno.elige_el_bono_que_quieres":"Choose the hour pack you want and message Nexo directly on WhatsApp.","alumno.presencial":"In person","alumno.online":"Online","alumno.tareas_enviadas_por_tu_profesor":"Assignments set by your tutor","alumno.comunicaciones_del_equipo_de_nexo":"Messages from the Nexo Académico team","alumno.recomendado":"Recommended","alumno.instala_nexo_en_tu_movil":"Install Nexo on your phone","alumno.tarea":"Assignment","alumno.nueva_entrada":"New entry","alumno.profesor":"Tutor","alumno.todos":"— All —","alumno.asignatura":"Subject","alumno.sin_asignatura":"— No subject —","alumno.hora_de_inicio":"Start time","alumno.duracion":"Duration","alumno.notas":"Notes","alumno.dia_de_la_semana":"Day of the week","alumno.lunes":"Monday","alumno.martes":"Tuesday","alumno.miercoles":"Wednesday","alumno.jueves":"Thursday","alumno.viernes":"Friday","alumno.sabado":"Saturday","alumno.domingo":"Sunday","alumno.repetir_hasta":"Repeat until","alumno.fin_de_mes":"End of month","alumno.fin_de_trimestre":"End of term","alumno.cancelar":"Cancel","alumno.guardar":"Save","alumno.nueva_version_disponible":"New version available","alumno.actualizar":"Update","alumno.web_principal":"Main website","alumno.informes_recientes":"Recent reports","alumno.estado_del_bono":"Hour pack status","alumno.proximas_clases":"Upcoming lessons","alumno.historial_de_sesiones":"Session history","alumno.anadir_entrada":"Add entry","alumno.bonos_en_espera":"Hour packs on hold","alumno.historial_de_bonos":"Hour pack history","alumno.contratar_bono":"Buy hours","alumno.por_entregar":"To hand in","alumno.entregadas_esperando_correccion":"Handed in — awaiting marking","alumno.corregidas":"Marked","alumno.ver_la_guia":"View the guide","alumno.activar_los_avisos":"Turn on notifications","alumno.eliminar":"Delete","alumno.ph.opcional":"Optional","alumno.ph.cerrar":"Close"});
+registrarTraducciones("es", {"alumno.msg.selecciona_un_archivo_para_entregar":"Selecciona un archivo para entregar","alumno.msg.tarea_entregada":"¡Tarea entregada!","alumno.msg.sesion_eliminada":"Sesión eliminada","alumno.msg.error_al_eliminar":"Error al eliminar: ","alumno.msg.entrada_eliminada":"Entrada eliminada","alumno.msg.elige_hasta_que_fecha_repetir":"Elige hasta qué fecha repetir","alumno.msg.no_hay_fechas_en_ese_rango":"No hay fechas en ese rango para el día seleccionado","alumno.msg.error_al_crear_entradas":"Error al crear entradas","alumno.msg.error_al_guardar":"Error al guardar","alumno.msg.entrada_guardada":"Entrada guardada","alumno.msg.eliminar_esta_sesion_cancelada_no_se":"¿Eliminar esta sesión cancelada? No se puede deshacer.","alumno.msg.hola":"Hola, ","alumno.msg.de_0h_contratadas":"de {0}h contratadas","alumno.msg.has_consumido_mas_del_75_de":"Has consumido más del 75% de tu bono. Renueva para no interrumpir las clases.","alumno.msg.sin_clases_programadas":"Sin clases programadas","alumno.msg.enviando":"Enviando…","alumno.msg.enviar_respuestas":"Enviar respuestas","alumno.msg.subiendo":"Subiendo…","alumno.msg.subir_entrega":"Subir entrega","alumno.msg.nueva_entrada":"Nueva entrada","alumno.msg.editar_entrada":"Editar entrada"}); /*_msg_es*/
+registrarTraducciones("en", {"alumno.msg.selecciona_un_archivo_para_entregar":"Choose a file to hand in","alumno.msg.tarea_entregada":"Assignment handed in!","alumno.msg.sesion_eliminada":"Session deleted","alumno.msg.error_al_eliminar":"Could not delete: ","alumno.msg.entrada_eliminada":"Entry deleted","alumno.msg.elige_hasta_que_fecha_repetir":"Choose the date to repeat until","alumno.msg.no_hay_fechas_en_ese_rango":"There are no dates in that range for the day you chose","alumno.msg.error_al_crear_entradas":"Could not create the entries","alumno.msg.error_al_guardar":"Could not save","alumno.msg.entrada_guardada":"Entry saved","alumno.msg.eliminar_esta_sesion_cancelada_no_se":"Delete this cancelled session? This cannot be undone.","alumno.msg.hola":"Hello, ","alumno.msg.de_0h_contratadas":"of {0}h purchased","alumno.msg.has_consumido_mas_del_75_de":"You have used more than 75% of your hours. Top up so your lessons are not interrupted.","alumno.msg.sin_clases_programadas":"No lessons scheduled","alumno.msg.enviando":"Sending…","alumno.msg.enviar_respuestas":"Submit answers","alumno.msg.subiendo":"Uploading…","alumno.msg.subir_entrega":"Hand in work","alumno.msg.nueva_entrada":"New entry","alumno.msg.editar_entrada":"Edit entry"});
 iniciarIdioma().then(() => montarSelectorIdioma("selector-idioma"));
 </script>
 </body>
