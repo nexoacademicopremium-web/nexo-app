@@ -40,28 +40,20 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  UPDATE public.alumnos a
-  SET horas_bono_total     = COALESCE(b.horas_contratadas, 0),
-      horas_bono_restantes = COALESCE(b.horas_restantes, 0)
-  FROM (
-    SELECT horas_contratadas, horas_restantes
-    FROM public.bonos
-    WHERE alumno_id = p_alumno_id AND estado = 'activo'
-    ORDER BY COALESCE(fecha_pago, created_at) ASC
-    LIMIT 1
-  ) b ON TRUE
-  WHERE a.id = p_alumno_id;
-
-  -- Sin bono activo la subconsulta no devuelve fila y el UPDATE no
-  -- llega a ejecutarse, así que se pone a cero aparte.
-  IF NOT EXISTS (
-    SELECT 1 FROM public.bonos
-    WHERE alumno_id = p_alumno_id AND estado = 'activo'
-  ) THEN
-    UPDATE public.alumnos
-    SET horas_bono_total = 0, horas_bono_restantes = 0
-    WHERE id = p_alumno_id;
-  END IF;
+  -- Subconsultas escalares: si no hay bono activo devuelven NULL y el
+  -- COALESCE lo deja en cero, que es justo lo que toca.
+  UPDATE public.alumnos
+  SET horas_bono_total = COALESCE((
+        SELECT horas_contratadas FROM public.bonos
+        WHERE alumno_id = p_alumno_id AND estado = 'activo'
+        ORDER BY COALESCE(fecha_pago, created_at) ASC
+        LIMIT 1), 0),
+      horas_bono_restantes = COALESCE((
+        SELECT horas_restantes FROM public.bonos
+        WHERE alumno_id = p_alumno_id AND estado = 'activo'
+        ORDER BY COALESCE(fecha_pago, created_at) ASC
+        LIMIT 1), 0)
+  WHERE id = p_alumno_id;
 END;
 $$;
 
