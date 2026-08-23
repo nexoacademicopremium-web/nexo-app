@@ -492,7 +492,7 @@
   <div class="nav-item" id="nav-avisos" onclick="showSection('avisos')"><i class="ti ti-bell"></i> Avisos<span class="badge-nav" id="badge-avisos" style="display:none">!</span></div>
   <div class="nav-divider"></div>
   <div class="nav-bottom">
-    <a href="https://nexoacademico.es" class="nav-item"><i class="ti ti-arrow-left"></i> Web principal</a>
+    <a href="https://nexoacademico.com" class="nav-item"><i class="ti ti-arrow-left"></i> Web principal</a>
     <div class="nav-item" onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</div>
   </div>
 </nav>
@@ -2562,7 +2562,10 @@ async function subirEntrega() {
 
   try {
     const file = fileInput.files[0];
-    const prep = prepararSubida(file, 'tareas/entregas', 10);
+    // Cada alumno entrega en su propia carpeta: el servidor comprueba
+    // que el archivo esté ahí, para que nadie pueda entregar un enlace
+    // externo ni el trabajo de otro.
+    const prep = prepararSubida(file, `tareas/entregas/${ctx.alumnoData.id}`, 10);
     if (!prep.ok) {
       showToast(prep.error, 'error');
       btn.disabled = false; btn.textContent = 'Subir entrega';

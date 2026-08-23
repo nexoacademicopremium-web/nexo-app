@@ -290,7 +290,7 @@ BEGIN
     SELECT id, alumno_id, duracion_minutos
     FROM public.sesiones
     WHERE estado = 'pendiente_confirmacion'
-      AND registrada_at < NOW() - INTERVAL '72 hours'
+      AND registrada_at < NOW() - INTERVAL '48 hours'  -- unificado: la app anuncia 48 h
   LOOP
     UPDATE public.sesiones
     SET estado = 'confirmada', confirmada_at = NOW()

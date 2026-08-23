@@ -7,7 +7,7 @@ const corsHeaders = {
 }
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')!
-const FROM_EMAIL     = 'clases@nexoacademico.es'
+const FROM_EMAIL     = Deno.env.get("FROM_EMAIL") || "clases@nexoacademico.com"
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
@@ -92,7 +92,7 @@ serve(async (req) => {
         <tr><td align="center" style="padding-top:24px">
           <p style="color:#4a6080;font-size:11px;margin:0;line-height:1.8">
             Nexo Académico · Valencia<br>
-            <a href="https://nexoacademico.es" style="color:#6eaef0;text-decoration:none">nexoacademico.es</a>
+            <a href="https://nexoacademico.com" style="color:#6eaef0;text-decoration:none">nexoacademico.com</a>
           </p>
         </td></tr>
 

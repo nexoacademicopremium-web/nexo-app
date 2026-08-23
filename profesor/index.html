@@ -1673,6 +1673,28 @@ async function _submitSesion(excedeBono = false) {
     excede_bono:              excedeBono,
   };
 
+  // Aviso de duplicado: nada impide registrar dos veces la misma clase, y
+  // ambas descuentan horas del bono. Pasa cuando dos profesores comparten
+  // alumno, o al registrarla en dos momentos distintos del día. Se avisa
+  // en vez de bloquear, porque una clase puede partirse legítimamente.
+  const { data: yaHay } = await db.from('sesiones')
+    .select('id, hora_inicio, duracion_minutos')
+    .eq('alumno_id', sesion.alumno_id)
+    .eq('fecha', sesion.fecha)
+    .not('estado', 'eq', 'cancelada');
+
+  if (yaHay?.length) {
+    const mismaHora = yaHay.find(s => s.hora_inicio === sesion.hora_inicio);
+    const aviso = mismaHora
+      ? `Ya hay una sesión registrada de este alumno ese día a las ${(sesion.hora_inicio || '').substring(0,5)}h. ¿Seguro que no es la misma?`
+      : `Este alumno ya tiene ${yaHay.length} sesión${yaHay.length > 1 ? 'es' : ''} registrada${yaHay.length > 1 ? 's' : ''} ese día. ¿Registrar otra?`;
+    if (!confirm(aviso + '\n\nSi aceptas, se descontarán las horas de las dos.')) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-send"></i> Enviar sesión';
+      return;
+    }
+  }
+
   const { data: newSes, error } = await db.from('sesiones').insert(sesion).select().single();
   btn.disabled = false;
   btn.innerHTML = '<i class="ti ti-send"></i> Enviar sesión';

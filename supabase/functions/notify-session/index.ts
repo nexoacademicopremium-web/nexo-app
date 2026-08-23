@@ -167,7 +167,7 @@ serve(async (req) => {
         <tr><td align="center" style="padding-top:24px">
           <p style="color:#4a6080;font-size:11px;margin:0;line-height:1.8">
             Nexo Académico · Valencia<br>
-            <a href="https://nexoacademico.es" style="color:#6eaef0;text-decoration:none">nexoacademico.es</a>
+            <a href="https://nexoacademico.com" style="color:#6eaef0;text-decoration:none">nexoacademico.com</a>
           </p>
         </td></tr>
 
