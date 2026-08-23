@@ -71,10 +71,13 @@ serve(async (req) => {
     // 1. Datos del alumno
     const { data: alumno, error: alumnoErr } = await admin
       .from('alumnos')
-      .select('id, nivel, usuario:usuarios(nombre, apellidos)')
+      .select('id, nivel, usuario:usuarios(nombre, apellidos, idioma)')
       .eq('id', alumno_id)
       .single()
     if (alumnoErr) throw new Error('Alumno no encontrado: ' + alumnoErr.message)
+
+    // El informe se redacta en el idioma que la familia tenga elegido.
+    const idiomaAlumno = (alumno.usuario as any)?.idioma === 'en' ? 'en' : 'es'
 
     // 2. Sesiones confirmadas en el rango
     const { data: sesiones, error: sesErr } = await admin
@@ -339,10 +342,28 @@ Devuelve ÚNICAMENTE un JSON válido con esta estructura exacta. Sin texto antes
       body: JSON.stringify({
         model: 'claude-opus-4-5',
         max_tokens: 4096,
-        system: systemPrompt,
+        // La instrucción del idioma va al final del system, que es donde
+        // más peso tiene, y se repite en el mensaje para que no se diluya
+        // entre el resto de reglas.
+        system: idiomaAlumno === 'en'
+          ? systemPrompt + `
+
+IDIOMA DE SALIDA
+Redacta TODO el contenido del informe en inglés británico. Esto incluye
+el resumen, los análisis por asignatura, las observaciones, los puntos
+fuertes, los objetivos y cualquier texto libre.
+
+Los nombres propios —del alumno, de los profesores y de las asignaturas—
+se dejan tal como llegan, sin traducir.
+
+Escribe para una familia, no para un claustro: lenguaje claro y cercano,
+sin jerga pedagógica.`
+          : systemPrompt,
         messages: [{
           role: 'user',
-          content: `Genera el informe para este alumno:\n\n${JSON.stringify(inputData, null, 2)}`,
+          content: idiomaAlumno === 'en'
+            ? `Write this student's report. All narrative text must be in British English:\n\n${JSON.stringify(inputData, null, 2)}`
+            : `Genera el informe para este alumno:\n\n${JSON.stringify(inputData, null, 2)}`,
         }],
       }),
     })

@@ -159,15 +159,37 @@ const ESTILO_EVENTO: Record<string, { color: string; suave: string; etiqueta: st
   },
 }
 
+// Antetítulos en inglés, para cuando la familia usa ese idioma.
+const ETIQUETA_EN: Record<string,string> = {
+  "sesion_registrada": "Waiting for confirmation",
+  "informe_publicado": "Progress report",
+  "test_asignado": "New quiz",
+  "tarea_asignada": "New assignment",
+  "tarea_corregida": "Assignment marked",
+  "material_asignado": "New materials",
+  "bono_actualizado": "Your hours",
+  "aviso_admin": "Notice from Nexo",
+  "test_entregado": "Quiz completed",
+  "tarea_entregada": "Work received",
+  "profesor_asignado": "Your tutor",
+  "prueba": "Test"
+}
+
 const ESTILO_POR_DEFECTO = ESTILO_EVENTO.aviso_admin
 
 function plantillaEmailPorEvento(
-  evento: string, titulo: string, cuerpo: string, url: string, cta: string, nombre: string,
+  evento: string, titulo: string, cuerpo: string, url: string, cta: string,
+  nombre: string, idioma = 'es',
 ) {
   const e = ESTILO_EVENTO[evento] || ESTILO_POR_DEFECTO
-  const saludo = nombre ? `Hola, <b style="color:#fff">${nombre}</b>.` : ''
+  const etiqueta = idioma === 'en' ? (ETIQUETA_EN[evento] || e.etiqueta) : e.etiqueta
+  const saludo = nombre
+    ? (idioma === 'en'
+        ? `Hi <b style="color:#fff">${nombre}</b>,`
+        : `Hola, <b style="color:#fff">${nombre}</b>.`)
+    : ''
 
-  return `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  return `<!DOCTYPE html><html lang="${idioma}"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>${titulo}</title></head>
 <body style="margin:0;padding:0;background:#060d20;font-family:'Helvetica Neue',Arial,sans-serif">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#060d20;padding:40px 20px"><tr><td align="center">
@@ -188,7 +210,7 @@ function plantillaEmailPorEvento(
         </div>
       </td>
       <td style="padding-left:13px;vertical-align:middle">
-        <div style="color:${e.color};font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700">${e.etiqueta}</div>
+        <div style="color:${e.color};font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700">${etiqueta}</div>
       </td>
     </tr></table>
 
@@ -212,7 +234,7 @@ function plantillaEmailPorEvento(
 
 async function enviarEmail(
   usuarioIds: string[], asunto: string, titulo: string,
-  cuerpo: string, url: string, cta: string, evento: string,
+  cuerpo: string, url: string, cta: string, evento: string, idioma = "es",
 ) {
   if (!RESEND_API_KEY || usuarioIds.length === 0) return { enviados: 0 }
 
@@ -231,7 +253,7 @@ async function enviarEmail(
   await Promise.all(validos.map(async (u) => {
     try {
       // El correo se compone por destinatario: cada uno lleva su nombre.
-      const html = plantillaEmailPorEvento(evento, titulo, cuerpo, url, cta, u.nombre || '')
+      const html = plantillaEmailPorEvento(evento, titulo, cuerpo, url, cta, u.nombre || '', idioma)
       const r = await fetch('https://api.resend.com/emails', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
@@ -247,6 +269,29 @@ async function enviarEmail(
 
 const esc = (s: unknown) => String(s ?? '')
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+
+// ── Textos en dos idiomas ───────────────────────────────────────
+// El texto del aviso se compone antes de saber a quién va dirigido, así
+// que M() guarda las dos versiones y se elige la buena al final, cuando
+// ya se conoce el idioma del destinatario.
+function M(es: string, en: string) {
+  return { __dosIdiomas: true, es, en }
+}
+
+function resolver(v: any, idioma: string): string {
+  if (v && typeof v === 'object' && v.__dosIdiomas) return v[idioma] || v.es
+  return v
+}
+
+// Idioma de los destinatarios. Si son varios y no coinciden, manda el
+// del primero: en la práctica cada aviso va a una sola persona, salvo
+// los avisos generales, cuyo texto escribe el admin a mano.
+async function idiomaDe(usuarioIds: string[]): Promise<string> {
+  if (!usuarioIds.length) return 'es'
+  const { data } = await admin
+    .from('usuarios').select('idioma').in('id', usuarioIds).limit(1)
+  return data?.[0]?.idioma === 'en' ? 'en' : 'es'
+}
 
 serve(async (req) => {
   const H = cors(req)
@@ -404,10 +449,10 @@ serve(async (req) => {
     // que haya un alumno, un material o una sesión de por medio.
     if (evento === 'prueba') {
       destinatarios = [user.id]
-      titulo = 'Los avisos funcionan'
-      cuerpo = 'Si estás leyendo esto en tu móvil, las notificaciones están bien configuradas.'
-      asunto = 'Prueba de avisos — Nexo Académico'
-      cta    = 'Abrir Nexo'
+      titulo = M('Los avisos funcionan', 'Notifications are working')
+      cuerpo = M('Si estás leyendo esto en tu móvil, las notificaciones están bien configuradas.', 'If you are reading this on your phone, notifications are set up correctly.')
+      asunto = M('Prueba de avisos — Nexo Académico', 'Notification test — Nexo Académico')
+      cta    = M('Abrir Nexo', 'Open Nexo')
       tag    = 'nexo-prueba'
 
     // ── SESIÓN REGISTRADA → al alumno ──────────────────────────
@@ -429,11 +474,11 @@ serve(async (req) => {
 
       const uid = (ses.alumno as any)?.usuario_id
       if (uid) destinatarios = [uid]
-      titulo = 'Tienes una sesión por confirmar'
-      cuerpo = `${esc(quien)} ha registrado una sesión de ${esc(ses.asignatura)}. Entra y confírmala.`
-      asunto = `Confirma tu clase de ${ses.asignatura}`
+      titulo = M('Tienes una sesión por confirmar', 'You have a session to confirm')
+      cuerpo = M(`${esc(quien)} ha registrado una sesión de ${esc(ses.asignatura)}. Entra y confírmala.`, `${esc(quien)} has logged a ${esc(ses.asignatura)} session. Please go in and confirm it.`)
+      asunto = M(`Confirma tu clase de ${ses.asignatura}`, `Confirm your ${ses.asignatura} lesson`)
       url    = `${APP_BASE_URL}/alumno/`
-      cta    = 'Confirmar la sesión'
+      cta    = M('Confirmar la sesión', 'Confirm the session')
       importante = true
 
     // ── TEST O TAREA ENTREGADA → al profesor ───────────────────
@@ -443,11 +488,11 @@ serve(async (req) => {
       if (!test) return new Response(JSON.stringify({ error: 'Test no encontrado' }), { status: 404, headers: H })
 
       if (test.creado_por) destinatarios = [test.creado_por]
-      titulo = 'Test completado'
-      cuerpo = `${esc(quien)} ha completado el test "${esc(test.titulo)}".`
-      asunto = `${quien} ha completado un test`
+      titulo = M('Test completado', 'Quiz completed')
+      cuerpo = M(`${esc(quien)} ha completado el test "${esc(test.titulo)}".`, `${esc(quien)} has completed the quiz "${esc(test.titulo)}".`)
+      asunto = M(`${quien} ha completado un test`, `${quien} has completed a quiz`)
       url    = `${APP_BASE_URL}/profesor/`
-      cta    = 'Ver el resultado'
+      cta    = M('Ver el resultado', 'See the result')
 
     } else if (evento === 'tarea_entregada') {
       const { data: tarea } = await admin
@@ -457,11 +502,11 @@ serve(async (req) => {
 
       const uid = (tarea.profesor as any)?.usuario_id
       if (uid) destinatarios = [uid]
-      titulo = 'Tarea entregada'
-      cuerpo = `${esc(quien)} ha entregado la tarea "${esc(tarea.titulo)}".`
-      asunto = `${quien} ha entregado una tarea`
+      titulo = M('Tarea entregada', 'Assignment handed in')
+      cuerpo = M(`${esc(quien)} ha entregado la tarea "${esc(tarea.titulo)}".`, `${esc(quien)} has handed in "${esc(tarea.titulo)}".`)
+      asunto = M(`${quien} ha entregado una tarea`, `${quien} has handed in an assignment`)
       url    = `${APP_BASE_URL}/profesor/`
-      cta    = 'Ver la entrega'
+      cta    = M('Ver la entrega', 'See the work')
 
     // ── TEST ASIGNADO → al alumno ──────────────────────────────
     } else if (evento === 'test_asignado') {
@@ -474,11 +519,11 @@ serve(async (req) => {
       }
       const uid = (test.alumno as any)?.usuario_id
       if (uid) destinatarios = [uid]
-      titulo = 'Tienes un test nuevo'
-      cuerpo = `${esc(quien)} te ha asignado el test "${esc(test.titulo)}".`
-      asunto = `Nuevo test: ${test.titulo}`
+      titulo = M('Tienes un test nuevo', 'You have a new quiz')
+      cuerpo = M(`${esc(quien)} te ha asignado el test "${esc(test.titulo)}".`, `${esc(quien)} has set you the quiz "${esc(test.titulo)}".`)
+      asunto = M(`Nuevo test: ${test.titulo}`, `New quiz: ${test.titulo}`)
       url    = `${APP_BASE_URL}/alumno/`
-      cta    = 'Hacer el test'
+      cta    = M('Hacer el test', 'Take the quiz')
 
     // ── TAREA ASIGNADA → al alumno ─────────────────────────────
     } else if (evento === 'tarea_asignada') {
@@ -498,11 +543,14 @@ serve(async (req) => {
       const plazo = tarea.fecha_limite
         ? ` Entrega antes del ${new Date(tarea.fecha_limite + 'T00:00:00').toLocaleDateString('es-ES', { day: 'numeric', month: 'long' })}.`
         : ''
-      titulo = 'Tienes una tarea nueva'
-      cuerpo = `${esc(quien)} te ha puesto "${esc(tarea.titulo)}".${plazo}`
-      asunto = `Nueva tarea: ${tarea.titulo}`
+      const plazoEn = tarea.fecha_limite
+        ? ` Due by ${new Date(tarea.fecha_limite + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}.`
+        : ''
+      titulo = M('Tienes una tarea nueva', 'You have a new assignment')
+      cuerpo = M(`${esc(quien)} te ha puesto "${esc(tarea.titulo)}".${plazo}`, `${esc(quien)} has set you "${esc(tarea.titulo)}".${plazoEn}`)
+      asunto = M(`Nueva tarea: ${tarea.titulo}`, `New assignment: ${tarea.titulo}`)
       url    = `${APP_BASE_URL}/alumno/`
-      cta    = 'Ver la tarea'
+      cta    = M('Ver la tarea', 'See the assignment')
 
     // ── TAREA CORREGIDA → al alumno ────────────────────────────
     } else if (evento === 'tarea_corregida') {
@@ -519,12 +567,13 @@ serve(async (req) => {
       }
       const uid = (tarea.alumno as any)?.usuario_id
       if (uid) destinatarios = [uid]
-      const nota = tarea.nota != null ? ` Nota: ${tarea.nota}.` : ''
-      titulo = 'Tu tarea ya está corregida'
-      cuerpo = `${esc(quien)} ha corregido "${esc(tarea.titulo)}".${nota}`
-      asunto = `Tarea corregida: ${tarea.titulo}`
+      const nota   = tarea.nota != null ? ` Nota: ${tarea.nota}.` : ''
+      const notaEn = tarea.nota != null ? ` Grade: ${tarea.nota}.` : ''
+      titulo = M('Tu tarea ya está corregida', 'Your assignment has been marked')
+      cuerpo = M(`${esc(quien)} ha corregido "${esc(tarea.titulo)}".${nota}`, `${esc(quien)} has marked "${esc(tarea.titulo)}".${notaEn}`)
+      asunto = M(`Tarea corregida: ${tarea.titulo}`, `Assignment marked: ${tarea.titulo}`)
       url    = `${APP_BASE_URL}/alumno/`
-      cta    = 'Ver la corrección'
+      cta    = M('Ver la corrección', 'See the feedback')
 
     // ── BONO NUEVO → al alumno ─────────────────────────────────
     } else if (evento === 'bono_actualizado') {
@@ -538,13 +587,15 @@ serve(async (req) => {
 
       const uid = (bono.alumno as any)?.usuario_id
       if (uid) destinatarios = [uid]
-      titulo = bono.estado === 'activo' ? 'Tu bono ya está activo' : 'Tienes un bono nuevo'
+      titulo = bono.estado === 'activo'
+        ? M('Tu bono ya está activo', 'Your hour pack is now active')
+        : M('Tienes un bono nuevo', 'You have a new hour pack')
       cuerpo = bono.estado === 'activo'
         ? `Se han añadido ${bono.horas_contratadas}h a tu bono. Ya puedes usarlas.`
         : `Se ha registrado un bono de ${bono.horas_contratadas}h. Se activará cuando termines el actual.`
-      asunto = 'Tu bono de Nexo Académico'
+      asunto = M('Tu bono de Nexo Académico', 'Your Nexo Académico hour pack')
       url    = `${APP_BASE_URL}/alumno/`
-      cta    = 'Ver mis horas'
+      cta    = M('Ver mis horas', 'See my hours')
 
     // ── PROFESOR ASIGNADO → al alumno ──────────────────────────
     } else if (evento === 'profesor_asignado') {
@@ -562,13 +613,13 @@ serve(async (req) => {
       const pu   = (rel.profesor as any)?.usuario
       const prof = pu ? `${pu.nombre || ''} ${pu.apellidos || ''}`.trim() : 'un profesor'
       const asig = (rel as any).asignaturas?.nombre
-      titulo = 'Ya tienes profesor asignado'
+      titulo = M('Ya tienes profesor asignado', 'You have been assigned a tutor')
       cuerpo = asig
         ? `${esc(prof)} será tu profesor de ${esc(asig)}.`
         : `${esc(prof)} será tu profesor.`
-      asunto = 'Tu profesor en Nexo Académico'
+      asunto = M('Tu profesor en Nexo Académico', 'Your tutor at Nexo Académico')
       url    = `${APP_BASE_URL}/alumno/`
-      cta    = 'Ver mi profesor'
+      cta    = M('Ver mi profesor', 'See my tutor')
 
     // ── MATERIAL ASIGNADO → a los alumnos que lo reciben ───────
     } else if (evento === 'material_asignado') {
@@ -590,11 +641,11 @@ serve(async (req) => {
         .map((a: any) => a.alumno?.usuario_id)
         .filter(Boolean)
 
-      titulo = 'Nuevo material disponible'
-      cuerpo = `${esc(quien)} ha subido "${esc(mat.titulo)}" a tu material.`
-      asunto = `Nuevo material: ${mat.titulo}`
+      titulo = M('Nuevo material disponible', 'New materials available')
+      cuerpo = M(`${esc(quien)} ha subido "${esc(mat.titulo)}" a tu material.`, `${esc(quien)} has uploaded "${esc(mat.titulo)}" to your materials.`)
+      asunto = M(`Nuevo material: ${mat.titulo}`, `New materials: ${mat.titulo}`)
       url    = `${APP_BASE_URL}/alumno/`
-      cta    = 'Ver el material'
+      cta    = M('Ver el material', 'See the materials')
 
     // ── AVISO DEL ADMIN → por rol o a una persona ──────────────
     } else if (evento === 'aviso_admin') {
@@ -619,7 +670,7 @@ serve(async (req) => {
       titulo = aviso.titulo || 'Aviso de Nexo Académico'
       cuerpo = esc(aviso.contenido || '').slice(0, 300)
       asunto = titulo
-      cta    = 'Leer el aviso'
+      cta    = M('Leer el aviso', 'Read the notice')
 
     // ── INFORME PUBLICADO → al alumno ──────────────────────────
     } else if (evento === 'informe_publicado') {
@@ -635,11 +686,11 @@ serve(async (req) => {
       // antes: es preferible repetir a que el alumno no se entere.
       const uid = (inf.alumno as any)?.usuario_id
       if (uid) destinatarios = [uid]
-      titulo = 'Tu informe ya está disponible'
-      cuerpo = `Ya puedes descargar "${esc(inf.titulo)}" desde tu panel.`
-      asunto = 'Tu informe de Nexo Académico ya está disponible'
+      titulo = M('Tu informe ya está disponible', 'Your report is ready')
+      cuerpo = M(`Ya puedes descargar "${esc(inf.titulo)}" desde tu panel.`, `You can now download "${esc(inf.titulo)}" from your dashboard.`)
+      asunto = M('Tu informe de Nexo Académico ya está disponible', 'Your Nexo Académico report is ready')
       url    = `${APP_BASE_URL}/alumno/`
-      cta    = 'Descargar el informe'
+      cta    = M('Descargar el informe', 'Download the report')
 
     } else {
       return new Response(JSON.stringify({ error: 'Evento desconocido' }), { status: 400, headers: H })
@@ -650,9 +701,16 @@ serve(async (req) => {
         { headers: { ...H, 'Content-Type': 'application/json' } })
     }
 
+    // Ya se sabe a quién va: se eligen las versiones del idioma correcto.
+    const idiomaDest = await idiomaDe(destinatarios)
+    const tituloF = resolver(titulo, idiomaDest)
+    const cuerpoF = resolver(cuerpo, idiomaDest)
+    const asuntoF = resolver(asunto, idiomaDest)
+    const ctaF    = resolver(cta,    idiomaDest)
+
     const [push, email] = await Promise.all([
-      enviarPush(destinatarios, { titulo, cuerpo, url, tag, importante }),
-      enviarEmail(destinatarios, asunto, titulo, cuerpo, url, cta, evento),
+      enviarPush(destinatarios, { titulo: tituloF, cuerpo: cuerpoF, url, tag, importante }),
+      enviarEmail(destinatarios, asuntoF, tituloF, cuerpoF, url, ctaF, evento, idiomaDest),
     ])
 
     return new Response(JSON.stringify({ ok: true, push, email }),

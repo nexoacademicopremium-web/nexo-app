@@ -41,7 +41,7 @@ serve(async (req) => {
 
     const { data: informe, error: infErr } = await admin
       .from('informes')
-      .select('*, alumno:alumnos(nivel, usuario:usuarios(nombre, apellidos))')
+      .select('*, alumno:alumnos(nivel, usuario:usuarios(nombre, apellidos, idioma))')
       .eq('id', informe_id)
       .single()
     if (infErr) throw new Error('Informe no encontrado: ' + infErr.message)
@@ -52,7 +52,11 @@ serve(async (req) => {
     const u = informe.alumno?.usuario as any
     const alumnoNombre = u ? `${u.nombre} ${u.apellidos || ''}`.trim() : 'Alumno'
 
-    const html = generarHtml(informe, ia, kpis, alumnoNombre)
+    // Los rótulos del PDF siguen el idioma de la familia. El texto
+    // narrativo ya viene redactado en ese idioma desde generar-informe.
+    const idioma = u?.idioma === 'en' ? 'en' : 'es'
+
+    const html = generarHtml(informe, ia, kpis, alumnoNombre, idioma)
 
     // ── Generar PDF con PDFShift ──────────────────────────────────
     // Se guarda SOLO la ruta interna del bucket, nunca la URL pública:
@@ -270,7 +274,42 @@ function buildCalendar(
   </div>`
 }
 
-function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): string {
+// Rótulos fijos del PDF. El texto narrativo lo redacta la IA ya en el
+// idioma de la familia; esto es solo lo que va impreso alrededor.
+const ROTULOS: Record<string, Record<string, string>> = {
+  es: {
+    sesiones: 'Sesiones', dedicadas: 'Dedicadas', asignaturas: 'Asignaturas',
+    asistencia: 'Asistencia', duracionMedia: 'Duración media/sesión',
+    horasDedicadas: 'Horas dedicadas', mediaSesion: 'Media por sesión',
+    notaEstimada: 'Nota estimada', resumenPeriodo: 'Resumen del periodo',
+    conclusiones: 'Conclusiones del periodo', puntosFuertes: 'Puntos fuertes del periodo',
+    puntosMejorar: 'Puntos a mejorar', objetivos: 'Objetivos del siguiente periodo',
+    patronTrabajo: 'Patrón de trabajo', propuesta: 'Propuesta de organización',
+    proximosExamenes: 'Próximos exámenes', actividadPeriodo: 'Actividad del periodo',
+    mayorProgreso: 'Mayor progreso del mes',
+    evolucion: 'Evolución de autonomía en el periodo (escala 0–100)',
+    generadoEl: 'Informe generado el',
+    informeMensual: 'Informe mensual', informePersonalizado: 'Informe personalizado',
+  },
+  en: {
+    sesiones: 'Sessions', dedicadas: 'Time spent', asignaturas: 'Subjects',
+    asistencia: 'Attendance', duracionMedia: 'Average lesson',
+    horasDedicadas: 'Hours spent', mediaSesion: 'Average per session',
+    notaEstimada: 'Estimated grade', resumenPeriodo: 'Summary of the period',
+    conclusiones: 'Conclusions', puntosFuertes: 'Strengths this period',
+    puntosMejorar: 'Areas to work on', objetivos: 'Goals for next period',
+    patronTrabajo: 'Working pattern', propuesta: 'Suggested plan',
+    proximosExamenes: 'Upcoming exams', actividadPeriodo: 'Activity this period',
+    mayorProgreso: 'Biggest progress this month',
+    evolucion: 'Independence over the period (0–100 scale)',
+    generadoEl: 'Report generated on',
+    informeMensual: 'Monthly report', informePersonalizado: 'Custom report',
+  },
+}
+
+function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string, idioma = 'es'): string {
+  const L = (k: string) => (ROTULOS[idioma] && ROTULOS[idioma][k]) || ROTULOS.es[k] || k
+  const localeFecha = idioma === 'en' ? 'en-GB' : 'es-ES'
   const global = kpis.global || {}
   const kpisAsigs: any[] = kpis.asignaturas || []
   const iaAsigs: any[] = ia.asignaturas || []
@@ -328,7 +367,7 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
 
     const mejorasHtml = subj.mejoras.length > 0
       ? `<div class="puntos-grupo mejora">
-          <h3>Puntos a mejorar</h3>
+          <h3>${L("puntosMejorar")}</h3>
           ${subj.mejoras.map((m: any, mi: number) => `<div class="mejora-item"><div class="mejora-orden">${m.prioridad || mi + 1}</div><div>${escHtml(m.descripcion)}</div></div>`).join('')}
         </div>`
       : ''
@@ -362,17 +401,17 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
   </div>
   <div class="subj-content">
     <div class="mini-kpi-row">
-      <div class="mini-kpi"><div class="num">${subj.horas_totales || '—'}h</div><div class="label">Horas dedicadas</div></div>
-      <div class="mini-kpi"><div class="num">${subj.num_sesiones || '—'}</div><div class="label">Sesiones</div></div>
-      <div class="mini-kpi"><div class="num">${avgPorSesion}</div><div class="label">Media por sesión</div></div>
-      ${subj.nota_media != null ? `<div class="mini-kpi"><div class="num">${subj.nota_media.toFixed(1)}</div><div class="label">Nota estimada</div></div>` : ''}
+      <div class="mini-kpi"><div class="num">${subj.horas_totales || '—'}h</div><div class="label">${L("horasDedicadas")}</div></div>
+      <div class="mini-kpi"><div class="num">${subj.num_sesiones || '—'}</div><div class="label">${L("sesiones")}</div></div>
+      <div class="mini-kpi"><div class="num">${avgPorSesion}</div><div class="label">${L("mediaSesion")}</div></div>
+      ${subj.nota_media != null ? `<div class="mini-kpi"><div class="num">${subj.nota_media.toFixed(1)}</div><div class="label">${L("notaEstimada")}</div></div>` : ''}
     </div>
     <div class="temas-tabla">${temasHtml}</div>
     ${analisisHtml}
     ${mejorasHtml}
     ${recomHtml}
     <div class="evolucion-wrap">
-      <div class="subtitulo">Evolución de autonomía en el periodo (escala 0–100)</div>
+      <div class="subtitulo">${L("evolucion")}</div>
       <canvas class="evolucion-chart" id="${chartId}"></canvas>
     </div>
   </div>
@@ -381,7 +420,7 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
 
   const puntosFuertesHtml = (ia.puntos_fuertes || []).length > 0
     ? `<div class="puntos-grupo fuertes">
-        <h3>Puntos fuertes del periodo</h3>
+        <h3>${L("puntosFuertes")}</h3>
         <ul class="puntos-lista">
           ${(ia.puntos_fuertes as string[]).map((p: string) => `<li>${escHtml(p)}</li>`).join('')}
         </ul>
@@ -390,14 +429,14 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
 
   const objetivosHtml = (ia.objetivos_siguiente_periodo || []).length > 0
     ? `<div class="puntos-grupo mejora" style="margin-top:20px">
-        <h3>Objetivos del siguiente periodo</h3>
+        <h3>${L("objetivos")}</h3>
         ${(ia.objetivos_siguiente_periodo as string[]).map((o: string, i: number) => `<div class="mejora-item"><div class="mejora-orden">${i + 1}</div><div>${escHtml(o)}</div></div>`).join('')}
       </div>`
     : ''
 
   const planHtml = iaAsigs.length > 0
     ? `<div class="conclu-block">
-        <div class="conclu-eyebrow">Propuesta de organización</div>
+        <div class="conclu-eyebrow">${L("propuesta")}</div>
         <h3 style="font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:14px">Plan para el siguiente periodo</h3>
         <div class="plan-comparativa">
           <div class="plan-col propuesta">
@@ -441,7 +480,7 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
             ${countdownHtml}`
         }).join('')
         return `<div class="conclu-block">
-          <div class="conclu-eyebrow">Próximos exámenes</div>
+          <div class="conclu-eyebrow">${L("proximosExamenes")}</div>
           <h3 style="font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:14px">Exámenes registrados</h3>
           ${items}
         </div>`
@@ -563,7 +602,7 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
 
   const propuestaDetalladaHtml = (propLines.length>0 || showNextCal)
     ? `<div class="conclu-block">
-        <div class="conclu-eyebrow">Propuesta de organización</div>
+        <div class="conclu-eyebrow">${L("propuesta")}</div>
         <h3 style="font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:14px">Plan detallado para el siguiente periodo</h3>
         ${propLines.length>0
           ? `<ul class="prop-schedule" style="list-style:none;padding:0;margin-bottom:16px">
@@ -576,7 +615,7 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
 
   const calendariosConclusionHtml = calPeriodoHtml
     ? `<div class="conclu-block">
-        <div class="conclu-eyebrow">Actividad del periodo</div>
+        <div class="conclu-eyebrow">${L("actividadPeriodo")}</div>
         ${calPeriodoHtml}
       </div>`
     : ''
@@ -588,7 +627,7 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
           <path d="M3 17l6-6 4 4 8-8"/><path d="M15 6h6v6"/>
         </svg>
         <div class="txt">
-          <div class="eyebrow">Mayor progreso del mes</div>
+          <div class="eyebrow">${L("mayorProgreso")}</div>
           <div class="valor">${escHtml(mayorLogro.asignatura)} — <span style="color:var(--blue-light)">${escHtml(mayorLogro.descripcion)}</span></div>
         </div>
       </div>`
@@ -784,17 +823,17 @@ function generarHtml(informe: any, ia: any, kpis: any, alumnoNombre: string): st
 
 <div class="wrap-inner">
   <div class="kpi-strip">
-    <div class="kpi-card"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/><path d="m9 15 2 2 4-4"/></svg><div class="num">${global.total_sesiones ?? '—'}</div><div class="label">Sesiones</div></div>
-    <div class="kpi-card"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><div class="num">${fmtDuracionMin(totalMinutos)}</div><div class="label">Dedicadas</div></div>
-    <div class="kpi-card"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5V5.5"/><path d="M20 18H6.5A2.5 2.5 0 0 0 4 20.5"/></svg><div class="num">${global.asignaturas_distintas ?? '—'}</div><div class="label">Asignaturas</div></div>
-    <div class="kpi-card"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg><div class="num" style="color:var(--blue-light)">${asistenciaTxt}</div><div class="label">Asistencia</div></div>
-    <div class="kpi-card"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/></svg><div class="num" style="color:var(--blue-light)">${mediaMin > 0 ? fmtDuracionMin(mediaMin) : '—'}</div><div class="label">Duración media/sesión</div></div>
+    <div class="kpi-card"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/><path d="m9 15 2 2 4-4"/></svg><div class="num">${global.total_sesiones ?? '—'}</div><div class="label">${L("sesiones")}</div></div>
+    <div class="kpi-card"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><div class="num">${fmtDuracionMin(totalMinutos)}</div><div class="label">${L("dedicadas")}</div></div>
+    <div class="kpi-card"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5V5.5"/><path d="M20 18H6.5A2.5 2.5 0 0 0 4 20.5"/></svg><div class="num">${global.asignaturas_distintas ?? '—'}</div><div class="label">${L("asignaturas")}</div></div>
+    <div class="kpi-card"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg><div class="num" style="color:var(--blue-light)">${asistenciaTxt}</div><div class="label">${L("asistencia")}</div></div>
+    <div class="kpi-card"><svg class="icono" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12M6 21h12M7 3c0 5 5 6 5 9s-5 4-5 9M17 3c0 5-5 6-5 9s5 4 5 9"/></svg><div class="num" style="color:var(--blue-light)">${mediaMin > 0 ? fmtDuracionMin(mediaMin) : '—'}</div><div class="label">${L("duracionMedia")}</div></div>
   </div>
 </div>
 
 ${highlightHtml}
 
-${ia.resumen_ejecutivo ? `<div class="wrap"><section class="resumen-mes" style="margin-top:24px"><h2>Resumen del periodo</h2><p style="font-size:1.02rem">${escHtml(ia.resumen_ejecutivo)}</p></section></div>` : ''}
+${ia.resumen_ejecutivo ? `<div class="wrap"><section class="resumen-mes" style="margin-top:24px"><h2>${L("resumenPeriodo")}</h2><p style="font-size:1.02rem">${escHtml(ia.resumen_ejecutivo)}</p></section></div>` : ''}
 
 <div class="wrap">
   ${subjectHtml}
@@ -805,7 +844,7 @@ ${ia.resumen_ejecutivo ? `<div class="wrap"><section class="resumen-mes" style="
       <span class="cc-meta">${escHtml(mesLabel)}</span>
     </div>
     <section>
-      <h2 style="margin-top:0">Conclusiones del periodo</h2>
+      <h2 style="margin-top:0">${L("conclusiones")}</h2>
 
       ${examenesHtml}
 
@@ -813,7 +852,7 @@ ${ia.resumen_ejecutivo ? `<div class="wrap"><section class="resumen-mes" style="
 
       ${puntosFuertesHtml}
 
-      ${ia.patron_trabajo ? `<div class="conclu-block"><div class="conclu-eyebrow">Patrón de trabajo</div><p>${escHtml(ia.patron_trabajo)}</p></div>` : ''}
+      ${ia.patron_trabajo ? `<div class="conclu-block"><div class="conclu-eyebrow">${L("patronTrabajo")}</div><p>${escHtml(ia.patron_trabajo)}</p></div>` : ''}
 
       ${objetivosHtml}
 
@@ -822,7 +861,7 @@ ${ia.resumen_ejecutivo ? `<div class="wrap"><section class="resumen-mes" style="
   </div>
 </div>
 
-<footer>Nexo Académico · nexoacademico.com · nexoacademicopremium@gmail.com · 699 52 93 99<br>Informe generado el ${new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}</footer>
+<footer>Nexo Académico · nexoacademico.com · nexoacademicopremium@gmail.com · 699 52 93 99<br>${L("generadoEl")} ${new Date().toLocaleDateString(localeFecha, { day: 'numeric', month: 'long', year: 'numeric' })}</footer>
 
 <script>
 ${chartInits.join('\n')}
