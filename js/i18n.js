@@ -126,7 +126,10 @@ async function iniciarIdioma() {
 
 // ── Selector para el menú ───────────────────────────────────────
 
+const _selectoresMontados = new Set();
+
 function montarSelectorIdioma(idContenedor) {
+  _selectoresMontados.add(idContenedor);
   const cont = document.getElementById(idContenedor);
   if (!cont) return;
 
@@ -144,7 +147,8 @@ function montarSelectorIdioma(idContenedor) {
   cont.querySelectorAll('.nexo-idioma-btn').forEach(btn => {
     btn.onclick = async () => {
       await cambiarIdioma(btn.dataset.idioma);
-      montarSelectorIdioma(idContenedor);
+      // Se repintan todos: puede haber uno en el menú y otro en la portada
+      _selectoresMontados.forEach(id => montarSelectorIdioma(id));
     };
   });
 }
