@@ -137,5 +137,8 @@
   "profesor.ph.ej_repaso_tema_3_algebra": "e.g. Topic 3 revision — Algebra",
   "profesor.ph.ej_test_funciones_matematicas": "e.g. Functions quiz — Maths",
   "profesor.ph.ej_tema_3_resumen": "e.g. Topic 3 summary",
-  "profesor.ph.cerrar": "Close"
+  "profesor.ph.cerrar": "Close",
+  "profesor.guia_titulo": "Installation guide",
+  "profesor.abrir_en_navegador": "Open in browser ↗",
+  "profesor.cerrar": "Close"
 }

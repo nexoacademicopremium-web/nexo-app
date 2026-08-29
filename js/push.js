@@ -516,3 +516,105 @@ async function sincronizarPushSiYaConcedido() {
     console.warn('Sincronización push omitida:', e);
   }
 }
+
+// ── Visor de la guía en PDF ─────────────────────────────────────
+// Con Nexo instalada como aplicación no hay pestañas, ni barra de
+// direcciones, ni botón de volver: un PDF abierto con target="_blank"
+// se adueña de la ventana y deja al usuario sin salida más que cerrar
+// la app. Por eso se abre en una capa propia, que sí tiene su cierre.
+//
+// Se puede salir de tres formas: el aspa, la tecla Escape y el botón
+// de volver del móvil (se mete una entrada en el historial para que
+// ese gesto cierre la capa en vez de sacar al usuario de la sección).
+
+const _ID_VISOR_GUIA = 'nexo-visor-guia';
+
+// El visor lo usan los dos paneles y cada uno prefija sus claves de
+// forma distinta, así que se prueban ambas antes de rendirse al
+// castellano de reserva.
+function _txt(claves, castellano) {
+  if (typeof t !== 'function') return castellano;
+  for (const c of [].concat(claves)) {
+    const v = t(c);
+    if (v !== c) return v;
+  }
+  return castellano;
+}
+
+function _estilosVisorGuia() {
+  if (document.getElementById('nexo-visor-css')) return;
+  const s = document.createElement('style');
+  s.id = 'nexo-visor-css';
+  s.textContent = `
+    #${_ID_VISOR_GUIA}{position:fixed;inset:0;z-index:100000;background:var(--bg,#04071b);
+      display:flex;flex-direction:column;animation:nexoVisorIn .2s ease}
+    @keyframes nexoVisorIn{from{opacity:0}to{opacity:1}}
+
+    #${_ID_VISOR_GUIA} .vg-head{display:flex;align-items:center;justify-content:space-between;
+      gap:12px;flex-shrink:0;background:var(--dark,#070c22);
+      border-bottom:.5px solid var(--border,#1a2a4a);
+      padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 12px}
+    #${_ID_VISOR_GUIA} .vg-tit{color:#fff;font-size:14px;font-weight:700;
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    #${_ID_VISOR_GUIA} .vg-x{background:rgba(255,255,255,.06);color:#fff;border:none;
+      width:34px;height:34px;border-radius:9px;font-size:16px;line-height:1;cursor:pointer;
+      flex-shrink:0;font-family:inherit;display:flex;align-items:center;justify-content:center}
+    #${_ID_VISOR_GUIA} .vg-x:hover{background:rgba(255,255,255,.12)}
+
+    #${_ID_VISOR_GUIA} iframe{flex:1;width:100%;border:0;background:#fff;min-height:0}
+
+    #${_ID_VISOR_GUIA} .vg-pie{flex-shrink:0;background:var(--dark,#070c22);
+      border-top:.5px solid var(--border,#1a2a4a);text-align:center;
+      padding:11px 16px calc(env(safe-area-inset-bottom,0px) + 11px)}
+    #${_ID_VISOR_GUIA} .vg-pie a{color:var(--blue,#6eaef0);font-size:12.5px;
+      text-decoration:none;font-weight:600}`;
+  document.head.appendChild(s);
+}
+
+function abrirGuiaInstalacion(url) {
+  if (document.getElementById(_ID_VISOR_GUIA)) return;
+  _estilosVisorGuia();
+
+  const pdf = new URL(url || 'assets/guia-instalar-nexo.pdf', document.baseURI).href;
+
+  const ov = document.createElement('div');
+  ov.id = _ID_VISOR_GUIA;
+  ov.innerHTML = `
+    <div class="vg-head">
+      <span class="vg-tit">${_txt(['alumno.guia_titulo','profesor.guia_titulo'], 'Guía de instalación')}</span>
+      <button class="vg-x" aria-label="${_txt(['alumno.cerrar','profesor.cerrar'], 'Cerrar')}">&times;</button>
+    </div>
+    <iframe src="${pdf}" title="${_txt(['alumno.guia_titulo','profesor.guia_titulo'], 'Guía de instalación')}"></iframe>
+    <div class="vg-pie">
+      <a href="${pdf}" target="_blank" rel="noopener noreferrer">
+        ${_txt(['alumno.abrir_en_navegador','profesor.abrir_en_navegador'], 'Abrir en el navegador ↗')}
+      </a>
+    </div>`;
+
+  document.body.appendChild(ov);
+  // Se bloquea el desplazamiento de detrás para que no se mueva el
+  // fondo mientras se lee la guía.
+  const scrollPrevio = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
+
+  const alTeclado = (e) => { if (e.key === 'Escape') cerrar(); };
+  const alVolver  = () => cerrar(false);
+
+  function cerrar(consumirHistorial = true) {
+    window.removeEventListener('popstate', alVolver);
+    document.removeEventListener('keydown', alTeclado);
+    document.body.style.overflow = scrollPrevio;
+    ov.remove();
+    if (consumirHistorial && history.state && history.state.nexoVisorGuia) history.back();
+  }
+
+  ov.querySelector('.vg-x').onclick = () => cerrar();
+  document.addEventListener('keydown', alTeclado);
+
+  // El botón de volver del móvil cierra la capa en vez de sacar al
+  // usuario de donde estaba.
+  try {
+    history.pushState({ nexoVisorGuia: true }, '');
+    window.addEventListener('popstate', alVolver);
+  } catch { /* algún navegador puede negarlo; quedan el aspa y Escape */ }
+}

@@ -137,5 +137,8 @@
   "profesor.ph.ej_repaso_tema_3_algebra": "Ej: Repaso tema 3 — Álgebra",
   "profesor.ph.ej_test_funciones_matematicas": "Ej: Test Funciones — Matemáticas",
   "profesor.ph.ej_tema_3_resumen": "Ej: Tema 3 Resumen",
-  "profesor.ph.cerrar": "Cerrar"
+  "profesor.ph.cerrar": "Cerrar",
+  "profesor.guia_titulo": "Guía de instalación",
+  "profesor.abrir_en_navegador": "Abrir en el navegador ↗",
+  "profesor.cerrar": "Cerrar"
 }

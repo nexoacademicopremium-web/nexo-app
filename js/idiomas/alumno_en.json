@@ -79,5 +79,8 @@
   "alumno.activar_los_avisos": "Turn on notifications",
   "alumno.eliminar": "Delete",
   "alumno.ph.opcional": "Optional",
-  "alumno.ph.cerrar": "Close"
+  "alumno.ph.cerrar": "Close",
+  "alumno.guia_titulo": "Installation guide",
+  "alumno.abrir_en_navegador": "Open in browser ↗",
+  "alumno.cerrar": "Close"
 }
