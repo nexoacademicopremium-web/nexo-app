@@ -128,34 +128,76 @@ async function estadoNotificaciones() {
 
 const _PUSH_DESCARTADO = 'nexo_push_descartado';
 
+// El banner vive pegado al borde de abajo. En el móvil hay que dejar
+// libre la barra de navegación inferior (70px + la zona segura del
+// iPhone), o el aviso queda escondido detrás de ella.
+const _ID_CSS_BANNER = 'nexo-push-css';
+
+function _estilosBanner() {
+  if (document.getElementById(_ID_CSS_BANNER)) return;
+  const s = document.createElement('style');
+  s.id = _ID_CSS_BANNER;
+  s.textContent = `
+    @keyframes nexoPushIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+    #nexo-push-banner{position:fixed;left:14px;right:14px;z-index:9998;
+      bottom:calc(16px + env(safe-area-inset-bottom,0px));
+      max-width:440px;margin:0 auto;
+      background:#0a1530;border:1px solid #1a2a4a;border-radius:14px;
+      padding:14px 16px;box-shadow:0 12px 32px rgba(4,7,27,.6);
+      display:flex;align-items:center;gap:13px;
+      font-family:inherit;animation:nexoPushIn .25s ease}
+
+    #nexo-push-banner .push-ico{width:38px;height:38px;border-radius:10px;background:#0f2240;
+      display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    #nexo-push-banner .push-txt{flex:1;min-width:0}
+    #nexo-push-banner .push-tit{color:#fff;font-size:13px;font-weight:600;margin-bottom:2px}
+    #nexo-push-banner .push-sub{color:#a8c8f0;font-size:11.5px;line-height:1.45}
+    #nexo-push-banner .push-acc{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+
+    #nexo-push-banner #nexo-push-si{background:#154ca9;color:#fff;border:none;border-radius:8px;
+      padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap}
+    #nexo-push-banner #nexo-push-no{background:none;color:#6b83a5;border:none;padding:2px;
+      font-size:11px;cursor:pointer;font-family:inherit;white-space:nowrap}
+
+    /* Móvil: por encima de la barra de navegación de abajo */
+    @media(max-width:768px){
+      #nexo-push-banner{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+    }
+
+    /* Pantallas estrechas: el texto arriba y los botones en su propia
+       fila, para que no se estrujen contra el borde */
+    @media(max-width:430px){
+      #nexo-push-banner{flex-wrap:wrap;gap:11px;padding:14px}
+      #nexo-push-banner .push-txt{flex:1 1 0}
+      #nexo-push-banner .push-acc{flex:1 1 100%;flex-direction:row-reverse;
+        align-items:center;justify-content:space-between;gap:10px}
+      #nexo-push-banner #nexo-push-si{flex:1;padding:10px 14px;font-size:12.5px}
+      #nexo-push-banner #nexo-push-no{padding:10px 2px}
+    }`;
+  document.head.appendChild(s);
+}
+
 function _montarBannerPush() {
   if (document.getElementById('nexo-push-banner')) return;
+  _estilosBanner();
 
   const banner = document.createElement('div');
   banner.id = 'nexo-push-banner';
-  banner.style.cssText = [
-    'position:fixed', 'left:16px', 'right:16px', 'bottom:16px', 'z-index:9998',
-    'max-width:440px', 'margin:0 auto',
-    'background:#0a1530', 'border:1px solid #1a2a4a', 'border-radius:14px',
-    'padding:16px 18px', 'box-shadow:0 12px 32px rgba(4,7,27,.6)',
-    'display:flex', 'align-items:center', 'gap:14px',
-    'font-family:inherit', 'animation:nexoPushIn .25s ease',
-  ].join(';');
 
   banner.innerHTML = `
-    <style>@keyframes nexoPushIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}</style>
-    <div style="width:38px;height:38px;border-radius:10px;background:#0f2240;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+    <div class="push-ico">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6eaef0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
       </svg>
     </div>
-    <div style="flex:1;min-width:0">
-      <div style="color:#fff;font-size:13px;font-weight:600;margin-bottom:2px">Activa los avisos</div>
-      <div style="color:#a8c8f0;font-size:11.5px;line-height:1.45">Te avisamos en este dispositivo de las sesiones y novedades.</div>
+    <div class="push-txt">
+      <div class="push-tit">Activa los avisos</div>
+      <div class="push-sub">Te avisamos en este dispositivo de las sesiones y novedades.</div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
-      <button id="nexo-push-si" style="background:#154ca9;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Activar</button>
-      <button id="nexo-push-no" style="background:none;color:#4a6080;border:none;padding:2px;font-size:11px;cursor:pointer;font-family:inherit">Ahora no</button>
+    <div class="push-acc">
+      <button id="nexo-push-si">Activar</button>
+      <button id="nexo-push-no">Ahora no</button>
     </div>`;
 
   document.body.appendChild(banner);
