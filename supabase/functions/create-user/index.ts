@@ -97,7 +97,12 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Solo el administrador puede crear usuarios' }), { status: 403, headers: corsHeaders })
     }
 
-    const { nombre, apellidos, rol, username: usernameParam, password: passwordParam } = await req.json()
+    const {
+      nombre, apellidos, rol,
+      username: usernameParam,
+      password: passwordParam,
+      email: emailParam,
+    } = await req.json()
     if (!nombre || !apellidos || !rol) {
       return new Response(JSON.stringify({ error: 'Faltan campos obligatorios (nombre, apellidos, rol)' }), { status: 400, headers: corsHeaders })
     }
@@ -116,19 +121,31 @@ serve(async (req) => {
     const password = passwordParam?.trim()?.length >= 6
       ? passwordParam.trim()
       : generarPassword()
-    const email    = `${username}@nexo.internal`
+    // Hay dos correos y no son lo mismo:
+    //   emailAcceso   — interno, va con el nombre de usuario. Es con lo
+    //                   que se entra, y por eso nunca puede faltar.
+    //   emailContacto — el de verdad, el de la familia o el profesor.
+    //                   Es opcional y es a donde llegan los avisos.
+    const emailAcceso = `${username}@nexo.internal`
 
     // Red de seguridad: si aun así el correo no sale válido, se avisa
     // de qué pasa en vez de soltar el "invalid format" de Supabase,
     // que no le dice nada a nadie.
-    if (!/^[A-Za-z0-9._-]+@nexo\.internal$/.test(email)) {
+    if (!/^[A-Za-z0-9._-]+@nexo\.internal$/.test(emailAcceso)) {
       return new Response(JSON.stringify({
         error: 'El nombre de usuario solo puede llevar letras sin tilde, números, puntos y guiones.',
       }), { status: 400, headers: corsHeaders })
     }
 
+    const emailContacto = typeof emailParam === 'string' ? emailParam.trim() : ''
+    if (emailContacto && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(emailContacto)) {
+      return new Response(JSON.stringify({
+        error: 'El email no tiene un formato válido.',
+      }), { status: 400, headers: corsHeaders })
+    }
+
     const { data: newAuthUser, error: createErr } = await adminClient.auth.admin.createUser({
-      email,
+      email: emailAcceso,
       password,
       email_confirm: true,
     })
@@ -140,7 +157,7 @@ serve(async (req) => {
 
     const { error: dbErr } = await adminClient.from('usuarios').insert({
       id:       userId,
-      email,
+      email:    emailContacto || emailAcceso,
       nombre,
       apellidos,
       rol,

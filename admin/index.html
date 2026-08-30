@@ -629,8 +629,8 @@
         <div><label class="fl" style="margin-top:0">Apellidos *</label><input class="fi" id="fich-prof-apellidos" required></div>
       </div>
       <div id="ficha-prof-row-email">
-        <label class="fl">Email</label>
-        <input class="fi" id="fich-prof-email" type="email">
+        <label class="fl">Email <span style="color:var(--muted);font-size:10px;font-weight:400">(opcional — aquí llegan los avisos)</span></label>
+        <input class="fi" id="fich-prof-email" type="email" placeholder="profesor@ejemplo.com">
       </div>
       <div>
         <label class="fl">Código profesor <span style="color:var(--muted);font-size:10px;font-weight:400">(interno — ej. PRO_26_004)</span></label>
@@ -749,8 +749,8 @@
         <div><label class="fl" style="margin-top:0">Apellidos *</label><input class="fi" id="fich-apellidos" required></div>
       </div>
       <div id="ficha-row-email">
-        <label class="fl">Email</label>
-        <input class="fi" id="fich-email" type="email">
+        <label class="fl">Email <span style="color:var(--muted);font-size:10px;font-weight:400">(opcional — aquí llegan los avisos)</span></label>
+        <input class="fi" id="fich-email" type="email" placeholder="familia@ejemplo.com">
       </div>
       <div>
         <label class="fl">Código alumno <span style="color:var(--muted);font-size:10px;font-weight:400">(interno — ej. ALU_26_008)</span></label>
@@ -1708,7 +1708,8 @@ function fichaAlumnoModoCreacion() {
   document.getElementById('ficha-section-creds').style.display        = 'none';
   document.getElementById('ficha-section-creds-new').style.display    = '';
   document.getElementById('ficha-section-pwd').style.display          = 'none';
-  document.getElementById('ficha-row-email').style.display            = 'none';
+  document.getElementById('ficha-row-email').style.display            = '';
+  document.getElementById('fich-email').value                         = '';
   document.getElementById('ficha-row-contacto').style.display         = 'none';
   document.getElementById('ficha-row-dir').style.display              = 'none';
   document.getElementById('btn-guardar-ficha').innerHTML              = '<i class="ti ti-user-plus"></i> Crear alumno';
@@ -2249,7 +2250,8 @@ function fichaProfModoCreacion() {
   document.getElementById('ficha-prof-section-creds-new').style.display  = '';
   document.getElementById('ficha-prof-section-pwd').style.display        = 'none';
   document.getElementById('ficha-prof-section-obs').style.display        = 'none';
-  document.getElementById('ficha-prof-row-email').style.display          = 'none';
+  document.getElementById('ficha-prof-row-email').style.display          = '';
+  document.getElementById('fich-prof-email').value                       = '';
   document.getElementById('ficha-prof-row-contacto').style.display       = 'none';
   document.getElementById('ficha-prof-row-estudios').style.display       = 'none';
   document.getElementById('ficha-prof-row-nivel').style.display          = 'none';
@@ -2339,7 +2341,7 @@ async function guardarFichaProfesor() {
       const usernameNew = document.getElementById('fich-prof-username-new').value.trim() || null;
       const passwordNew = document.getElementById('fich-prof-password-new').value.trim() || null;
       const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
-        body: { nombre, apellidos, rol: 'profesor', username: usernameNew, password: passwordNew }
+        body: { nombre, apellidos, rol: 'profesor', username: usernameNew, password: passwordNew, email: email || null }
       });
       if (fnErr) {
         let detail = fnErr.message;
@@ -2604,7 +2606,7 @@ async function guardarFicha() {
       const usernameNew = document.getElementById('fich-username-new').value.trim() || null;
       const passwordNew = document.getElementById('fich-password-new').value.trim() || null;
       const { data: newUser, error: fnErr } = await db.functions.invoke('create-user', {
-        body: { nombre, apellidos, rol: 'alumno', username: usernameNew, password: passwordNew }
+        body: { nombre, apellidos, rol: 'alumno', username: usernameNew, password: passwordNew, email: email || null }
       });
       if (fnErr) {
         let detail = fnErr.message;
