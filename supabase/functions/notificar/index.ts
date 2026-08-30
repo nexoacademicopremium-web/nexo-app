@@ -39,6 +39,7 @@ const APP_BASE_URL   = Deno.env.get('APP_BASE_URL')   || 'https://app.nexoacadem
 // puede ser una dirección de Gmail: Google rechaza que otro servicio
 // envíe en su nombre.
 const FROM_EMAIL     = Deno.env.get('FROM_EMAIL')     || 'clases@nexoacademico.com'
+const LOGO_EMAIL     = `${APP_BASE_URL}/assets/logo/logo_nexo_blanco.png`
 // Si una familia responde al aviso, la respuesta va al correo de Nexo.
 const REPLY_TO       = Deno.env.get('REPLY_TO')       || 'nexoacademicopremium@gmail.com'
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
@@ -200,22 +201,17 @@ function plantillaEmailPorEvento(
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#060d20;padding:40px 20px"><tr><td align="center">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px">
 
-  <tr><td align="center" style="padding-bottom:30px">
-    <span style="color:#fff;font-size:21px;font-weight:700;letter-spacing:3px">NEXO</span>
-    <span style="color:#6eaef0;font-size:10px;letter-spacing:4px;text-transform:uppercase;display:block;margin-top:3px">Académico</span>
+  <tr><td align="center" bgcolor="#154ca9" style="background:#154ca9;border-radius:14px;padding:26px 20px">
+    <img src="${LOGO_EMAIL}" width="170" alt="NEXO ACADÉMICO"
+         style="display:block;margin:0 auto;border:0;width:170px;max-width:62%;height:auto;color:#ffffff;font-size:19px;font-weight:700;letter-spacing:3px">
   </td></tr>
+  <tr><td style="height:26px;line-height:26px;font-size:0">&nbsp;</td></tr>
 
   <tr><td style="background:#0a1530;border:1px solid #1a2a4a;border-top:3px solid ${e.color};border-radius:14px;padding:34px">
 
-    <table cellpadding="0" cellspacing="0" style="margin-bottom:18px"><tr>
-      <td width="44" style="vertical-align:middle">
-        <div style="width:44px;height:44px;border-radius:11px;background:${e.suave};text-align:center;line-height:44px">
-          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="${e.color}" stroke-width="1.9"
-               stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle">${e.icono}</svg>
-        </div>
-      </td>
-      <td style="padding-left:13px;vertical-align:middle">
-        <div style="color:${e.color};font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700">${etiqueta}</div>
+    <table cellpadding="0" cellspacing="0" style="margin-bottom:20px"><tr>
+      <td bgcolor="${e.suave}" style="background:${e.suave};border-left:3px solid ${e.color};border-radius:0 7px 7px 0;padding:8px 13px">
+        <span style="color:${e.color};font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700">${etiqueta}</span>
       </td>
     </tr></table>
 
