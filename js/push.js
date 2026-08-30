@@ -546,8 +546,11 @@ function _estilosVisorGuia() {
   const s = document.createElement('style');
   s.id = 'nexo-visor-css';
   s.textContent = `
+    /* El relleno de abajo deja libre la barra de gestos del iPhone,
+       que si no se montaría sobre la guía. */
     #${_ID_VISOR_GUIA}{position:fixed;inset:0;z-index:100000;background:var(--bg,#04071b);
-      display:flex;flex-direction:column;animation:nexoVisorIn .2s ease}
+      display:flex;flex-direction:column;animation:nexoVisorIn .2s ease;
+      padding-bottom:env(safe-area-inset-bottom,0px)}
     @keyframes nexoVisorIn{from{opacity:0}to{opacity:1}}
 
     #${_ID_VISOR_GUIA} .vg-head{display:flex;align-items:center;justify-content:space-between;
@@ -561,13 +564,7 @@ function _estilosVisorGuia() {
       flex-shrink:0;font-family:inherit;display:flex;align-items:center;justify-content:center}
     #${_ID_VISOR_GUIA} .vg-x:hover{background:rgba(255,255,255,.12)}
 
-    #${_ID_VISOR_GUIA} iframe{flex:1;width:100%;border:0;background:#fff;min-height:0}
-
-    #${_ID_VISOR_GUIA} .vg-pie{flex-shrink:0;background:var(--dark,#070c22);
-      border-top:.5px solid var(--border,#1a2a4a);text-align:center;
-      padding:11px 16px calc(env(safe-area-inset-bottom,0px) + 11px)}
-    #${_ID_VISOR_GUIA} .vg-pie a{color:var(--blue,#6eaef0);font-size:12.5px;
-      text-decoration:none;font-weight:600}`;
+    #${_ID_VISOR_GUIA} iframe{flex:1;width:100%;border:0;background:#fff;min-height:0}`;
   document.head.appendChild(s);
 }
 
@@ -584,12 +581,7 @@ function abrirGuiaInstalacion(url) {
       <span class="vg-tit">${_txt(['alumno.guia_titulo','profesor.guia_titulo'], 'Guía de instalación')}</span>
       <button class="vg-x" aria-label="${_txt(['alumno.cerrar','profesor.cerrar'], 'Cerrar')}">&times;</button>
     </div>
-    <iframe src="${pdf}" title="${_txt(['alumno.guia_titulo','profesor.guia_titulo'], 'Guía de instalación')}"></iframe>
-    <div class="vg-pie">
-      <a href="${pdf}" target="_blank" rel="noopener noreferrer">
-        ${_txt(['alumno.abrir_en_navegador','profesor.abrir_en_navegador'], 'Abrir en el navegador ↗')}
-      </a>
-    </div>`;
+    <iframe src="${pdf}" title="${_txt(['alumno.guia_titulo','profesor.guia_titulo'], 'Guía de instalación')}"></iframe>`;
 
   document.body.appendChild(ov);
   // Se bloquea el desplazamiento de detrás para que no se mueva el
