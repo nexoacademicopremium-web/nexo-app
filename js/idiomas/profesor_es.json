@@ -140,5 +140,6 @@
   "profesor.ph.cerrar": "Cerrar",
   "profesor.guia_titulo": "Guía de instalación",
   "profesor.abrir_en_navegador": "Abrir en el navegador ↗",
-  "profesor.cerrar": "Cerrar"
+  "profesor.cerrar": "Cerrar",
+  "profesor.instalar_desc": "Añádela a tu pantalla de inicio y recibirás un aviso cuando tengas una sesión que confirmar, material nuevo, una tarea o el informe del mes. En iPhone es imprescindible: sin instalarla no llega ninguno."
 }

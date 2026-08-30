@@ -140,5 +140,6 @@
   "profesor.ph.cerrar": "Close",
   "profesor.guia_titulo": "Installation guide",
   "profesor.abrir_en_navegador": "Open in browser ↗",
-  "profesor.cerrar": "Close"
+  "profesor.cerrar": "Close",
+  "profesor.instalar_desc": "Add it to your home screen and you will be notified when you have a session to confirm, new materials, an assignment or the monthly report. On iPhone it is essential: without installing it, none arrive."
 }
