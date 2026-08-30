@@ -332,11 +332,24 @@ Catálogo de precios cerrado, editable por admin. Primaria solo tiene Presencial
 | `activo` | `BOOLEAN` | default `TRUE` |
 | UNIQUE | `(grupo, modalidad, horas)` | |
 
-**Precios vigentes (€):**
-- Primaria Presencial: 32 / 70 / 135 / 200
-- ESO Online: 40 / 90 / 175 / 260 · ESO Presencial: 44 / 94 / 185 / 270
-- Bach Online: 42 / 92 / 180 / 265 · Bach Presencial: 46 / 98 / 195 / 285
-- Univ Online: 44 / 96 / 190 / 280 · Univ Presencial: 48 / 105 / 205 / 300
+**Precios vigentes (€)** — comprobados en el panel el 30-08-2026. La fuente real es
+la tabla `tarifas_bonos`, no esta lista: consultarla antes de dar por buenas las cifras.
+
+| Grupo | Modalidad | 2h | 4h | 8h | 12h | Hora base (2h ÷ 2) |
+|---|---|---|---|---|---|---|
+| Primaria | Presencial | 44 | 86 | 170 | 250 | 22,00 |
+| ESO | Online | 46 | 90 | 175 | 260 | 23,00 |
+| ESO | Presencial | 48 | 94 | 185 | 270 | 24,00 |
+| Bachillerato | Online | 48 | 94 | 185 | 270 | 24,00 |
+| Bachillerato | Presencial | 50 | 98 | 195 | 285 | 25,00 |
+| Universidad | Online | 50 | 98 | 195 | 285 | 25,00 |
+| Universidad | Presencial | 55 | 105 | 205 | 300 | 27,50 |
+
+**Bonos a medida:** para quien contrata más horas de las del catálogo. El admin
+escribe horas y precio final; el panel calcula el precio base como
+`horas × hora_base` (la del bono de 2h, que es la tarifa sin rebaja por volumen)
+y de ahí deduce el descuento. Se guardan en `bonos` como cualquier otro, con las
+horas fuera de (2, 4, 8, 12) como única señal de que son a medida.
 
 **Nivel → grupo mapping (para panel alumno):** `1ESO-4ESO → ESO`, `1BACH-2BACH → Bachillerato`. Primaria/Universidad no existen aún en `alumnos.nivel`.
 
