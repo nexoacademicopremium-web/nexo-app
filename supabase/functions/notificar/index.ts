@@ -195,35 +195,51 @@ function plantillaEmailPorEvento(
         : `Hola, <b style="color:#fff">${nombre}</b>.`)
     : ''
 
+  // El correo entero va sobre el azul oscuro de Nexo, en una sola
+  // pieza con el logo dentro. Las dos etiquetas color-scheme son
+  // importantes: sin ellas Gmail en Android da por hecho que el correo
+  // es claro, le invierte los colores y lo deja en blanco.
   return `<!DOCTYPE html><html lang="${idioma}"><head><meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><title>${titulo}</title></head>
-<body style="margin:0;padding:0;background:#060d20;font-family:'Helvetica Neue',Arial,sans-serif">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#060d20;padding:40px 20px"><tr><td align="center">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
+<title>${titulo}</title>
+<style>:root{color-scheme:dark;supported-color-schemes:dark}</style></head>
+<body style="margin:0;padding:0;background:#04071b;font-family:'Helvetica Neue',Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#04071b" style="background:#04071b;padding:32px 16px"><tr><td align="center">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px">
 
-  <tr><td align="center" bgcolor="#154ca9" style="background:#154ca9;border-radius:14px;padding:26px 20px">
-    <img src="${LOGO_EMAIL}" width="170" alt="NEXO ACADÉMICO"
-         style="display:block;margin:0 auto;border:0;width:170px;max-width:62%;height:auto;color:#ffffff;font-size:19px;font-weight:700;letter-spacing:3px">
-  </td></tr>
-  <tr><td style="height:26px;line-height:26px;font-size:0">&nbsp;</td></tr>
+  <tr><td bgcolor="#0a1530" style="background:#0a1530;border:1px solid #1a2a4a;border-top:3px solid ${e.color};border-radius:16px;padding:0">
 
-  <tr><td style="background:#0a1530;border:1px solid #1a2a4a;border-top:3px solid ${e.color};border-radius:14px;padding:34px">
-
-    <table cellpadding="0" cellspacing="0" style="margin-bottom:20px"><tr>
-      <td bgcolor="${e.suave}" style="background:${e.suave};border-left:3px solid ${e.color};border-radius:0 7px 7px 0;padding:8px 13px">
-        <span style="color:${e.color};font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700">${etiqueta}</span>
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td align="center" bgcolor="#0a1530" style="background:#0a1530;padding:30px 30px 26px">
+        <img src="${LOGO_EMAIL}" width="160" alt="NEXO ACADÉMICO"
+             style="display:block;margin:0 auto;border:0;width:160px;max-width:58%;height:auto;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:3px">
       </td>
     </tr></table>
 
-    <h1 style="color:#fff;font-size:20px;font-weight:700;margin:0 0 12px;line-height:1.3">${titulo}</h1>
-    ${saludo ? `<p style="color:#a8c8f0;font-size:14px;margin:0 0 8px">${saludo}</p>` : ''}
-    <p style="color:#a8c8f0;font-size:14px;margin:0 0 26px;line-height:1.6">${cuerpo}</p>
+    <table width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td bgcolor="#0a1530" style="background:#0a1530;padding:0 30px 32px">
 
-    <a href="${url}" style="display:block;background:${e.color};color:#04071b;text-decoration:none;padding:14px;border-radius:9px;font-size:14px;font-weight:700;text-align:center">${cta}</a>
+        <table cellpadding="0" cellspacing="0" style="margin-bottom:18px"><tr>
+          <td bgcolor="${e.suave}" style="background:${e.suave};border-left:3px solid ${e.color};border-radius:0 7px 7px 0;padding:8px 13px">
+            <span style="color:${e.color};font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700">${etiqueta}</span>
+          </td>
+        </tr></table>
+
+        <h1 style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 12px;line-height:1.3">${titulo}</h1>
+        ${saludo ? `<p style="color:#a8c8f0;font-size:14px;margin:0 0 8px">${saludo}</p>` : ''}
+        <p style="color:#a8c8f0;font-size:14px;margin:0 0 26px;line-height:1.6">${cuerpo}</p>
+
+        <a href="${url}" style="display:block;background:${e.color};color:#04071b;text-decoration:none;padding:14px;border-radius:9px;font-size:14px;font-weight:700;text-align:center">${cta}</a>
+
+      </td>
+    </tr></table>
+
   </td></tr>
 
   <tr><td align="center" style="padding-top:22px">
-    <p style="color:#4a6080;font-size:11px;margin:0;line-height:1.8">
+    <p style="color:#6b86a8;font-size:11px;margin:0;line-height:1.8">
       Nexo Académico · Valencia · 699 52 93 99<br>
       <a href="https://nexoacademico.com" style="color:#6eaef0;text-decoration:none">nexoacademico.com</a>
     </p>
