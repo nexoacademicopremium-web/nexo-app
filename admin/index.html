@@ -1137,7 +1137,7 @@
     <input type="hidden" id="bono-old-estado">
 
     <label class="fl">Alumno *</label>
-    <select class="fi" id="bono-alumno-sel" required onchange="autoFillPrecioBono()"></select>
+    <select class="fi" id="bono-alumno-sel" required onchange="autoFillPrecioBono();pintarReferenciaBono()"></select>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div>
@@ -1147,13 +1147,13 @@
           <option value="4">4 horas</option>
           <option value="8" selected>8 horas</option>
           <option value="12">12 horas</option>
-          <option value="custom">Personalizado…</option>
+          <option value="custom">A medida…</option>
         </select>
-        <input class="fi" id="bono-horas-custom" type="number" min="0.5" step="0.5" placeholder="Nº horas" style="display:none;margin-top:6px">
+        <input class="fi" id="bono-horas-custom" type="number" min="0.5" step="0.5" placeholder="Nº horas" style="display:none;margin-top:6px" oninput="pintarReferenciaBono()">
       </div>
       <div>
         <label class="fl">Modalidad *</label>
-        <select class="fi" id="bono-modalidad" onchange="autoFillPrecioBono()">
+        <select class="fi" id="bono-modalidad" onchange="autoFillPrecioBono();pintarReferenciaBono()">
           <option value="Presencial">Presencial</option>
           <option value="Online">Online</option>
         </select>
@@ -1163,17 +1163,21 @@
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
       <div>
         <label class="fl">Precio base (€)</label>
-        <input class="fi" id="bono-precio-base" type="number" min="0" step="0.01" placeholder="0.00" oninput="calcPrecioFinal()">
+        <input class="fi" id="bono-precio-base" type="number" min="0" step="0.01" placeholder="0.00" oninput="calcPrecioFinal();pintarReferenciaBono()">
       </div>
       <div>
         <label class="fl">Descuento (%)</label>
-        <input class="fi" id="bono-descuento" type="number" min="0" max="100" step="0.5" value="0" oninput="calcPrecioFinal()">
+        <input class="fi" id="bono-descuento" type="number" min="0" max="100" step="0.5" value="0" oninput="calcPrecioFinal();pintarReferenciaBono()">
       </div>
       <div>
         <label class="fl">Precio final (€)</label>
         <input class="fi" id="bono-precio-final" type="number" min="0" step="0.01" placeholder="0.00" readonly style="color:var(--soft)">
       </div>
     </div>
+
+    <!-- Solo en bonos a medida: qué cuesta la hora según el catálogo y
+         qué sale con lo que se está escribiendo, para no fijar precios a ciegas. -->
+    <div id="bono-ref-medida" style="display:none;margin:0 0 13px;padding:11px 13px;background:var(--dark);border:.5px solid var(--border2);border-radius:8px;font-size:11.5px;line-height:1.65;color:var(--muted)"></div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div>
@@ -4335,7 +4339,7 @@ async function loadBonos() {
           : `<span style="color:var(--muted);font-size:11px">—</span>`;
         return `<tr>
           <td style="color:#fff">${alumnoNom}</td>
-          <td>${b.horas_contratadas}h</td>
+          <td>${b.horas_contratadas}h${esBonoAMedida(b.horas_contratadas) ? ' <span class="status-pill st-pend" style="font-size:9.5px;padding:1px 6px;margin-left:3px">a medida</span>' : ''}</td>
           <td>${consumidas.toFixed(1)}h</td>
           <td style="color:${lowBono ? 'var(--amber)' : 'inherit'}">${b.estado === 'activo' || b.estado === 'agotado' ? restantes.toFixed(1) + 'h' : '—'}</td>
           <td>${b.modalidad}</td>
@@ -4400,6 +4404,7 @@ function abrirModalBono() {
   document.getElementById('bono-estado-display').style.display = 'none';
   document.getElementById('bono-notas').value = '';
   document.getElementById('bono-consumidas-wrap').style.display = 'none';
+  pintarReferenciaBono();
   document.getElementById('modal-bono').classList.add('open');
 }
 
@@ -4457,6 +4462,7 @@ async function abrirEditBono(bonoId) {
     document.getElementById('bono-consumidas-wrap').style.display = 'none';
   }
 
+  pintarReferenciaBono();
   document.getElementById('modal-bono').classList.add('open');
 }
 
@@ -4466,9 +4472,91 @@ function getBonoHoras() {
 }
 
 function toggleBonoHorasCustom() {
-  const sel = document.getElementById('bono-horas').value;
-  document.getElementById('bono-horas-custom').style.display = sel === 'custom' ? 'block' : 'none';
+  const aMedida = document.getElementById('bono-horas').value === 'custom';
+  document.getElementById('bono-horas-custom').style.display = aMedida ? 'block' : 'none';
+
+  if (aMedida) {
+    // El precio venía de la tarifa del tramo anterior y ya no vale para
+    // estas horas. Se borra para que nadie lo dé por bueno sin mirarlo.
+    document.getElementById('bono-horas-custom').value = '';
+    document.getElementById('bono-precio-base').value = '';
+    calcPrecioFinal();
+    document.getElementById('bono-horas-custom').focus();
+  }
+
   autoFillPrecioBono();
+  pintarReferenciaBono();
+}
+
+// ── Bonos a medida ─────────────────────────────────────────────
+// Para las familias que dan más horas de las que cubre el catálogo.
+// El precio lo pone el admin a mano, pero conviene enseñarle a cuánto
+// sale la hora en el catálogo y a cuánto le está saliendo a él, que
+// es donde se cometen los descuadres.
+
+const HORAS_CATALOGO = [2, 4, 8, 12];
+
+function esBonoAMedida(horas) {
+  return !HORAS_CATALOGO.includes(+horas);
+}
+
+// Se toma el bono más grande del catálogo para ese nivel y modalidad:
+// es el que mejor precio por hora tiene y el punto de partida lógico
+// para negociar uno mayor.
+function _tarifaReferenciaBono() {
+  const alumnoId = editBonoId
+    ? document.getElementById('bono-alumno-id-hidden').value
+    : document.getElementById('bono-alumno-sel').value;
+  const alumno    = allAlumnos.find(a => a.id === alumnoId);
+  const grupo     = nivelToGrupoBono(alumno?.nivel);
+  const modalidad = document.getElementById('bono-modalidad').value;
+  if (!grupo || !allTarifas.length) return null;
+
+  const suyas = allTarifas.filter(t => t.grupo === grupo && t.modalidad === modalidad);
+  if (!suyas.length) return null;
+  return suyas.reduce((mayor, t) => (+t.horas > +mayor.horas ? t : mayor));
+}
+
+function pintarReferenciaBono() {
+  const caja = document.getElementById('bono-ref-medida');
+  if (!caja) return;
+
+  const aMedida = document.getElementById('bono-horas').value === 'custom';
+  caja.style.display = aMedida ? 'block' : 'none';
+  if (!aMedida) return;
+
+  const ref   = _tarifaReferenciaBono();
+  const horas = parseFloat(getBonoHoras()) || 0;
+  const final = parseFloat(document.getElementById('bono-precio-final').value) || 0;
+  const filas = [];
+
+  if (ref) {
+    const phRef = ref.precio / ref.horas;
+    filas.push(`Tarifa del catálogo: <b style="color:var(--soft)">${ref.horas}h por ${(+ref.precio).toFixed(2)}€</b> — <b style="color:var(--soft)">${phRef.toFixed(2)}€/h</b>`);
+  } else {
+    filas.push('<span style="color:var(--amber)">No hay tarifa de referencia: revisa el nivel del alumno.</span>');
+  }
+
+  if (horas > 0 && final > 0) {
+    const ph = final / horas;
+    let comparacion = '';
+    if (ref) {
+      const phRef = ref.precio / ref.horas;
+      const dif   = ((ph - phRef) / phRef) * 100;
+      if (Math.abs(dif) >= 0.5) {
+        const color = dif > 0 ? 'var(--amber)' : 'var(--green)';
+        const signo = dif > 0 ? 'más caro' : 'más barato';
+        comparacion = ` · <span style="color:${color}">${Math.abs(dif).toFixed(0)}% ${signo} por hora</span>`;
+      } else {
+        comparacion = ' · <span style="color:var(--muted)">al mismo precio por hora</span>';
+      }
+    }
+    filas.push(`Este bono: <b style="color:#fff">${horas}h por ${final.toFixed(2)}€</b> — <b style="color:#fff">${ph.toFixed(2)}€/h</b>${comparacion}`);
+  } else {
+    filas.push('<span style="color:var(--amber)">Indica las horas y el precio base.</span>');
+  }
+
+  caja.innerHTML = filas.join('<br>');
 }
 
 function calcPrecioFinal() {
@@ -4540,6 +4628,10 @@ async function guardarBono() {
     const notas       = document.getElementById('bono-notas').value.trim() || null;
 
     if (!fechaCompra) { showToast('La fecha es obligatoria', 'error'); btn.disabled = false; return; }
+
+    if (document.getElementById('bono-horas').value === 'custom' && !precioBase) {
+      showToast('Indica el precio del bono a medida', 'error'); btn.disabled = false; return;
+    }
 
     const hoy = _fechaHoy();
 
