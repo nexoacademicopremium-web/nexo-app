@@ -6,10 +6,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// El nombre de usuario acaba formando parte de un correo interno, y
+// un correo no admite acentos ni espacios. Un apellido tan corriente
+// como Álvarez dejaba el alta en "invalid format", porque la inicial
+// se colaba con tilde.
+function limpiarParaEmail(txt: string): string {
+  return txt
+    .normalize('NFD')             // separa la letra de su tilde
+    .replace(/[\u0300-\u036f]/g, '')   // y se queda solo con la letra
+    .replace(/[^A-Za-z0-9._-]/g, '')    // fuera lo que no vale en un correo
+}
+
 function generarUsername(rol: string, nombre: string, apellidos: string, year: number): string {
   const prefix = rol === 'alumno' ? 'ALU' : 'PRO'
   const partes = `${nombre} ${apellidos}`.trim().split(/\s+/).filter(Boolean)
-  const iniciales = partes.slice(0, 3).map(p => p[0].toUpperCase()).join('').padEnd(3, 'X')
+  const iniciales = partes.slice(0, 3)
+    .map(p => limpiarParaEmail(p[0]).toUpperCase())
+    .join('')
+    .padEnd(3, 'X')
   return `${prefix}${year}${iniciales}`
 }
 
@@ -97,13 +111,21 @@ serve(async (req) => {
     )
 
     const year = new Date().getFullYear()
-    const username = usernameParam?.trim()
-      ? usernameParam.trim()
-      : await generarUsernameUnico(adminClient, rol, nombre, apellidos, year)
+    const escrito  = usernameParam?.trim() ? limpiarParaEmail(usernameParam.trim()) : ''
+    const username = escrito || await generarUsernameUnico(adminClient, rol, nombre, apellidos, year)
     const password = passwordParam?.trim()?.length >= 6
       ? passwordParam.trim()
       : generarPassword()
     const email    = `${username}@nexo.internal`
+
+    // Red de seguridad: si aun así el correo no sale válido, se avisa
+    // de qué pasa en vez de soltar el "invalid format" de Supabase,
+    // que no le dice nada a nadie.
+    if (!/^[A-Za-z0-9._-]+@nexo\.internal$/.test(email)) {
+      return new Response(JSON.stringify({
+        error: 'El nombre de usuario solo puede llevar letras sin tilde, números, puntos y guiones.',
+      }), { status: 400, headers: corsHeaders })
+    }
 
     const { data: newAuthUser, error: createErr } = await adminClient.auth.admin.createUser({
       email,
