@@ -195,43 +195,55 @@ function plantillaEmailPorEvento(
         : `Hola, <b style="color:#fff">${nombre}</b>.`)
     : ''
 
-  // El correo entero va sobre el azul oscuro de Nexo, en una sola
-  // pieza con el logo dentro. Las dos etiquetas color-scheme son
-  // importantes: sin ellas Gmail en Android da por hecho que el correo
-  // es claro, le invierte los colores y lo deja en blanco.
+  // Todo el correo sobre el azul oscuro de Nexo (#04071b), en una sola
+  // pieza con el logo dentro.
+  //
+  // Gmail en Android invierte por su cuenta los correos oscuros y los
+  // deja casi blancos. Contra eso van tres cosas: las etiquetas
+  // color-scheme, los bgcolor repetidos fuera del style (hay clientes
+  // que hacen caso a uno y no al otro) y las reglas data-ogsc/data-ogsb,
+  // que son las marcas que Gmail y Outlook ponen en lo que han
+  // retocado y permiten devolverle el color original.
   return `<!DOCTYPE html><html lang="${idioma}"><head><meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <meta name="supported-color-schemes" content="dark">
 <title>${titulo}</title>
-<style>:root{color-scheme:dark;supported-color-schemes:dark}</style></head>
-<body style="margin:0;padding:0;background:#04071b;font-family:'Helvetica Neue',Arial,sans-serif">
-<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#04071b" style="background:#04071b;padding:32px 16px"><tr><td align="center">
+<style>
+  :root{color-scheme:dark;supported-color-schemes:dark}
+  [data-ogsc] .nx-fondo, [data-ogsb] .nx-fondo{background-color:#04071b !important}
+  [data-ogsc] .nx-tit{color:#ffffff !important}
+  [data-ogsc] .nx-txt{color:#a8c8f0 !important}
+  [data-ogsc] .nx-pie{color:#6b86a8 !important}
+  [data-ogsc] .nx-cta{color:#04071b !important}
+</style></head>
+<body class="nx-fondo" style="margin:0;padding:0;background:#04071b;background-color:#04071b;font-family:'Helvetica Neue',Arial,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" bgcolor="#04071b" class="nx-fondo" style="background:#04071b;background-color:#04071b;padding:32px 16px"><tr><td align="center" bgcolor="#04071b" class="nx-fondo" style="background-color:#04071b">
 <table width="100%" cellpadding="0" cellspacing="0" style="max-width:520px">
 
-  <tr><td bgcolor="#0a1530" style="background:#0a1530;border:1px solid #1a2a4a;border-top:3px solid ${e.color};border-radius:16px;padding:0">
+  <tr><td bgcolor="#04071b" class="nx-fondo" style="background:#04071b;background-color:#04071b;border:1px solid #1a2a4a;border-top:3px solid ${e.color};border-radius:16px;padding:0">
 
     <table width="100%" cellpadding="0" cellspacing="0"><tr>
-      <td align="center" bgcolor="#0a1530" style="background:#0a1530;padding:30px 30px 26px">
+      <td align="center" bgcolor="#04071b" class="nx-fondo" style="background:#04071b;background-color:#04071b;padding:30px 30px 26px">
         <img src="${LOGO_EMAIL}" width="160" alt="NEXO ACADÉMICO"
              style="display:block;margin:0 auto;border:0;width:160px;max-width:58%;height:auto;color:#ffffff;font-size:18px;font-weight:700;letter-spacing:3px">
       </td>
     </tr></table>
 
     <table width="100%" cellpadding="0" cellspacing="0"><tr>
-      <td bgcolor="#0a1530" style="background:#0a1530;padding:0 30px 32px">
+      <td bgcolor="#04071b" class="nx-fondo" style="background:#04071b;background-color:#04071b;padding:0 30px 32px">
 
         <table cellpadding="0" cellspacing="0" style="margin-bottom:18px"><tr>
-          <td bgcolor="${e.suave}" style="background:${e.suave};border-left:3px solid ${e.color};border-radius:0 7px 7px 0;padding:8px 13px">
+          <td style="border-left:3px solid ${e.color};padding:3px 0 3px 11px">
             <span style="color:${e.color};font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;font-weight:700">${etiqueta}</span>
           </td>
         </tr></table>
 
-        <h1 style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 12px;line-height:1.3">${titulo}</h1>
-        ${saludo ? `<p style="color:#a8c8f0;font-size:14px;margin:0 0 8px">${saludo}</p>` : ''}
-        <p style="color:#a8c8f0;font-size:14px;margin:0 0 26px;line-height:1.6">${cuerpo}</p>
+        <h1 class="nx-tit" style="color:#ffffff;font-size:20px;font-weight:700;margin:0 0 12px;line-height:1.3">${titulo}</h1>
+        ${saludo ? `<p class="nx-txt" style="color:#a8c8f0;font-size:14px;margin:0 0 8px">${saludo}</p>` : ''}
+        <p class="nx-txt" style="color:#a8c8f0;font-size:14px;margin:0 0 26px;line-height:1.6">${cuerpo}</p>
 
-        <a href="${url}" style="display:block;background:${e.color};color:#04071b;text-decoration:none;padding:14px;border-radius:9px;font-size:14px;font-weight:700;text-align:center">${cta}</a>
+        <a href="${url}" class="nx-cta" style="display:block;background:${e.color};background-color:${e.color};color:#04071b;text-decoration:none;padding:14px;border-radius:9px;font-size:14px;font-weight:700;text-align:center">${cta}</a>
 
       </td>
     </tr></table>
@@ -239,7 +251,7 @@ function plantillaEmailPorEvento(
   </td></tr>
 
   <tr><td align="center" style="padding-top:22px">
-    <p style="color:#6b86a8;font-size:11px;margin:0;line-height:1.8">
+    <p class="nx-pie" style="color:#6b86a8;font-size:11px;margin:0;line-height:1.8">
       Nexo Académico · Valencia · 699 52 93 99<br>
       <a href="https://nexoacademico.com" style="color:#6eaef0;text-decoration:none">nexoacademico.com</a>
     </p>
