@@ -1676,6 +1676,7 @@ function renderTablaAlumnos(lista, horasByAlumno = {}) {
         <button class="btn-ficha" onclick="abrirFicha('${a.id}')"><i class="ti ti-id-badge"></i> Ficha</button>
         <button class="btn-edit" style="margin-left:4px" onclick="abrirModalInforme('${a.id}')">Informe</button>
         <button class="btn-danger" style="margin-left:4px" onclick="toggleActivo('alumno','${a.id}',${!a.activo})">${a.activo ? 'Desactivar' : 'Activar'}</button>
+        <button class="btn-danger" style="margin-left:4px;background:#7f1d1d" onclick="eliminarAlumno('${a.id}')" title="Eliminar definitivamente"><i class="ti ti-trash"></i></button>
       </td>
     </tr>`;
   }).join('');
@@ -2525,6 +2526,73 @@ async function toggleActivo(tipo, id, nuevoEstado) {
   showToast(`${tipo.charAt(0).toUpperCase() + tipo.slice(1)} ${nuevoEstado ? 'activado' : 'desactivado'}`);
   await loadAll();
   if (tipo === 'alumno') await loadTablaAlumnos(); else await loadTablaProfesores();
+}
+
+// Borrado definitivo de un alumno. Va por una función del servidor
+// porque hay que tocar tablas que el panel no puede vaciar solo y
+// además borrar la cuenta de acceso.
+//
+// Antes de preguntar se cuenta lo que se va a perder: un alumno con
+// veinte sesiones y tres bonos no es lo mismo que uno recién creado,
+// y el aviso tiene que decirlo con números.
+async function eliminarAlumno(alumnoId) {
+  const a = allAlumnos.find(x => x.id === alumnoId);
+  if (!a) return;
+  const u = a.usuario || {};
+  const nombre = `${u.nombre || ''} ${u.apellidos || ''}`.trim() || 'este alumno';
+
+  let recuento;
+  try {
+    const contar = (tabla) => db.from(tabla)
+      .select('id', { count: 'exact', head: true }).eq('alumno_id', alumnoId);
+    const [ses, inf, bon, res] = await Promise.all([
+      contar('sesiones'), contar('informes'), contar('bonos'), contar('resultados_test'),
+    ]);
+    recuento = {
+      sesiones: ses.count || 0, informes: inf.count || 0,
+      bonos:    bon.count || 0, tests:    res.count || 0,
+    };
+  } catch (e) {
+    showToast('No se ha podido comprobar qué tiene el alumno: ' + e.message, 'error');
+    return;
+  }
+
+  const lineas = [];
+  if (recuento.sesiones) lineas.push(`· ${recuento.sesiones} sesión/es del historial`);
+  if (recuento.informes) lineas.push(`· ${recuento.informes} informe/s`);
+  if (recuento.bonos)    lineas.push(`· ${recuento.bonos} bono/s, con sus pagos`);
+  if (recuento.tests)    lineas.push(`· ${recuento.tests} test/s hecho/s`);
+  lineas.push('· sus tareas, su material asignado y su cuenta de acceso');
+
+  const aviso = `Vas a eliminar a ${nombre} y todo lo suyo:\n\n${lineas.join('\n')}\n\n`
+    + 'Esto no se puede deshacer, y el historial no se podrá recuperar.\n\n'
+    + 'Si solo quieres que deje de entrar en la app, cancela y usa Desactivar.';
+  if (!confirm(aviso)) return;
+
+  const escrito = prompt(`Para confirmar, escribe ELIMINAR en mayúsculas:`);
+  if (escrito !== 'ELIMINAR') {
+    if (escrito !== null) showToast('Cancelado: no coincidía la palabra', 'error');
+    return;
+  }
+
+  try {
+    const { data, error } = await db.functions.invoke('delete-user', {
+      body: { alumno_id: alumnoId, confirmacion: 'ELIMINAR' },
+    });
+    if (error) {
+      let detalle = error.message;
+      try { const body = await error.context?.json(); detalle = body?.error || detalle; } catch (_) {}
+      throw new Error(detalle);
+    }
+    if (!data?.ok) throw new Error(data?.error || 'No se recibió confirmación del borrado');
+
+    showToast(`${nombre} eliminado`);
+    allAlumnos = allAlumnos.filter(x => x.id !== alumnoId);
+    await loadAll();
+    await loadTablaAlumnos();
+  } catch (e) {
+    showToast('No se pudo eliminar: ' + e.message, 'error');
+  }
 }
 
 async function eliminarProfesor(profId) {
