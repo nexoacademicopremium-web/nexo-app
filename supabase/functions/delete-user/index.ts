@@ -4,6 +4,9 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'https://app.nexoacademico.com',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  // Sin esto la respuesta viaja como texto suelto y el panel no sabe
+  // leerla: daba 'no se recibió confirmación' aunque el borrado fuera bien.
+  'Content-Type': 'application/json',
 }
 
 // Borra un alumno y todo lo que cuelga de él.
