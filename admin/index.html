@@ -2587,22 +2587,56 @@ async function eliminarAlumno(alumnoId) {
   }
 }
 
+// Igual que el alumno, va por la función del servidor: hay que quitar
+// la firma del profesor en el material y los tests que subió (eso es
+// lo que daba el error de "material_subido_por_fkey"), sin borrar ese
+// material, que les sigue sirviendo a los alumnos.
 async function eliminarProfesor(profId) {
   const p = allProfesores.find(x => x.id === profId);
   if (!p) return;
-  const nombre = `${escHTML(p.usuario?.nombre || '')} ${escHTML(p.usuario?.apellidos || '')}`.trim();
-  const { count: nSes } = await db.from('sesiones').select('id', { count: 'exact', head: true }).eq('profesor_id', profId);
+  const u = p.usuario || {};
+  const nombre = `${u.nombre || ''} ${u.apellidos || ''}`.trim() || 'este profesor';
+
+  const { count: nSes } = await db.from('sesiones')
+    .select('id', { count: 'exact', head: true }).eq('profesor_id', profId);
   if (nSes > 0) {
-    showToast(`No se puede eliminar: ${escHTML(nombre)} tiene ${nSes} sesión/es registrada/s. Elimínalas primero desde Sesiones.`, 'error');
+    showToast(`No se puede eliminar: ${nombre} tiene ${nSes} sesión/es registradas, que son el historial de sus alumnos. `
+      + 'Bórralas primero desde Sesiones, o desactívalo en vez de eliminarlo.', 'error');
     return;
   }
-  if (!confirm(`¿Eliminar definitivamente al profesor ${escHTML(nombre)}? Esta acción no se puede deshacer.`)) return;
-  const usuarioId = p.usuario_id || p.usuario?.id;
-  const { error } = await db.from('usuarios').delete().eq('id', usuarioId);
-  if (error) { showToast('Error: ' + error.message, 'error'); return; }
-  showToast('Profesor eliminado');
-  allProfesores = allProfesores.filter(x => x.id !== profId);
-  filtrar('profesores');
+
+  const aviso = `Vas a eliminar al profesor ${nombre}.\n\n`
+    + 'Se borran su ficha, su agenda y su cuenta de acceso.\n'
+    + 'El material y los tests que subiera se quedan, sin su firma.\n\n'
+    + 'Esto no se puede deshacer.\n\n'
+    + 'Si solo quieres que deje de entrar en la app, cancela y usa Desactivar.';
+  if (!confirm(aviso)) return;
+
+  const escrito = prompt('Para confirmar, escribe ELIMINAR en mayúsculas:');
+  if (escrito !== 'ELIMINAR') {
+    if (escrito !== null) showToast('Cancelado: no coincidía la palabra', 'error');
+    return;
+  }
+
+  try {
+    const { data, error } = await db.functions.invoke('delete-user', {
+      body: { tipo: 'profesor', id: profId, confirmacion: 'ELIMINAR' },
+    });
+    if (error) {
+      let detalle = error.message;
+      try { const body = await error.context?.json(); detalle = body?.error || detalle; } catch (_) {}
+      throw new Error(detalle);
+    }
+    const r = typeof data === 'string' ? (() => { try { return JSON.parse(data); } catch { return null; } })() : data;
+    if (!r?.ok) throw new Error(r?.error || 'El servidor no confirmó el borrado');
+
+    showToast(`${nombre} eliminado`);
+    allProfesores = allProfesores.filter(x => x.id !== profId);
+    await loadAll();
+    await loadTablaProfesores();
+  } catch (e) {
+    showToast('No se pudo eliminar: ' + e.message, 'error');
+  }
 }
 
 // ============================================================
