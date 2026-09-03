@@ -311,7 +311,9 @@
   .tarifa-card.selected{border-color:var(--navy);background:linear-gradient(145deg,#0f1e3d,#0a1530);box-shadow:0 0 0 2px var(--navy),0 8px 28px rgba(21,76,169,.3)}
   .tarifa-h{color:#fff;font-size:48px;font-weight:800;line-height:1;margin-bottom:2px;letter-spacing:-3px}
   .tarifa-h-lbl{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.8px;margin-bottom:18px}
-  .tarifa-precio{color:var(--blue);font-size:28px;font-weight:700;margin-bottom:4px}
+  .tarifa-pedir{color:var(--blue);font-size:11px;font-weight:600;margin-top:8px;
+    display:inline-flex;align-items:center;gap:5px}
+  .tarifa-pedir::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--blue)}
   .tarifa-mod{color:var(--muted);font-size:11px}
   .mod-toggle{display:inline-flex;background:var(--dark);border:.5px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:14px}
   .mod-btn{padding:7px 18px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:none;color:var(--muted);font-family:inherit;transition:all .15s}
@@ -1518,7 +1520,7 @@ async function loadBonosAlumno() {
   // Cargar bonos del alumno
   const { data: bonos } = await db
     .from('bonos')
-    .select('id, horas_contratadas, horas_consumidas, horas_restantes, modalidad, precio_base, descuento, precio_final, fecha_compra, agotado_at, estado, notas')
+    .select('id, horas_contratadas, horas_consumidas, horas_restantes, modalidad, fecha_compra, agotado_at, estado, notas')
     .eq('alumno_id', alumnoId)
     .order('created_at', { ascending: false });
 
@@ -1541,9 +1543,6 @@ async function loadBonosAlumno() {
         <div style="color:var(--muted);font-size:11px">Solicita un bono para empezar tus clases</div>
       </div>`;
   } else {
-    const precioTxt = bonoActivo?.precio_final != null
-      ? `${bonoActivo.precio_final.toFixed(2)}€${bonoActivo.descuento > 0 ? ` <span style="color:var(--green);font-size:11px">(−${bonoActivo.descuento}%)</span>` : ''}`
-      : '—';
     wrap.innerHTML = `
       <div class="card">
         <div class="card-head">
@@ -1558,7 +1557,7 @@ async function loadBonosAlumno() {
           <div class="bono-bar-wrap"><div class="bono-bar-fill" style="width:${pct.toFixed(0)}%;background:${barColor}"></div></div>
           <div style="display:flex;justify-content:space-between;margin-top:8px">
             <span style="color:var(--muted);font-size:11px">${pct.toFixed(0)}% disponible</span>
-            <span style="color:var(--muted);font-size:11px">${bonoActivo?.modalidad || '—'} · Precio: ${precioTxt}</span>
+            <span style="color:var(--muted);font-size:11px">${bonoActivo?.modalidad || '—'}</span>
           </div>
         </div>
       </div>`;
@@ -1608,12 +1607,11 @@ async function loadBonosAlumno() {
   if (agotados.length > 0) {
     histCard.style.display = 'block';
     histEl.innerHTML = agotados.map(b => {
-      const precioStr   = b.precio_final != null ? `${b.precio_final.toFixed(2)}€` : '—';
-      const agotadoStr  = b.agotado_at ? formatDate(b.agotado_at) : '—';
+      const agotadoStr = b.agotado_at ? formatDate(b.agotado_at) : '—';
       return `<div class="bono-hist-row">
         <div>
           <div style="color:#fff;font-size:13px;font-weight:500">${b.horas_contratadas}h · ${b.modalidad}</div>
-          <div style="color:var(--muted);font-size:11px;margin-top:2px">Compra: ${formatDate(b.fecha_compra)} · ${precioStr}</div>
+          <div style="color:var(--muted);font-size:11px;margin-top:2px">Compra: ${formatDate(b.fecha_compra)}</div>
           <div style="color:var(--muted);font-size:11px;margin-top:1px">Agotado: ${agotadoStr}</div>
         </div>
         <span class="status-pill st-grey">Agotado</span>
@@ -1632,11 +1630,10 @@ async function loadBonosAlumno() {
     if (enEsperaHist.length > 0) {
       espCard.style.display = 'block';
       espEl.innerHTML = enEsperaHist.map(b => {
-        const precioStr = b.precio_final != null ? `${b.precio_final.toFixed(2)}€` : '—';
         return `<div class="bono-hist-row">
           <div>
             <div style="color:#fff;font-size:13px;font-weight:500">${b.horas_contratadas}h · ${b.modalidad}</div>
-            <div style="color:var(--muted);font-size:11px;margin-top:2px">Compra: ${formatDate(b.fecha_compra)} · ${precioStr}</div>
+            <div style="color:var(--muted);font-size:11px;margin-top:2px">Compra: ${formatDate(b.fecha_compra)}</div>
             <div style="color:var(--blue);font-size:11px;margin-top:1px">Se activará cuando se agote el bono actual</div>
           </div>
           <span class="status-pill st-pend">En espera</span>
@@ -1670,8 +1667,8 @@ function renderWACardsAlumno() {
     return `<div class="tarifa-card" onclick="window.open('https://wa.me/34699529399?text=${msg}','_blank')" style="cursor:pointer">
       <div class="tarifa-h">${h}</div>
       <div class="tarifa-h-lbl">horas</div>
-      <div class="tarifa-precio">${t.precio.toFixed(2)}€</div>
       <div class="tarifa-mod">${modTarifaWA}</div>
+      <div class="tarifa-pedir">Consultar</div>
     </div>`;
   }).join('');
 }
