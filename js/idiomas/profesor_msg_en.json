@@ -48,5 +48,6 @@
   "profesor.msg.editar_test": "Edit quiz",
   "profesor.msg.pregunta": "Question ",
   "profesor.msg.guardando": "Saving…",
-  "profesor.msg.crear_tarea": "Create assignment"
+  "profesor.msg.crear_tarea": "Create assignment",
+  "profesor.msg.material_sin_permiso": "Could not delete: you can only remove materials you uploaded yourself."
 }

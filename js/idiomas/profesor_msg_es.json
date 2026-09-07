@@ -48,5 +48,6 @@
   "profesor.msg.editar_test": "Editar test",
   "profesor.msg.pregunta": "Pregunta ",
   "profesor.msg.guardando": "Guardando…",
-  "profesor.msg.crear_tarea": "Crear tarea"
+  "profesor.msg.crear_tarea": "Crear tarea",
+  "profesor.msg.material_sin_permiso": "No se ha podido eliminar: solo puedes borrar el material que hayas subido tú."
 }
