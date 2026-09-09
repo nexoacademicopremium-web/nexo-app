@@ -699,6 +699,9 @@
           <label class="fl" id="fich-prof-pwd-label" style="margin-top:0">Nueva contraseña</label>
           <input class="fi" id="fich-prof-password" type="text" placeholder="mínimo 6 caracteres" autocomplete="new-password">
         </div>
+        <button class="btn-ghost" onclick="generarPasswordEn('fich-prof-password')" style="flex-shrink:0;margin-bottom:1px" title="Inventar una contraseña segura">
+          <i class="ti ti-dice-5"></i> Generar
+        </button>
         <button class="btn-primary" id="btn-cambiar-pwd-prof" onclick="cambiarPasswordProfesor()" style="flex-shrink:0;margin-bottom:1px">
           <i class="ti ti-lock-check"></i> Cambiar
         </button>
@@ -850,6 +853,9 @@
           <label class="fl" id="fich-pwd-label" style="margin-top:0">Nueva contraseña</label>
           <input class="fi" id="fich-password" type="text" placeholder="mínimo 6 caracteres" autocomplete="new-password">
         </div>
+        <button class="btn-ghost" onclick="generarPasswordEn('fich-password')" style="flex-shrink:0;margin-bottom:1px" title="Inventar una contraseña segura">
+          <i class="ti ti-dice-5"></i> Generar
+        </button>
         <button class="btn-primary" id="btn-cambiar-pwd" onclick="cambiarPasswordAlumno()" style="flex-shrink:0;margin-bottom:1px">
           <i class="ti ti-lock-check"></i> Cambiar
         </button>
@@ -2447,8 +2453,19 @@ async function cambiarPasswordProfesor() {
   }
 
   showToast('Contraseña cambiada correctamente');
-  document.getElementById('fich-prof-password').value = '';
   btn.disabled = false;
+
+  // Se enseña junto al usuario, para poder pasársela. Es la única
+  // ocasión de verla: en cuanto se cierre, ya no se puede recuperar.
+  const { data: cred } = await db.from('admin_credenciales')
+    .select('username').eq('usuario_id', userId).maybeSingle();
+  const u = p?.usuario || {};
+  mostrarCredencialesCreadas(
+    cred?.username || u.email || '—', pwd,
+    `${u.nombre || ''} ${u.apellidos || ''}`.trim(),
+  );
+
+  document.getElementById('fich-prof-password').value = '';
   await cargarCredencialesAdminProf(fichaProfesorId);
 }
 
@@ -2812,8 +2829,20 @@ async function cambiarPasswordAlumno() {
   }
 
   showToast('Contraseña cambiada correctamente');
-  document.getElementById('fich-password').value = '';
   btn.disabled = false;
+
+  // Se enseña junto al usuario, que es lo que hay que pasarle a la
+  // familia. Es la única ocasión de verla: en cuanto se cierre, ya no
+  // se puede recuperar.
+  const { data: cred } = await db.from('admin_credenciales')
+    .select('username').eq('usuario_id', userId).maybeSingle();
+  const u = a?.usuario || {};
+  mostrarCredencialesCreadas(
+    cred?.username || u.email || '—', pwd,
+    `${u.nombre || ''} ${u.apellidos || ''}`.trim(),
+  );
+
+  document.getElementById('fich-password').value = '';
   await cargarCredencialesAdmin(fichaAlumnoId);
 }
 
@@ -3726,6 +3755,38 @@ function copiarTexto(inputId) {
   const el = document.getElementById(inputId);
   if (!el) return;
   navigator.clipboard.writeText(el.value).then(() => showToast('Copiado al portapapeles'));
+}
+
+// Contraseña para dictar por teléfono o mandar por WhatsApp: se
+// dejan fuera las letras y números que se confunden al leerlos (l, 1,
+// I, O, 0) y no se usan símbolos raros, que dan problemas al teclearla
+// en el móvil.
+function generarPasswordEn(campoId) {
+  const may = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const min = 'abcdefghijkmnpqrstuvwxyz';
+  const num = '23456789';
+  const todo = may + min + num;
+
+  const azar = new Uint8Array(12);
+  crypto.getRandomValues(azar);
+
+  // Se asegura al menos una de cada, y el resto al azar.
+  const letras = [
+    may[azar[0] % may.length],
+    min[azar[1] % min.length],
+    num[azar[2] % num.length],
+  ];
+  for (let i = 3; i < 10; i++) letras.push(todo[azar[i] % todo.length]);
+  for (let i = letras.length - 1; i > 0; i--) {
+    const j = azar[i] % (i + 1);
+    [letras[i], letras[j]] = [letras[j], letras[i]];
+  }
+
+  const campo = document.getElementById(campoId);
+  if (!campo) return;
+  campo.value = letras.join('');
+  campo.focus();
+  campo.select();
 }
 
 function mostrarCredencialesCreadas(username, password, nombre) {
