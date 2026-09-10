@@ -26,6 +26,40 @@ async function requireAuth(requiredRole) {
     return null;
   }
 
+  // ── Vista de administrador ────────────────────────────────────
+  // El admin puede abrir el área de un alumno o un profesor para ver
+  // lo mismo que ve esa persona, con ?ver=<id> en la dirección. No es
+  // entrar en su cuenta: sigue siendo el admin, con su sesión, y solo
+  // puede mirar (las escrituras se bloquean más abajo).
+  //
+  // Que esto sea seguro no depende de esta comprobación, sino de los
+  // permisos de la base de datos: un alumno que cambie la dirección a
+  // mano no pasa de aquí, y aunque pasara no podría leer los datos de
+  // otro.
+  const verComo = new URLSearchParams(location.search).get('ver');
+  if (verComo && usuario.rol === 'admin' && (requiredRole === 'alumno' || requiredRole === 'profesor')) {
+    const tabla = requiredRole === 'alumno' ? 'alumnos' : 'profesores';
+    const { data: ficha } = await db.from(tabla).select('*').eq('id', verComo).single();
+    if (ficha) {
+      const { data: suUsuario } = await db
+        .from('usuarios').select('*').eq('id', ficha.usuario_id).single();
+      if (suUsuario) {
+        activarSoloLectura();
+        return {
+          session,
+          usuario:      suUsuario,
+          alumnoData:   requiredRole === 'alumno'   ? ficha : null,
+          profesorData: requiredRole === 'profesor' ? ficha : null,
+          modoAdmin:    true,
+          admin:        usuario,
+        };
+      }
+    }
+    alert('No se ha encontrado a esa persona.');
+    window.location.href = BASE_PATH + '/admin/index.html';
+    return null;
+  }
+
   if (requiredRole && usuario.rol !== requiredRole) {
     if (usuario.rol === 'alumno')   window.location.href = BASE_PATH + '/alumno/index.html';
     if (usuario.rol === 'profesor') window.location.href = BASE_PATH + '/profesor/index.html';
@@ -55,6 +89,99 @@ async function requireAuth(requiredRole) {
   }
 
   return { session, usuario, alumnoData, profesorData };
+}
+
+// ── Solo lectura ────────────────────────────────────────────────
+// Mirando el área de otro, cualquier cosa que escriba quedaría a su
+// nombre: una sesión confirmada, una tarea entregada. Así que se
+// cierran todas las escrituras de golpe, en vez de ir escondiendo
+// botones uno a uno y olvidarse de alguno.
+function activarSoloLectura() {
+  const motivo = { data: null, error: { message: 'Vista de administrador: aquí solo se puede mirar.' } };
+
+  // Devuelve algo que se puede encadenar tanto como haga falta
+  // (.eq().select().single()...) y que al final siempre da el mismo
+  // aviso en vez de tocar nada.
+  const cadenaMuerta = () => {
+    const nodo = new Proxy(function () {}, {
+      get(_, prop) {
+        if (prop === 'then') return (resolver) => Promise.resolve(motivo).then(resolver);
+        if (prop === 'catch' || prop === 'finally') return () => nodo;
+        return () => nodo;
+      },
+      apply: () => nodo,
+    });
+    return nodo;
+  };
+
+  const avisar = () => {
+    if (typeof showToast === 'function') showToast('Estás viendo el área de otra persona: solo se puede mirar', 'error');
+  };
+
+  const fromOriginal = db.from.bind(db);
+  db.from = (tabla) => {
+    const consulta = fromOriginal(tabla);
+    for (const metodo of ['insert', 'update', 'upsert', 'delete']) {
+      consulta[metodo] = () => { avisar(); return cadenaMuerta(); };
+    }
+    return consulta;
+  };
+
+  // Las funciones del servidor también escriben (confirmar sesiones,
+  // avisar por correo), así que se cierran igual.
+  db.functions.invoke = async () => { avisar(); return motivo; };
+
+  // Y subir archivos.
+  const storageOriginal = db.storage.from.bind(db.storage);
+  db.storage.from = (cubo) => {
+    const almacen = storageOriginal(cubo);
+    for (const metodo of ['upload', 'remove', 'move', 'copy']) {
+      almacen[metodo] = async () => { avisar(); return motivo; };
+    }
+    return almacen;
+  };
+}
+
+// Barra de aviso para que quede claro de quién es lo que se está
+// mirando, y por dónde se sale.
+function montarAvisoVistaAdmin(nombre) {
+  if (document.getElementById('nexo-vista-admin')) return;
+
+  const barra = document.createElement('div');
+  barra.id = 'nexo-vista-admin';
+  barra.style.cssText = [
+    'position:fixed', 'top:0', 'left:0', 'right:0', 'z-index:100001',
+    'background:#7c2d12', 'border-bottom:1px solid #c2410c',
+    'padding:calc(env(safe-area-inset-top,0px) + 9px) 14px 9px',
+    'display:flex', 'align-items:center', 'justify-content:center', 'gap:12px',
+    'flex-wrap:wrap', 'font-family:inherit',
+  ].join(';');
+
+  barra.innerHTML = `
+    <span style="color:#fed7aa;font-size:12.5px;font-weight:600">
+      Estás viendo el área de <b style="color:#fff">${nombre}</b> — solo lectura
+    </span>
+    <button id="nexo-vista-salir" style="background:#fff;color:#7c2d12;border:none;border-radius:7px;
+      padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;flex-shrink:0">
+      Volver al panel
+    </button>`;
+
+  document.body.appendChild(barra);
+
+  // La barra tapa la parte de arriba: se baja todo lo que va fijo ahí.
+  const alto = barra.offsetHeight;
+  document.body.style.paddingTop = alto + 'px';
+  for (const sel of ['.topbar', '.sidebar', '.bottom-nav']) {
+    document.querySelectorAll(sel).forEach(el => {
+      const actual = getComputedStyle(el).top;
+      if (el.classList.contains('bottom-nav')) return;
+      el.style.top = (parseInt(actual) || 0) + alto + 'px';
+    });
+  }
+
+  document.getElementById('nexo-vista-salir').onclick = () => {
+    window.location.href = BASE_PATH + '/admin/index.html';
+  };
 }
 
 async function logout() {

@@ -1004,6 +1004,12 @@ let editEventoId = null;
   if (!ctx) return;
 
   const { usuario, alumnoData } = ctx;
+
+  // Si es el admin mirando, que se vea bien claro de quién es esto.
+  if (ctx.modoAdmin) {
+    montarAvisoVistaAdmin(`${usuario.nombre || ''} ${usuario.apellidos || ''}`.trim());
+  }
+
   document.getElementById('topbar-name').textContent = usuario.nombre;
   document.getElementById('avatar-initials').textContent = getInitials(usuario.nombre, usuario.apellidos);
   const mmUser = document.getElementById('mmenu-user');

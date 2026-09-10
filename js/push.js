@@ -180,6 +180,9 @@ function _estilosBanner() {
 
 function _montarBannerPush() {
   if (document.getElementById('nexo-push-banner')) return;
+  // Mirando el área de otro no se pide nada: los avisos irían al
+  // aparato del admin, y además el guardado está cerrado.
+  if (typeof ctx !== 'undefined' && ctx?.modoAdmin) return;
   _estilosBanner();
 
   const banner = document.createElement('div');

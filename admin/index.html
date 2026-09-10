@@ -728,6 +728,9 @@
 
     <div class="modal-footer">
       <button class="btn-cancel" onclick="cerrarModal('modal-ficha-profesor')">Cerrar</button>
+      <button class="btn-ghost" id="btn-ver-area-prof" onclick="verAreaProfesor()" title="Abrir su área privada tal y como la ve él">
+        <i class="ti ti-eye"></i> Ver su área
+      </button>
       <button class="btn-primary" id="btn-guardar-ficha-prof" onclick="guardarFichaProfesor()"><i class="ti ti-device-floppy"></i> Guardar cambios</button>
     </div>
   </div>
@@ -889,6 +892,9 @@
 
     <div class="modal-footer">
       <button class="btn-cancel" onclick="cerrarModal('modal-ficha')">Cerrar</button>
+      <button class="btn-ghost" id="btn-ver-area-alumno" onclick="verAreaAlumno()" title="Abrir su área privada tal y como la ve él">
+        <i class="ti ti-eye"></i> Ver su área
+      </button>
       <button class="btn-primary" id="btn-guardar-ficha" onclick="guardarFicha()"><i class="ti ti-device-floppy"></i> Guardar cambios</button>
     </div>
   </div>
@@ -1706,6 +1712,7 @@ function fichaAlumnoModoCreacion() {
   document.getElementById('ficha-section-pwd').style.display          = 'none';
   document.getElementById('ficha-row-email').style.display            = '';
   document.getElementById('fich-email').value                         = '';
+  document.getElementById('btn-ver-area-alumno').style.display        = 'none';
   document.getElementById('ficha-row-contacto').style.display         = 'none';
   document.getElementById('ficha-row-dir').style.display              = 'none';
   document.getElementById('btn-guardar-ficha').innerHTML              = '<i class="ti ti-user-plus"></i> Crear alumno';
@@ -1719,6 +1726,7 @@ function fichaAlumnoModoEdicion(a) {
   document.getElementById('ficha-section-obs').style.display          = '';
   document.getElementById('ficha-section-creds').style.display        = '';
   document.getElementById('ficha-section-creds-new').style.display    = 'none';
+  document.getElementById('btn-ver-area-alumno').style.display        = '';
   document.getElementById('ficha-section-pwd').style.display          = '';
   document.getElementById('ficha-row-email').style.display            = '';
   document.getElementById('ficha-row-contacto').style.display         = '';
@@ -2248,6 +2256,7 @@ function fichaProfModoCreacion() {
   document.getElementById('ficha-prof-section-obs').style.display        = 'none';
   document.getElementById('ficha-prof-row-email').style.display          = '';
   document.getElementById('fich-prof-email').value                       = '';
+  document.getElementById('btn-ver-area-prof').style.display             = 'none';
   document.getElementById('ficha-prof-row-contacto').style.display       = 'none';
   document.getElementById('ficha-prof-row-estudios').style.display       = 'none';
   document.getElementById('ficha-prof-row-nivel').style.display          = 'none';
@@ -2257,6 +2266,7 @@ function fichaProfModoEdicion(p) {
   const u = p.usuario || {};
   document.getElementById('ficha-prof-titulo').textContent                = `${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}`;
   document.getElementById('ficha-prof-section-creds').style.display      = '';
+  document.getElementById('btn-ver-area-prof').style.display             = '';
   document.getElementById('ficha-prof-section-creds-new').style.display  = 'none';
   document.getElementById('ficha-prof-section-pwd').style.display        = '';
   document.getElementById('ficha-prof-section-obs').style.display        = '';
@@ -3794,6 +3804,21 @@ function mostrarCredencialesCreadas(username, password, nombre) {
   document.getElementById('creds-modal-username').value       = username;
   document.getElementById('creds-modal-password').value       = password;
   document.getElementById('modal-creds').classList.add('open');
+}
+
+// Abre el área privada de la persona tal y como la ve ella. No es
+// entrar en su cuenta: la sesión sigue siendo la del admin, y allí
+// solo se puede mirar (lo impide activarSoloLectura, en auth.js).
+//
+// Se abre en otra pestaña para no perder de vista el panel.
+function verAreaAlumno() {
+  if (!fichaAlumnoId) { showToast('Guarda primero la ficha', 'error'); return; }
+  window.open(`../alumno/index.html?ver=${encodeURIComponent(fichaAlumnoId)}`, '_blank', 'noopener');
+}
+
+function verAreaProfesor() {
+  if (!fichaProfesorId) { showToast('Guarda primero la ficha', 'error'); return; }
+  window.open(`../profesor/index.html?ver=${encodeURIComponent(fichaProfesorId)}`, '_blank', 'noopener');
 }
 
 async function cargarCredencialesAdmin(alumnoId) {
