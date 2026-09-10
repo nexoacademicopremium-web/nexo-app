@@ -1634,6 +1634,15 @@ async function loadTablaAlumnos() {
   renderTablaAlumnos(allAlumnos, hMap);
 }
 
+// Cada usuario lleva un correo interno inventado (ALU2026JAP@nexo.internal)
+// que solo sirve para que Supabase lo identifique al entrar. No es de
+// nadie y no vale para escribirle, así que no se enseña: solo se
+// muestran los correos de verdad.
+function emailVisible(email) {
+  if (!email || email.endsWith('@nexo.internal')) return '';
+  return email;
+}
+
 function renderTablaAlumnos(lista, horasByAlumno = {}) {
   const tbody = document.getElementById('tbody-alumnos');
   if (lista.length === 0) {
@@ -1668,7 +1677,7 @@ function renderTablaAlumnos(lista, horasByAlumno = {}) {
     }
 
     return `<tr onclick="abrirQuickFicha('${a.id}')" style="cursor:pointer">
-      <td><b style="color:#fff">${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}</b><br><span style="color:var(--muted);font-size:11px">${escHTML(u.email || '')}</span></td>
+      <td><b style="color:#fff">${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}</b>${emailVisible(u.email) ? `<br><span style="color:var(--muted);font-size:11px">${escHTML(emailVisible(u.email))}</span>` : ''}</td>
       <td><span class="pill ${(a.nivel||'').includes('BACH') ? 'pill-bach' : 'pill-eso'}">${nivelLabel(a.nivel)}</span></td>
       <td style="max-width:160px;white-space:normal">${(a._asigNombres || []).join(', ') || '—'}</td>
       <td style="max-width:180px">${profCell}</td>
@@ -1710,7 +1719,7 @@ function fichaAlumnoModoCreacion() {
   document.getElementById('ficha-section-creds').style.display        = 'none';
   document.getElementById('ficha-section-creds-new').style.display    = '';
   document.getElementById('ficha-section-pwd').style.display          = 'none';
-  document.getElementById('ficha-row-email').style.display            = '';
+  document.getElementById('ficha-row-email').style.display            = 'none';
   document.getElementById('fich-email').value                         = '';
   document.getElementById('btn-ver-area-alumno').style.display        = 'none';
   document.getElementById('ficha-row-contacto').style.display         = 'none';
@@ -1728,7 +1737,7 @@ function fichaAlumnoModoEdicion(a) {
   document.getElementById('ficha-section-creds-new').style.display    = 'none';
   document.getElementById('btn-ver-area-alumno').style.display        = '';
   document.getElementById('ficha-section-pwd').style.display          = '';
-  document.getElementById('ficha-row-email').style.display            = '';
+  document.getElementById('ficha-row-email').style.display            = 'none';
   document.getElementById('ficha-row-contacto').style.display         = '';
   document.getElementById('ficha-row-dir').style.display              = '';
   document.getElementById('ficha-pwd-title').innerHTML                = '<i class="ti ti-lock"></i> Cambiar contraseña';
@@ -2231,7 +2240,7 @@ function renderTablaProfesores(lista) {
     const u = p.usuario || {};
     const nAlumnos = Object.values(alumnoProfesorMap).filter(aps => aps.some(ap => ap.profesor_id === p.id)).length;
     return `<tr onclick="abrirFichaProfesor('${p.id}')" style="cursor:pointer">
-      <td><b style="color:#fff">${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}</b><br><span style="color:var(--muted);font-size:11px">${escHTML(u.email || '')}</span></td>
+      <td><b style="color:#fff">${escHTML(u.nombre || '?')} ${escHTML(u.apellidos || '')}</b>${emailVisible(u.email) ? `<br><span style="color:var(--muted);font-size:11px">${escHTML(emailVisible(u.email))}</span>` : ''}</td>
       <td>${(p._asigNombres||[]).join(', ') || '—'}</td>
       <td>${escHTML(p.zona || '—')}</td>
       <td><span class="pill pill-ok">${nAlumnos} alumno${nAlumnos !== 1 ? 's' : ''}</span></td>
@@ -2254,7 +2263,7 @@ function fichaProfModoCreacion() {
   document.getElementById('ficha-prof-section-creds-new').style.display  = '';
   document.getElementById('ficha-prof-section-pwd').style.display        = 'none';
   document.getElementById('ficha-prof-section-obs').style.display        = 'none';
-  document.getElementById('ficha-prof-row-email').style.display          = '';
+  document.getElementById('ficha-prof-row-email').style.display          = 'none';
   document.getElementById('fich-prof-email').value                       = '';
   document.getElementById('btn-ver-area-prof').style.display             = 'none';
   document.getElementById('ficha-prof-row-contacto').style.display       = 'none';
@@ -2270,7 +2279,7 @@ function fichaProfModoEdicion(p) {
   document.getElementById('ficha-prof-section-creds-new').style.display  = 'none';
   document.getElementById('ficha-prof-section-pwd').style.display        = '';
   document.getElementById('ficha-prof-section-obs').style.display        = '';
-  document.getElementById('ficha-prof-row-email').style.display          = '';
+  document.getElementById('ficha-prof-row-email').style.display          = 'none';
   document.getElementById('ficha-prof-row-contacto').style.display       = '';
   document.getElementById('ficha-prof-row-estudios').style.display       = '';
   document.getElementById('ficha-prof-row-nivel').style.display          = '';
