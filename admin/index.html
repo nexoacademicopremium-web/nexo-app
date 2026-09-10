@@ -415,6 +415,18 @@
     <div><h1 class="page-title" style="margin:0">Alumnos</h1><p class="page-sub" style="margin:0" id="alumnos-sub">—</p></div>
     <button class="btn-primary" onclick="abrirModalAlumno()"><i class="ti ti-plus"></i> Nuevo alumno</button>
   </div>
+  <!-- Sale solo cuando hay alguien a punto de quedarse sin horas -->
+  <div id="aviso-renovar" style="display:none;margin-bottom:14px;padding:13px 16px;border-radius:11px;
+       background:#3a2a00;border:1px solid #7a5a00;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <i class="ti ti-bell-ringing" style="color:#fbbf24;font-size:19px;flex-shrink:0"></i>
+    <div style="flex:1;min-width:200px">
+      <div style="color:#fbbf24;font-size:13px;font-weight:700" id="aviso-renovar-txt"></div>
+      <div style="color:#d9c9a8;font-size:11.5px;margin-top:2px">Conviene avisar a la familia para que renueve.</div>
+    </div>
+    <button class="btn-ghost" id="btn-filtrar-renovar" onclick="alternarSoloPorRenovar()"
+            style="flex-shrink:0;color:#fbbf24;border-color:rgba(251,191,36,.45)">Ver solo esos</button>
+  </div>
+
   <div class="search-bar">
     <i class="ti ti-search"></i>
     <input type="text" id="q-alumnos" placeholder="Buscar por nombre, nivel, asignatura..." oninput="filtrar('alumnos')">
@@ -422,7 +434,7 @@
   <div class="card">
     <table class="tabla">
       <thead><tr>
-        <th>Alumno</th><th>Nivel</th><th>Asignaturas</th><th>Profesores</th><th>Estado</th><th>Acciones</th>
+        <th>Alumno</th><th>Nivel</th><th>Asignaturas</th><th>Profesores</th><th>Bono</th><th>Estado</th><th>Acciones</th>
       </tr></thead>
       <tbody id="tbody-alumnos"></tbody>
     </table>
@@ -1634,6 +1646,67 @@ async function loadTablaAlumnos() {
   renderTablaAlumnos(allAlumnos, hMap);
 }
 
+// ── Aviso de bono a punto de agotarse ──────────────────────────
+// A partir de dos horas restantes conviene hablar con la familia: da
+// tiempo a renovar antes de que el alumno se quede sin clases.
+const HORAS_AVISO_BONO = 2;
+
+// Se mira la caché de la ficha del alumno, que es la misma cifra que
+// ve él en su panel. Así los dos ven lo mismo.
+function horasRestantesAlumno(a) {
+  const h = parseFloat(a?.horas_bono_restantes);
+  return Number.isFinite(h) ? h : null;
+}
+
+function alumnoPorRenovar(a) {
+  if (!a?.activo) return false;          // los de baja no urgen
+  const h = horasRestantesAlumno(a);
+  return h !== null && h <= HORAS_AVISO_BONO;
+}
+
+function celdaBono(a) {
+  const h = horasRestantesAlumno(a);
+  if (h === null) return '<span style="color:var(--muted)">—</span>';
+
+  if (h <= 0) {
+    return '<span class="pill" style="background:#3a0d0d;color:#f87171;border:.5px solid #7f1d1d">'
+         + '<i class="ti ti-alert-triangle" style="font-size:11px"></i> Sin horas</span>';
+  }
+  if (h <= HORAS_AVISO_BONO) {
+    return `<span class="pill" style="background:#3a2a00;color:#fbbf24;border:.5px solid #7a5a00">`
+         + `<i class="ti ti-alert-circle" style="font-size:11px"></i> ${h.toFixed(1)}h</span>`;
+  }
+  return `<span style="color:var(--soft);font-size:12px">${h.toFixed(1)}h</span>`;
+}
+
+// Con el filtro puesto, la lista enseña solo a quien hay que llamar.
+let _soloPorRenovar = false;
+
+function alternarSoloPorRenovar() {
+  _soloPorRenovar = !_soloPorRenovar;
+  const btn = document.getElementById('btn-filtrar-renovar');
+  if (btn) btn.textContent = _soloPorRenovar ? 'Ver todos' : 'Ver solo esos';
+  filtrar('alumnos');
+}
+
+function refrescarAvisoRenovar() {
+  const caja = document.getElementById('aviso-renovar');
+  if (!caja) return;
+  const cuantos = (allAlumnos || []).filter(alumnoPorRenovar).length;
+
+  if (cuantos === 0) {
+    caja.style.display = 'none';
+    _soloPorRenovar = false;
+    const btn = document.getElementById('btn-filtrar-renovar');
+    if (btn) btn.textContent = 'Ver solo esos';
+    return;
+  }
+  caja.style.display = 'flex';
+  document.getElementById('aviso-renovar-txt').textContent = cuantos === 1
+    ? 'Hay 1 alumno con 2 horas o menos de bono'
+    : `Hay ${cuantos} alumnos con 2 horas o menos de bono`;
+}
+
 // Cada usuario lleva un correo interno inventado (ALU2026JAP@nexo.internal)
 // que solo sirve para que Supabase lo identifique al entrar. No es de
 // nadie y no vale para escribirle, así que no se enseña: solo se
@@ -1646,7 +1719,7 @@ function emailVisible(email) {
 function renderTablaAlumnos(lista, horasByAlumno = {}) {
   const tbody = document.getElementById('tbody-alumnos');
   if (lista.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted)">Sin alumnos</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--muted)">Sin alumnos</td></tr>`;
     return;
   }
   tbody.innerHTML = lista.map(a => {
@@ -1681,6 +1754,7 @@ function renderTablaAlumnos(lista, horasByAlumno = {}) {
       <td><span class="pill ${(a.nivel||'').includes('BACH') ? 'pill-bach' : 'pill-eso'}">${nivelLabel(a.nivel)}</span></td>
       <td style="max-width:160px;white-space:normal">${(a._asigNombres || []).join(', ') || '—'}</td>
       <td style="max-width:180px">${profCell}</td>
+      <td style="white-space:nowrap">${celdaBono(a)}</td>
       <td><span class="pill ${a.activo ? 'pill-ok' : 'pill-grey'}">${a.activo ? 'Activo' : 'Inactivo'}</span></td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
         <button class="btn-ficha" onclick="abrirFicha('${a.id}')"><i class="ti ti-id-badge"></i> Ficha</button>
@@ -1690,12 +1764,15 @@ function renderTablaAlumnos(lista, horasByAlumno = {}) {
       </td>
     </tr>`;
   }).join('');
+
+  refrescarAvisoRenovar();
 }
 
 function filtrar(tipo) {
   const q = document.getElementById('q-' + tipo).value.toLowerCase();
   if (tipo === 'alumnos') {
     const res = allAlumnos.filter(a => {
+      if (_soloPorRenovar && !alumnoPorRenovar(a)) return false;
       const u = a.usuario || {};
       return `${escHTML(u.nombre)} ${escHTML(u.apellidos)} ${(a._asigNombres||[]).join(' ')} ${a.nivel}`.toLowerCase().includes(q);
     });
