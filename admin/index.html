@@ -94,6 +94,15 @@
   .btn-danger:hover{background:#3d1010}
   .btn-edit{background:#0a1a30;color:var(--blue);border:.5px solid var(--border);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit}
   .btn-edit:hover{background:#0f2240}
+  /* El ojo para asomarse al área de alguien: en naranja, que no se
+     confunda con los botones de siempre ni con los de borrar. */
+  .btn-ojo{background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.5);
+    border-radius:7px;padding:5px 9px;font-size:12px;cursor:pointer;font-family:inherit;
+    line-height:1;display:inline-flex;align-items:center;justify-content:center;
+    transition:background .15s ease,border-color .15s ease}
+  .btn-ojo i{font-size:15px}
+  .btn-ojo:hover{background:rgba(245,158,11,.24);border-color:#f59e0b}
+
   .btn-ficha{background:#0a2d1a;color:#2ecc71;border:.5px solid #1a5e30;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px}
   .btn-ficha:hover{background:#0d3d22}
   .btn-ficha i{font-size:13px}
@@ -1757,7 +1766,8 @@ function renderTablaAlumnos(lista, horasByAlumno = {}) {
       <td style="white-space:nowrap">${celdaBono(a)}</td>
       <td><span class="pill ${a.activo ? 'pill-ok' : 'pill-grey'}">${a.activo ? 'Activo' : 'Inactivo'}</span></td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
-        <button class="btn-ficha" onclick="abrirFicha('${a.id}')"><i class="ti ti-id-badge"></i> Ficha</button>
+        <button class="btn-ojo" onclick="verAreaAlumno('${a.id}')" title="Asomarse a su área privada"><i class="ti ti-eye"></i></button>
+        <button class="btn-ficha" style="margin-left:4px" onclick="abrirFicha('${a.id}')"><i class="ti ti-id-badge"></i> Ficha</button>
         <button class="btn-edit" style="margin-left:4px" onclick="abrirModalInforme('${a.id}')">Informe</button>
         <button class="btn-danger" style="margin-left:4px" onclick="toggleActivo('alumno','${a.id}',${!a.activo})">${a.activo ? 'Desactivar' : 'Activar'}</button>
         <button class="btn-danger" style="margin-left:4px;background:#7f1d1d" onclick="eliminarAlumno('${a.id}')" title="Eliminar definitivamente"><i class="ti ti-trash"></i></button>
@@ -2323,7 +2333,8 @@ function renderTablaProfesores(lista) {
       <td><span class="pill pill-ok">${nAlumnos} alumno${nAlumnos !== 1 ? 's' : ''}</span></td>
       <td><span class="pill ${p.activo ? 'pill-ok' : 'pill-grey'}">${p.activo ? 'Activo' : 'Inactivo'}</span></td>
       <td style="white-space:nowrap" onclick="event.stopPropagation()">
-        <button class="btn-ficha" onclick="abrirFichaProfesor('${p.id}')"><i class="ti ti-id-badge"></i> Ficha</button>
+        <button class="btn-ojo" onclick="verAreaProfesor('${p.id}')" title="Asomarse a su área privada"><i class="ti ti-eye"></i></button>
+        <button class="btn-ficha" style="margin-left:4px" onclick="abrirFichaProfesor('${p.id}')"><i class="ti ti-id-badge"></i> Ficha</button>
         <button class="btn-danger" style="margin-left:4px" onclick="toggleActivo('profesor','${p.id}',${!p.activo})">${p.activo ? 'Desactivar' : 'Activar'}</button>
         ${!p.activo ? `<button class="btn-danger" style="margin-left:4px" onclick="eliminarProfesor('${p.id}')"><i class="ti ti-trash"></i></button>` : ''}
       </td>
@@ -3897,14 +3908,16 @@ function mostrarCredencialesCreadas(username, password, nombre) {
 // solo se puede mirar (lo impide activarSoloLectura, en auth.js).
 //
 // Se abre en otra pestaña para no perder de vista el panel.
-function verAreaAlumno() {
-  if (!fichaAlumnoId) { showToast('Guarda primero la ficha', 'error'); return; }
-  window.open(`../alumno/index.html?ver=${encodeURIComponent(fichaAlumnoId)}`, '_blank', 'noopener');
+function verAreaAlumno(alumnoId) {
+  const id = alumnoId || fichaAlumnoId;
+  if (!id) { showToast('Guarda primero la ficha', 'error'); return; }
+  window.open(`../alumno/index.html?ver=${encodeURIComponent(id)}`, '_blank', 'noopener');
 }
 
-function verAreaProfesor() {
-  if (!fichaProfesorId) { showToast('Guarda primero la ficha', 'error'); return; }
-  window.open(`../profesor/index.html?ver=${encodeURIComponent(fichaProfesorId)}`, '_blank', 'noopener');
+function verAreaProfesor(profId) {
+  const id = profId || fichaProfesorId;
+  if (!id) { showToast('Guarda primero la ficha', 'error'); return; }
+  window.open(`../profesor/index.html?ver=${encodeURIComponent(id)}`, '_blank', 'noopener');
 }
 
 async function cargarCredencialesAdmin(alumnoId) {
