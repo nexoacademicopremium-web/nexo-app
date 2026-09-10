@@ -5504,7 +5504,12 @@ async function loadTablaAvisos() {
           <td>${escHTML(dest)}</td>
           <td>${formatShortDate(a.created_at?.split('T')[0])}</td>
           <td><span class="pill ${a.visible ? 'pill-ok' : 'pill-grey'}">${a.visible ? 'Visible' : 'Oculto'}</span></td>
-          <td><button class="btn-danger" onclick="ocultarAviso('${a.id}')">Ocultar</button></td>
+          <td style="white-space:nowrap">
+            ${a.visible
+              ? `<button class="btn-danger" onclick="ocultarAviso('${a.id}', false)">Ocultar</button>`
+              : `<button class="btn-edit" onclick="ocultarAviso('${a.id}', true)">Mostrar</button>`}
+            <button class="btn-danger" style="margin-left:4px;background:#7f1d1d" onclick="eliminarAviso('${a.id}')" title="Eliminar definitivamente"><i class="ti ti-trash"></i></button>
+          </td>
         </tr>`;
       }).join('')}
     </tbody>
@@ -5556,10 +5561,29 @@ async function guardarAviso(e) {
   await loadTablaAvisos();
 }
 
-async function ocultarAviso(id) {
-  const { error } = await db.from('avisos').update({ visible: false }).eq('id', id);
+// Ocultar es reversible: el aviso sigue guardado, simplemente deja de
+// salirle a quien iba dirigido.
+async function ocultarAviso(id, visible) {
+  const { error } = await db.from('avisos').update({ visible }).eq('id', id);
   if (error) { showToast('Error: ' + error.message, 'error'); return; }
-  showToast('Aviso ocultado');
+  showToast(visible ? 'Aviso visible de nuevo' : 'Aviso ocultado');
+  await loadTablaAvisos();
+}
+
+// Eliminar no lo es: se va del todo, y el correo o el aviso al móvil
+// que se enviaran en su día no se pueden retirar de donde llegaron.
+async function eliminarAviso(id) {
+  if (!confirm('¿Eliminar este aviso definitivamente?\n\n'
+    + 'Desaparece de aquí y de quien lo tuviera sin leer. Esto no se puede deshacer.\n\n'
+    + 'Si solo quieres que deje de verse, cancela y usa Ocultar.')) return;
+
+  const { data: borrados, error } = await db.from('avisos').delete().eq('id', id).select('id');
+  if (error) { showToast('Error: ' + error.message, 'error'); return; }
+  if (!borrados || borrados.length === 0) {
+    showToast('No se ha podido eliminar el aviso', 'error');
+    return;
+  }
+  showToast('Aviso eliminado');
   await loadTablaAvisos();
 }
 
