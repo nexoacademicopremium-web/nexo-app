@@ -97,7 +97,7 @@ Catálogo cerrado de materias. Lista fija definida por el admin.
 
 | Columna | Tipo | Notas |
 |---|---|---|
-| `id` | `SMALLINT PK` | |
+| `id` | `SMALLINT PK` | `GENERATED ALWAYS AS IDENTITY` — lo pone Postgres. Al insertar NO se pasa: da error 428C9 |
 | `nombre` | `TEXT UNIQUE NOT NULL` | Ej: `'Matemáticas'`, `'Lengua'` |
 
 **RLS:** sin RLS (lectura pública — o policy `SELECT TRUE` para todos).
