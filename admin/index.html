@@ -686,9 +686,13 @@
             <label class="fl">Nivel máximo</label>
             <select class="fi" id="fich-prof-nivel-max">
               <option value="">—</option>
+              <option value="1PRI">1.º Primaria</option><option value="2PRI">2.º Primaria</option>
+              <option value="3PRI">3.º Primaria</option><option value="4PRI">4.º Primaria</option>
+              <option value="5PRI">5.º Primaria</option><option value="6PRI">6.º Primaria</option>
               <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
               <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
               <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
+              <option value="UNIV">Universidad</option>
             </select>
           </div>
           <div><label class="fl">Fecha inicio</label><input class="fi" id="fich-prof-fecha-inicio" type="date"></div>
@@ -1071,9 +1075,13 @@
       <select class="fi" id="mat-nivel" required onchange="actualizarSelectTemas()">
         <option value="">— Selecciona —</option>
         <option value="todos">Todos</option>
+        <option value="1PRI">1.º Primaria</option><option value="2PRI">2.º Primaria</option>
+        <option value="3PRI">3.º Primaria</option><option value="4PRI">4.º Primaria</option>
+        <option value="5PRI">5.º Primaria</option><option value="6PRI">6.º Primaria</option>
         <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
         <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
         <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
+        <option value="UNIV">Universidad</option>
       </select>
       <label class="fl">Asignatura *</label>
       <select class="fi" id="mat-asignatura" required onchange="actualizarSelectTemas()">
@@ -1125,9 +1133,13 @@
           <label class="fl">Curso *</label>
           <select class="fi" id="t-nivel">
             <option value="">— Elige curso —</option>
+            <option value="1PRI">1.º Primaria</option><option value="2PRI">2.º Primaria</option>
+            <option value="3PRI">3.º Primaria</option><option value="4PRI">4.º Primaria</option>
+            <option value="5PRI">5.º Primaria</option><option value="6PRI">6.º Primaria</option>
             <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
             <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
             <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
+            <option value="UNIV">Universidad</option>
           </select>
         </div>
         <div id="t-row-alumno" style="display:none">
@@ -4196,7 +4208,7 @@ async function confirmarCancelacion() {
 // ============================================================
 // MATERIAL
 // ============================================================
-const MAT_NIVEL_ORDER = ['1ESO','2ESO','3ESO','4ESO','1BACH','2BACH','todos'];
+const MAT_NIVEL_ORDER = ['1PRI','2PRI','3PRI','4PRI','5PRI','6PRI','1ESO','2ESO','3ESO','4ESO','1BACH','2BACH','UNIV','todos'];
 const MAT_ASIG_COLORS = [
   { clr:'#6eaef0', bg:'#0b1e38' },
   { clr:'#7c3aed', bg:'#180f2d' },
@@ -4364,7 +4376,9 @@ function _matRenderNiveles(c) {
   const items = _matData.genItems;
   const nivelCnt = {};
   items.forEach(m => { const n = m.nivel||'todos'; nivelCnt[n] = (nivelCnt[n]||0)+1; });
-  const colores = { '1ESO':'#2563eb','2ESO':'#0891b2','3ESO':'#7c3aed','4ESO':'#059669','1BACH':'#b45309','2BACH':'#9d174d','todos':'#374151' };
+  const colores = { '1PRI':'#0ea5e9','2PRI':'#06b6d4','3PRI':'#14b8a6','4PRI':'#10b981','5PRI':'#84cc16','6PRI':'#eab308',
+                    '1ESO':'#2563eb','2ESO':'#0891b2','3ESO':'#7c3aed','4ESO':'#059669','1BACH':'#b45309','2BACH':'#9d174d',
+                    'UNIV':'#be185d','todos':'#374151' };
   const bubbles = MAT_NIVEL_ORDER.filter(n => nivelCnt[n]).map(n => {
     const cc = colores[n]||'#2563eb';
     return `<div class="mat-asig-bubble" style="--ab-clr:${cc}" onclick="_matGo('gen','${n}',null,null,null)">
@@ -5439,7 +5453,7 @@ function _testsRenderNiveles(c) {
     cuenta[k] = (cuenta[k] || 0) + 1;
   });
 
-  const orden = ['1ESO','2ESO','3ESO','4ESO','1BACH','2BACH','__sin__'];
+  const orden = ['1PRI','2PRI','3PRI','4PRI','5PRI','6PRI','1ESO','2ESO','3ESO','4ESO','1BACH','2BACH','UNIV','__sin__'];
   const burbujas = Object.keys(cuenta)
     .sort((a, b) => orden.indexOf(a) - orden.indexOf(b))
     .map(niv => {
