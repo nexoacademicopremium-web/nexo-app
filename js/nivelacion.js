@@ -26,44 +26,46 @@ const NIVELACION = {
       'Vocabulary in Use',
     ],
 
-    // De menor a mayor. `hasta` es el porcentaje máximo de ese tramo:
-    // se trabaja en porcentaje para que los tramos sigan valiendo
-    // aunque el test cambie de número de preguntas.
+    // De menor a mayor, por porcentaje de puntos acertados. Se trabaja
+    // en porcentaje y no en puntos porque el test cambia de tamaño: el
+    // de referencia tenía 109 preguntas y el nuevo ronda las 50.
+    //
+    // Tramos y textos según la especificación del 17-09-2026.
     tramos: [
       {
         nivel: 'Pre-B1',
-        etiqueta: 'Elementary / Pre-Intermediate',
-        hasta: 40,
-        horas: '4-5 h / semana',
+        etiqueta: 'A2 o inferior — se recomienda una prueba de nivel más básica.',
+        hasta: 39,
+        horas: '4–5 h/semana',
         consejo: 'Para construir cuanto antes una base sólida de gramática y vocabulario.',
       },
       {
         nivel: 'B1',
-        etiqueta: 'Intermediate',
-        hasta: 60,
-        horas: '3-4 h / semana',
-        consejo: 'Para afianzar la base y empezar a soltarse con textos más largos.',
+        etiqueta: 'Usuario independiente — nivel intermedio.',
+        hasta: 54,
+        horas: '3–4 h/semana',
+        consejo: 'Ritmo constante para consolidar el intermedio y dar el salto a B2.',
       },
       {
         nivel: 'B2',
-        etiqueta: 'Upper-Intermediate',
-        hasta: 80,
-        horas: '2-3 h / semana',
-        consejo: 'Para pulir los usos avanzados y ganar naturalidad.',
+        etiqueta: 'Usuario independiente — nivel intermedio alto.',
+        hasta: 70,
+        horas: '2–3 h/semana',
+        consejo: 'Mantener el nivel mientras se amplía vocabulario y fluidez.',
       },
       {
         nivel: 'C1',
-        etiqueta: 'Advanced',
-        hasta: 94,
-        horas: '2 h / semana',
-        consejo: 'Para mantener el nivel y afinar matices y registro.',
+        etiqueta: 'Usuario competente — nivel avanzado.',
+        hasta: 86,
+        horas: '2 h/semana',
+        consejo: 'Perfeccionamiento y preparación de examen (Advanced).',
       },
       {
         nivel: 'C2',
-        etiqueta: 'Proficiency',
+        etiqueta: 'Usuario competente — nivel de maestría.',
         hasta: 100,
-        horas: '1-2 h / semana',
-        consejo: 'Para conservar el nivel y no perder soltura.',
+        horas: '1–2 h/semana',
+        consejo: 'Mantenimiento y matices — ya tiene un dominio muy alto.',
       },
     ],
   },
