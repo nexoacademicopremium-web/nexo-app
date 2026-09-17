@@ -5294,115 +5294,200 @@ async function loadListaTests() {
   _renderTests();
 }
 
+// ── Navegación de tests ────────────────────────────────────────
+// Mismo recorrido que Material, para no tener que aprenderse dos:
+//
+//   Exclusivo → alumno → asignatura → tests
+//   Genérico  → curso  → asignatura → tests
+//
+// _testsNav a null es la portada con las dos tarjetas.
+
 function _renderTests() {
   const c = document.getElementById('tests-lista');
   if (!c || !_testsData) return;
-  if (!_testsNav)                { _testsRenderAlumnos(c); return; }
-  if (_testsNav.asig == null)    { _testsRenderAsigs(c);   return; }
+  if (!_testsNav)                   { _testsRenderRoot(c);    return; }
+  if (_testsNav.sec === 'excl' && _testsNav.alumnoId == null) { _testsRenderAlumnos(c); return; }
+  if (_testsNav.sec === 'gen'  && _testsNav.nivel == null)    { _testsRenderNiveles(c); return; }
+  if (_testsNav.asig == null)       { _testsRenderAsigs(c);   return; }
   _testsRenderCards(c);
 }
 
-function _testsGo(alumnoId, asig) {
-  _testsNav = { alumnoId: alumnoId ?? null, asig: asig ?? null };
+function _testsGo(sec, nivel, alumnoId, asig) {
+  _testsNav = {
+    sec,
+    nivel:    nivel    ?? null,
+    alumnoId: alumnoId ?? null,
+    asig:     asig     ?? null,
+  };
   _renderTests();
 }
+
 function _testsGoRoot() { _testsNav = null; _renderTests(); }
+
 function _testsBack() {
   if (!_testsNav) return;
-  if (_testsNav.asig != null) { _testsGo(_testsNav.alumnoId, null); return; }
+  const { sec, nivel, alumnoId, asig } = _testsNav;
+  if (asig != null) { _testsGo(sec, nivel, alumnoId, null); return; }
+  if (sec === 'excl' && alumnoId != null) { _testsGo('excl', null, null, null); return; }
+  if (sec === 'gen'  && nivel   != null)  { _testsGo('gen',  null, null, null); return; }
   _testsGoRoot();
+}
+
+// Los tests que caen en el punto donde estamos.
+function _testsItems() {
+  if (!_testsNav) return [];
+  const { sec, nivel, alumnoId, asig } = _testsNav;
+  let items = _testsData.filter(t =>
+    sec === 'excl' ? !!t.alumno_id : !t.alumno_id);
+  if (alumnoId != null) items = items.filter(t => t.alumno_id === alumnoId);
+  if (nivel    != null) items = items.filter(t => (t.nivel || null) === nivel);
+  if (asig     != null) items = items.filter(t => (t.asignatura || '—') === asig);
+  return items;
 }
 
 function _testsAlumnoNombre(alumnoId) {
   const t = _testsData.find(x => x.alumno_id === alumnoId);
   if (!t?.alumno?.usuario) return 'Alumno';
   const u = t.alumno.usuario;
-  return `${escHTML(u.nombre)} ${escHTML(u.apellidos||'')}`.trim();
+  return `${u.nombre || ''} ${u.apellidos || ''}`.trim() || 'Alumno';
 }
 
 function _testsBc() {
   if (!_testsNav) return '';
-  const { alumnoId, asig } = _testsNav;
+  const { sec, nivel, alumnoId, asig } = _testsNav;
   const sep = `<i class="ti ti-chevron-right mat-bc-sep"></i>`;
-  const alumnoLbl = alumnoId ? _testsAlumnoNombre(alumnoId) : 'General';
-  const alumnoIdJs = alumnoId ? `'${alumnoId}'` : 'null';
-  const parts = [
-    `<button class="mat-back-btn" onclick="_testsBack()"><i class="ti ti-arrow-left"></i></button>`,
-    `<div class="mat-bc">`,
-    `<span class="mat-bc-link" onclick="_testsGoRoot()">Tests</span>`,
-    sep,
-  ];
-  if (asig != null) {
-    parts.push(`<span class="mat-bc-link" onclick="_testsGo(${alumnoIdJs},null)">${escHTML(alumnoLbl)}</span>`);
-    parts.push(sep);
-    parts.push(`<span class="mat-bc-cur">${escHTML(asig)}</span>`);
-  } else {
-    parts.push(`<span class="mat-bc-cur">${escHTML(alumnoLbl)}</span>`);
+
+  const partes = [`<span class="mat-bc-link" onclick="_testsGoRoot()">Tests</span>`];
+  const secLbl = sec === 'excl' ? 'Exclusivo' : 'Genérico';
+
+  // Cada escalón es pulsable menos el último, que es donde estamos.
+  const hayMas = alumnoId != null || nivel != null || asig != null;
+  partes.push(hayMas
+    ? `<span class="mat-bc-link" onclick="_testsGo('${sec}',null,null,null)">${secLbl}</span>`
+    : `<span class="mat-bc-cur">${secLbl}</span>`);
+
+  if (alumnoId != null) {
+    const nom = escHTML(_testsAlumnoNombre(alumnoId));
+    partes.push(asig != null
+      ? `<span class="mat-bc-link" onclick="_testsGo('excl',null,'${alumnoId}',null)">${nom}</span>`
+      : `<span class="mat-bc-cur">${nom}</span>`);
   }
-  parts.push('</div>');
-  return `<div class="mat-nav-bar">${parts.join('')}</div>`;
+  if (nivel != null) {
+    const nom = escHTML(nivelLabel(nivel));
+    partes.push(asig != null
+      ? `<span class="mat-bc-link" onclick="_testsGo('gen','${nivel}',null,null)">${nom}</span>`
+      : `<span class="mat-bc-cur">${nom}</span>`);
+  }
+  if (asig != null) partes.push(`<span class="mat-bc-cur">${escHTML(asig)}</span>`);
+
+  return `<div class="mat-nav-bar">
+    <button class="mat-back-btn" onclick="_testsBack()"><i class="ti ti-arrow-left"></i> Volver</button>
+    <div class="mat-bc">${partes.join(sep)}</div>
+  </div>`;
 }
 
-function _testsRenderAlumnos(c) {
+// ── Portada: exclusivo o genérico ──────────────────────────────
+function _testsRenderRoot(c) {
   if (!_testsData.length) {
     c.innerHTML = `<div class="empty-state"><i class="ti ti-list-check"></i><p>Sin tests creados todavía</p></div>`;
     return;
   }
-  const buckets = {};
-  _testsData.forEach(t => {
-    const key = t.alumno_id || '__gen__';
-    if (!buckets[key]) buckets[key] = { alumnoId: t.alumno_id || null, nombre: null, cnt: 0 };
-    if (t.alumno?.usuario && !buckets[key].nombre) {
-      const u = t.alumno.usuario;
-      buckets[key].nombre = `${escHTML(u.nombre)} ${escHTML(u.apellidos||'')}`.trim();
-    }
-    buckets[key].cnt++;
-  });
-  const sorted = Object.values(buckets).sort((a, b) => {
-    if (!a.alumnoId) return 1;
-    if (!b.alumnoId) return -1;
-    return (a.nombre||'').localeCompare(b.nombre||'', 'es');
-  });
-  const bubbles = sorted.map(b => {
-    const nombre = b.alumnoId ? (b.nombre || 'Alumno') : 'General';
-    const ico    = b.alumnoId ? 'ti-user' : 'ti-world';
-    const cc     = b.alumnoId ? '#5b21b6' : '#374151';
-    const cnt    = b.cnt;
-    const idJs   = b.alumnoId ? `'${b.alumnoId}'` : 'null';
-    return `<div class="mat-asig-bubble" style="--ab-clr:${cc}" onclick="_testsGo(${idJs},null)">
-      <div class="mat-asig-ico"><i class="ti ${ico}"></i></div>
-      <span class="mat-asig-label">${escHTML(nombre)}</span>
-      <span class="mat-asig-count">${cnt} test${cnt!==1?'s':''}</span>
-    </div>`;
-  }).join('');
-  c.innerHTML = `<div class="mat-asig-grid">${bubbles}</div>`;
+  const excl = _testsData.filter(t => !!t.alumno_id).length;
+  const gen  = _testsData.filter(t => !t.alumno_id).length;
+
+  c.innerHTML = `<div class="mat-asig-grid" style="max-width:400px">
+    <div class="mat-asig-bubble" style="--ab-clr:#f59e0b" onclick="_testsGo('excl',null,null,null)">
+      <div class="mat-asig-ico"><i class="ti ti-crown"></i></div>
+      <span class="mat-asig-label">Exclusivo</span>
+      <span class="mat-asig-count">${excl} test${excl!==1?'s':''}</span>
+    </div>
+    <div class="mat-asig-bubble" style="--ab-clr:#2563eb" onclick="_testsGo('gen',null,null,null)">
+      <div class="mat-asig-ico"><i class="ti ti-list-check"></i></div>
+      <span class="mat-asig-label">Genérico</span>
+      <span class="mat-asig-count">${gen} test${gen!==1?'s':''}</span>
+    </div>
+  </div>`;
 }
 
+// ── Exclusivo: un escalón por alumno ───────────────────────────
+function _testsRenderAlumnos(c) {
+  const cuenta = {};
+  _testsData.filter(t => !!t.alumno_id).forEach(t => {
+    cuenta[t.alumno_id] = (cuenta[t.alumno_id] || 0) + 1;
+  });
+
+  const burbujas = Object.keys(cuenta)
+    .sort((a, b) => _testsAlumnoNombre(a).localeCompare(_testsAlumnoNombre(b), 'es'))
+    .map(id => {
+      const n = cuenta[id];
+      return `<div class="mat-asig-bubble" style="--ab-clr:#5b21b6" onclick="_testsGo('excl',null,'${id}',null)">
+        <div class="mat-asig-ico"><i class="ti ti-user"></i></div>
+        <span class="mat-asig-label">${escHTML(_testsAlumnoNombre(id))}</span>
+        <span class="mat-asig-count">${n} test${n!==1?'s':''}</span>
+      </div>`;
+    }).join('');
+
+  c.innerHTML = _testsBc() + `<div class="mat-asig-grid">${burbujas
+    || '<p style="color:var(--muted);font-size:12px;padding:8px 0">Todavía no hay tests para un alumno concreto</p>'}</div>`;
+}
+
+// ── Genérico: un escalón por curso ─────────────────────────────
+function _testsRenderNiveles(c) {
+  const cuenta = {};
+  _testsData.filter(t => !t.alumno_id).forEach(t => {
+    const k = t.nivel || '__sin__';
+    cuenta[k] = (cuenta[k] || 0) + 1;
+  });
+
+  const orden = ['1ESO','2ESO','3ESO','4ESO','1BACH','2BACH','__sin__'];
+  const burbujas = Object.keys(cuenta)
+    .sort((a, b) => orden.indexOf(a) - orden.indexOf(b))
+    .map(niv => {
+      const n = cuenta[niv];
+      const esSin = niv === '__sin__';
+      const nom = esSin ? 'Sin curso' : nivelLabel(niv);
+      const val = esSin ? 'null' : `'${niv}'`;
+      const cc  = esSin ? '#374151' : (niv.includes('BACH') ? '#7c3aed' : '#2563eb');
+      return `<div class="mat-asig-bubble" style="--ab-clr:${cc}" onclick="_testsGo('gen',${val},null,null)">
+        <div class="mat-asig-ico"><i class="ti ti-school"></i></div>
+        <span class="mat-asig-label">${escHTML(nom)}</span>
+        <span class="mat-asig-count">${n} test${n!==1?'s':''}</span>
+      </div>`;
+    }).join('');
+
+  c.innerHTML = _testsBc() + `<div class="mat-asig-grid">${burbujas
+    || '<p style="color:var(--muted);font-size:12px;padding:8px 0">Todavía no hay tests para un curso</p>'}</div>`;
+}
+
+// ── Asignaturas del punto donde estemos ────────────────────────
 function _testsRenderAsigs(c) {
-  const { alumnoId } = _testsNav;
-  const items = _testsData.filter(t => alumnoId ? t.alumno_id === alumnoId : !t.alumno_id);
-  const asigCnt = {};
-  items.forEach(t => { const a = t.asignatura || '—'; asigCnt[a] = (asigCnt[a]||0)+1; });
-  const idJs = alumnoId ? `'${alumnoId}'` : 'null';
-  const bubbles = Object.keys(asigCnt).sort((a,b) => a.localeCompare(b,'es')).map(asig => {
-    const meta = getSubjectMeta(asig);
-    const cnt  = asigCnt[asig];
-    return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_testsGo(${idJs},'${asig.replace(/'/g,"\\'")}')">
-      <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
-      <span class="mat-asig-label">${escHTML(asig)}</span>
-      <span class="mat-asig-count">${cnt} test${cnt!==1?'s':''}</span>
-    </div>`;
-  }).join('');
-  c.innerHTML = _testsBc() + `<div class="mat-asig-grid">${bubbles || '<p style="color:var(--muted);font-size:12px">Sin asignaturas</p>'}</div>`;
+  const { sec, nivel, alumnoId } = _testsNav;
+  const cuenta = {};
+  _testsItems().forEach(t => { const a = t.asignatura || '—'; cuenta[a] = (cuenta[a] || 0) + 1; });
+
+  const nivJs = nivel    ? `'${nivel}'`    : 'null';
+  const aluJs = alumnoId ? `'${alumnoId}'` : 'null';
+
+  const burbujas = Object.keys(cuenta)
+    .sort((a, b) => a.localeCompare(b, 'es'))
+    .map(asig => {
+      const meta = getSubjectMeta(asig);
+      const n    = cuenta[asig];
+      const asigJs = asig.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      return `<div class="mat-asig-bubble" style="--ab-clr:${meta.cc}" onclick="_testsGo('${sec}',${nivJs},${aluJs},'${asigJs}')">
+        <div class="mat-asig-ico"><i class="ti ${meta.ico}"></i></div>
+        <span class="mat-asig-label">${escHTML(asig)}</span>
+        <span class="mat-asig-count">${n} test${n!==1?'s':''}</span>
+      </div>`;
+    }).join('');
+
+  c.innerHTML = _testsBc() + `<div class="mat-asig-grid">${burbujas
+    || '<p style="color:var(--muted);font-size:12px;padding:8px 0">Sin asignaturas</p>'}</div>`;
 }
 
+// ── Y los tests ────────────────────────────────────────────────
 function _testsRenderCards(c) {
-  const { alumnoId, asig } = _testsNav;
-  const items = _testsData.filter(t =>
-    (alumnoId ? t.alumno_id === alumnoId : !t.alumno_id) &&
-    (t.asignatura || '—') === asig
-  );
-  const cards = items.map(t => {
+  const cards = _testsItems().map(t => {
     const meta  = getSubjectMeta(t.asignatura || '');
     const nPreg = t.preguntas?.length || 0;
     return `<div class="mat-pdf-card" style="--ab-clr:${meta.cc}">
@@ -5419,7 +5504,9 @@ function _testsRenderCards(c) {
       </div>
     </div>`;
   }).join('');
-  c.innerHTML = _testsBc() + `<div class="mat-pdf-grid">${cards || '<p style="color:var(--muted);font-size:12px;padding:8px 0">Sin tests</p>'}</div>`;
+
+  c.innerHTML = _testsBc() + `<div class="mat-pdf-grid">${cards
+    || '<p style="color:var(--muted);font-size:12px;padding:8px 0">Sin tests</p>'}</div>`;
 }
 
 async function eliminarTest(testId) {
