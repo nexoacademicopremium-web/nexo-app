@@ -5567,6 +5567,19 @@ async function eliminarTest(testId) {
 
 let preguntasEdit = [];
 
+// Cuando el navegador rechaza un formulario por un campo obligatorio
+// que no puede enseñar —porque está escondido— no avisa de nada: el
+// botón de guardar simplemente no hace nada. Esto lo cuenta.
+document.addEventListener('invalid', (e) => {
+  const campo = e.target;
+  const visible = campo.offsetParent !== null;
+  if (visible) return;   // si se ve, el navegador ya lo señala él
+  if (typeof showToast === 'function') {
+    showToast('No se puede guardar: hay un campo obligatorio oculto sin rellenar. Avisa de esto.', 'error');
+  }
+  console.warn('Campo obligatorio oculto bloqueando el formulario:', campo.id || campo.name || campo);
+}, true);
+
 function abrirModalTest() {
   editTestId    = null;
   preguntasCount = 0;
@@ -5779,6 +5792,9 @@ function _refrescarBancoPreguntas() {
     caja.style.display  = 'none';
     lista.style.display = '';
     btn.style.display   = '';
+    // Al volver del banco la lista se quedó vacía: se repone una
+    // pregunta en blanco para poder escribir.
+    if (!lista.children.length) addPregunta();
     return;
   }
 
@@ -5786,6 +5802,14 @@ function _refrescarBancoPreguntas() {
   caja.style.display  = '';
   lista.style.display = 'none';
   btn.style.display   = 'none';
+
+  // Y se vacía, no solo se esconde. Cada pregunta trae seis campos
+  // obligatorios: escondidos siguen contando, y el navegador se niega
+  // a enviar un formulario con un campo obligatorio vacío que no
+  // puede enseñarte. El botón de guardar no hacía nada y sin decir
+  // por qué.
+  lista.innerHTML = '';
+  preguntasCount = 0;
 
   document.getElementById('banco-titulo').textContent =
     `${banco.titulo} — ${preg} preguntas, ${pts} puntos`;
