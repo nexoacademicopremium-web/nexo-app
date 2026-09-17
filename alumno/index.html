@@ -2667,8 +2667,15 @@ async function loadTests() {
   const [{ data: misAsigs }, { data: catalogo }, { data: tests }, { data: testsAllNiv }, { data: misResultados }] = await Promise.all([
     db.from('alumno_asignaturas').select('asignatura_id').eq('alumno_id', alumno.id),
     db.from('asignaturas').select('id,nombre').order('nombre'),
-    db.from('tests').select('id,titulo,asignatura,bloque_tema,alumno_id,generado_ia,puede_repetir').eq('visible', true).eq('nivel', alumno.nivel),
-    db.from('tests').select('asignatura,bloque_tema').eq('visible', true),
+    // Los de su curso, pero solo los que van a todos (sin alumno) o los
+    // suyos. Sin esto, un test hecho para un compañero de clase le
+    // aparecería también a él.
+    db.from('tests').select('id,titulo,asignatura,bloque_tema,alumno_id,generado_ia,puede_repetir')
+      .eq('visible', true).eq('nivel', alumno.nivel)
+      .or(`alumno_id.is.null,alumno_id.eq.${alumno.id}`),
+    // Para la lista de temas "próximamente": los personales de otros no
+    // pintan nada ahí.
+    db.from('tests').select('asignatura,bloque_tema').eq('visible', true).is('alumno_id', null),
     db.from('resultados_test').select('test_id,nota').eq('alumno_id', alumno.id),
   ]);
 

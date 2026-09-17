@@ -96,6 +96,21 @@
   .btn-edit:hover{background:#0f2240}
   /* El ojo para asomarse al área de alguien: en naranja, que no se
      confunda con los botones de siempre ni con los de borrar. */
+  /* Elegir si el test va a un curso entero o a una sola persona. Se
+     ve de un vistazo cuál está puesto, que de eso depende quién lo
+     recibe. */
+  .t-tipo-btn{flex:1;display:flex;align-items:center;gap:10px;text-align:left;
+    background:transparent;border:1px solid var(--border);border-radius:10px;
+    padding:11px 13px;cursor:pointer;font-family:inherit;color:var(--muted);
+    transition:border-color .15s ease,background .15s ease,color .15s ease}
+  .t-tipo-btn i{font-size:19px;flex-shrink:0}
+  .t-tipo-btn span{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .t-tipo-btn b{font-size:13px;font-weight:600;color:var(--soft)}
+  .t-tipo-btn small{font-size:10.5px;opacity:.85}
+  .t-tipo-btn:hover{border-color:var(--blue)}
+  .t-tipo-btn.on{background:#0a1a30;border-color:var(--blue);color:var(--blue)}
+  .t-tipo-btn.on b{color:#fff}
+
   .btn-ojo{background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.5);
     border-radius:7px;padding:5px 9px;font-size:12px;cursor:pointer;font-family:inherit;
     line-height:1;display:inline-flex;align-items:center;justify-content:center;
@@ -1091,16 +1106,38 @@
     <div class="modal-title"><span id="modal-test-titulo">Nuevo test</span><button class="modal-close" onclick="cerrarModal('modal-test')">×</button></div>
     <form id="form-test" onsubmit="guardarTest(event)">
       <label class="fl">Título *</label><input class="fi" id="t-titulo" required>
+
+      <label class="fl">¿Para quién es?</label>
+      <div style="display:flex;gap:9px;margin-bottom:4px">
+        <button type="button" class="t-tipo-btn" id="t-tipo-general"  onclick="setTipoTest('general')">
+          <i class="ti ti-users"></i>
+          <span><b>General</b><small>Todo un curso</small></span>
+        </button>
+        <button type="button" class="t-tipo-btn" id="t-tipo-especifico" onclick="setTipoTest('especifico')">
+          <i class="ti ti-user"></i>
+          <span><b>Específico</b><small>Un solo alumno</small></span>
+        </button>
+      </div>
+      <input type="hidden" id="t-tipo" value="general">
+
       <div class="fi-grid2">
-        <div><label class="fl">Asignatura</label><input class="fi" id="t-asignatura" placeholder="Matemáticas"></div>
-        <div>
-          <label class="fl">Nivel</label>
+        <div id="t-row-nivel">
+          <label class="fl">Curso *</label>
           <select class="fi" id="t-nivel">
-            <option value="">—</option>
+            <option value="">— Elige curso —</option>
             <option value="1ESO">1.º ESO</option><option value="2ESO">2.º ESO</option>
             <option value="3ESO">3.º ESO</option><option value="4ESO">4.º ESO</option>
             <option value="1BACH">1.º Bach</option><option value="2BACH">2.º Bach</option>
           </select>
+        </div>
+        <div id="t-row-alumno" style="display:none">
+          <label class="fl">Alumno *</label>
+          <select class="fi" id="t-alumno" onchange="alAlumnoDelTest()"></select>
+          <p style="color:var(--muted);font-size:11px;margin:4px 0 0" id="t-alumno-nivel"></p>
+        </div>
+        <div>
+          <label class="fl">Asignatura *</label>
+          <select class="fi" id="t-asignatura"></select>
         </div>
       </div>
       <label class="fl">Bloque / Tema</label><input class="fi" id="t-bloque">
@@ -5407,6 +5444,8 @@ function abrirModalTest() {
   document.getElementById('form-test').reset();
   document.getElementById('modal-test-titulo').textContent = 'Nuevo test';
   document.getElementById('preguntas-container').innerHTML = '';
+  poblarSelectoresTest();
+  setTipoTest('general');
   addPregunta();
   document.getElementById('modal-test').classList.add('open');
 }
@@ -5417,10 +5456,15 @@ async function editarTest(id) {
   if (eTest || !test) { showToast('Error al cargar el test', 'error'); return; }
   const { data: preguntas } = await db.from('preguntas_test').select('*').eq('test_id', id).order('orden');
   document.getElementById('modal-test-titulo').textContent = 'Editar test';
+  poblarSelectoresTest();
   document.getElementById('t-titulo').value     = test.titulo || '';
   document.getElementById('t-asignatura').value = test.asignatura || '';
   document.getElementById('t-nivel').value      = test.nivel || '';
   document.getElementById('t-bloque').value     = test.bloque_tema || '';
+
+  // Un test con alumno es específico; sin alumno, va al curso entero.
+  document.getElementById('t-alumno').value = test.alumno_id || '';
+  setTipoTest(test.alumno_id ? 'especifico' : 'general');
   preguntasCount = 0;
   document.getElementById('preguntas-container').innerHTML = '';
   (preguntas || []).forEach(p => addPregunta(p));
@@ -5456,12 +5500,81 @@ function addPregunta(data = null) {
   document.getElementById('preguntas-container').appendChild(div);
 }
 
+// ── Tests: a quién van dirigidos ───────────────────────────────
+// Un test general lo ve todo un curso; uno específico, una sola
+// persona. Por dentro la diferencia es solo si el test lleva alumno
+// o no, pero conviene decidirlo antes de escribir las preguntas.
+
+function setTipoTest(tipo) {
+  const esEspecifico = tipo === 'especifico';
+  document.getElementById('t-tipo').value = tipo;
+
+  document.getElementById('t-tipo-general').classList.toggle('on', !esEspecifico);
+  document.getElementById('t-tipo-especifico').classList.toggle('on', esEspecifico);
+  document.getElementById('t-row-nivel').style.display  = esEspecifico ? 'none' : '';
+  document.getElementById('t-row-alumno').style.display = esEspecifico ? '' : 'none';
+
+  if (esEspecifico) alAlumnoDelTest();
+  else document.getElementById('t-alumno-nivel').textContent = '';
+}
+
+// El curso de un test específico no se elige: es el del alumno. Si no
+// coincidiera, el test no le aparecería, porque su panel busca por
+// curso.
+function alAlumnoDelTest() {
+  const sel = document.getElementById('t-alumno');
+  const pie = document.getElementById('t-alumno-nivel');
+  const a = allAlumnos.find(x => x.id === sel.value);
+  pie.textContent = a?.nivel ? `Curso: ${nivelLabel(a.nivel)}` : '';
+}
+
+// Los desplegables salen del catálogo y de los alumnos de verdad, no
+// de una lista escrita a mano que se quede vieja.
+function poblarSelectoresTest() {
+  const selAsig = document.getElementById('t-asignatura');
+  const previaAsig = selAsig.value;
+  selAsig.innerHTML = '<option value="">— Elige asignatura —</option>'
+    + (allAsignaturas || []).map(a => `<option value="${escHTML(a.nombre)}">${escHTML(a.nombre)}</option>`).join('');
+  if (previaAsig) selAsig.value = previaAsig;
+
+  const selAlu = document.getElementById('t-alumno');
+  const previaAlu = selAlu.value;
+  selAlu.innerHTML = '<option value="">— Elige alumno —</option>'
+    + (allAlumnos || []).filter(a => a.activo).map(a => {
+        const u = a.usuario || {};
+        const nom = `${u.nombre || '?'} ${u.apellidos || ''}`.trim();
+        return `<option value="${a.id}">${escHTML(nom)}${a.nivel ? ' · ' + escHTML(nivelLabel(a.nivel)) : ''}</option>`;
+      }).join('');
+  if (previaAlu) selAlu.value = previaAlu;
+}
+
 async function guardarTest(e) {
   e.preventDefault();
+  const esEspecifico = document.getElementById('t-tipo').value === 'especifico';
+  const asignatura   = document.getElementById('t-asignatura').value || null;
+
+  if (!asignatura) { showToast('Elige la asignatura del test', 'error'); return; }
+
+  let nivel    = null;
+  let alumnoId = null;
+
+  if (esEspecifico) {
+    alumnoId = document.getElementById('t-alumno').value || null;
+    if (!alumnoId) { showToast('Elige a qué alumno va dirigido', 'error'); return; }
+    // El curso se hereda del alumno: su panel busca los tests por
+    // curso, así que si no coincide no lo vería nunca.
+    nivel = allAlumnos.find(a => a.id === alumnoId)?.nivel || null;
+    if (!nivel) { showToast('Ese alumno no tiene curso asignado: ponle uno en su ficha', 'error'); return; }
+  } else {
+    nivel = document.getElementById('t-nivel').value || null;
+    if (!nivel) { showToast('Elige el curso al que va dirigido', 'error'); return; }
+  }
+
   const testData = {
     titulo:      document.getElementById('t-titulo').value,
-    asignatura:  document.getElementById('t-asignatura').value || null,
-    nivel:       document.getElementById('t-nivel').value || null,
+    asignatura,
+    nivel,
+    alumno_id:   alumnoId,
     bloque_tema: document.getElementById('t-bloque').value || null,
     creado_por:  ctx.usuario.id,
   };
