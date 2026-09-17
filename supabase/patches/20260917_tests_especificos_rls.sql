@@ -1,16 +1,26 @@
 -- ============================================================
--- Que un test específico solo lo pueda leer su destinatario
+-- Tests dirigidos a un alumno concreto: que solo los vea él
 --
--- Con los tests dirigidos a un alumno concreto, el permiso de lectura
--- que había se queda corto: dejaba ver cualquier test visible, así que
--- un alumno podía leer por su cuenta el que se hizo para un compañero.
+-- ⚠️ CORREGIDO. Una versión anterior de este archivo recreaba el
+--    permiso preguntas_alumno_read, que se había quitado a propósito
+--    en agosto (patch 20260807_profesor_fase1_rls_fixes) porque
+--    dejaba que un alumno leyera la tabla de preguntas entera,
+--    respuesta correcta incluida.
 --
--- El panel ya los filtra, pero eso es la pantalla. Esto es el candado.
+--    Si llegaste a ejecutar la versión anterior, este archivo lo
+--    deshace: el primer DROP se encarga.
 --
--- Pegar en el editor SQL de Supabase. Es repetible: borra el permiso
--- si existe y lo vuelve a crear igual.
+--    Las preguntas no necesitan permiso: el alumno las pide por la
+--    función get_preguntas_alumno, que ya comprueba que el test sea
+--    suyo y no devuelve la respuesta correcta.
+--
+-- Pegar en el editor SQL de Supabase. Es repetible.
 -- ============================================================
 
+-- ── Lo que sí hace falta ────────────────────────────────────
+-- El listado de tests del alumno sale de esta tabla, y hasta ahora
+-- dejaba ver cualquiera que estuviera visible: con los tests dirigidos
+-- a una persona, eso significa ver el de un compañero.
 DROP POLICY IF EXISTS "tests_alumno_read" ON public.tests;
 
 CREATE POLICY "tests_alumno_read" ON public.tests
@@ -18,29 +28,19 @@ CREATE POLICY "tests_alumno_read" ON public.tests
   USING (
     visible = TRUE
     AND (
-      -- Los de todo un curso
-      alumno_id IS NULL
-      -- o los suyos
-      OR alumno_id = public.get_alumno_id()
+      alumno_id IS NULL                      -- los de todo un curso
+      OR alumno_id = public.get_alumno_id()  -- o los suyos
     )
   );
 
--- Las preguntas van detrás del test: si no puede ver el test, tampoco
--- sus preguntas.
+-- ── Lo que NO debe existir ──────────────────────────────────
+-- Este permiso deja leer preguntas_test directamente, y ahí está la
+-- respuesta correcta de cada pregunta.
 DROP POLICY IF EXISTS "preguntas_alumno_read" ON public.preguntas_test;
 
-CREATE POLICY "preguntas_alumno_read" ON public.preguntas_test
-  FOR SELECT
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.tests t
-      WHERE t.id = preguntas_test.test_id
-        AND t.visible = TRUE
-        AND (t.alumno_id IS NULL OR t.alumno_id = public.get_alumno_id())
-    )
-  );
-
--- Comprobación: deben salir las dos.
+-- Comprobación. Debe salir:
+--   · tests_alumno_read      → SELECT     (tiene que estar)
+--   · preguntas_alumno_read  → NO aparece (tiene que NO estar)
 SELECT tablename, policyname, cmd
 FROM pg_policies
 WHERE schemaname = 'public'

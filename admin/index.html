@@ -1128,6 +1128,20 @@
       </div>
       <input type="hidden" id="t-tipo" value="general">
 
+      <label class="fl">Clase de test</label>
+      <div style="display:flex;gap:9px;margin-bottom:4px">
+        <button type="button" class="t-tipo-btn" id="t-clase-normal" onclick="setClaseTest('normal')">
+          <i class="ti ti-list-check"></i>
+          <span><b>Autoevaluación</b><small>Nota sobre 10</small></span>
+        </button>
+        <button type="button" class="t-tipo-btn" id="t-clase-nivelacion" onclick="setClaseTest('nivelacion')">
+          <i class="ti ti-stairs-up"></i>
+          <span><b>Nivelación</b><small>Sitúa su nivel</small></span>
+        </button>
+      </div>
+      <input type="hidden" id="t-clase" value="normal">
+      <p id="t-clase-aviso" style="display:none;color:#fbbf24;font-size:11.5px;margin:6px 0 0;line-height:1.5"></p>
+
       <div class="fi-grid2">
         <div id="t-row-nivel">
           <label class="fl">Curso *</label>
@@ -1149,7 +1163,7 @@
         </div>
         <div>
           <label class="fl">Asignatura *</label>
-          <select class="fi" id="t-asignatura"></select>
+          <select class="fi" id="t-asignatura" onchange="alCambiarAsignaturaTest()"></select>
         </div>
       </div>
       <label class="fl">Bloque / Tema</label><input class="fi" id="t-bloque">
@@ -1351,6 +1365,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
+<script src="../js/nivelacion.js"></script>
 <script src="../js/push.js"></script>
 <script>
 // ============================================================
@@ -5547,6 +5562,7 @@ function abrirModalTest() {
   document.getElementById('preguntas-container').innerHTML = '';
   poblarSelectoresTest();
   setTipoTest('general');
+  setClaseTest('normal');
   addPregunta();
   document.getElementById('modal-test').classList.add('open');
 }
@@ -5566,6 +5582,7 @@ async function editarTest(id) {
   // Un test con alumno es específico; sin alumno, va al curso entero.
   document.getElementById('t-alumno').value = test.alumno_id || '';
   setTipoTest(test.alumno_id ? 'especifico' : 'general');
+  setClaseTest(test.tipo === 'nivelacion' ? 'nivelacion' : 'normal');
   preguntasCount = 0;
   document.getElementById('preguntas-container').innerHTML = '';
   (preguntas || []).forEach(p => addPregunta(p));
@@ -5597,8 +5614,75 @@ function addPregunta(data = null) {
       <option value="c" ${data?.respuesta_correcta === 'c' ? 'selected' : ''}>C</option>
       <option value="d" ${data?.respuesta_correcta === 'd' ? 'selected' : ''}>D</option>
     </select>
+
+    <div class="preg-nivelacion" id="preg-niv-${i}" style="display:none;grid-template-columns:2fr 1fr;gap:8px;margin-top:8px">
+      <div>
+        <label class="fl" style="margin-top:0">Parte del test</label>
+        <select class="fi" id="preg-parte-${i}"></select>
+      </div>
+      <div>
+        <label class="fl" style="margin-top:0">Puntos</label>
+        <input class="fi" id="preg-puntos-${i}" type="number" min="1" max="10" step="1" value="${data?.puntos || 1}">
+      </div>
+    </div>
   `;
   document.getElementById('preguntas-container').appendChild(div);
+
+  // Se rellena la parte después de añadir el bloque, que antes no
+  // existe el desplegable.
+  _pintarPartesDePregunta(i, data?.parte || null);
+  _refrescarCamposNivelacion();
+}
+
+// ── Nivelación ─────────────────────────────────────────────────
+
+function _pintarPartesDePregunta(i, parteActual) {
+  const sel = document.getElementById(`preg-parte-${i}`);
+  if (!sel) return;
+  const asig = document.getElementById('t-asignatura').value;
+  const partes = partesDeNivelacion(asig);
+  sel.innerHTML = '<option value="">— Sin parte —</option>'
+    + partes.map(p => `<option value="${escHTML(p)}"${p === parteActual ? ' selected' : ''}>${escHTML(p)}</option>`).join('');
+}
+
+// Los campos de parte y puntos solo pintan algo en un test de
+// nivelación de una asignatura que los tenga definidos.
+function _refrescarCamposNivelacion() {
+  const esNivelacion = document.getElementById('t-clase')?.value === 'nivelacion';
+  const asig  = document.getElementById('t-asignatura')?.value;
+  const tiene = partesDeNivelacion(asig).length > 0;
+  const mostrar = esNivelacion && tiene;
+
+  document.querySelectorAll('.preg-nivelacion').forEach(el => {
+    el.style.display = mostrar ? 'grid' : 'none';
+  });
+
+  const aviso = document.getElementById('t-clase-aviso');
+  if (!aviso) return;
+  if (esNivelacion && asig && !tiene) {
+    aviso.style.display = '';
+    aviso.textContent = `Todavía no hay niveles definidos para ${asig}. El test se guardará, pero al alumno le saldrá `
+      + 'la nota de siempre en vez del nivel. De momento solo está montado el inglés.';
+  } else {
+    aviso.style.display = 'none';
+  }
+}
+
+// Las partes dependen de la asignatura: si se cambia, hay que
+// rehacer los desplegables de cada pregunta.
+function alCambiarAsignaturaTest() {
+  document.querySelectorAll('[id^="preg-parte-"]').forEach(sel => {
+    const i = sel.id.replace('preg-parte-', '');
+    _pintarPartesDePregunta(i, sel.value);
+  });
+  _refrescarCamposNivelacion();
+}
+
+function setClaseTest(clase) {
+  document.getElementById('t-clase').value = clase;
+  document.getElementById('t-clase-normal').classList.toggle('on', clase !== 'nivelacion');
+  document.getElementById('t-clase-nivelacion').classList.toggle('on', clase === 'nivelacion');
+  _refrescarCamposNivelacion();
 }
 
 // ── Tests: a quién van dirigidos ───────────────────────────────
@@ -5676,6 +5760,7 @@ async function guardarTest(e) {
     asignatura,
     nivel,
     alumno_id:   alumnoId,
+    tipo:        document.getElementById('t-clase').value || 'normal',
     bloque_tema: document.getElementById('t-bloque').value || null,
     creado_por:  ctx.usuario.id,
   };
@@ -5707,6 +5792,11 @@ async function guardarTest(e) {
       opcion_c:           document.getElementById(`preg-c-${n}`)?.value || '',
       opcion_d:           document.getElementById(`preg-d-${n}`)?.value || '',
       respuesta_correcta: document.getElementById(`preg-correct-${n}`)?.value || 'a',
+      // Solo tienen sentido en los de nivelación; en el resto van
+      // vacía y a un punto.
+      parte:              document.getElementById(`preg-parte-${n}`)?.value || null,
+      puntos:             Math.max(1, Math.min(10,
+                            parseInt(document.getElementById(`preg-puntos-${n}`)?.value, 10) || 1)),
       orden:              idx,
     });
   });

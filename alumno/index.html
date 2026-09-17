@@ -985,6 +985,7 @@
 <script src="../js/auth.js"></script>
 <script src="../js/i18n.js"></script>
 <script src="../js/push.js"></script>
+<script src="../js/nivelacion.js"></script>
 <script>
 // escHTML() vive en js/auth.js
 // ============================================================
@@ -2220,7 +2221,7 @@ async function iniciarTest(testId, tituloEnc, from) {
 
   // Fetch fresh test metadata from DB (avoids stale cache across sections)
   const [{ data: testRecord }, { data: resultado }] = await Promise.all([
-    db.from('tests').select('puede_repetir,generado_ia,alumno_id,creado_por').eq('id', testId).single(),
+    db.from('tests').select('puede_repetir,generado_ia,alumno_id,creado_por,tipo,asignatura').eq('id', testId).single(),
     db.from('resultados_test').select('*').eq('test_id', testId).eq('alumno_id', ctx.alumnoData.id).maybeSingle(),
   ]);
 
@@ -2231,7 +2232,7 @@ async function iniciarTest(testId, tituloEnc, from) {
   if (resultado && isAssigned && !puedeRep) {
     // View-only: fetch solucionario server-side (only available after submission)
     const { data: solucionario } = await db.rpc('get_solucionario', { p_test_id: testId });
-    testState = { testId, preguntas, respuestas: resultado.respuestas || {}, enviado: true, viewOnly: true, isAssigned, creadoPor, isIA: !!testRecord?.generado_ia, respuestas_correctas: solucionario || {} };
+    testState = { testId, preguntas, respuestas: resultado.respuestas || {}, enviado: true, viewOnly: true, isAssigned, creadoPor, isIA: !!testRecord?.generado_ia, tipo: testRecord?.tipo || 'normal', asignatura: testRecord?.asignatura || null, respuestas_correctas: solucionario || {} };
     renderTest();
     const nota      = resultado.nota;
     const correctas = preguntas.filter(p => (resultado.respuestas || {})[p.id] === (solucionario || {})[p.id]).length;
@@ -2251,7 +2252,7 @@ async function iniciarTest(testId, tituloEnc, from) {
     return;
   }
 
-  testState = { testId, preguntas, respuestas: {}, enviado: false, viewOnly: false, isAssigned, creadoPor, isIA: !!testRecord?.generado_ia, respuestas_correctas: {} };
+  testState = { testId, preguntas, respuestas: {}, enviado: false, viewOnly: false, isAssigned, creadoPor, isIA: !!testRecord?.generado_ia, tipo: testRecord?.tipo || 'normal', asignatura: testRecord?.asignatura || null, respuestas_correctas: {} };
   renderTest();
 }
 
@@ -2288,6 +2289,103 @@ function seleccionarRespuesta(pregId, opcion) {
   renderTest();
 }
 
+// ── Resultado de un test de nivelación ─────────────────────────
+// No lleva nota: lleva el nivel al que corresponde lo que ha hecho,
+// cuántas horas semanales le convienen y en qué partes anda mejor y
+// peor, que es lo que sirve para orientar las clases.
+function _pintarNivelacion(d) {
+  const caja = document.createElement('div');
+  caja.style.cssText = 'margin-top:20px';
+
+  const partes = d.partes.map(g => {
+    const pct = g.total > 0 ? (g.puntos / g.total) * 100 : 0;
+    return `
+      <div style="padding:11px 0;border-bottom:.5px solid var(--border2)">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+          <span style="color:var(--soft);font-size:13px">${escHTML(g.nombre)}</span>
+          <b style="color:#fff;font-size:13px;white-space:nowrap">${g.puntos}/${g.total}</b>
+        </div>
+        <div style="height:4px;background:var(--dark);border-radius:2px;margin-top:7px;overflow:hidden">
+          <div style="height:100%;width:${pct.toFixed(0)}%;background:var(--blue);border-radius:2px"></div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const lista = (items, color) => items.map(x =>
+    `<li style="color:${color};font-size:12.5px;line-height:1.7">${escHTML(x)}</li>`
+  ).join('');
+
+  caja.innerHTML = `
+    <!-- El nivel, que es lo que viene a saber -->
+    <div style="background:linear-gradient(135deg,#1e2a45,#2a3854);border-radius:16px;
+                padding:30px 24px;text-align:center;margin-bottom:16px">
+      <div style="color:#a8c8f0;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:700">
+        Nivel recomendado</div>
+      <div style="color:#fff;font-size:46px;font-weight:800;line-height:1.1;margin:8px 0 2px;letter-spacing:-1px">
+        ${escHTML(d.nivel)}</div>
+      <div style="color:#c9d9ef;font-size:14px">${escHTML(d.etiqueta)}</div>
+      <div style="display:inline-block;margin-top:14px;padding:6px 15px;border-radius:20px;
+                  background:rgba(255,255,255,.14);color:#fff;font-size:12px;font-weight:600">
+        ${d.puntos} de ${d.total} puntos</div>
+    </div>
+
+    <!-- Las tres cifras de un vistazo -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+      <div style="background:var(--surface);border:.5px solid var(--border);border-radius:12px;padding:16px 8px;text-align:center">
+        <div style="color:#fff;font-size:20px;font-weight:700">${d.correctas}/${d.preguntas}</div>
+        <div style="color:var(--muted);font-size:10px;letter-spacing:.09em;text-transform:uppercase;margin-top:3px">Correctas</div>
+      </div>
+      <div style="background:var(--surface);border:.5px solid var(--border);border-radius:12px;padding:16px 8px;text-align:center">
+        <div style="color:#fff;font-size:20px;font-weight:700">${d.puntos}/${d.total}</div>
+        <div style="color:var(--muted);font-size:10px;letter-spacing:.09em;text-transform:uppercase;margin-top:3px">Puntos</div>
+      </div>
+      <div style="background:var(--surface);border:.5px solid var(--border);border-radius:12px;padding:16px 8px;text-align:center">
+        <div style="color:#fff;font-size:20px;font-weight:700">${d.porcentaje}%</div>
+        <div style="color:var(--muted);font-size:10px;letter-spacing:.09em;text-transform:uppercase;margin-top:3px">Porcentaje</div>
+      </div>
+    </div>
+
+    <!-- Qué hacer a partir de aquí -->
+    <div style="background:var(--surface);border:.5px solid var(--border);border-radius:12px;
+                padding:16px 18px;margin-bottom:16px;display:flex;gap:13px;align-items:flex-start">
+      <i class="ti ti-calendar-week" style="color:var(--blue);font-size:20px;flex-shrink:0;margin-top:1px"></i>
+      <div style="min-width:0">
+        <div style="color:var(--blue);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:4px">
+          Horas recomendadas a la semana</div>
+        <div style="color:#fff;font-size:14px;line-height:1.6">
+          <b>${escHTML(d.horas)}</b> — ${escHTML(d.consejo)}</div>
+      </div>
+    </div>
+
+    <!-- Dónde ha sacado cada punto -->
+    <div style="background:var(--surface);border:.5px solid var(--border);border-radius:12px;
+                padding:16px 18px 6px;margin-bottom:16px">
+      <div style="color:var(--blue);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:6px">
+        Desglose por parte</div>
+      ${partes}
+    </div>
+
+    <!-- En qué apoyarse y qué reforzar -->
+    <div style="background:var(--surface);border:.5px solid var(--border);border-radius:12px;
+                padding:16px 18px;margin-bottom:20px;display:grid;grid-template-columns:1fr 1fr;gap:18px">
+      <div style="min-width:0">
+        <div style="color:var(--green);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:7px">
+          Puntos fuertes</div>
+        <ul style="margin:0;padding-left:17px">${lista(d.fuertes, 'var(--soft)')}</ul>
+      </div>
+      <div style="min-width:0">
+        <div style="color:#fbbf24;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:7px">
+          Áreas de mejora</div>
+        <ul style="margin:0;padding-left:17px">${lista(d.flojas, 'var(--soft)')}</ul>
+      </div>
+    </div>
+
+    <button class="btn-primary" style="width:100%" onclick="showSection(_testOriginSection||'estudiar')">
+      ← Volver</button>`;
+
+  return caja;
+}
+
 async function enviarTest() {
   const { testId, preguntas, respuestas, isIA } = testState;
   testState.enviado = true;
@@ -2319,6 +2417,26 @@ async function enviarTest() {
   renderTest();
 
   const content = document.getElementById('test-content');
+
+  // Un test de nivelación no se lee con una nota: se lee con un
+  // nivel y una recomendación. Si la asignatura no tiene niveles
+  // montados, cae al resultado de siempre.
+  if (testState.tipo === 'nivelacion') {
+    const desglose = calcularNivelacion(
+      testState.asignatura, testState.preguntas, respuestas,
+    );
+    if (desglose) {
+      // Se guarda para poder volver a enseñarlo sin recalcular.
+      db.from('resultados_test').update({ detalle: desglose })
+        .eq('test_id', testId).eq('alumno_id', ctx.alumnoData.id)
+        .then(({ error }) => { if (error) console.warn('No se guardó el desglose:', error.message); });
+
+      content.prepend(_pintarNivelacion(desglose));
+      window.scrollTo(0, 0);
+      return;
+    }
+  }
+
   const resultDiv = document.createElement('div');
   resultDiv.style.cssText = 'background:var(--surface);border:.5px solid var(--border);border-radius:16px;padding:32px 24px 24px;text-align:center;margin-top:20px';
   resultDiv.innerHTML = `
