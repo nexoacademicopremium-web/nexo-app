@@ -1170,8 +1170,21 @@
       <div style="margin-top:20px;border-top:.5px solid var(--border);padding-top:16px">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
           <span style="color:var(--soft);font-size:13px;font-weight:500">Preguntas</span>
-          <button type="button" class="btn-ghost" onclick="addPregunta()"><i class="ti ti-plus"></i> Añadir pregunta</button>
+          <button type="button" class="btn-ghost" id="btn-add-pregunta" onclick="addPregunta()"><i class="ti ti-plus"></i> Añadir pregunta</button>
         </div>
+
+        <!-- Los tests de nivelación traen sus preguntas puestas -->
+        <div id="preguntas-banco" style="display:none;background:var(--dark);border:.5px solid var(--border);
+             border-radius:11px;padding:16px 18px">
+          <div style="display:flex;gap:12px;align-items:flex-start">
+            <i class="ti ti-lock" style="color:var(--blue);font-size:19px;flex-shrink:0;margin-top:2px"></i>
+            <div style="min-width:0">
+              <div style="color:#fff;font-size:13.5px;font-weight:600;margin-bottom:4px" id="banco-titulo"></div>
+              <div style="color:var(--muted);font-size:12px;line-height:1.6" id="banco-detalle"></div>
+            </div>
+          </div>
+        </div>
+
         <div id="preguntas-container"></div>
       </div>
       <div class="modal-footer">
@@ -1366,6 +1379,7 @@
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
 <script src="../js/nivelacion.js"></script>
+<script src="../js/test-nivel-ingles.js"></script>
 <script src="../js/push.js"></script>
 <script>
 // ============================================================
@@ -5648,6 +5662,7 @@ function _pintarPartesDePregunta(i, parteActual) {
 // Los campos de parte y puntos solo pintan algo en un test de
 // nivelación de una asignatura que los tenga definidos.
 function _refrescarCamposNivelacion() {
+  _refrescarBancoPreguntas();
   const esNivelacion = document.getElementById('t-clase')?.value === 'nivelacion';
   const asig  = document.getElementById('t-asignatura')?.value;
   const tiene = partesDeNivelacion(asig).length > 0;
@@ -5678,11 +5693,108 @@ function alCambiarAsignaturaTest() {
   _refrescarCamposNivelacion();
 }
 
+// Si la asignatura tiene banco de preguntas, no se escriben a mano:
+// son siempre las mismas, y que cada test tuviera las suyas haría
+// que dos alumnos no fueran comparables.
+function bancoDeAsignatura(asignatura) {
+  if (typeof TEST_NIVEL_INGLES === 'undefined') return null;
+  const limpia = (t) => (t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  return limpia(asignatura) === limpia(TEST_NIVEL_INGLES.asignatura) ? TEST_NIVEL_INGLES : null;
+}
+
+function _resumenBanco(banco) {
+  const preg = banco.partes.reduce((s, p) => s + p.preguntas.length, 0);
+  const pts  = banco.partes.reduce((s, p) => s + p.preguntas.length * p.puntos, 0);
+  return { preg, pts };
+}
+
 function setClaseTest(clase) {
   document.getElementById('t-clase').value = clase;
   document.getElementById('t-clase-normal').classList.toggle('on', clase !== 'nivelacion');
   document.getElementById('t-clase-nivelacion').classList.toggle('on', clase === 'nivelacion');
   _refrescarCamposNivelacion();
+}
+
+// Enseña el aviso del banco y esconde el formulario de preguntas,
+// o al revés.
+// Pasa el banco a filas de preguntas_test.
+//
+// Las de escribir van con respuestas_validas y sin respuesta
+// correcta; las de marcar, al revés. La columna respuesta_correcta
+// no admite vacío, así que en las de escribir se deja una letra
+// cualquiera que no se mira: manda respuestas_validas.
+function _preguntasDelBanco(banco, testId) {
+  const filas = [];
+  let orden = 0;
+
+  for (const parte of banco.partes) {
+    parte.preguntas.forEach((q, i) => {
+      let enunciado;
+
+      if (parte.nombre === 'Open Cloze') {
+        // El hueco se presenta con su texto entero, para leerlo en
+        // contexto sin tener que ir arriba y abajo.
+        const texto = parte.textos[q.texto];
+        enunciado = `${texto.titulo} — hueco ${q.hueco}\n\n${texto.cuerpo}`;
+      } else if (q.clave && q.inicio !== undefined) {
+        // Key Word Transformation: frase original, palabra clave y
+        // el trozo que hay que completar.
+        enunciado = `${q.e}\n\nPalabra clave: ${q.clave}\n`
+          + `${q.inicio ? q.inicio + ' ' : ''}______ ${q.fin}`;
+      } else if (q.clave) {
+        // Word Formation: enunciado y la palabra de la que derivar.
+        enunciado = `${q.e}\n\n(${q.clave})`;
+      } else {
+        enunciado = q.e;
+      }
+
+      filas.push({
+        test_id:            testId,
+        enunciado,
+        opcion_a:           q.o?.[0] || '',
+        opcion_b:           q.o?.[1] || '',
+        opcion_c:           q.o?.[2] || '',
+        opcion_d:           q.o?.[3] || '',
+        respuesta_correcta: parte.tipo === 'opcion' ? q.r : 'a',
+        respuestas_validas: parte.tipo === 'escribe' ? q.r : null,
+        parte:              parte.nombre,
+        puntos:             parte.puntos,
+        orden:              orden++,
+      });
+    });
+  }
+  return filas;
+}
+
+function _refrescarBancoPreguntas() {
+  const esNivelacion = document.getElementById('t-clase')?.value === 'nivelacion';
+  const banco = esNivelacion ? bancoDeAsignatura(document.getElementById('t-asignatura')?.value) : null;
+
+  const caja  = document.getElementById('preguntas-banco');
+  const lista = document.getElementById('preguntas-container');
+  const btn   = document.getElementById('btn-add-pregunta');
+  if (!caja || !lista || !btn) return;
+
+  if (!banco) {
+    caja.style.display  = 'none';
+    lista.style.display = '';
+    btn.style.display   = '';
+    return;
+  }
+
+  const { preg, pts } = _resumenBanco(banco);
+  caja.style.display  = '';
+  lista.style.display = 'none';
+  btn.style.display   = 'none';
+
+  document.getElementById('banco-titulo').textContent =
+    `${banco.titulo} — ${preg} preguntas, ${pts} puntos`;
+  document.getElementById('banco-detalle').innerHTML =
+    'Las preguntas ya están definidas y se añaden solas al guardar. Son siempre las mismas, '
+    + 'para que el nivel de dos alumnos se pueda comparar.<br>'
+    + banco.partes.map(p =>
+        `· ${escHTML(p.nombre)} — ${p.preguntas.length} ${p.preguntas.length === 1 ? 'pregunta' : 'preguntas'}`
+      ).join('<br>');
 }
 
 // ── Tests: a quién van dirigidos ───────────────────────────────
@@ -5775,6 +5887,24 @@ async function guardarTest(e) {
     if (error) { showToast('Error: ' + error.message, 'error'); return; }
     const { error: eDel } = await db.from('preguntas_test').delete().eq('test_id', testId);
     if (eDel) { showToast('Error al actualizar preguntas: ' + eDel.message, 'error'); return; }
+  }
+
+  // Si el test tiene banco, las preguntas salen de ahí y no de lo
+  // que haya escrito nadie.
+  const banco = document.getElementById('t-clase').value === 'nivelacion'
+    ? bancoDeAsignatura(asignatura) : null;
+
+  if (banco) {
+    const delBanco = _preguntasDelBanco(banco, testId);
+    const { error: eBanco } = await db.from('preguntas_test').insert(delBanco);
+    if (eBanco) {
+      showToast('Test guardado, pero fallaron las preguntas: ' + eBanco.message, 'error');
+    } else {
+      showToast(`Test creado con ${delBanco.length} preguntas`);
+    }
+    cerrarModal('modal-test');
+    await loadListaTests();
+    return;
   }
 
   const container = document.getElementById('preguntas-container');
