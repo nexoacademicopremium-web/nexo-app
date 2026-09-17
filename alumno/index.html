@@ -2259,28 +2259,99 @@ async function iniciarTest(testId, tituloEnc, from) {
 function renderTest() {
   const { preguntas, respuestas, enviado, respuestas_correctas } = testState;
   const content = document.getElementById('test-content');
-  const respondidas = Object.keys(respuestas).length;
+
+  // Las preguntas vienen agrupadas por partes cuando el test las
+  // tiene (los de nivelación). Se pone una cabecera al empezar cada
+  // una, que si no son cien preguntas seguidas sin saber por dónde vas.
+  let parteActual = null;
+
+  const cuerpo = preguntas.map((p, i) => {
+    let cabecera = '';
+    if (p.parte && p.parte !== parteActual) {
+      parteActual = p.parte;
+      cabecera = `<div style="margin:26px 0 14px;padding-bottom:9px;border-bottom:1px solid var(--border)">
+        <span style="color:var(--blue);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700">
+          ${escHTML(p.parte)}</span></div>`;
+    }
+
+    const cuerpoPregunta = p.escribe
+      ? _pintarRespuestaEscrita(p, respuestas, enviado, respuestas_correctas)
+      : _pintarOpciones(p, respuestas, enviado, respuestas_correctas);
+
+    return `${cabecera}
+      <div class="test-pregunta" id="preg-${p.id}">
+        <div class="test-enunciado" style="white-space:pre-line">${i + 1}. ${escHTML(p.enunciado)}</div>
+        ${cuerpoPregunta}
+      </div>`;
+  }).join('');
 
   content.innerHTML = `
-    <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
-      <span style="color:var(--muted);font-size:13px">${respondidas} de ${preguntas.length} respondidas</span>
-      ${!enviado && respondidas === preguntas.length ? `<button class="btn-primary" onclick="enviarTest()"><i class="ti ti-send"></i> Enviar test</button>` : ''}
+    <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <span style="color:var(--muted);font-size:13px" id="test-contador"></span>
+      <span id="test-enviar-arriba"></span>
     </div>
-    ${preguntas.map((p, i) => `
-      <div class="test-pregunta" id="preg-${p.id}">
-        <div class="test-enunciado">${i+1}. ${escHTML(p.enunciado)}</div>
-        <div class="test-opciones">
-          ${['a','b','c','d'].map(op => `
-            <label class="test-opcion ${respuestas[p.id] === op ? 'selected' : ''} ${enviado ? (op === respuestas_correctas[p.id] ? 'correct' : respuestas[p.id] === op ? 'wrong' : '') : ''}">
-              <input type="radio" name="p_${p.id}" value="${op}" ${respuestas[p.id] === op ? 'checked' : ''} ${enviado ? 'disabled' : ''} onchange="seleccionarRespuesta('${p.id}','${op}')">
-              <span class="test-opcion-txt"><b style="color:var(--blue)">${op.toUpperCase()})</b> ${p['opcion_' + op]}</span>
-            </label>
-          `).join('')}
-        </div>
-      </div>
+    ${cuerpo}
+    <div style="text-align:right;margin-top:20px" id="test-enviar-abajo"></div>`;
+
+  _refrescarContadorTest();
+}
+
+function _pintarOpciones(p, respuestas, enviado, correctas) {
+  return `<div class="test-opciones">
+    ${['a','b','c','d'].map(op => `
+      <label class="test-opcion ${respuestas[p.id] === op ? 'selected' : ''} ${enviado ? (op === correctas[p.id] ? 'correct' : respuestas[p.id] === op ? 'wrong' : '') : ''}">
+        <input type="radio" name="p_${p.id}" value="${op}" ${respuestas[p.id] === op ? 'checked' : ''} ${enviado ? 'disabled' : ''} onchange="seleccionarRespuesta('${p.id}','${op}')">
+        <span class="test-opcion-txt"><b style="color:var(--blue)">${op.toUpperCase()})</b> ${p['opcion_' + op]}</span>
+      </label>
     `).join('')}
-    ${enviado ? '' : respondidas === preguntas.length ? `<div style="text-align:right;margin-top:16px"><button class="btn-primary" onclick="enviarTest()"><i class="ti ti-send"></i> Enviar test</button></div>` : ''}
-  `;
+  </div>`;
+}
+
+// Las de escribir llevan un campo de texto. Una vez enviado, debajo
+// aparece la respuesta de referencia, que en estas no se puede
+// señalar sobre las opciones como en las de marcar.
+function _pintarRespuestaEscrita(p, respuestas, enviado, correctas) {
+  const dada = respuestas[p.id] || '';
+  const solucion = correctas[p.id];
+
+  let veredicto = '';
+  if (enviado && solucion !== undefined) {
+    const limpia = (t) => String(t || '').toLowerCase().trim().replace(/\s+/g, ' ').replace(/[.!?]+$/, '');
+    const acierta = limpia(dada) !== '' && limpia(dada) === limpia(solucion);
+    veredicto = acierta
+      ? `<div style="color:var(--green);font-size:12.5px;margin-top:7px">
+           <i class="ti ti-check"></i> Correcta</div>`
+      : `<div style="color:var(--muted);font-size:12.5px;margin-top:7px">
+           <i class="ti ti-x" style="color:var(--red)"></i> Respuesta: <b style="color:var(--soft)">${escHTML(solucion)}</b></div>`;
+  }
+
+  return `<div>
+    <input type="text" class="fi" id="resp-${p.id}" value="${escHTML(dada)}"
+           ${enviado ? 'disabled' : ''} autocomplete="off" autocapitalize="off" spellcheck="false"
+           placeholder="Escribe tu respuesta"
+           style="margin-top:10px;font-family:inherit;${enviado ? 'opacity:.75' : ''}"
+           oninput="escribirRespuesta('${p.id}', this.value)">
+    ${veredicto}
+  </div>`;
+}
+
+// El contador y el botón de enviar se refrescan solos, sin rehacer la
+// página entera: si se repintara en cada tecla, el alumno perdería el
+// cursor a mitad de palabra.
+function _refrescarContadorTest() {
+  const { preguntas, respuestas, enviado } = testState;
+  const hechas = preguntas.filter(p => String(respuestas[p.id] ?? '').trim() !== '').length;
+
+  const cont = document.getElementById('test-contador');
+  if (cont) cont.textContent = `${hechas} de ${preguntas.length} respondidas`;
+
+  const botón = (!enviado && hechas === preguntas.length)
+    ? `<button class="btn-primary" onclick="enviarTest()"><i class="ti ti-send"></i> Enviar test</button>`
+    : '';
+  const arriba = document.getElementById('test-enviar-arriba');
+  const abajo  = document.getElementById('test-enviar-abajo');
+  if (arriba) arriba.innerHTML = botón;
+  if (abajo)  abajo.innerHTML  = botón;
 }
 
 function seleccionarRespuesta(pregId, opcion) {
@@ -2289,6 +2360,13 @@ function seleccionarRespuesta(pregId, opcion) {
   renderTest();
 }
 
+// Al escribir no se repinta nada: solo se guarda y se actualiza el
+// contador de arriba.
+function escribirRespuesta(pregId, valor) {
+  if (testState.enviado) return;
+  testState.respuestas[pregId] = valor;
+  _refrescarContadorTest();
+}
 // ── Resultado de un test de nivelación ─────────────────────────
 // No lleva nota: lleva el nivel al que corresponde lo que ha hecho,
 // cuántas horas semanales le convienen y en qué partes anda mejor y
@@ -2423,7 +2501,7 @@ async function enviarTest() {
   // montados, cae al resultado de siempre.
   if (testState.tipo === 'nivelacion') {
     const desglose = calcularNivelacion(
-      testState.asignatura, testState.preguntas, respuestas,
+      testState.asignatura, testState.preguntas, respuestas, solucionario,
     );
     if (desglose) {
       // Se guarda para poder volver a enseñarlo sin recalcular.

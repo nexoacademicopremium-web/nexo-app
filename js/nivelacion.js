@@ -89,12 +89,34 @@ function partesDeNivelacion(asignatura) {
 
 // ── El cálculo ──────────────────────────────────────────────────
 
-// preguntas: [{ id, parte, puntos, respuesta_correcta }]
-// respuestas: { [preguntaId]: 'a' | 'b' | ... }
+// Las de marcar se comparan tal cual. Las de escribir, ignorando
+// mayúsculas, espacios de más, el punto final y el tipo de apóstrofe,
+// que en el móvil es distinto del del teclado. Es la misma regla que
+// aplica el servidor, para que la pantalla no diga una cosa y la
+// corrección otra.
+function _acierta(dada, esperada) {
+  if (dada == null || esperada == null) return false;
+  const limpia = (t) => String(t)
+    .toLowerCase()
+    .trim()
+    .replace(/[\u2019\u2018\u0060\u00b4]/g, "'")
+    .replace(/\s+/g, " ")
+    .replace(/[.!?]+$/, "");
+  const a = limpia(dada);
+  return a !== "" && a === limpia(esperada);
+}
+
+// preguntas:    [{ id, parte, puntos, escribe }]
+// respuestas:   { [preguntaId]: lo que contestó }
+// solucionario: { [preguntaId]: lo que debía contestar }
+//
+// El solucionario lo devuelve el servidor al corregir: aquí no se
+// sabe la respuesta correcta hasta entonces, y por eso esto se llama
+// después de enviar y no antes.
 //
 // Devuelve el desglose entero listo para pintar: nivel, totales, qué
 // ha sacado en cada parte y en qué anda mejor y peor.
-function calcularNivelacion(asignatura, preguntas, respuestas) {
+function calcularNivelacion(asignatura, preguntas, respuestas, solucionario) {
   const config = configNivelacion(asignatura);
   if (!config) return null;
 
@@ -111,7 +133,7 @@ function calcularNivelacion(asignatura, preguntas, respuestas) {
     grupo.total     += vale;
     grupo.preguntas += 1;
 
-    if (respuestas[p.id] && respuestas[p.id] === p.respuesta_correcta) {
+    if (_acierta(respuestas[p.id], (solucionario || {})[p.id])) {
       grupo.puntos    += vale;
       grupo.correctas += 1;
     }
@@ -124,7 +146,11 @@ function calcularNivelacion(asignatura, preguntas, respuestas) {
   const total     = partes.reduce((s, g) => s + g.total, 0);
   const correctas = partes.reduce((s, g) => s + g.correctas, 0);
   const preguntasN = partes.reduce((s, g) => s + g.preguntas, 0);
-  const porcentaje = total > 0 ? (puntos / total) * 100 : 0;
+  // Se redondea ANTES de buscar el tramo, no después. Si no, un 70,09 %
+  // se enseña como 70 % pero se clasifica como si pasara de 70, y el
+  // alumno ve un nivel que no cuadra con el porcentaje que tiene
+  // delante.
+  const porcentaje = total > 0 ? Math.round((puntos / total) * 100) : 0;
 
   const tramo = config.tramos.find(t => porcentaje <= t.hasta)
              || config.tramos[config.tramos.length - 1];
@@ -146,7 +172,7 @@ function calcularNivelacion(asignatura, preguntas, respuestas) {
     total,
     correctas,
     preguntas:  preguntasN,
-    porcentaje: Math.round(porcentaje),
+    porcentaje,
     partes,
     fuertes: conPct.slice(0, 2).map(g => g.nombre),
     flojas:  conPct.slice(-2).reverse().map(g => g.nombre),
