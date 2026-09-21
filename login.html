@@ -109,13 +109,15 @@
       <label>Usuario</label>
       <div class="input-wrap">
         <i class="ti ti-user"></i>
-        <input type="text" id="email" placeholder="ALU2026MCR" required autocomplete="username">
+        <input type="text" id="email" placeholder="ALU2026MCR" required autocomplete="username"
+               autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text">
       </div>
 
       <label>Contraseña</label>
       <div class="input-wrap">
         <i class="ti ti-lock"></i>
-        <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
+        <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password"
+               autocapitalize="off" autocorrect="off" spellcheck="false">
         <button type="button" class="toggle-pass" id="toggle-pass" onmousedown="event.preventDefault()" onclick="togglePass()">
           <i class="ti ti-eye" id="toggle-pass-icon"></i>
         </button>
@@ -165,7 +167,19 @@ async function handleLogin(e) {
   errEl.style.display = 'none';
 
   try {
-    const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
+    let { data, error } = await db.auth.signInWithPassword({ email, password: pass });
+
+    // Al pegar la contraseña desde WhatsApp o al autocompletarla, el
+    // teclado del móvil cuela un espacio delante o detrás. El usuario
+    // ya se limpiaba; la contraseña no, y por eso a unos les entraba
+    // y a otros no con la contraseña correcta.
+    //
+    // Se reintenta sin el espacio en vez de limpiarlo de entrada: así
+    // entra quien lo arrastró sin querer, y sigue entrando quien de
+    // verdad tenga espacios en su contraseña.
+    if (error && pass !== pass.trim()) {
+      ({ data, error } = await db.auth.signInWithPassword({ email, password: pass.trim() }));
+    }
 
     if (error) {
       throw new Error('Credenciales incorrectas. Revisa tu usuario y contraseña.');

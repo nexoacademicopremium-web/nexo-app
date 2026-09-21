@@ -27,12 +27,25 @@ function generarUsername(rol: string, nombre: string, apellidos: string, year: n
   return `${prefix}${year}${iniciales}`
 }
 
+// Contraseña para dictar por teléfono o mandar por WhatsApp.
+//
+// Sin símbolos, y esto importa: WhatsApp usa *texto* para negrita y
+// _texto_ para cursiva. Una contraseña con asteriscos llegaba a la
+// familia con los asteriscos escondidos y el texto en negrita, así
+// que al copiarla copiaban una contraseña que no era. Por eso a unos
+// les entraba y a otros no.
+//
+// Van fuera también las letras y números que se confunden al leerlos
+// en voz alta: l, 1, I, O, 0.
+//
+// Doce caracteres entre mayúsculas, minúsculas y números siguen
+// siendo de sobra; lo que se pierde en símbolos se gana en que la
+// contraseña llegue entera.
 function generarPassword(): string {
   const upper   = 'ABCDEFGHJKLMNPQRSTUVWXYZ'
   const lower   = 'abcdefghjkmnpqrstuvwxyz'
   const digits  = '23456789'
-  const symbols = '!@#$%&*'
-  const all     = upper + lower + digits + symbols
+  const all     = upper + lower + digits
 
   const arr = new Uint8Array(16)
   crypto.getRandomValues(arr)
@@ -41,7 +54,7 @@ function generarPassword(): string {
     upper[arr[0] % upper.length],
     lower[arr[1] % lower.length],
     digits[arr[2] % digits.length],
-    symbols[arr[3] % symbols.length],
+    all[arr[3] % all.length],
   ]
   for (let i = 4; i < 12; i++) chars.push(all[arr[i] % all.length])
 

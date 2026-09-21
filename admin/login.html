@@ -90,10 +90,17 @@ async function handleLogin(e) {
   errEl.style.display = 'none';
 
   try {
-    const { data, error } = await db.auth.signInWithPassword({
-      email: document.getElementById('email').value.trim(),
-      password: document.getElementById('password').value
-    });
+    const correo = document.getElementById('email').value.trim();
+    const pass   = document.getElementById('password').value;
+
+    let { data, error } = await db.auth.signInWithPassword({ email: correo, password: pass });
+
+    // Igual que en el login de alumnos: los teclados del móvil cuelan
+    // un espacio al pegar. Se reintenta sin él antes de darlo por malo.
+    if (error && pass !== pass.trim()) {
+      ({ data, error } = await db.auth.signInWithPassword({ email: correo, password: pass.trim() }));
+    }
+
     if (error) throw new Error('Credenciales incorrectas.');
 
     const { data: usuario } = await db
