@@ -3326,9 +3326,12 @@ let _tpEditId = null, _tpPregCount = 0, _tpAlumnosData = [];
 async function loadTestsProf() {
   const el = document.getElementById('prof-tests-lista');
   el.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+  // Sin filtrar por quién lo creó: se traen todos los que este
+  // profesor tiene permiso para ver, que son los suyos y los de sus
+  // alumnos en las asignaturas que les da, los haya montado él o el
+  // administrador. De eso se encarga la base de datos.
   const { data: rawTests } = await db.from('tests')
-    .select('id,titulo,asignatura,visible,created_at,generado_ia,puede_repetir,alumno_id,preguntas:preguntas_test(id),alumno:alumnos(usuario:usuarios(nombre,apellidos)),resultados:resultados_test(nota,completado_at,alumno_id)')
-    .eq('creado_por', ctx.usuario.id);
+    .select('id,titulo,asignatura,visible,created_at,generado_ia,puede_repetir,alumno_id,creado_por,preguntas:preguntas_test(id),alumno:alumnos(usuario:usuarios(nombre,apellidos)),resultados:resultados_test(nota,completado_at,alumno_id)');
 
   const tests = (rawTests || []).sort((a, b) => {
     const aNom = a.alumno?.usuario ? `${escHTML(a.alumno.usuario.nombre)} ${escHTML(a.alumno.usuario.apellidos||'')}`.trim() : '￿';
@@ -3369,6 +3372,11 @@ async function loadTestsProf() {
     const showRepetir   = t.alumno_id && resultado && !t.puede_repetir;
     const showYaRepetir = t.alumno_id && t.puede_repetir;
 
+    // Los que montó el administrador se ven pero no se tocan: los
+    // permisos no le dejarían y los botones fallarían sin explicar por
+    // qué. Mejor no enseñárselos y decir de quién es.
+    const esSuyo = t.creado_por === ctx.usuario.id;
+
     return `<div class="test-prof-card" style="--cc:${meta.cc}">
       ${t.generado_ia ? `<div class="test-ia-badge"><i class="ti ti-brain" style="font-size:9px;margin-right:3px"></i>IA</div>` : ''}
       <div class="test-vis-badge ${t.visible ? 'st-ok' : 'st-grey'}">${t.visible ? 'Visible' : 'Oculto'}</div>
@@ -3376,14 +3384,17 @@ async function loadTestsProf() {
       <div class="test-prof-titulo">${escHTML(t.titulo)}</div>
       <div class="test-prof-meta">
         ${escHTML(t.asignatura || '—')}${alumNom !== 'General' ? ` · ${escHTML(alumNom)}` : ''}
+        ${esSuyo ? '' : '<br><span style="color:#a78bfa;font-size:10.5px">Creado por Nexo</span>'}
       </div>
       <span class="test-prof-result" style="background:${resBg};color:${resClr}">${resTxt}</span>
       <div class="test-prof-actions">
         <button class="test-prof-btn accent" onclick="verTestProf('${t.id}')"><i class="ti ti-eye"></i> Ver</button>
-        <button class="test-prof-btn" onclick="toggleTestVis('${t.id}',${!t.visible})">${t.visible ? 'Ocultar' : 'Mostrar'}</button>
-        ${!t.generado_ia ? `<button class="test-prof-btn" onclick="editarTestProf('${t.id}')"><i class="ti ti-pencil"></i> Editar</button>` : ''}
-        ${showRepetir ? `<button class="test-prof-btn" style="color:#a78bfa;border-color:rgba(139,92,246,.4)" onclick="permitirRepetir('${t.id}')">↺ Permitir repetir</button>` : ''}
-        ${showYaRepetir ? `<button class="test-prof-btn" style="color:#f87171;border-color:rgba(248,113,113,.35)" onclick="bloquearRepetir('${t.id}')"><i class="ti ti-lock"></i> Bloquear</button>` : ''}
+        ${esSuyo ? `
+          <button class="test-prof-btn" onclick="toggleTestVis('${t.id}',${!t.visible})">${t.visible ? 'Ocultar' : 'Mostrar'}</button>
+          ${!t.generado_ia ? `<button class="test-prof-btn" onclick="editarTestProf('${t.id}')"><i class="ti ti-pencil"></i> Editar</button>` : ''}
+          ${showRepetir ? `<button class="test-prof-btn" style="color:#a78bfa;border-color:rgba(139,92,246,.4)" onclick="permitirRepetir('${t.id}')">↺ Permitir repetir</button>` : ''}
+          ${showYaRepetir ? `<button class="test-prof-btn" style="color:#f87171;border-color:rgba(248,113,113,.35)" onclick="bloquearRepetir('${t.id}')"><i class="ti ti-lock"></i> Bloquear</button>` : ''}
+        ` : ''}
       </div>
     </div>`;
   }).join('');
@@ -4263,9 +4274,10 @@ async function loadProfMaterial() {
   const c = document.getElementById('pmat-list');
   c.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
   await _pMatLoadCatalog();
+  // Igual que con los tests: lo que él subió y lo que tengan
+  // asignado sus alumnos.
   const { data: mat, error } = await db.from('material')
     .select('*')
-    .eq('subido_por', ctx.usuario.id)
     .order('asignatura_id').order('bloque_id').order('tema_id').order('titulo');
   if (error) { c.innerHTML = `<div class="empty-state"><p style="color:var(--red)">${escHTML(error.message)}</p></div>`; return; }
   pAllMaterial = mat || [];
