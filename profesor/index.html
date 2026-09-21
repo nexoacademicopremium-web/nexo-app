@@ -1002,6 +1002,23 @@
 </div><!-- end .main -->
 
 <!-- MODAL NUEVA TAREA (PROFESOR) -->
+
+<!-- Detalle de un test corregido -->
+<div class="modal-overlay" id="modal-resultado-test">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-title">
+      <span id="resultado-test-titulo">Resultado</span>
+      <button class="modal-close" onclick="cerrarModal('modal-resultado-test')">×</button>
+    </div>
+    <div id="resultado-test-contenido" style="max-height:70vh;overflow-y:auto;padding-right:4px">
+      <div class="loading-section"><div class="spinner"></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModal('modal-resultado-test')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-nueva-tarea">
   <div class="modal-box" style="max-width:520px;width:95%">
     <div class="modal-title">
@@ -1308,6 +1325,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
+<script src="../js/resultado-test.js"></script>
 <script src="../js/i18n.js"></script>
 <script src="../js/push.js"></script>
 <script>
@@ -3388,7 +3406,8 @@ async function loadTestsProf() {
       </div>
       <span class="test-prof-result" style="background:${resBg};color:${resClr}">${resTxt}</span>
       <div class="test-prof-actions">
-        <button class="test-prof-btn accent" onclick="verTestProf('${t.id}')"><i class="ti ti-eye"></i> Ver</button>
+        ${resultado ? `<button class="test-prof-btn accent" onclick="verResultadoTest('${t.id}','${t.alumno_id}','${alumNom.replace(/'/g, " ")}')"><i class="ti ti-report-search"></i> Ver respuestas</button>` : ''}
+        <button class="test-prof-btn" onclick="verTestProf('${t.id}')"><i class="ti ti-eye"></i> Ver test</button>
         ${esSuyo ? `
           <button class="test-prof-btn" onclick="toggleTestVis('${t.id}',${!t.visible})">${t.visible ? 'Ocultar' : 'Mostrar'}</button>
           ${!t.generado_ia ? `<button class="test-prof-btn" onclick="editarTestProf('${t.id}')"><i class="ti ti-pencil"></i> Editar</button>` : ''}
@@ -3730,6 +3749,32 @@ async function bloquearRepetir(testId) {
   loadTestsProf();
 }
 
+
+// ── Ver lo que contestó un alumno ──────────────────────────────
+// Abre el detalle del test corregido: el nivel o la nota, y después
+// cada pregunta con lo que puso y lo que era. El mismo detalle que ve
+// el otro panel, que para hablar de un alumno hay que estar mirando
+// lo mismo.
+async function verResultadoTest(testId, alumnoId, nombreAlumno) {
+  const modal = document.getElementById('modal-resultado-test');
+  const caja  = document.getElementById('resultado-test-contenido');
+  const titulo = document.getElementById('resultado-test-titulo');
+  if (!modal || !caja) return;
+
+  titulo.textContent = nombreAlumno ? `Resultado · ${nombreAlumno}` : 'Resultado';
+  caja.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+  modal.classList.add('open');
+
+  try {
+    const datos = await cargarResultadoTest(testId, alumnoId);
+    if (datos.test?.titulo) {
+      titulo.textContent = `${datos.test.titulo}${nombreAlumno ? ' · ' + nombreAlumno : ''}`;
+    }
+    caja.innerHTML = pintarResultadoTest(datos);
+  } catch (e) {
+    caja.innerHTML = `<div class="empty-state" style="padding:24px"><i class="ti ti-alert-triangle"></i><p>No se ha podido cargar: ${escHTML(e.message)}</p></div>`;
+  }
+}
 async function verTestProf(testId) {
   document.getElementById('modal-ver-test').classList.add('open');
   const el = document.getElementById('ver-test-contenido');

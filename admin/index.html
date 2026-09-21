@@ -647,6 +647,22 @@
 
 
 <!-- MODAL FICHA PROFESOR (unificada) -->
+<!-- Detalle de un test corregido -->
+<div class="modal-overlay" id="modal-resultado-test">
+  <div class="modal-box" style="max-width:640px">
+    <div class="modal-title">
+      <span id="resultado-test-titulo">Resultado</span>
+      <button class="modal-close" onclick="cerrarModal('modal-resultado-test')">×</button>
+    </div>
+    <div id="resultado-test-contenido" style="max-height:70vh;overflow-y:auto;padding-right:4px">
+      <div class="loading-section"><div class="spinner"></div></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModal('modal-resultado-test')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-ficha-profesor">
   <div class="modal-box" style="max-width:680px">
     <div class="modal-title">
@@ -1379,6 +1395,7 @@
 <script src="../js/config.js"></script>
 <script src="../js/auth.js"></script>
 <script src="../js/nivelacion.js"></script>
+<script src="../js/resultado-test.js"></script>
 <script src="../js/test-nivel-ingles.js"></script>
 <script src="../js/push.js"></script>
 <script>
@@ -5533,6 +5550,8 @@ function _testsRenderCards(c) {
   const cards = _testsItems().map(t => {
     const meta  = getSubjectMeta(t.asignatura || '');
     const nPreg = t.preguntas?.length || 0;
+    const u     = t.alumno?.usuario;
+    const nom   = u ? `${u.nombre || ''} ${u.apellidos || ''}`.trim() : '';
     return `<div class="mat-pdf-card" style="--ab-clr:${meta.cc}">
       <div class="mat-pdf-ico"><i class="ti ${meta.ico}"></i></div>
       <div class="mat-pdf-body">
@@ -5541,6 +5560,7 @@ function _testsRenderCards(c) {
       </div>
       <span class="mat-pdf-vis ${t.visible?'ok':'off'}">${t.visible?'Visible':'Oculto'}</span>
       <div class="mat-pdf-actions">
+        ${t.alumno_id ? `<button class="btn-edit" onclick="verResultadoTest('${t.id}','${t.alumno_id}','${nom.replace(/'/g, " ")}')"><i class="ti ti-report-search"></i> Resultado</button>` : ''}
         <button class="btn-edit" onclick="editarTest('${t.id}')"><i class="ti ti-pencil"></i> Editar</button>
         <button class="btn-danger" onclick="toggleVisible('tests','${t.id}',${!t.visible})">${t.visible?'Ocultar':'Mostrar'}</button>
         <button class="btn-danger" onclick="eliminarTest('${t.id}')"><i class="ti ti-trash"></i></button>
@@ -5550,6 +5570,32 @@ function _testsRenderCards(c) {
 
   c.innerHTML = _testsBc() + `<div class="mat-pdf-grid">${cards
     || '<p style="color:var(--muted);font-size:12px;padding:8px 0">Sin tests</p>'}</div>`;
+}
+
+// ── Ver lo que contestó un alumno ──────────────────────────────
+// El nivel o la nota, y después cada pregunta con lo que puso y lo
+// que era. Es el mismo detalle que ve el profesor en su panel: si
+// vierais cosas distintas, al hablar de un alumno estaríais mirando
+// dos sitios que no cuadran.
+async function verResultadoTest(testId, alumnoId, nombreAlumno) {
+  const modal  = document.getElementById('modal-resultado-test');
+  const caja   = document.getElementById('resultado-test-contenido');
+  const titulo = document.getElementById('resultado-test-titulo');
+  if (!modal || !caja) return;
+
+  titulo.textContent = nombreAlumno ? `Resultado · ${nombreAlumno}` : 'Resultado';
+  caja.innerHTML = '<div class="loading-section"><div class="spinner"></div></div>';
+  modal.classList.add('open');
+
+  try {
+    const datos = await cargarResultadoTest(testId, alumnoId);
+    if (datos.test?.titulo) {
+      titulo.textContent = `${datos.test.titulo}${nombreAlumno ? ' · ' + nombreAlumno : ''}`;
+    }
+    caja.innerHTML = pintarResultadoTest(datos);
+  } catch (e) {
+    caja.innerHTML = `<div class="empty-state" style="padding:24px"><i class="ti ti-alert-triangle"></i><p>No se ha podido cargar: ${escHTML(e.message)}</p></div>`;
+  }
 }
 
 async function eliminarTest(testId) {
