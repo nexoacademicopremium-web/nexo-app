@@ -1644,8 +1644,19 @@ document.addEventListener('click', e => {
 });
 
 function cerrarModal(id) {
-  document.getElementById(id).classList.remove('open');
+  // Con comprobación: si el identificador no existe, esto reventaba y
+  // dejaba la ventana abierta sin explicar por qué.
+  const m = document.getElementById(id);
+  if (m) m.classList.remove('open');
 }
+
+// La tecla Escape cierra la ventana que esté abierta, para no depender
+// de acertar con el aspa.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const abiertos = document.querySelectorAll('.modal-overlay.open');
+  if (abiertos.length) abiertos[abiertos.length - 1].classList.remove('open');
+});
 
 // ============================================================
 // DASHBOARD

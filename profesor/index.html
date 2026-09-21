@@ -1869,6 +1869,24 @@ async function enviarSesion(e) {
   _submitSesion(false);
 }
 
+// Cierra cualquier ventana emergente por su identificador.
+//
+// Aquí cada modal tenía su propia función de cierre y no había una
+// general, así que un botón que llamara a cerrarModal() no hacía nada
+// y dejaba al usuario encerrado sin decir por qué.
+function cerrarModal(id) {
+  const m = document.getElementById(id);
+  if (m) m.classList.remove('open');
+}
+
+// Y que la tecla Escape cierre la que esté abierta, para no depender
+// de acertar con el aspa.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  const abiertos = document.querySelectorAll('.modal-overlay.open');
+  if (abiertos.length) abiertos[abiertos.length - 1].classList.remove('open');
+});
+
 function cerrarModalOk() {
   document.getElementById('modal-ok').classList.remove('open');
 }
