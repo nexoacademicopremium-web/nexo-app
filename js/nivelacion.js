@@ -96,6 +96,9 @@ function partesDeNivelacion(asignatura) {
 // corrección otra.
 function _acierta(dada, esperada) {
   if (dada == null || esperada == null) return false;
+  // Un hueco puede tener varias respuestas buenas; basta con que
+  // coincida una.
+  if (Array.isArray(esperada)) return esperada.some(e => _acierta(dada, e));
   const limpia = (t) => String(t)
     .toLowerCase()
     .trim()

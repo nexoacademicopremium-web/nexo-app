@@ -58,7 +58,22 @@ function pintarResultadoTest({ test, preguntas, resultado }) {
   }
 
   const respuestas = resultado.respuestas || {};
-  const d = resultado.detalle;
+
+  // El nivel tiene que salir siempre que se vea un test de
+  // nivelación, no solo cuando quedó guardado al hacerlo. Los tests
+  // hechos antes de que existiera el desglose, o aquellos en los que
+  // falló el guardado, no lo tienen: se rehace aquí con las mismas
+  // reglas y sale igual.
+  let d = resultado.detalle;
+  if (!d && test?.tipo === 'nivelacion' && typeof calcularNivelacion === 'function') {
+    const solucionario = {};
+    for (const p of preguntas) {
+      solucionario[p.id] = (p.respuestas_validas && p.respuestas_validas.length)
+        ? p.respuestas_validas   // todas las formas que valen
+        : p.respuesta_correcta;
+    }
+    d = calcularNivelacion(test.asignatura, preguntas, respuestas, solucionario);
+  }
 
   // ── Cabecera ──────────────────────────────────────────────
   let cabecera;

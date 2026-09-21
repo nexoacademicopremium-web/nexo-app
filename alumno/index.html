@@ -2234,9 +2234,23 @@ async function iniciarTest(testId, tituloEnc, from) {
     const { data: solucionario } = await db.rpc('get_solucionario', { p_test_id: testId });
     testState = { testId, preguntas, respuestas: resultado.respuestas || {}, enviado: true, viewOnly: true, isAssigned, creadoPor, isIA: !!testRecord?.generado_ia, tipo: testRecord?.tipo || 'normal', asignatura: testRecord?.asignatura || null, respuestas_correctas: solucionario || {} };
     renderTest();
+    const content   = document.getElementById('test-content');
+
+    // Si era de nivelación, al volver a abrirlo tiene que ver su nivel
+    // otra vez, no una nota sobre diez. Es el dato que le sirve, y el
+    // mismo que ven su profesor y Nexo.
+    if (testRecord?.tipo === 'nivelacion') {
+      const desglose = resultado.detalle
+        || calcularNivelacion(testRecord.asignatura, preguntas, resultado.respuestas || {}, solucionario || {});
+      if (desglose) {
+        content.prepend(_pintarNivelacion(desglose));
+        window.scrollTo(0, 0);
+        return;
+      }
+    }
+
     const nota      = resultado.nota;
     const correctas = preguntas.filter(p => (resultado.respuestas || {})[p.id] === (solucionario || {})[p.id]).length;
-    const content   = document.getElementById('test-content');
     const resultDiv = document.createElement('div');
     resultDiv.style.cssText = 'background:var(--surface);border:.5px solid var(--border);border-radius:16px;padding:32px 24px 24px;text-align:center;margin-bottom:20px';
     resultDiv.innerHTML = `
