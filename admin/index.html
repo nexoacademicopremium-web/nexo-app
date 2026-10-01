@@ -366,8 +366,27 @@
 
 <!-- ═══ DASHBOARD ═══ -->
 <div class="section active" id="section-dashboard">
-  <h1 class="page-title">Panel de administración</h1>
-  <p class="page-sub" id="dash-sub">Resumen general · Nexo Académico</p>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px">
+    <div style="min-width:0">
+      <h1 class="page-title" style="margin:0">Panel de administración</h1>
+      <p class="page-sub" style="margin:0" id="dash-sub">Resumen general · Nexo Académico</p>
+    </div>
+
+    <!-- Qué mes se está mirando. Lo de hoy no sirve para cerrar el mes
+         pasado, que es cuando hacen falta estos números. -->
+    <div style="display:flex;align-items:center;gap:7px;flex-shrink:0">
+      <button class="btn-ghost" style="padding:7px 11px" onclick="moverMesDash(-1)" title="Mes anterior">
+        <i class="ti ti-chevron-left"></i></button>
+      <div style="min-width:132px;text-align:center">
+        <div style="color:#fff;font-size:13.5px;font-weight:700;line-height:1.2" id="dash-mes-nombre">—</div>
+        <button id="dash-mes-hoy" onclick="moverMesDash(0)"
+                style="background:none;border:none;color:var(--blue);font-size:10.5px;cursor:pointer;
+                       font-family:inherit;padding:2px 0 0;display:none">Volver a este mes</button>
+      </div>
+      <button class="btn-ghost" style="padding:7px 11px" id="dash-mes-sig" onclick="moverMesDash(1)" title="Mes siguiente">
+        <i class="ti ti-chevron-right"></i></button>
+    </div>
+  </div>
 
   <!-- Hub de navegación por burbujas -->
   <div class="admin-hub-grid">
@@ -417,6 +436,18 @@
     <div class="loading-section"><div class="spinner"></div></div>
   </div>
   <div id="dash-alertas"></div>
+
+  <!-- Quién ha dado clase y cuánto, en el mes que se esté mirando -->
+  <div class="card" style="margin-bottom:16px">
+    <div class="card-head">
+      <div class="card-title"><i class="ti ti-clock-hour-4"></i> Horas por alumno</div>
+      <span style="color:var(--muted);font-size:12px" id="dash-horas-resumen"></span>
+    </div>
+    <div id="dash-horas-alumno">
+      <div class="loading-section"><div class="spinner"></div></div>
+    </div>
+  </div>
+
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
     <div class="card">
       <div class="card-head"><div class="card-title"><i class="ti ti-clock"></i> Sesiones pendientes de confirmar</div></div>
@@ -1661,9 +1692,116 @@ document.addEventListener('keydown', (e) => {
 // ============================================================
 // DASHBOARD
 // ============================================================
+// ── Horas por alumno ───────────────────────────────────────────
+// Cuánto ha dado cada alumno en el mes que se está mirando, de mayor
+// a menor. Es la cifra que se mira al cerrar el mes y la que se
+// contrasta con lo que dice cada profesor.
+//
+// Se cuentan solo las sesiones confirmadas: las pendientes todavía
+// pueden rechazarse y no deben sumar a lo que se da por hecho.
+function _pintarHorasPorAlumno(sesiones, esteMes) {
+  const caja = document.getElementById('dash-horas-alumno');
+  const resumen = document.getElementById('dash-horas-resumen');
+  if (!caja) return;
+
+  const porAlumno = {};
+  for (const ses of sesiones) {
+    if (!ses.alumno_id) continue;
+    if (!porAlumno[ses.alumno_id]) porAlumno[ses.alumno_id] = { horas: 0, sesiones: 0, asigs: new Set() };
+    const g = porAlumno[ses.alumno_id];
+    g.horas    += (ses.duracion_minutos || 0) / 60;
+    g.sesiones += 1;
+    if (ses.asignatura) g.asigs.add(ses.asignatura);
+  }
+
+  const filas = Object.entries(porAlumno)
+    .map(([id, g]) => {
+      const a = allAlumnos.find(x => x.id === id);
+      const u = a?.usuario || {};
+      return { ...g, nombre: `${u.nombre || ''} ${u.apellidos || ''}`.trim() || 'Alumno', nivel: a?.nivel };
+    })
+    .sort((x, y) => y.horas - x.horas);
+
+  const totalHoras = filas.reduce((t, f) => t + f.horas, 0);
+  const totalSes   = filas.reduce((t, f) => t + f.sesiones, 0);
+
+  if (resumen) {
+    resumen.textContent = filas.length
+      ? `${totalHoras.toFixed(1)}h · ${totalSes} sesiones · ${filas.length} ${filas.length === 1 ? 'alumno' : 'alumnos'}`
+      : '';
+  }
+
+  if (!filas.length) {
+    caja.innerHTML = `<div class="empty-state" style="padding:24px"><i class="ti ti-calendar-off"></i>
+      <p>Sin clases confirmadas ${esteMes ? 'este mes todavía' : 'ese mes'}</p></div>`;
+    return;
+  }
+
+  // La barra se mide contra quien más horas tiene, para que se vea de
+  // un vistazo quién carga más sin tener que comparar números.
+  const tope = filas[0].horas || 1;
+
+  caja.innerHTML = `<div style="padding:4px 16px 14px">
+    ${filas.map(f => {
+      const pct = (f.horas / tope) * 100;
+      const asigs = [...f.asigs].join(', ');
+      return `
+        <div style="padding:10px 0;border-bottom:.5px solid var(--border2)">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px">
+            <span style="color:#fff;font-size:13px;font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              ${escHTML(f.nombre)}
+              ${f.nivel ? `<span style="color:var(--muted);font-size:11px;font-weight:400"> · ${escHTML(nivelLabel(f.nivel))}</span>` : ''}
+            </span>
+            <b style="color:var(--blue);font-size:13.5px;white-space:nowrap">${f.horas.toFixed(1)}h</b>
+          </div>
+          <div style="height:5px;background:var(--dark);border-radius:3px;margin-top:7px;overflow:hidden">
+            <div style="height:100%;width:${pct.toFixed(0)}%;background:linear-gradient(90deg,var(--navy),var(--blue));border-radius:3px"></div>
+          </div>
+          <div style="color:var(--muted);font-size:11px;margin-top:5px">
+            ${f.sesiones} ${f.sesiones === 1 ? 'sesión' : 'sesiones'}${asigs ? ' · ' + escHTML(asigs) : ''}
+          </div>
+        </div>`;
+    }).join('')}
+
+    <div style="display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:14px 0 2px;margin-top:4px;border-top:1px solid var(--border)">
+      <span style="color:var(--soft);font-size:13px;font-weight:600">Total</span>
+      <b style="color:#fff;font-size:16px">${totalHoras.toFixed(1)}h</b>
+    </div>
+  </div>`;
+}
+
+// Mes que se está mirando en el panel. Arranca en el actual, pero el
+// mes pasado es justo el que hace falta para cerrar cuentas.
+let dashMes = new Date();
+
+function moverMesDash(delta) {
+  dashMes = delta === 0
+    ? new Date()
+    : new Date(dashMes.getFullYear(), dashMes.getMonth() + delta, 1);
+  loadDashboard();
+}
+
+function _esMesActual(d) {
+  const hoy = new Date();
+  return d.getFullYear() === hoy.getFullYear() && d.getMonth() === hoy.getMonth();
+}
+
 async function loadDashboard() {
-  const now = new Date();
-  const mesIni = _fechaLocal(new Date(now.getFullYear(), now.getMonth(), 1));
+  const ini = new Date(dashMes.getFullYear(), dashMes.getMonth(), 1);
+  const fin = new Date(dashMes.getFullYear(), dashMes.getMonth() + 1, 0);
+  const mesIni = _fechaLocal(ini);
+  const mesFin = _fechaLocal(fin);
+  const esteMes = _esMesActual(dashMes);
+
+  // Encabezado del selector
+  const nombreMes = ini.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' });
+  const elNombre = document.getElementById('dash-mes-nombre');
+  if (elNombre) elNombre.textContent = nombreMes.charAt(0).toUpperCase() + nombreMes.slice(1);
+  const elHoy = document.getElementById('dash-mes-hoy');
+  if (elHoy) elHoy.style.display = esteMes ? 'none' : '';
+  // No se puede ir al futuro: no hay nada que ver.
+  const elSig = document.getElementById('dash-mes-sig');
+  if (elSig) elSig.disabled = esteMes;
 
   const [
     { count: nAlumnos },
@@ -1674,7 +1812,10 @@ async function loadDashboard() {
   ] = await Promise.all([
     db.from('alumnos').select('id', { count: 'exact', head: true }).eq('activo', true),
     db.from('profesores').select('id', { count: 'exact', head: true }).eq('activo', true),
-    db.from('sesiones').select('duracion_minutos').gte('fecha', mesIni).eq('estado', 'confirmada'),
+    // Acotado por los dos extremos: antes solo miraba el principio, así
+    // que al pedir un mes pasado se traía también todo lo posterior.
+    db.from('sesiones').select('duracion_minutos, alumno_id, profesor_id, asignatura')
+      .gte('fecha', mesIni).lte('fecha', mesFin).eq('estado', 'confirmada'),
     db.from('sesiones').select('id, asignatura, fecha, registrada_at, alumno_id, profesor_id')
       .eq('estado', 'pendiente_confirmacion')
       .order('registrada_at', { ascending: false })
@@ -1683,13 +1824,15 @@ async function loadDashboard() {
       .lte('horas_bono_restantes', 3).eq('activo', true)
   ]);
 
+  _pintarHorasPorAlumno(sesMes || [], esteMes);
+
   const hMes = ((sesMes || []).reduce((a, s) => a + (s.duracion_minutos || 0), 0) / 60).toFixed(1);
   const nPend = sesPend?.length || 0;
 
   document.getElementById('dash-kpis').innerHTML = `
     <div class="kpi blue"><div class="kpi-label">Alumnos activos</div><div class="kpi-val">${nAlumnos || 0}</div></div>
     <div class="kpi green"><div class="kpi-label">Profesores activos</div><div class="kpi-val">${nProfs || 0}</div></div>
-    <div class="kpi navy"><div class="kpi-label">Horas confirmadas</div><div class="kpi-val">${hMes}h</div><div class="kpi-sub">${(sesMes||[]).length} sesiones este mes</div></div>
+    <div class="kpi navy"><div class="kpi-label">Horas confirmadas</div><div class="kpi-val">${hMes}h</div><div class="kpi-sub">${(sesMes||[]).length} sesiones ${esteMes ? 'este mes' : 'ese mes'}</div></div>
     <div class="kpi ${nPend > 0 ? 'amber' : 'navy'}"><div class="kpi-label">Pendientes confirmar</div><div class="kpi-val">${nPend}</div></div>
     <div class="kpi ${(bonos?.length||0) > 0 ? 'red' : 'green'}"><div class="kpi-label">Bonos bajos</div><div class="kpi-val">${bonos?.length||0}</div></div>
   `;
@@ -1700,7 +1843,7 @@ async function loadDashboard() {
   const hubP = document.getElementById('hub-count-profesores');
   if (hubP) hubP.textContent = `${nProfs || 0} activos`;
   const hubS = document.getElementById('hub-count-sesiones');
-  if (hubS) hubS.textContent = `${(sesMes||[]).length} sesiones este mes`;
+  if (hubS) hubS.textContent = `${(sesMes||[]).length} sesiones ${esteMes ? 'este mes' : 'en ' + nombreMes.split(' ')[0]}`;
   const hubB = document.getElementById('hub-count-bonos');
   if (hubB) hubB.textContent = (bonos?.length||0) > 0 ? `${bonos.length} con bono bajo` : 'Todo en orden';
 
@@ -4162,7 +4305,24 @@ async function loadSesionesAdmin() {
 
   const from = sesionesPageNum * SESIONES_PAGE_SIZE;
   const to   = from + SESIONES_PAGE_SIZE - 1;
-  const { data: sesiones, error, count } = await query.range(from, to);
+
+  // Las horas salen de una consulta aparte sin paginar: si se sumaran
+  // las de la página, el total cambiaría al pasar de página y no
+  // serviría para nada.
+  let queryHoras = db.from('sesiones').select('duracion_minutos, estado');
+  if (aVal)   queryHoras = queryHoras.eq('alumno_id', aVal);
+  if (pVal)   queryHoras = queryHoras.eq('profesor_id', pVal);
+  if (mVal) {
+    const [_hy, _hm] = mVal.split('-').map(Number);
+    const _hd = new Date(_hy, _hm, 0).getDate();
+    queryHoras = queryHoras.gte('fecha', mVal + '-01').lte('fecha', mVal + '-' + String(_hd).padStart(2, '0'));
+  }
+  if (estVal) queryHoras = queryHoras.eq('estado', estVal);
+
+  const [{ data: sesiones, error, count }, { data: todasLasHoras }] = await Promise.all([
+    query.range(from, to),
+    queryHoras,
+  ]);
 
   if (error) {
     sesEl.innerHTML = `<div class="empty-state"><i class="ti ti-alert-triangle"></i><p>Error al cargar sesiones: ${escHTML(error.message)}</p></div>`;
@@ -4182,15 +4342,33 @@ async function loadSesionesAdmin() {
   allProfesores.forEach(p => { profMap[p.id] = p; });
 
   const totalPages  = Math.ceil((count || 0) / SESIONES_PAGE_SIZE);
+
+  // Horas de todo lo que cumple el filtro. Se separan las confirmadas
+  // porque son las que cuentan de verdad: una pendiente todavía puede
+  // rechazarse.
+  const minutos = (lista) => lista.reduce((t, x) => t + (x.duracion_minutos || 0), 0);
+  const hTotal  = minutos(todasLasHoras || []) / 60;
+  const hFirmes = minutos((todasLasHoras || []).filter(x => x.estado === 'confirmada')) / 60;
+  const hayOtras = Math.abs(hTotal - hFirmes) > 0.01;
+
+  const resumen = count > 0 ? `
+    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+      <span style="color:var(--soft);font-size:12.5px"><b style="color:#fff">${count}</b> sesion${count !== 1 ? 'es' : ''}</span>
+      <span style="color:var(--border2)">·</span>
+      <span style="color:var(--soft);font-size:12.5px"><b style="color:var(--blue)">${hTotal.toFixed(1)}h</b> en total</span>
+      ${hayOtras ? `<span style="color:var(--border2)">·</span>
+        <span style="color:var(--muted);font-size:11.5px">${hFirmes.toFixed(1)}h confirmadas</span>` : ''}
+    </div>` : '';
+
   const paginacion  = totalPages > 1 ? `
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-top:.5px solid var(--border)">
-      <span style="color:var(--muted);font-size:12px">${from + 1}–${Math.min(to + 1, count)} de ${count} sesiones</span>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 16px;border-top:.5px solid var(--border)">
+      ${resumen}
       <div style="display:flex;gap:8px;align-items:center">
         <button class="btn-ghost" style="padding:5px 11px" ${sesionesPageNum === 0 ? 'disabled' : ''} onclick="sesionesPageNum--;loadSesionesAdmin()">← Anterior</button>
         <span style="color:var(--soft);font-size:12px">Pág. ${sesionesPageNum + 1} / ${totalPages}</span>
         <button class="btn-ghost" style="padding:5px 11px" ${sesionesPageNum >= totalPages - 1 ? 'disabled' : ''} onclick="sesionesPageNum++;loadSesionesAdmin()">Siguiente →</button>
       </div>
-    </div>` : (count > 0 ? `<div style="padding:8px 16px;border-top:.5px solid var(--border);color:var(--muted);font-size:12px">${count} sesion${count !== 1 ? 'es' : ''}</div>` : '');
+    </div>` : (count > 0 ? `<div style="padding:11px 16px;border-top:.5px solid var(--border)">${resumen}</div>` : '');
 
   sesEl.innerHTML = !sesiones || sesiones.length === 0
     ? `<div class="empty-state"><i class="ti ti-calendar-off"></i><p>Sin sesiones en este período</p></div>`
