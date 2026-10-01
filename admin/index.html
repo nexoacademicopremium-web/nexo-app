@@ -1738,8 +1738,8 @@ function _pintarHorasPorAlumno(sesiones, esteMes) {
   // el total de allí nunca coincidirá con este.
   const nota = document.getElementById('dash-horas-nota');
   if (nota) {
-    nota.textContent = 'Solo sesiones confirmadas del mes que estás viendo. '
-      + 'En la sección Sesiones salen todas las fechas y estados, por eso el total de allí es mayor.';
+    nota.textContent = 'Clases dadas en el mes que estás viendo, confirmadas y pendientes de confirmar. '
+      + 'No cuentan las rechazadas ni las canceladas.';
   }
 
   if (!filas.length) {
@@ -1823,10 +1823,16 @@ async function loadDashboard() {
   ] = await Promise.all([
     db.from('alumnos').select('id', { count: 'exact', head: true }).eq('activo', true),
     db.from('profesores').select('id', { count: 'exact', head: true }).eq('activo', true),
+    // Las dadas y las que están a falta de que el alumno confirme: las
+    // dos son clases impartidas, y para saber cómo va el mes cuentan
+    // igual. Quedan fuera las rechazadas y las canceladas, que no se
+    // dieron.
+    //
     // Acotado por los dos extremos: antes solo miraba el principio, así
     // que al pedir un mes pasado se traía también todo lo posterior.
-    db.from('sesiones').select('duracion_minutos, alumno_id, profesor_id, asignatura')
-      .gte('fecha', mesIni).lte('fecha', mesFin).eq('estado', 'confirmada'),
+    db.from('sesiones').select('duracion_minutos, estado, alumno_id, profesor_id, asignatura')
+      .gte('fecha', mesIni).lte('fecha', mesFin)
+      .in('estado', ['confirmada', 'pendiente_confirmacion']),
     db.from('sesiones').select('id, asignatura, fecha, registrada_at, alumno_id, profesor_id')
       .eq('estado', 'pendiente_confirmacion')
       .order('registrada_at', { ascending: false })
@@ -1837,13 +1843,17 @@ async function loadDashboard() {
 
   _pintarHorasPorAlumno(sesMes || [], esteMes);
 
-  const hMes = ((sesMes || []).reduce((a, s) => a + (s.duracion_minutos || 0), 0) / 60).toFixed(1);
+  const minutosDe = (lista) => lista.reduce((a, s) => a + (s.duracion_minutos || 0), 0);
+  const hMes    = (minutosDe(sesMes || []) / 60).toFixed(1);
+  const firmes  = (sesMes || []).filter(s => s.estado === 'confirmada');
+  const hFirmes = (minutosDe(firmes) / 60).toFixed(1);
+  const hayPend = hMes !== hFirmes;
   const nPend = sesPend?.length || 0;
 
   document.getElementById('dash-kpis').innerHTML = `
     <div class="kpi blue"><div class="kpi-label">Alumnos activos</div><div class="kpi-val">${nAlumnos || 0}</div></div>
     <div class="kpi green"><div class="kpi-label">Profesores activos</div><div class="kpi-val">${nProfs || 0}</div></div>
-    <div class="kpi navy"><div class="kpi-label">Horas confirmadas</div><div class="kpi-val">${hMes}h</div><div class="kpi-sub">${(sesMes||[]).length} sesiones · ${escHTML(nombreMes)}</div></div>
+    <div class="kpi navy"><div class="kpi-label">Horas del mes</div><div class="kpi-val">${hMes}h</div><div class="kpi-sub">${(sesMes||[]).length} sesiones${hayPend ? ` · ${hFirmes}h confirmadas` : ''}</div></div>
     <div class="kpi ${nPend > 0 ? 'amber' : 'navy'}"><div class="kpi-label">Pendientes confirmar</div><div class="kpi-val">${nPend}</div></div>
     <div class="kpi ${(bonos?.length||0) > 0 ? 'red' : 'green'}"><div class="kpi-label">Bonos bajos</div><div class="kpi-val">${bonos?.length||0}</div></div>
   `;
