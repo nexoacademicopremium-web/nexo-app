@@ -443,6 +443,8 @@
       <div class="card-title"><i class="ti ti-clock-hour-4"></i> Horas por alumno</div>
       <span style="color:var(--muted);font-size:12px" id="dash-horas-resumen"></span>
     </div>
+    <div style="padding:10px 16px 0;color:var(--muted);font-size:11.5px;line-height:1.5" id="dash-horas-nota">
+    </div>
     <div id="dash-horas-alumno">
       <div class="loading-section"><div class="spinner"></div></div>
     </div>
@@ -1731,6 +1733,15 @@ function _pintarHorasPorAlumno(sesiones, esteMes) {
       : '';
   }
 
+  // Decir qué se está contando evita comparar peras con manzanas: en
+  // la sección Sesiones salen todos los meses y todos los estados, y
+  // el total de allí nunca coincidirá con este.
+  const nota = document.getElementById('dash-horas-nota');
+  if (nota) {
+    nota.textContent = 'Solo sesiones confirmadas del mes que estás viendo. '
+      + 'En la sección Sesiones salen todas las fechas y estados, por eso el total de allí es mayor.';
+  }
+
   if (!filas.length) {
     caja.innerHTML = `<div class="empty-state" style="padding:24px"><i class="ti ti-calendar-off"></i>
       <p>Sin clases confirmadas ${esteMes ? 'este mes todavía' : 'ese mes'}</p></div>`;
@@ -1832,7 +1843,7 @@ async function loadDashboard() {
   document.getElementById('dash-kpis').innerHTML = `
     <div class="kpi blue"><div class="kpi-label">Alumnos activos</div><div class="kpi-val">${nAlumnos || 0}</div></div>
     <div class="kpi green"><div class="kpi-label">Profesores activos</div><div class="kpi-val">${nProfs || 0}</div></div>
-    <div class="kpi navy"><div class="kpi-label">Horas confirmadas</div><div class="kpi-val">${hMes}h</div><div class="kpi-sub">${(sesMes||[]).length} sesiones ${esteMes ? 'este mes' : 'ese mes'}</div></div>
+    <div class="kpi navy"><div class="kpi-label">Horas confirmadas</div><div class="kpi-val">${hMes}h</div><div class="kpi-sub">${(sesMes||[]).length} sesiones · ${escHTML(nombreMes)}</div></div>
     <div class="kpi ${nPend > 0 ? 'amber' : 'navy'}"><div class="kpi-label">Pendientes confirmar</div><div class="kpi-val">${nPend}</div></div>
     <div class="kpi ${(bonos?.length||0) > 0 ? 'red' : 'green'}"><div class="kpi-label">Bonos bajos</div><div class="kpi-val">${bonos?.length||0}</div></div>
   `;
@@ -4351,13 +4362,24 @@ async function loadSesionesAdmin() {
   const hFirmes = minutos((todasLasHoras || []).filter(x => x.estado === 'confirmada')) / 60;
   const hayOtras = Math.abs(hTotal - hFirmes) > 0.01;
 
+  // Qué abarca el recuento. Sin esto, 93h aquí y 62h en el panel
+  // parecen un error de cálculo, y lo único que pasa es que no están
+  // contando lo mismo.
+  const alcance = [
+    mVal   ? null : 'todas las fechas',
+    estVal ? null : 'todos los estados',
+  ].filter(Boolean).join(' · ');
+
   const resumen = count > 0 ? `
-    <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
-      <span style="color:var(--soft);font-size:12.5px"><b style="color:#fff">${count}</b> sesion${count !== 1 ? 'es' : ''}</span>
-      <span style="color:var(--border2)">·</span>
-      <span style="color:var(--soft);font-size:12.5px"><b style="color:var(--blue)">${hTotal.toFixed(1)}h</b> en total</span>
-      ${hayOtras ? `<span style="color:var(--border2)">·</span>
-        <span style="color:var(--muted);font-size:11.5px">${hFirmes.toFixed(1)}h confirmadas</span>` : ''}
+    <div style="min-width:0">
+      <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+        <span style="color:var(--soft);font-size:12.5px"><b style="color:#fff">${count}</b> sesion${count !== 1 ? 'es' : ''}</span>
+        <span style="color:var(--border2)">·</span>
+        <span style="color:var(--soft);font-size:12.5px"><b style="color:var(--blue)">${hTotal.toFixed(1)}h</b> en total</span>
+        ${hayOtras ? `<span style="color:var(--border2)">·</span>
+          <span style="color:var(--muted);font-size:11.5px">${hFirmes.toFixed(1)}h confirmadas</span>` : ''}
+      </div>
+      ${alcance ? `<div style="color:var(--muted);font-size:11px;margin-top:3px">Incluye ${alcance}</div>` : ''}
     </div>` : '';
 
   const paginacion  = totalPages > 1 ? `
