@@ -335,6 +335,7 @@
     <span class="topbar-name" id="topbar-name">Manu</span>
     <div class="avatar" id="avatar-btn" onclick="toggleMenu()">M
       <div class="avatar-menu" id="avatar-menu">
+        <a onclick="abrirMiPassword()"><i class="ti ti-lock"></i> Cambiar mi contraseña</a>
         <a onclick="logout()"><i class="ti ti-logout"></i> Cerrar sesión</a>
       </div>
     </div>
@@ -681,6 +682,31 @@
 
 <!-- MODAL FICHA PROFESOR (unificada) -->
 <!-- Detalle de un test corregido -->
+<!-- Cambiar la contraseña de admin -->
+<div class="modal-overlay" id="modal-mi-password">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-title">
+      <span>Cambiar mi contraseña</span>
+      <button class="modal-close" onclick="cerrarModal('modal-mi-password')">×</button>
+    </div>
+
+    <label class="fl" style="margin-top:0">Nueva contraseña</label>
+    <div style="display:flex;gap:8px;align-items:flex-end">
+      <input class="fi" id="mipwd-nueva" type="text" placeholder="mínimo 6 caracteres" autocomplete="new-password" style="flex:1">
+      <button class="btn-ghost" onclick="generarPasswordEn('mipwd-nueva')" style="flex-shrink:0" title="Inventar una contraseña segura">
+        <i class="ti ti-dice-5"></i> Generar</button>
+    </div>
+    <p style="color:var(--muted);font-size:11px;margin:8px 0 0;line-height:1.5">
+      Apúntala antes de cambiarla: en cuanto se guarde, la próxima vez que entres hará falta esta nueva.</p>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModal('modal-mi-password')">Cancelar</button>
+      <button class="btn-primary" id="btn-mi-password" onclick="guardarMiPassword()">
+        <i class="ti ti-lock-check"></i> Cambiar</button>
+    </div>
+  </div>
+</div>
+
 <!-- Subir un informe ya hecho, en PDF -->
 <div class="modal-overlay" id="modal-subir-informe">
   <div class="modal-box" style="max-width:480px">
@@ -5838,6 +5864,35 @@ function _testsRenderCards(c) {
 // que era. Es el mismo detalle que ve el profesor en su panel: si
 // vierais cosas distintas, al hablar de un alumno estaríais mirando
 // dos sitios que no cuadran.
+// ── Cambiar la contraseña del propio admin ──────────────────────
+function abrirMiPassword() {
+  document.getElementById('avatar-menu').style.display = 'none';
+  document.getElementById('mipwd-nueva').value = '';
+  document.getElementById('modal-mi-password').classList.add('open');
+}
+
+async function guardarMiPassword() {
+  const btn = document.getElementById('btn-mi-password');
+  const pwd = document.getElementById('mipwd-nueva').value.trim();
+  if (!pwd)            { showToast('Escribe una contraseña', 'error'); return; }
+  if (pwd.length < 6)  { showToast('Mínimo 6 caracteres', 'error'); return; }
+
+  btn.disabled = true;
+  const { data, error } = await db.functions.invoke('update-user-password', {
+    body: { user_id: ctx.usuario.id, password: pwd },
+  });
+
+  if (error || !data?.ok) {
+    showToast('Error: ' + (data?.error || error?.message || 'desconocido'), 'error');
+    btn.disabled = false;
+    return;
+  }
+
+  cerrarModal('modal-mi-password');
+  showToast('Contraseña cambiada. Apúntala en un sitio seguro.');
+  btn.disabled = false;
+}
+
 // ── Subir un informe hecho fuera ───────────────────────────────
 // Los informes se redactan fuera de la aplicación y aquí solo se
 // cuelgan: se elige alumno y mes, se sube el PDF y le aparece al
