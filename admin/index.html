@@ -588,8 +588,8 @@
   <!-- Pantalla A: Lista (burbujas) -->
   <div id="inf-view-lista">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
-      <div><h1 class="page-title" style="margin:0">Informes</h1><p class="page-sub" style="margin:0">Seguimiento por alumno generado con IA</p></div>
-      <button class="btn-primary" onclick="_infAbrirGenerar(null)"><i class="ti ti-sparkles"></i> Generar informe</button>
+      <div><h1 class="page-title" style="margin:0">Informes</h1><p class="page-sub" style="margin:0">Informes mensuales por alumno</p></div>
+      <button class="btn-primary" onclick="abrirSubirInforme()"><i class="ti ti-upload"></i> Subir informe</button>
     </div>
     <div id="informes-admin-tabla"><div class="loading-section"><div class="spinner"></div></div></div>
   </div>
@@ -681,6 +681,47 @@
 
 <!-- MODAL FICHA PROFESOR (unificada) -->
 <!-- Detalle de un test corregido -->
+<!-- Subir un informe ya hecho, en PDF -->
+<div class="modal-overlay" id="modal-subir-informe">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-title">
+      <span>Subir informe</span>
+      <button class="modal-close" onclick="cerrarModal('modal-subir-informe')">×</button>
+    </div>
+
+    <label class="fl">Alumno *</label>
+    <select class="fi" id="subinf-alumno"></select>
+
+    <div class="fi-grid2">
+      <div>
+        <label class="fl">Mes *</label>
+        <input class="fi" id="subinf-mes" type="month" onchange="_refrescarTituloInforme()">
+      </div>
+      <div>
+        <label class="fl">Tipo</label>
+        <select class="fi" id="subinf-tipo">
+          <option value="mensual">Mensual</option>
+          <option value="personalizado">Personalizado</option>
+        </select>
+      </div>
+    </div>
+
+    <label class="fl">Título <span style="color:var(--muted);font-size:10px;font-weight:400">(se rellena solo)</span></label>
+    <input class="fi" id="subinf-titulo" placeholder="Informe mensual · Septiembre 2026">
+
+    <label class="fl">Archivo PDF *</label>
+    <input class="fi" id="subinf-archivo" type="file" accept="application/pdf,.pdf" style="padding:9px">
+    <p style="color:var(--muted);font-size:11px;margin:6px 0 0;line-height:1.5" id="subinf-aviso">
+      Al guardarlo le aparece al alumno en su sección Informes.</p>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="cerrarModal('modal-subir-informe')">Cancelar</button>
+      <button class="btn-primary" id="btn-subir-informe" onclick="guardarInformeSubido()">
+        <i class="ti ti-upload"></i> Subir</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-resultado-test">
   <div class="modal-box" style="max-width:640px">
     <div class="modal-title">
@@ -2591,10 +2632,9 @@ async function eliminarInformeAdmin(informeId) {
   _renderInformes();
 }
 
-// Llamada desde botón "Informe" en la tabla de alumnos
+// Llamada desde botón "Informe" en la tabla de alumnos y desde la ficha
 function abrirModalInforme(alumnoId) {
-  showSection('informes');
-  setTimeout(() => _infAbrirGenerar(alumnoId), 150);
+  abrirSubirInforme(alumnoId);
 }
 
 // ============================================================
@@ -5798,6 +5838,126 @@ function _testsRenderCards(c) {
 // que era. Es el mismo detalle que ve el profesor en su panel: si
 // vierais cosas distintas, al hablar de un alumno estaríais mirando
 // dos sitios que no cuadran.
+// ── Subir un informe hecho fuera ───────────────────────────────
+// Los informes se redactan fuera de la aplicación y aquí solo se
+// cuelgan: se elige alumno y mes, se sube el PDF y le aparece al
+// alumno en su sección Informes.
+
+function abrirSubirInforme(alumnoId) {
+  const sel = document.getElementById('subinf-alumno');
+  sel.innerHTML = '<option value="">— Elige alumno —</option>'
+    + (allAlumnos || []).filter(a => a.activo).map(a => {
+        const u = a.usuario || {};
+        const nom = `${u.nombre || '?'} ${u.apellidos || ''}`.trim();
+        return `<option value="${a.id}">${escHTML(nom)}</option>`;
+      }).join('');
+  if (alumnoId) sel.value = alumnoId;
+
+  // Por defecto, el mes pasado: un informe se hace cuando el mes ya
+  // ha terminado.
+  const hoy = new Date();
+  const pasado = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+  document.getElementById('subinf-mes').value =
+    `${pasado.getFullYear()}-${String(pasado.getMonth() + 1).padStart(2, '0')}`;
+
+  document.getElementById('subinf-tipo').value   = 'mensual';
+  document.getElementById('subinf-titulo').value = '';
+  document.getElementById('subinf-archivo').value = '';
+  _refrescarTituloInforme();
+  document.getElementById('modal-subir-informe').classList.add('open');
+}
+
+// El título se escribe solo a partir del mes, para que todos los
+// informes se llamen igual y el alumno los reconozca de un vistazo.
+function _refrescarTituloInforme() {
+  const campo = document.getElementById('subinf-titulo');
+  const mes   = document.getElementById('subinf-mes')?.value;
+  if (!campo || !mes) return;
+  const [anio, m] = mes.split('-').map(Number);
+  const nombre = _INF_MESES[m - 1] || '';
+  campo.placeholder = `Informe mensual · ${nombre} ${anio}`;
+}
+
+async function guardarInformeSubido() {
+  const btn = document.getElementById('btn-subir-informe');
+  const alumnoId = document.getElementById('subinf-alumno').value;
+  const mes      = document.getElementById('subinf-mes').value;
+  const tipo     = document.getElementById('subinf-tipo').value;
+  const file     = document.getElementById('subinf-archivo').files[0];
+
+  if (!alumnoId) { showToast('Elige el alumno', 'error'); return; }
+  if (!mes)      { showToast('Elige el mes', 'error'); return; }
+
+  // Se comprueba el archivo antes de tocar nada: tamaño, extensión y
+  // que no venga vacío.
+  const prep = prepararSubida(file, 'informes', 20);
+  if (!prep.ok) { showToast(prep.error, 'error'); return; }
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    showToast('El informe tiene que ser un PDF', 'error'); return;
+  }
+
+  const [anio, m] = mes.split('-').map(Number);
+  const mesBonito = _INF_MESES[m - 1] || '';
+
+  // El informe cubre el mes entero. La lista agrupa por fecha_inicio,
+  // así que de ahí sale la carpeta del mes; fecha es el último día,
+  // que es hasta donde llega lo que cuenta.
+  const desde = _fechaLocal(new Date(anio, m - 1, 1));
+  const hasta = _fechaLocal(new Date(anio, m, 0));
+  const titulo = document.getElementById('subinf-titulo').value.trim()
+    || `Informe ${tipo === 'mensual' ? 'mensual' : 'personalizado'} · ${mesBonito} ${anio}`;
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div>';
+
+  try {
+    const { error: eUp } = await db.storage.from('nexo-files').upload(prep.ruta, file, {
+      contentType: file.type || 'application/pdf',
+      upsert: false,
+    });
+    if (eUp) throw new Error('No se pudo subir el archivo: ' + eUp.message);
+
+    const { data: urlData } = db.storage.from('nexo-files').getPublicUrl(prep.ruta);
+    const enlace = urlData.publicUrl;
+
+    const { data: creado, error: eIns } = await db.from('informes').insert({
+      alumno_id:    alumnoId,
+      tipo,
+      titulo,
+      fecha:        hasta,
+      fecha_inicio: desde,
+      fecha_fin:    hasta,
+      pdf_url:      enlace,
+      archivo_url:  enlace,
+      subido_por:   ctx.usuario.id,
+      estado:       'visible',
+      visible:      true,
+      eliminado:    false,
+      published_at: new Date().toISOString(),
+    }).select('id').single();
+    if (eIns) {
+      // Si no se pudo registrar, el archivo subido no le sirve a nadie.
+      await db.storage.from('nexo-files').remove([prep.ruta]);
+      throw new Error('No se pudo guardar el informe: ' + eIns.message);
+    }
+
+    cerrarModal('modal-subir-informe');
+    showToast('Informe subido');
+
+    // Avisar al alumno de que ya lo tiene. «notificar» espera el id del
+    // informe, no el del alumno, y de ahí saca a quién avisar.
+    db.functions.invoke('notificar', { body: { evento: 'informe_publicado', id: creado.id } })
+      .catch(err => console.warn('Aviso al alumno fallido:', err));
+
+    if (typeof loadInformesAdmin === 'function') await loadInformesAdmin();
+  } catch (e) {
+    showToast(e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="ti ti-upload"></i> Subir';
+  }
+}
+
 async function verResultadoTest(testId, alumnoId, nombreAlumno) {
   const modal  = document.getElementById('modal-resultado-test');
   const caja   = document.getElementById('resultado-test-contenido');
