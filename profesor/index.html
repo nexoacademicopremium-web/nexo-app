@@ -3168,7 +3168,7 @@ async function nSesRenderExamenes() {
   }
   lista.innerHTML = asigs.map((asig, i) => {
     const ct = _curriculoTemasConLabels(alumno?.nivel, asig.nombre);
-    const temaCtrl = ct?.valores.length
+    const temaCtrl = ct?.valores?.length
       ? _cSel(`nses-extema-${i}`, ct.valores, null, ct.labels)
       : `<input class="field-input" type="text" id="nses-extema-${i}" placeholder="${t('profesor.nses.ph_tema_examen')}">`;
     return `
@@ -4693,7 +4693,10 @@ let _curriculoCache = null;
 
 async function _cargarCurriculo() {
   if (_curriculoCache?.length) return;
-  const { data } = await db.from('curriculo_temas').select('curso,asignatura,tema,tema_en,tema_ru').order('id');
+  // select('*') y no una lista de columnas: así no se rompe si todavía
+  // no se ha ejecutado en Supabase el SQL que añade tema_en/tema_ru —
+  // simplemente esas dos vendrían vacías y el desplegable cae al español.
+  const { data } = await db.from('curriculo_temas').select('*').order('id');
   if (data?.length) _curriculoCache = data;
 }
 
