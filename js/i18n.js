@@ -10,10 +10,13 @@
 // Con valores:  t('sesiones.pendientes', { n: 3 })
 // ============================================================
 
+// Sin bandera: una bandera marca un país, no un idioma (el inglés no
+// es solo de Reino Unido), y además es lo que hacía el selector
+// parecer un selector de "portal de vuelos" en vez de una app seria.
 const IDIOMAS = {
-  es: { nombre: 'Español',  bandera: '🇪🇸', sigla: 'ES' },
-  en: { nombre: 'English',  bandera: '🇬🇧', sigla: 'EN' },
-  ru: { nombre: 'Русский',  bandera: '🇷🇺', sigla: 'RU' },
+  es: { nombre: 'Español',  sigla: 'ES' },
+  en: { nombre: 'English',  sigla: 'EN' },
+  ru: { nombre: 'Русский',  sigla: 'RU' },
 };
 
 const IDIOMA_POR_DEFECTO = 'es';
@@ -127,76 +130,144 @@ async function iniciarIdioma() {
 
 // ── Selector para el menú ───────────────────────────────────────
 //
-// Un único botón (bandera + siglas) que al pulsarlo despliega una
-// tarjeta flotante con los idiomas disponibles, cada uno con su
-// bandera y su nombre. La misma pieza sirve para colarla en una
-// esquina (compacto) o para el menú lateral (normal, algo más
-// grande y con "arriba" si el hueco de abajo es escaso).
+// Botón minimalista (icono + siglas, sin banderas) que al pulsarlo
+// abre un menú flotante con el nombre de cada idioma. El menú se
+// monta una sola vez en <body> con position:fixed y se coloca con
+// coordenadas calculadas en cada apertura — así nunca lo recorta un
+// contenedor con overflow (el sidebar, una cabecera con scroll...),
+// que es justo lo que pasaba con la versión anterior en el móvil y
+// en el menú lateral.
 //
-// Se guarda con qué forma se montó cada uno, porque al cambiar de
-// idioma se repintan todos a la vez y cada cual debe volver como era.
+// Se guarda con qué forma se montó cada selector, porque al cambiar
+// de idioma se repintan todos a la vez y cada cual debe volver como era.
 
 const _selectoresMontados = new Map();
 const _ID_ESTILOS = 'nexo-idioma-css';
-let _idiomaClickExterior = false;
+const _ID_PANEL   = 'nexo-idioma-panel-global';
+let _idiomaTriggerAbierto = null; // el <button> que abrió el panel, o null
 
 function _inyectarEstilos() {
   if (document.getElementById(_ID_ESTILOS)) return;
   const s = document.createElement('style');
   s.id = _ID_ESTILOS;
   s.textContent = `
-    .nexo-idioma-wrap{position:relative;display:inline-block}
-
-    .nexo-idioma-trigger{display:inline-flex;align-items:center;gap:7px;
-      background:transparent;border:.5px solid var(--border2,#1a2a4a);border-radius:9px;
-      padding:7px 11px;cursor:pointer;font-family:inherit;color:var(--soft,#a8c8f0);
-      font-size:12px;font-weight:500;transition:border-color .15s,background .15s}
-    .nexo-idioma-trigger:hover{border-color:var(--blue,#6eaef0)}
-    .nexo-idioma-trigger .nxi-flag{font-size:14px;line-height:1}
-    .nexo-idioma-trigger .ti-chevron-down{font-size:12px;color:var(--muted,#4a6080);
+    .nexo-idioma-trigger{display:inline-flex;align-items:center;gap:6px;
+      background:transparent;border:.5px solid var(--border2,#1a2a4a);border-radius:7px;
+      padding:6px 10px;cursor:pointer;font-family:inherit;color:var(--soft,#a8c8f0);
+      font-size:12px;font-weight:500;line-height:1;transition:border-color .15s,color .15s}
+    .nexo-idioma-trigger:hover{border-color:var(--blue,#6eaef0);color:var(--txt,#e0eaf8)}
+    .nexo-idioma-trigger .ti-language{font-size:14px;color:var(--muted,#4a6080)}
+    .nexo-idioma-trigger .ti-chevron-down{font-size:11px;color:var(--muted,#4a6080);
       transition:transform .15s}
-    .nexo-idioma-wrap[data-open="true"] .nexo-idioma-trigger{border-color:var(--blue,#6eaef0)}
-    .nexo-idioma-wrap[data-open="true"] .ti-chevron-down{transform:rotate(180deg)}
+    .nexo-idioma-trigger[aria-expanded="true"]{border-color:var(--blue,#6eaef0);color:var(--txt,#e0eaf8)}
+    .nexo-idioma-trigger[aria-expanded="true"] .ti-chevron-down{transform:rotate(180deg)}
 
-    /* Compacto: solo bandera + siglas, pastilla pequeña para una esquina */
-    .nexo-idioma-wrap[data-compacto="true"] .nexo-idioma-trigger{
-      padding:5px 9px;gap:5px;font-size:11px;font-weight:700;letter-spacing:.03em;
-      border-radius:20px}
+    /* Compacto: pastilla pequeña y redondeada, para una esquina */
+    .nexo-idioma-trigger.compacto{padding:4px 9px;gap:4px;font-size:10.5px;
+      font-weight:600;letter-spacing:.02em;border-radius:20px}
+    .nexo-idioma-trigger.compacto .ti-language{font-size:12px}
 
-    .nexo-idioma-panel{position:absolute;right:0;min-width:172px;
+    #${_ID_PANEL}{position:fixed;min-width:150px;max-width:calc(100vw - 16px);
       background:var(--surface,#0a1530);border:.5px solid var(--border,#1a2a4a);
-      border-radius:12px;padding:6px;box-shadow:0 14px 34px rgba(0,0,0,.5);z-index:200;
-      display:flex;flex-direction:column;gap:1px;
-      opacity:0;transform:translateY(-4px) scale(.98);pointer-events:none;
-      transition:opacity .14s ease,transform .14s ease}
-    .nexo-idioma-wrap[data-open="true"] .nexo-idioma-panel{
-      opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
-    .nexo-idioma-wrap[data-arriba="true"] .nexo-idioma-panel{bottom:calc(100% + 6px)}
-    .nexo-idioma-wrap:not([data-arriba="true"]) .nexo-idioma-panel{top:calc(100% + 6px)}
+      border-radius:11px;padding:5px;box-shadow:0 16px 36px rgba(0,0,0,.5);z-index:1000;
+      display:none;flex-direction:column;gap:1px}
+    #${_ID_PANEL}.open{display:flex}
 
     .nexo-idioma-opt{display:flex;align-items:center;gap:9px;background:transparent;
-      border:none;border-radius:8px;padding:8px 10px;cursor:pointer;font-family:inherit;
-      color:var(--txt,#e0eaf8);font-size:12.5px;font-weight:500;text-align:left;width:100%}
-    .nexo-idioma-opt .nxi-flag{font-size:15px}
+      border:none;border-radius:7px;padding:9px 10px;cursor:pointer;font-family:inherit;
+      color:var(--txt,#e0eaf8);font-size:13px;font-weight:450;text-align:left;width:100%}
     .nexo-idioma-opt .ti-check{margin-left:auto;color:var(--blue,#6eaef0);
-      font-size:14px;opacity:0}
-    .nexo-idioma-opt[aria-selected="true"]{background:rgba(110,174,240,.12)}
+      font-size:14px;opacity:0;flex-shrink:0}
+    .nexo-idioma-opt[aria-selected="true"]{color:var(--soft,#a8c8f0);font-weight:600}
     .nexo-idioma-opt[aria-selected="true"] .ti-check{opacity:1}
     @media(hover:hover){
-      .nexo-idioma-opt:not([aria-selected="true"]):hover{background:var(--border2,#0f1f35)}
+      .nexo-idioma-opt:hover{background:var(--border2,#0f1f35)}
     }`;
   document.head.appendChild(s);
+}
 
-  // Un solo listener global: cierra cualquier selector abierto al tocar
-  // fuera, sin importar cuántos haya montados en la página.
-  if (!_idiomaClickExterior) {
-    _idiomaClickExterior = true;
-    document.addEventListener('click', e => {
-      document.querySelectorAll('.nexo-idioma-wrap[data-open="true"]').forEach(w => {
-        if (!w.contains(e.target)) w.dataset.open = 'false';
-      });
-    });
-  }
+// El panel es uno solo para toda la página — se reutiliza y se
+// reposiciona, en vez de tener una copia por cada botón montado.
+function _panelIdioma() {
+  let panel = document.getElementById(_ID_PANEL);
+  if (panel) return panel;
+  panel = document.createElement('div');
+  panel.id = _ID_PANEL;
+  panel.setAttribute('role', 'listbox');
+  document.body.appendChild(panel);
+
+  document.addEventListener('click', e => {
+    if (!panel.classList.contains('open')) return;
+    if (panel.contains(e.target)) return;
+    if (_idiomaTriggerAbierto && _idiomaTriggerAbierto.contains(e.target)) return;
+    _cerrarPanelIdioma();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') _cerrarPanelIdioma();
+  });
+  // Un selector abierto no puede quedarse "flotando" en el sitio
+  // antiguo si la página se desplaza o cambia de tamaño (p. ej. al
+  // girar el móvil o al abrirse el teclado).
+  window.addEventListener('scroll', () => _cerrarPanelIdioma(), true);
+  window.addEventListener('resize', () => _cerrarPanelIdioma());
+
+  return panel;
+}
+
+function _cerrarPanelIdioma() {
+  const panel = document.getElementById(_ID_PANEL);
+  if (panel) panel.classList.remove('open');
+  if (_idiomaTriggerAbierto) _idiomaTriggerAbierto.setAttribute('aria-expanded', 'false');
+  _idiomaTriggerAbierto = null;
+}
+
+function _abrirPanelIdioma(trigger) {
+  const panel = _panelIdioma();
+
+  panel.innerHTML = Object.entries(IDIOMAS).map(([cod, info]) => {
+    const activo = cod === _idioma;
+    return `<button type="button" class="nexo-idioma-opt" data-idioma="${cod}" role="option"
+              aria-selected="${activo}">
+              <span>${info.nombre}</span>
+              <i class="ti ti-check" aria-hidden="true"></i>
+            </button>`;
+  }).join('');
+
+  panel.querySelectorAll('.nexo-idioma-opt').forEach(btn => {
+    btn.onclick = async e => {
+      e.stopPropagation();
+      _cerrarPanelIdioma();
+      if (btn.getAttribute('aria-selected') === 'true') return;
+      await cambiarIdioma(btn.dataset.idioma);
+      // Se repintan todos los botones montados: puede haber uno en el
+      // menú lateral y otro en la esquina de la portada.
+      _selectoresMontados.forEach((_, id) => montarSelectorIdioma(id));
+    };
+  });
+
+  panel.classList.add('open');
+  _idiomaTriggerAbierto = trigger;
+  trigger.setAttribute('aria-expanded', 'true');
+
+  // Posición: pegado al botón, pero sin salirse nunca de la pantalla
+  // — ni por la derecha ni por abajo. Es justo lo que fallaba antes
+  // en el móvil, donde "a la derecha del botón" podía caer fuera.
+  const r = trigger.getBoundingClientRect();
+  const vw = document.documentElement.clientWidth;
+  const vh = document.documentElement.clientHeight;
+  const ph = panel.offsetHeight;
+  const pw = panel.offsetWidth;
+  const margen = 8;
+
+  let left = r.right - pw;           // alineado por la derecha del botón…
+  left = Math.max(margen, Math.min(left, vw - pw - margen)); // …sin salirse
+
+  let top = r.bottom + 6;
+  const cabeAbajo = top + ph <= vh - margen;
+  if (!cabeAbajo) top = Math.max(margen, r.top - 6 - ph);    // se abre hacia arriba
+
+  panel.style.left = `${left}px`;
+  panel.style.top  = `${top}px`;
 }
 
 function montarSelectorIdioma(idContenedor, opciones) {
@@ -210,45 +281,19 @@ function montarSelectorIdioma(idContenedor, opciones) {
   const compacto = !!opc.compacto;
   const actual = IDIOMAS[_idioma] || IDIOMAS[IDIOMA_POR_DEFECTO];
 
-  const opts = Object.entries(IDIOMAS).map(([cod, info]) => {
-    const activo = cod === _idioma;
-    return `<button type="button" class="nexo-idioma-opt" data-idioma="${cod}" role="option"
-              aria-selected="${activo}">
-              <span class="nxi-flag" aria-hidden="true">${info.bandera}</span>
-              <span>${info.nombre}</span>
-              <i class="ti ti-check" aria-hidden="true"></i>
-            </button>`;
-  }).join('');
-
   cont.innerHTML = `
-    <div class="nexo-idioma-wrap" data-compacto="${compacto}" data-arriba="${!!opc.arriba}" data-open="false">
-      <button type="button" class="nexo-idioma-trigger" aria-haspopup="listbox" aria-expanded="false">
-        <span class="nxi-flag" aria-hidden="true">${actual.bandera}</span>
-        <span>${actual.sigla}</span>
-        <i class="ti ti-chevron-down" aria-hidden="true"></i>
-      </button>
-      <div class="nexo-idioma-panel" role="listbox">${opts}</div>
-    </div>`;
+    <button type="button" class="nexo-idioma-trigger${compacto ? ' compacto' : ''}"
+      aria-haspopup="listbox" aria-expanded="false">
+      <i class="ti ti-language" aria-hidden="true"></i>
+      <span>${actual.sigla}</span>
+      <i class="ti ti-chevron-down" aria-hidden="true"></i>
+    </button>`;
 
-  const wrap    = cont.querySelector('.nexo-idioma-wrap');
   const trigger = cont.querySelector('.nexo-idioma-trigger');
-
   trigger.onclick = e => {
     e.stopPropagation();
-    const abierto = wrap.dataset.open === 'true';
-    // Al abrir uno, se cierran los demás selectores que hubiera en la página.
-    document.querySelectorAll('.nexo-idioma-wrap').forEach(w => w.dataset.open = 'false');
-    wrap.dataset.open = abierto ? 'false' : 'true';
+    const yaAbierto = _idiomaTriggerAbierto === trigger;
+    _cerrarPanelIdioma();
+    if (!yaAbierto) _abrirPanelIdioma(trigger);
   };
-
-  cont.querySelectorAll('.nexo-idioma-opt').forEach(btn => {
-    btn.onclick = async e => {
-      e.stopPropagation();
-      wrap.dataset.open = 'false';
-      if (btn.getAttribute('aria-selected') === 'true') return;
-      await cambiarIdioma(btn.dataset.idioma);
-      // Se repintan todos: puede haber uno en el menú y otro en la portada
-      _selectoresMontados.forEach((_, id) => montarSelectorIdioma(id));
-    };
-  });
 }
