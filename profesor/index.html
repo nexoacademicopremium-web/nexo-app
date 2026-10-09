@@ -594,8 +594,8 @@
   <div class="nav-divider"></div>
   <div class="nav-bottom">
     <div style="padding:10px 16px 4px">
-      <div style="color:var(--muted);font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:7px">Idioma / Language</div>
-      <div id="selector-idioma" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+      <div style="color:var(--muted);font-size:10px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;margin-bottom:7px">Idioma / Language / Язык</div>
+      <div id="selector-idioma"></div>
     </div>
     <div class="nav-item" onclick="logout()"><i class="ti ti-logout"></i> <span data-i18n="profesor.cerrar_sesion">Cerrar sesión</span></div>
   </div>
@@ -606,8 +606,13 @@
 
 <!-- ═══ PANEL ═══ -->
 <div class="section active" id="section-panel">
-  <h1 class="page-title" id="greeting" data-i18n="profesor.hola">Hola</h1>
-  <p class="page-sub" id="greeting-sub">—</p>
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap">
+    <div style="min-width:0">
+      <h1 class="page-title" id="greeting" data-i18n="profesor.hola">Hola</h1>
+      <p class="page-sub" id="greeting-sub">—</p>
+    </div>
+    <div id="selector-idioma-inicio" style="flex-shrink:0;padding-top:6px"></div>
+  </div>
 
   <div id="alerta-sesiones" style="display:none" class="alerta">
     <i class="ti ti-alert-circle"></i>
@@ -1626,7 +1631,7 @@ async function renderMiniCal() {
 // ============================================================
 function prepararFormSesion() {
   const sel = document.getElementById('ses-alumno');
-  sel.innerHTML = '<option value="">Seleccionar alumno</option>';
+  sel.innerHTML = `<option value="">${t('profesor.seleccionar_alumno')}</option>`;
   misAlumnos.forEach(a => {
     const u = a.usuario || {};
     const opt = document.createElement('option');
@@ -2508,7 +2513,7 @@ function nSesInit() {
   nSesLoadHist();
   // Poblar select de alumnos
   const sel = document.getElementById('nses-alumno');
-  sel.innerHTML = '<option value="">Seleccionar alumno</option>';
+  sel.innerHTML = `<option value="">${t('profesor.seleccionar_alumno')}</option>`;
   misAlumnos.forEach(a => {
     const u = a.usuario || {};
     const opt = document.createElement('option');
@@ -2538,19 +2543,21 @@ async function nSesLoadHist() {
     .limit(60);
 
   if (!sesiones || sesiones.length === 0) {
-    el.innerHTML = `<div class="empty-state"><i class="ti ti-history"></i><p>Sin sesiones registradas aún</p></div>`;
+    el.innerHTML = `<div class="empty-state"><i class="ti ti-history"></i><p>${t('profesor.nses.sin_sesiones')}</p></div>`;
     return;
   }
 
+  // [clase, texto] en vez de "clase texto" concatenado: una traducción
+  // con más de una palabra rompería el split(' ') que había antes.
   const pillMap = {
-    confirmada: 'st-ok Confirmada',
-    pendiente_confirmacion: 'st-pend Pendiente',
-    rechazada: 'st-red Rechazada',
-    cancelada: 'st-grey Cancelada'
+    confirmada:             ['st-ok',   t('profesor.nses.st_confirmada')],
+    pendiente_confirmacion: ['st-pend', t('profesor.nses.st_pendiente')],
+    rechazada:              ['st-red',  t('profesor.nses.st_rechazada')],
+    cancelada:              ['st-grey', t('profesor.nses.st_cancelada')],
   };
 
   el.innerHTML = '<div class="card">' + sesiones.map(s => {
-    const [pc, pt] = (pillMap[s.estado] || 'st-grey —').split(' ');
+    const [pc, pt] = pillMap[s.estado] || ['st-grey', '—'];
     const nom = s.alumno?.usuario
       ? `${escHTML(s.alumno.usuario.nombre)} ${escHTML(s.alumno.usuario.apellidos)}`
       : '—';
@@ -2569,7 +2576,7 @@ async function nSesLoadHist() {
         </div>
         <span class="status-pill ${pc}">${pt}</span>
         <button class="btn-ghost" style="margin-left:6px;font-size:11px;padding:5px 10px;flex-shrink:0" onclick="nSesVerDetalle('${s.id}',event)">
-          <i class="ti ti-eye" style="font-size:13px"></i> Ver
+          <i class="ti ti-eye" style="font-size:13px"></i> ${t('profesor.nses.ver')}
         </button>
       </div>`;
   }).join('') + '</div>';
@@ -2604,7 +2611,7 @@ async function nSesLoadAlumno() {
     return;
   }
 
-  container.innerHTML = '<div class="loading-section"><div class="spinner"></div> <span style="color:var(--muted);font-size:12px">Cargando asignaturas…</span></div>';
+  container.innerHTML = `<div class="loading-section"><div class="spinner"></div> <span style="color:var(--muted);font-size:12px">${t('profesor.nses.cargando_asignaturas')}</span></div>`;
   bloque2.style.display = 'block';
 
   // Asignaturas que este profesor trabaja con este alumno (alumno_profesor junction)
@@ -2623,7 +2630,7 @@ async function nSesLoadAlumno() {
     .filter(a => seen.has(a.id) ? false : seen.add(a.id));
 
   if (asigs.length === 0) {
-    container.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:12px 18px">No hay asignaturas asignadas entre tú y este alumno.</p>';
+    container.innerHTML = `<p style="color:var(--muted);font-size:12px;padding:12px 18px">${t('profesor.nses.sin_asignaturas_con_alumno')}</p>`;
     return;
   }
 
@@ -2656,7 +2663,7 @@ async function nSesLoadAlumno() {
   document.getElementById('nses-examen-detalle').style.display = 'none';
   document.getElementById('nses-examenes-lista').innerHTML = '';
   const exTemaSel = document.getElementById('nses-examen-tema');
-  if (exTemaSel) exTemaSel.innerHTML = '<option value="">— Selecciona asignatura primero —</option>';
+  if (exTemaSel) exTemaSel.innerHTML = `<option value="">${t('profesor.nses.selecciona_asignatura_primero')}</option>`;
 }
 
 function _nSesGetMin(prefix, id) {
@@ -2687,7 +2694,7 @@ function _nSesRenderAsig(asig, ai, prevTemasMap) {
       <div class="nses-asig-body" id="nses-asig-body-${ai}">
         <div class="nses-asig-time-row">
           <span class="nses-asig-time-label">
-            <i class="ti ti-clock" style="font-size:12px;margin-right:4px"></i>Tiempo dedicado
+            <i class="ti ti-clock" style="font-size:12px;margin-right:4px"></i>${t('profesor.nses.tiempo_dedicado')}
             <span id="nses-tema-sum-${ai}" style="color:var(--muted);font-size:10px;margin-left:6px"></span>
           </span>
           ${_nSesTimeHtml(`nses-atm-h-${ai}`, `nses-atm-m-${ai}`, 'nSesCheckTotals()')}
@@ -2696,7 +2703,7 @@ function _nSesRenderAsig(asig, ai, prevTemasMap) {
         <div style="padding:8px 16px 12px;border-top:.5px solid var(--border2)">
           <button type="button" class="btn-ghost" style="font-size:11px;padding:5px 12px"
             onclick="nSesAddTema(${ai},'${asigKey}')">
-            <i class="ti ti-plus" style="font-size:12px"></i> Añadir tema
+            <i class="ti ti-plus" style="font-size:12px"></i> ${t('profesor.nses.anadir_tema')}
           </button>
         </div>
       </div>
@@ -2706,9 +2713,9 @@ function _nSesRenderAsig(asig, ai, prevTemasMap) {
 function _nSesRenderNota(pid) {
   return `
     <div style="padding:4px 0;margin-top:10px">
-      <label style="color:var(--muted);font-size:11px;font-style:italic;display:block;margin-bottom:6px">Nota del profesor (opcional, máx. 200 caracteres)</label>
+      <label style="color:var(--muted);font-size:11px;font-style:italic;display:block;margin-bottom:6px">${t('profesor.nses.nota_profesor_label')}</label>
       <textarea class="field-input" id="nses-nota-${pid}" maxlength="200" rows="2"
-        placeholder="Solo si hay algo relevante…" style="font-size:12px;min-height:60px"></textarea>
+        placeholder="${t('profesor.nses.nota_profesor_ph')}" style="font-size:12px;min-height:60px"></textarea>
     </div>`;
 }
 
@@ -2719,30 +2726,33 @@ function _nSesRenderNota(pid) {
 // Mapeo: nombre real de asignatura → clave de batería
 // Claves simples → batería directa en preguntas_asignatura
 // Claves especiales → selector de categoría
+// Los labels se guardan como clave de traducción, no como texto fijo: se
+// resuelven con t() en el momento de pintar, para que cambien si el
+// profesor cambia de idioma sin recargar la página.
 const _CAT_META = {
   'Lengua Castellana': { cats: [
-    { val: 'gramatica',   label: 'Gramática / Norma',             dbKey: 'Lengua Castellana' },
-    { val: 'comprension', label: 'Comprensión y Expresión',       dbKey: 'Lengua Castellana' },
+    { val: 'gramatica',   labelKey: 'profesor.nses.cat_gram_norma',        dbKey: 'Lengua Castellana' },
+    { val: 'comprension', labelKey: 'profesor.nses.cat_compr_expr',        dbKey: 'Lengua Castellana' },
   ]},
   'Valenciano': { cats: [
-    { val: 'gramatica',   label: 'Gramática / Norma',             dbKey: 'Valenciano' },
-    { val: 'comprension', label: 'Comprensión y Expresión',       dbKey: 'Valenciano' },
+    { val: 'gramatica',   labelKey: 'profesor.nses.cat_gram_norma',        dbKey: 'Valenciano' },
+    { val: 'comprension', labelKey: 'profesor.nses.cat_compr_expr',        dbKey: 'Valenciano' },
   ]},
   'Inglés': { cats: [
-    { val: 'gramatica',   label: 'Gramática / Vocabulario',       dbKey: 'Inglés' },
-    { val: 'comprension', label: 'Comprensión y Expresión escrita', dbKey: 'Inglés' },
+    { val: 'gramatica',   labelKey: 'profesor.nses.cat_gram_vocab',        dbKey: 'Inglés' },
+    { val: 'comprension', labelKey: 'profesor.nses.cat_compr_expr_escrita', dbKey: 'Inglés' },
   ]},
   'Francés': { cats: [
-    { val: 'gramatica',   label: 'Gramática / Vocabulario',       dbKey: 'Francés' },
-    { val: 'comprension', label: 'Comprensión y Expresión escrita', dbKey: 'Francés' },
+    { val: 'gramatica',   labelKey: 'profesor.nses.cat_gram_vocab',        dbKey: 'Francés' },
+    { val: 'comprension', labelKey: 'profesor.nses.cat_compr_expr_escrita', dbKey: 'Francés' },
   ]},
   'FísicaQuímica': { cats: [
-    { val: 'fisica',      label: 'Física',                        dbKey: 'Física' },
-    { val: 'quimica',     label: 'Química',                       dbKey: 'Química' },
+    { val: 'fisica',      labelKey: 'profesor.nses.cat_fisica',           dbKey: 'Física' },
+    { val: 'quimica',     labelKey: 'profesor.nses.cat_quimica',          dbKey: 'Química' },
   ]},
   'GeografíaHistoria': { cats: [
-    { val: 'historia',    label: 'Historia',                      dbKey: 'Historia' },
-    { val: 'geografia',   label: 'Geografía',                     dbKey: 'Geografía' },
+    { val: 'historia',    labelKey: 'profesor.nses.cat_historia',         dbKey: 'Historia' },
+    { val: 'geografia',   labelKey: 'profesor.nses.cat_geografia',        dbKey: 'Geografía' },
   ]},
 };
 
@@ -2795,24 +2805,41 @@ function _getBateriaPregs(asigKey, catVal) {
 }
 
 // Renderiza el HTML de las preguntas dada una estructura { univ, asig }
+// El profesor puede dar clase en cualquier idioma, y tiene que entender
+// lo que responde sobre el alumno: estas dos funciones devuelven la
+// pregunta/opciones en el idioma elegido, cayendo al español si esa fila
+// aún no se ha traducido (p. ej. una pregunta añadida después).
+function _pregTxt(q) {
+  const idi = idiomaActual();
+  if (idi === 'en' && q.pregunta_en) return q.pregunta_en;
+  if (idi === 'ru' && q.pregunta_ru) return q.pregunta_ru;
+  return q.pregunta;
+}
+function _pregOpts(q) {
+  const idi = idiomaActual();
+  if (idi === 'en' && q.opciones_en?.length) return q.opciones_en;
+  if (idi === 'ru' && q.opciones_ru?.length) return q.opciones_ru;
+  return q.opciones;
+}
+
 function _renderBateriaPregs(pid, pregs) {
   function renderQ(q) {
     return `<div>
-      <div class="nses-p-label">${q.codigo} — ${escHTML(q.pregunta)} *
+      <div class="nses-p-label">${q.codigo} — ${escHTML(_pregTxt(q))} *
         <span class="nses-p-err" id="err-${q.codigo}-${pid}"></span>
       </div>
       <div class="nses-radio-group">
-        ${q.opciones.map(op => `<label><input type="radio" name="${q.codigo}-${pid}" value="${op.replace(/"/g,'&quot;')}"> ${op}</label>`).join('')}
+        ${_pregOpts(q).map((op, i) => `<label><input type="radio" name="${q.codigo}-${pid}" value="${(q.opciones[i] || op).replace(/"/g,'&quot;')}"> ${escHTML(op)}</label>`).join('')}
       </div>
     </div>`;
   }
   let html = '';
   if (pregs.univ.length) {
-    html += `<div class="nses-bat-tag"><i class="ti ti-circle-dot"></i> Preguntas universales</div>`;
+    html += `<div class="nses-bat-tag"><i class="ti ti-circle-dot"></i> ${t('profesor.nses.preguntas_universales')}</div>`;
     html += pregs.univ.map(renderQ).join('');
   }
   if (pregs.asig.length) {
-    html += `<div class="nses-bat-tag"><i class="ti ti-chart-bar"></i> Rendimiento específico</div>`;
+    html += `<div class="nses-bat-tag"><i class="ti ti-chart-bar"></i> ${t('profesor.nses.rendimiento_especifico')}</div>`;
     html += pregs.asig.map(renderQ).join('');
   }
   return html;
@@ -2827,13 +2854,13 @@ function _nSesRenderBateria(pid, asigKey) {
   const catMeta = _CAT_META[asigKey];
   if (catMeta) {
     return `<div class="nses-bat-cat">
-      <div class="nses-p-label" style="margin-top:0">Categoría del contenido trabajado *
+      <div class="nses-p-label" style="margin-top:0">${t('profesor.nses.categoria_contenido_label')}
         <span class="nses-p-err" id="err-cat-${pid}"></span>
       </div>
       <div class="nses-radio-group">
         ${catMeta.cats.map(c =>
           `<label><input type="radio" name="cat-${pid}" value="${c.val}"
-            onchange="nSesCatChange('${pid}','${asigKey}','${c.val}')"> ${c.label}</label>`
+            onchange="nSesCatChange('${pid}','${asigKey}','${c.val}')"> ${t(c.labelKey)}</label>`
         ).join('')}
       </div>
     </div>
@@ -2907,7 +2934,7 @@ function nSesToggleTest(btn, testId) {
   const open = body.style.display === 'block';
   body.style.display = open ? 'none' : 'block';
   btn.classList.toggle('active', !open);
-  btn.textContent = open ? 'Añadir' : 'Ocultar';
+  btn.textContent = open ? t('profesor.nses.anadir') : t('profesor.nses.ocultar');
 }
 
 function nSesValNum(prefix, pid) {
@@ -2943,7 +2970,7 @@ async function nSesSubmit(e) {
     // Asignatura: de la lista cargada o del input custom
     const asigNom = _nSesDatos.asigs[ai]?.nombre
       || document.getElementById(`nses-asig-nombre-${ai}`)?.value?.trim()
-      || '(sin asignatura)';
+      || t('profesor.nses.sin_asignatura_fallback');
 
     const temaEl  = document.getElementById(`nses-tnm-${pid}`);
     const temaNom = temaEl?.value?.trim() || '';
@@ -3058,7 +3085,7 @@ async function nSesSubmit(e) {
 
   const btn = document.getElementById('nses-submit-btn');
   btn.disabled = true;
-  btn.innerHTML = '<div style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px"></div> Guardando…';
+  btn.innerHTML = `<div style="display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px"></div> ${t('profesor.msg.guardando')}`;
 
   const fechaStr = document.getElementById('nses-fecha').value;
   const horaStr  = document.getElementById('nses-hora').value;
@@ -3081,7 +3108,7 @@ async function nSesSubmit(e) {
   if (sesErr) {
     showToast(t('profesor.msg.error_al_guardar_sesion') + sesErr.message, 'error');
     btn.disabled = false;
-    btn.innerHTML = '<i class="ti ti-send"></i> Enviar registro';
+    btn.innerHTML = `<i class="ti ti-send"></i> ${t('profesor.enviar_registro')}`;
     return;
   }
 
@@ -3095,7 +3122,7 @@ async function nSesSubmit(e) {
       await db.from('sesiones').delete().eq('id', newSes.id);
       showToast(t('profesor.msg.error_al_guardar_temas_la_sesion') + tErr.message, 'error');
       btn.disabled = false;
-      btn.innerHTML = '<i class="ti ti-send"></i> Enviar registro';
+      btn.innerHTML = `<i class="ti ti-send"></i> ${t('profesor.enviar_registro')}`;
       return;
     }
   } else {
@@ -3103,7 +3130,7 @@ async function nSesSubmit(e) {
   }
 
   btn.disabled = false;
-  btn.innerHTML = '<i class="ti ti-send"></i> Enviar registro';
+  btn.innerHTML = `<i class="ti ti-send"></i> ${t('profesor.enviar_registro')}`;
 
   document.getElementById('nses-form').reset();
   document.getElementById('nses-examen-no').checked = true;
@@ -3136,24 +3163,24 @@ async function nSesRenderExamenes() {
   const alumno   = misAlumnos.find(a => a.id === alumnoId);
   const asigs    = _nSesDatos?.asigs || [];
   if (!asigs.length) {
-    lista.innerHTML = '<p style="color:var(--muted);font-size:12px">Selecciona un alumno primero.</p>';
+    lista.innerHTML = `<p style="color:var(--muted);font-size:12px">${t('profesor.msg.selecciona_un_alumno_primero')}</p>`;
     return;
   }
   lista.innerHTML = asigs.map((asig, i) => {
     const temas   = _curriculoTemas(alumno?.nivel, asig.nombre);
     const temaCtrl = temas?.length
       ? _cSel(`nses-extema-${i}`, temas)
-      : `<input class="field-input" type="text" id="nses-extema-${i}" placeholder="Tema del examen">`;
+      : `<input class="field-input" type="text" id="nses-extema-${i}" placeholder="${t('profesor.nses.ph_tema_examen')}">`;
     return `
       <div style="background:var(--surface);border:.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px">
         <div style="color:var(--soft);font-size:13px;font-weight:600;margin-bottom:10px">${escHTML(asig.nombre)}</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div>
-            <label class="field-label" style="margin-top:0;font-size:11px">Fecha del examen</label>
+            <label class="field-label" style="margin-top:0;font-size:11px">${t('profesor.nses.fecha_examen_label')}</label>
             <input class="field-input" type="date" id="nses-exfecha-${i}">
           </div>
           <div>
-            <label class="field-label" style="margin-top:0;font-size:11px">Tema</label>
+            <label class="field-label" style="margin-top:0;font-size:11px">${t('profesor.tema_2')}</label>
             ${temaCtrl}
           </div>
         </div>
@@ -3198,7 +3225,7 @@ async function nSesAddTema(ai, asigKey, prefill) {
   const _temasSes    = _curriculoTemas(_nivelSes, _asigNomSes);
   const _temaField = (_temasSes?.length)
     ? _cSel(`nses-tnm-${pid}`, _temasSes)
-    : `<input type="text" id="nses-tnm-${pid}" placeholder="Nombre del tema…"
+    : `<input type="text" id="nses-tnm-${pid}" placeholder="${t('profesor.nses.ph_nombre_tema')}"
          value="${prefill ? prefill.replace(/"/g,'&quot;') : ''}">`;
 
   const div = document.createElement('div');
@@ -3210,7 +3237,7 @@ async function nSesAddTema(ai, asigKey, prefill) {
     <div class="nses-tema-block-hdr">
       ${_temaField}
       ${_nSesTimeHtml(`nses-ttm-h-${pid}`, `nses-ttm-m-${pid}`, `nSesCheckTemaTotals(${ai})`)}
-      <button type="button" class="nses-tema-del" title="Eliminar tema"
+      <button type="button" class="nses-tema-del" title="${t('profesor.nses.eliminar_tema')}"
         onclick="this.closest('.nses-tema-block').remove()">×</button>
     </div>
     <div class="nses-tema-detail">
@@ -3239,7 +3266,7 @@ function nSesAddAsig() {
     <div class="nses-asig-hdr" onclick="nSesToggleAsigBody(${ai})">
       <i class="ti ti-chevron-right nses-asig-chevron open" id="nses-asig-chev-${ai}"></i>
       <input type="text" class="field-input" id="nses-asig-nombre-${ai}"
-        placeholder="Nombre de la asignatura…"
+        placeholder="${t('profesor.nses.ph_nombre_asignatura')}"
         onclick="event.stopPropagation()"
         style="flex:1;font-size:13px;font-weight:500;padding:5px 10px;height:32px;background:transparent;border-color:rgba(255,255,255,.15)"
         data-custom-asig="true">
@@ -3247,20 +3274,20 @@ function nSesAddAsig() {
     <div class="nses-asig-body" id="nses-asig-body-${ai}" style="display:block">
       <div class="nses-asig-time-row">
         <span class="nses-asig-time-label">
-          <i class="ti ti-clock" style="font-size:12px"></i>Tiempo dedicado
+          <i class="ti ti-clock" style="font-size:12px"></i>${t('profesor.nses.tiempo_dedicado')}
           <span id="nses-tema-sum-${ai}" style="color:var(--muted);font-size:10px;margin-left:4px"></span>
         </span>
         ${_nSesTimeHtml(`nses-atm-h-${ai}`, `nses-atm-m-${ai}`, 'nSesCheckTotals()')}
       </div>
       <div id="nses-temas-list-${ai}">
         <p style="color:var(--muted);font-size:11px;padding:10px 16px 4px">
-          Pulsa "+ Añadir otro tema" para registrar los temas trabajados.
+          ${t('profesor.nses.pulsa_anadir_tema')}
         </p>
       </div>
       <div style="padding:8px 16px 12px;border-top:.5px solid var(--border2)">
         <button type="button" class="btn-ghost" style="font-size:11px;padding:5px 12px"
           onclick="nSesAddTema(${ai},null)">
-          <i class="ti ti-plus" style="font-size:12px"></i> Añadir otro tema
+          <i class="ti ti-plus" style="font-size:12px"></i> ${t('profesor.nses.anadir_otro_tema')}
         </button>
       </div>
     </div>`;
@@ -3285,58 +3312,69 @@ async function nSesVerDetalle(sesId, evt) {
   ]);
 
   if (!ses) {
-    document.getElementById('nses-det-content').innerHTML = '<p style="color:var(--muted);font-size:12px">No se encontraron datos.</p>';
+    document.getElementById('nses-det-content').innerHTML = `<p style="color:var(--muted);font-size:12px">${t('profesor.nses.no_datos')}</p>`;
     return;
   }
 
   const nom = ses.alumno?.usuario ? `${escHTML(ses.alumno.usuario.nombre)} ${escHTML(ses.alumno.usuario.apellidos)}` : '—';
-  const pillMap = { confirmada:'st-ok Confirmada', pendiente_confirmacion:'st-pend Pendiente', rechazada:'st-red Rechazada', cancelada:'st-grey Cancelada' };
-  const [pc, pt] = (pillMap[ses.estado] || 'st-grey —').split(' ');
+  const pillMap = {
+    confirmada:             ['st-ok',   t('profesor.nses.st_confirmada')],
+    pendiente_confirmacion: ['st-pend', t('profesor.nses.st_pendiente')],
+    rechazada:              ['st-red',  t('profesor.nses.st_rechazada')],
+    cancelada:              ['st-grey', t('profesor.nses.st_cancelada')],
+  };
+  const [pc, pt] = pillMap[ses.estado] || ['st-grey', '—'];
 
   const mapaLabel = {
-    planteamiento:'En el planteamiento', procedimiento:'En el procedimiento',
-    operatoria:'En la operatoria básica', no_errores:'Sin errores relevantes',
-    si:'Sí, detectaba solo', pregunta:'Al preguntar', no:'No detectaba',
-    bloqueo:'Se bloqueaba', intenta:'Lo intentaba solo', pide_adelanta:'Pedía ayuda y seguía',
-    lento:'Disperso y lento', normal:'Normal', constante:'Concentrado y constante',
+    planteamiento: t('profesor.nses.map_planteamiento'), procedimiento: t('profesor.nses.map_procedimiento'),
+    operatoria: t('profesor.nses.map_operatoria'), no_errores: t('profesor.nses.map_no_errores'),
+    si: t('profesor.nses.map_si'), pregunta: t('profesor.nses.map_pregunta'), no: t('profesor.nses.map_no'),
+    bloqueo: t('profesor.nses.map_bloqueo'), intenta: t('profesor.nses.map_intenta'), pide_adelanta: t('profesor.nses.map_pide_adelanta'),
+    lento: t('profesor.nses.map_lento'), normal: t('profesor.nses.map_normal'), constante: t('profesor.nses.map_constante'),
   };
 
   let html = `<div class="nses-det-section">
-    <div class="nses-det-title">Información general</div>
-    <div class="nses-det-row"><span>Alumno</span><b>${escHTML(nom)}</b></div>
-    <div class="nses-det-row"><span>Fecha</span><b>${formatDate(ses.fecha)}${ses.hora_inicio ? ' · ' + formatTime(ses.hora_inicio) : ''}</b></div>
-    <div class="nses-det-row"><span>Duración</span><b>${(ses.duracion_minutos / 60).toFixed(1).replace('.0', '')}h</b></div>
-    <div class="nses-det-row"><span>Estado</span><b><span class="status-pill ${pc}" style="font-size:10px">${pt}</span></b></div>
+    <div class="nses-det-title">${t('profesor.nses.info_general')}</div>
+    <div class="nses-det-row"><span>${t('profesor.alumno_2')}</span><b>${escHTML(nom)}</b></div>
+    <div class="nses-det-row"><span>${t('profesor.fecha_2')}</span><b>${formatDate(ses.fecha)}${ses.hora_inicio ? ' · ' + formatTime(ses.hora_inicio) : ''}</b></div>
+    <div class="nses-det-row"><span>${t('profesor.duracion_2')}</span><b>${(ses.duracion_minutos / 60).toFixed(1).replace('.0', '')}h</b></div>
+    <div class="nses-det-row"><span>${t('profesor.nses.estado_label')}</span><b><span class="status-pill ${pc}" style="font-size:10px">${pt}</span></b></div>
   </div>`;
 
   if (tErr && /does not exist|relation/i.test(tErr.message)) {
-    html += `<p style="color:var(--muted);font-size:12px;padding:8px 0;font-style:italic">Detalle de temas no disponible. Ejecuta la migración SQL en Supabase para activarlo.</p>`;
+    html += `<p style="color:var(--muted);font-size:12px;padding:8px 0;font-style:italic">${t('profesor.nses.detalle_no_disponible')}</p>`;
   } else if (!temas || temas.length === 0) {
-    html += `<p style="color:var(--muted);font-size:12px;padding:8px 0">Sin desglose de temas para esta sesión.</p>`;
+    html += `<p style="color:var(--muted);font-size:12px;padding:8px 0">${t('profesor.nses.sin_desglose')}</p>`;
   } else {
-    const _catLabels = { gramatica:'Gramática/Norma', comprension:'Comprensión y Expresión', fisica:'Física', quimica:'Química', historia:'Historia', geografia:'Geografía' };
-    temas.forEach(t => {
+    const _catLabels = {
+      gramatica: t('profesor.nses.cat_gram_norma'), comprension: t('profesor.nses.cat_compr_expr'),
+      fisica: t('profesor.nses.cat_fisica'), quimica: t('profesor.nses.cat_quimica'),
+      historia: t('profesor.nses.cat_historia'), geografia: t('profesor.nses.cat_geografia'),
+    };
+    // "tm" y no "t": dentro de este bucle, "t" tapa la función global de
+    // traducción, que aquí hace falta para las etiquetas de cada fila.
+    temas.forEach(tm => {
       let batHtml = '';
-      if (t.respuestas_bateria && Object.keys(t.respuestas_bateria).length) {
-        const rows = Object.entries(t.respuestas_bateria).map(([cod, val]) =>
-          `<div class="nses-det-row" style="gap:4px"><span style="min-width:32px;flex-shrink:0">${cod}</span><b style="flex:1">${val}</b></div>`
+      if (tm.respuestas_bateria && Object.keys(tm.respuestas_bateria).length) {
+        const rows = Object.entries(tm.respuestas_bateria).map(([cod, val]) =>
+          `<div class="nses-det-row" style="gap:4px"><span style="min-width:32px;flex-shrink:0">${cod}</span><b style="flex:1">${escHTML(val)}</b></div>`
         ).join('');
-        batHtml = `<div style="margin:6px 0 2px"><div class="nses-bat-tag" style="margin-bottom:6px"><i class="ti ti-chart-bar"></i> Batería respondida</div>${rows}</div>`;
+        batHtml = `<div style="margin:6px 0 2px"><div class="nses-bat-tag" style="margin-bottom:6px"><i class="ti ti-chart-bar"></i> ${t('profesor.nses.bateria_respondida')}</div>${rows}</div>`;
       }
       html += `<div class="nses-det-section" style="margin-top:14px;padding-top:12px;border-top:.5px solid var(--border)">
-        <div class="nses-det-title">${escHTML(t.asignatura)} — ${escHTML(t.tema)}</div>
-        ${t.tiempo_minutos ? `<div class="nses-det-row"><span>Tiempo</span><b>${t.tiempo_minutos} min</b></div>` : ''}
-        ${t.categoria_idioma ? `<div class="nses-det-row"><span>Categoría</span><b>${_catLabels[t.categoria_idioma] || t.categoria_idioma}</b></div>` : ''}
+        <div class="nses-det-title">${escHTML(tm.asignatura)} — ${escHTML(tm.tema)}</div>
+        ${tm.tiempo_minutos ? `<div class="nses-det-row"><span>${t('profesor.nses.tiempo_label')}</span><b>${tm.tiempo_minutos} min</b></div>` : ''}
+        ${tm.categoria_idioma ? `<div class="nses-det-row"><span>${t('profesor.nses.categoria_label')}</span><b>${_catLabels[tm.categoria_idioma] || tm.categoria_idioma}</b></div>` : ''}
         ${batHtml}
-        ${t.ejercicios_propuestos > 0 ? `<div class="nses-det-row"><span>Ejercicios</span><b>${t.ejercicios_propuestos} prop · ${t.ejercicios_solo} solo · ${t.ejercicios_ayuda} ayuda · ${t.ejercicios_sin_resolver} sin</b></div>` : ''}
-        ${t.tipo_ejercicios?.length ? `<div class="nses-det-row"><span>Tipo</span><b>${t.tipo_ejercicios.join(', ')}</b></div>` : ''}
-        ${t.donde_falla ? `<div class="nses-det-row"><span>Errores</span><b>${escHTML(mapaLabel[t.donde_falla] || t.donde_falla)}</b></div>` : ''}
-        ${t.detecta_errores ? `<div class="nses-det-row"><span>Detecta errores</span><b>${escHTML(mapaLabel[t.detecta_errores] || t.detecta_errores)}</b></div>` : ''}
-        ${t.actitud_dificultad ? `<div class="nses-det-row"><span>Dificultad</span><b>${escHTML(mapaLabel[t.actitud_dificultad] || t.actitud_dificultad)}</b></div>` : ''}
-        ${t.actitud_ritmo ? `<div class="nses-det-row"><span>Ritmo</span><b>${escHTML(mapaLabel[t.actitud_ritmo] || t.actitud_ritmo)}</b></div>` : ''}
-        ${t.test_inicio_propuestos > 0 ? `<div class="nses-det-row"><span>Test inicio</span><b>${t.test_inicio_propuestos} prop · ${t.test_inicio_solo} solo · ${t.test_inicio_ayuda} ayuda · ${t.test_inicio_sin_resolver} sin</b></div>` : ''}
-        ${t.test_cierre_propuestos > 0 ? `<div class="nses-det-row"><span>Test cierre</span><b>${t.test_cierre_propuestos} prop · ${t.test_cierre_solo} solo · ${t.test_cierre_ayuda} ayuda · ${t.test_cierre_sin_resolver} sin</b></div>` : ''}
-        ${t.nota_profesor ? `<div class="nses-det-row" style="flex-direction:column;align-items:flex-start;gap:4px"><span>Nota</span><b style="text-align:left">${escHTML(t.nota_profesor)}</b></div>` : ''}
+        ${tm.ejercicios_propuestos > 0 ? `<div class="nses-det-row"><span>${t('profesor.nses.ejercicios_label')}</span><b>${tm.ejercicios_propuestos} ${t('profesor.nses.abv_prop')} · ${tm.ejercicios_solo} ${t('profesor.nses.abv_solo')} · ${tm.ejercicios_ayuda} ${t('profesor.nses.abv_ayuda')} · ${tm.ejercicios_sin_resolver} ${t('profesor.nses.abv_sin')}</b></div>` : ''}
+        ${tm.tipo_ejercicios?.length ? `<div class="nses-det-row"><span>${t('profesor.nses.tipo_label')}</span><b>${tm.tipo_ejercicios.join(', ')}</b></div>` : ''}
+        ${tm.donde_falla ? `<div class="nses-det-row"><span>${t('profesor.nses.errores_label')}</span><b>${escHTML(mapaLabel[tm.donde_falla] || tm.donde_falla)}</b></div>` : ''}
+        ${tm.detecta_errores ? `<div class="nses-det-row"><span>${t('profesor.nses.detecta_errores_label')}</span><b>${escHTML(mapaLabel[tm.detecta_errores] || tm.detecta_errores)}</b></div>` : ''}
+        ${tm.actitud_dificultad ? `<div class="nses-det-row"><span>${t('profesor.nses.dificultad_label')}</span><b>${escHTML(mapaLabel[tm.actitud_dificultad] || tm.actitud_dificultad)}</b></div>` : ''}
+        ${tm.actitud_ritmo ? `<div class="nses-det-row"><span>${t('profesor.nses.ritmo_label')}</span><b>${escHTML(mapaLabel[tm.actitud_ritmo] || tm.actitud_ritmo)}</b></div>` : ''}
+        ${tm.test_inicio_propuestos > 0 ? `<div class="nses-det-row"><span>${t('profesor.nses.test_inicio_label')}</span><b>${tm.test_inicio_propuestos} ${t('profesor.nses.abv_prop')} · ${tm.test_inicio_solo} ${t('profesor.nses.abv_solo')} · ${tm.test_inicio_ayuda} ${t('profesor.nses.abv_ayuda')} · ${tm.test_inicio_sin_resolver} ${t('profesor.nses.abv_sin')}</b></div>` : ''}
+        ${tm.test_cierre_propuestos > 0 ? `<div class="nses-det-row"><span>${t('profesor.nses.test_cierre_label')}</span><b>${tm.test_cierre_propuestos} ${t('profesor.nses.abv_prop')} · ${tm.test_cierre_solo} ${t('profesor.nses.abv_solo')} · ${tm.test_cierre_ayuda} ${t('profesor.nses.abv_ayuda')} · ${tm.test_cierre_sin_resolver} ${t('profesor.nses.abv_sin')}</b></div>` : ''}
+        ${tm.nota_profesor ? `<div class="nses-det-row" style="flex-direction:column;align-items:flex-start;gap:4px"><span>${t('profesor.nses.nota_label')}</span><b style="text-align:left">${escHTML(tm.nota_profesor)}</b></div>` : ''}
       </div>`;
     });
   }
@@ -4923,9 +4961,17 @@ aplicarLimitesFecha();
 // ── Idiomas ──────────────────────────────────────────────
 registrarTraducciones("es", {"profesor.mi_area":"Mi área","profesor.inicio":"Inicio","profesor.registrar_sesion":"Registrar Sesión","profesor.mi_actividad":"Mi actividad","profesor.calendario":"Calendario","profesor.mis_alumnos":"Mis Alumnos","profesor.estudiar":"Estudiar","profesor.material":"Material","profesor.tareas":"Tareas","profesor.tests":"Tests","profesor.avisos":"Avisos","profesor.cerrar_sesion":"Cerrar sesión","profesor.hola":"Hola","profesor.tienes_sesiones_sin_registrar":"Tienes sesiones sin registrar.","profesor.registrar_ahora":"Registrar ahora","profesor.horas_esta_semana":"Horas esta semana","profesor.horas_este_mes":"Horas este mes","profesor.alumnos_activos":"Alumnos activos","profesor.registrar_sesion_2":"Registrar sesión","profesor.registra_la_clase_de_hoy":"Registra la clase de hoy","profesor.mis_alumnos_2":"Mis alumnos","profesor.ficha_completa_de_cada_alumno":"Ficha completa de cada alumno","profesor.programa_y_gestiona_tus_clases":"Programa y gestiona tus clases","profesor.historial_y_estadisticas":"Historial y estadísticas","profesor.crea_tests_para_tus_alumnos":"Crea tests para tus alumnos","profesor.sesiones":"Sesiones","profesor.historial_de_tus_sesiones_registradas":"Historial de tus sesiones registradas","profesor.registrar_nueva_sesion":"Registrar nueva sesión","profesor.alumno":"Alumno *","profesor.seleccionar_alumno":"Seleccionar alumno","profesor.fecha":"Fecha *","profesor.hora_de_inicio":"Hora de inicio *","profesor.duracion":"Duración *","profesor.tiene_el_alumno_un_examen":"¿Tiene el alumno un examen próximo? *","profesor.rellena_fecha_y_tema_para":"Rellena fecha y tema para cada asignatura con examen próximo. Deja en blanco las que no tengan.","profesor.cancelar":"Cancelar","profesor.alumno_2":"Alumno","profesor.nivel":"Nivel","profesor.asignatura":"Asignatura","profesor.horario":"Horario","profesor.horas_mes":"Horas mes","profesor.estado_bono":"Estado bono","profesor.tus_clases_programadas":"Tus clases programadas","profesor.lun":"Lun","profesor.mar":"Mar","profesor.mie":"Mié","profesor.jue":"Jue","profesor.vie":"Vie","profesor.sab":"Sáb","profesor.dom":"Dom","profesor.historial_y_estadisticas_de_tus":"Historial y estadísticas de tus sesiones","profesor.accede_al_historial_y_registra":"Accede al historial y registra una nueva clase","profesor.todos_los_meses":"Todos los meses","profesor.todos_los_alumnos":"Todos los alumnos","profesor.todos_los_estados":"Todos los estados","profesor.confirmadas":"Confirmadas","profesor.pendientes":"Pendientes","profesor.rechazadas":"Rechazadas","profesor.canceladas":"Canceladas","profesor.comunicaciones_del_equipo_de_nexo":"Comunicaciones del equipo de Nexo Académico","profesor.recomendado":"Recomendado","profesor.instalar_desc":"Añádela a tu pantalla de inicio y recibirás un aviso cuando tengas una sesión que confirmar, material nuevo, una tarea o el informe del mes. En iPhone es imprescindible: sin instalarla no llega ninguno.","profesor.instala_nexo_en_tu_movil":"Instala Nexo en tu móvil","profesor.crea_y_gestiona_tests_para":"Crea y gestiona tests para tus alumnos","profesor.sube_y_gestiona_material_para":"Sube y gestiona material para tus alumnos","profesor.asigna_y_corrige_tareas_para":"Asigna y corrige tareas para tus alumnos","profesor.pendiente":"Pendiente","profesor.entregada":"Entregada","profesor.corregida":"Corregida","profesor.nueva_tarea":"Nueva tarea","profesor.tema":"Tema *","profesor.titulo":"Título *","profesor.instrucciones":"Instrucciones","profesor.adjunto_enunciado_pdf_imagen":"Adjunto enunciado (PDF / imagen)","profesor.crear_tarea":"Crear tarea","profesor.detalle_de_tarea":"Detalle de tarea","profesor.nuevo_test":"Nuevo test","profesor.asignatura_2":"Asignatura *","profesor.titulo_del_test":"Título del test *","profesor.preguntas":"Preguntas","profesor.tema_2":"Tema","profesor.pdf_de_teoria_o_test":"PDF de teoría o test *","profesor.arrastra_un_pdf_o_pulsa":"Arrastra un PDF o pulsa para seleccionar","profesor.test":"Test","profesor.ficha_del_alumno":"Ficha del alumno","profesor.nueva_clase":"Nueva clase","profesor.sin_alumno_especifico":"Sin alumno específico","profesor.fecha_2":"Fecha","profesor.hora_de_inicio_2":"Hora de inicio","profesor.duracion_2":"Duración","profesor.notas":"Notas","profesor.dia_de_la_semana":"Día de la semana","profesor.lunes":"Lunes","profesor.martes":"Martes","profesor.miercoles":"Miércoles","profesor.jueves":"Jueves","profesor.viernes":"Viernes","profesor.sabado":"Sábado","profesor.domingo":"Domingo","profesor.repetir_hasta":"Repetir hasta","profesor.fin_de_mes":"Fin de mes","profesor.fin_de_trimestre":"Fin de trimestre","profesor.guardar":"Guardar","profesor.sesion_excede_el_bono":"Sesión excede el bono","profesor.continuar_de_todos_modos":"Continuar de todos modos","profesor.sesion_registrada":"Sesión registrada","profesor.clase_pendiente_de_confirmacion_por":"Clase pendiente de confirmación por el alumno.","profesor.volver_al_panel":"Volver al panel","profesor.anadir_material":"Añadir material","profesor.archivo_pdf":"Archivo (PDF) *","profesor.subir_material":"Subir material","profesor.detalle_de_la_sesion":"Detalle de la sesión","profesor.nueva_version_disponible":"Nueva versión disponible","profesor.actualizar":"Actualizar","profesor.calendario_2":"Calendario —","profesor.expandir":"Expandir","profesor.sesiones_recientes":"Sesiones recientes","profesor.historial":"Historial","profesor.acciones_rapidas":"Acciones rápidas","profesor.nueva_sesion":"Nueva sesión","profesor.1_datos_de_la_sesion":"1 — Datos de la sesión","profesor.2_asignaturas_y_temas_trabajados":"2 — Asignaturas y temas trabajados","profesor.anadir_otra_asignatura":"Añadir otra asignatura","profesor.3_examen_proximo":"3 — Examen próximo","profesor.enviar_registro":"Enviar registro","profesor.ver_la_guia":"Ver la guía","profesor.guia_titulo":"Guía de instalación","profesor.cerrar":"Cerrar","profesor.activar_los_avisos":"Activar los avisos","profesor.test_desde_pdf":"Test desde PDF","profesor.subir_archivo":"Subir archivo","profesor.anadir_pregunta":"Añadir pregunta","profesor.guardar_test":"Guardar test","profesor.generar_test":"Generar test","profesor.eliminar":"Eliminar","profesor.ph.buscar_por_nombre_asignatura_o":"Buscar por nombre, asignatura o nivel...","profesor.ph.ej_ejercicios_tema_5_ecuaciones":"Ej: Ejercicios tema 5 — Ecuaciones","profesor.ph.describe_que_tiene_que_hacer":"Describe qué tiene que hacer el alumno…","profesor.ph.ej_repaso_tema_3_algebra":"Ej: Repaso tema 3 — Álgebra","profesor.ph.ej_test_funciones_matematicas":"Ej: Test Funciones — Matemáticas","profesor.ph.ej_tema_3_resumen":"Ej: Tema 3 Resumen","profesor.ph.cerrar":"Cerrar"});
 registrarTraducciones("en", {"profesor.mi_area":"My area","profesor.inicio":"Home","profesor.registrar_sesion":"Log a session","profesor.mi_actividad":"My activity","profesor.calendario":"Calendar","profesor.mis_alumnos":"My students","profesor.estudiar":"Teaching","profesor.material":"Materials","profesor.tareas":"Assignments","profesor.tests":"Quizzes","profesor.avisos":"Notices","profesor.cerrar_sesion":"Log out","profesor.hola":"Hello","profesor.tienes_sesiones_sin_registrar":"You have lessons that are not logged yet.","profesor.registrar_ahora":"Log them now","profesor.horas_esta_semana":"Hours this week","profesor.horas_este_mes":"Hours this month","profesor.alumnos_activos":"Active students","profesor.registrar_sesion_2":"Log a session","profesor.registra_la_clase_de_hoy":"Log today's lesson","profesor.mis_alumnos_2":"My students","profesor.ficha_completa_de_cada_alumno":"Full profile for each student","profesor.programa_y_gestiona_tus_clases":"Schedule and manage your lessons","profesor.historial_y_estadisticas":"History and figures","profesor.crea_tests_para_tus_alumnos":"Create quizzes for your students","profesor.sesiones":"Sessions","profesor.historial_de_tus_sesiones_registradas":"History of the sessions you have logged","profesor.registrar_nueva_sesion":"Log a new session","profesor.alumno":"Student *","profesor.seleccionar_alumno":"Choose a student","profesor.fecha":"Date *","profesor.hora_de_inicio":"Start time *","profesor.duracion":"Duration *","profesor.tiene_el_alumno_un_examen":"Does the student have an exam coming up? *","profesor.rellena_fecha_y_tema_para":"Fill in the date and topic for each subject with an exam coming up. Leave the rest blank.","profesor.cancelar":"Cancel","profesor.alumno_2":"Student","profesor.nivel":"Year group","profesor.asignatura":"Subject","profesor.horario":"Timetable","profesor.horas_mes":"Hours this month","profesor.estado_bono":"Hour pack","profesor.tus_clases_programadas":"Your scheduled lessons","profesor.lun":"Mon","profesor.mar":"Tue","profesor.mie":"Wed","profesor.jue":"Thu","profesor.vie":"Fri","profesor.sab":"Sat","profesor.dom":"Sun","profesor.historial_y_estadisticas_de_tus":"History and figures for your sessions","profesor.accede_al_historial_y_registra":"Open the history or log a new lesson","profesor.todos_los_meses":"All months","profesor.todos_los_alumnos":"All students","profesor.todos_los_estados":"All statuses","profesor.confirmadas":"Confirmed","profesor.pendientes":"Pending","profesor.rechazadas":"Rejected","profesor.canceladas":"Cancelled","profesor.comunicaciones_del_equipo_de_nexo":"Messages from the Nexo Académico team","profesor.recomendado":"Recommended","profesor.instalar_desc":"Add it to your home screen and you will be notified when you have a session to confirm, new materials, an assignment or the monthly report. On iPhone it is essential: without installing it, none arrive.","profesor.instala_nexo_en_tu_movil":"Install Nexo on your phone","profesor.crea_y_gestiona_tests_para":"Create and manage quizzes for your students","profesor.sube_y_gestiona_material_para":"Upload and manage materials for your students","profesor.asigna_y_corrige_tareas_para":"Set and mark assignments for your students","profesor.pendiente":"Pending","profesor.entregada":"Handed in","profesor.corregida":"Marked","profesor.nueva_tarea":"New assignment","profesor.tema":"Topic *","profesor.titulo":"Title *","profesor.instrucciones":"Instructions","profesor.adjunto_enunciado_pdf_imagen":"Attachment (PDF / image)","profesor.crear_tarea":"Create assignment","profesor.detalle_de_tarea":"Assignment details","profesor.nuevo_test":"New quiz","profesor.asignatura_2":"Subject *","profesor.titulo_del_test":"Quiz title *","profesor.preguntas":"Questions","profesor.tema_2":"Topic","profesor.pdf_de_teoria_o_test":"PDF with notes or a quiz *","profesor.arrastra_un_pdf_o_pulsa":"Drag a PDF here, or click to choose one","profesor.test":"Quiz","profesor.ficha_del_alumno":"Student profile","profesor.nueva_clase":"New lesson","profesor.sin_alumno_especifico":"No specific student","profesor.fecha_2":"Date","profesor.hora_de_inicio_2":"Start time","profesor.duracion_2":"Duration","profesor.notas":"Notes","profesor.dia_de_la_semana":"Day of the week","profesor.lunes":"Monday","profesor.martes":"Tuesday","profesor.miercoles":"Wednesday","profesor.jueves":"Thursday","profesor.viernes":"Friday","profesor.sabado":"Saturday","profesor.domingo":"Sunday","profesor.repetir_hasta":"Repeat until","profesor.fin_de_mes":"End of month","profesor.fin_de_trimestre":"End of term","profesor.guardar":"Save","profesor.sesion_excede_el_bono":"This session goes over the hour pack","profesor.continuar_de_todos_modos":"Continue anyway","profesor.sesion_registrada":"Session logged","profesor.clase_pendiente_de_confirmacion_por":"The lesson is waiting for the student to confirm it.","profesor.volver_al_panel":"Back to the dashboard","profesor.anadir_material":"Add materials","profesor.archivo_pdf":"File (PDF) *","profesor.subir_material":"Upload materials","profesor.detalle_de_la_sesion":"Session details","profesor.nueva_version_disponible":"New version available","profesor.actualizar":"Update","profesor.calendario_2":"Calendar —","profesor.expandir":"Expand","profesor.sesiones_recientes":"Recent sessions","profesor.historial":"History","profesor.acciones_rapidas":"Quick actions","profesor.nueva_sesion":"New session","profesor.1_datos_de_la_sesion":"1 — Session details","profesor.2_asignaturas_y_temas_trabajados":"2 — Subjects and topics covered","profesor.anadir_otra_asignatura":"Add another subject","profesor.3_examen_proximo":"3 — Upcoming exam","profesor.enviar_registro":"Submit","profesor.ver_la_guia":"View the guide","profesor.guia_titulo":"Installation guide","profesor.cerrar":"Close","profesor.activar_los_avisos":"Turn on notifications","profesor.test_desde_pdf":"Quiz from a PDF","profesor.subir_archivo":"Upload a file","profesor.anadir_pregunta":"Add a question","profesor.guardar_test":"Save quiz","profesor.generar_test":"Generate quiz","profesor.eliminar":"Delete","profesor.ph.buscar_por_nombre_asignatura_o":"Search by name, subject or year group...","profesor.ph.ej_ejercicios_tema_5_ecuaciones":"e.g. Topic 5 exercises — Equations","profesor.ph.describe_que_tiene_que_hacer":"Describe what the student has to do…","profesor.ph.ej_repaso_tema_3_algebra":"e.g. Topic 3 revision — Algebra","profesor.ph.ej_test_funciones_matematicas":"e.g. Functions quiz — Maths","profesor.ph.ej_tema_3_resumen":"e.g. Topic 3 summary","profesor.ph.cerrar":"Close"});
+registrarTraducciones("ru", {"profesor.mi_area":"Мой кабинет","profesor.inicio":"Главная","profesor.registrar_sesion":"Внести занятие","profesor.mi_actividad":"Моя активность","profesor.calendario":"Календарь","profesor.mis_alumnos":"Мои ученики","profesor.estudiar":"Преподавание","profesor.material":"Материалы","profesor.tareas":"Задания","profesor.tests":"Тесты","profesor.avisos":"Объявления","profesor.cerrar_sesion":"Выйти","profesor.hola":"Привет","profesor.tienes_sesiones_sin_registrar":"У вас есть занятия, которые ещё не внесены.","profesor.registrar_ahora":"Внести сейчас","profesor.horas_esta_semana":"Часы за эту неделю","profesor.horas_este_mes":"Часы за этот месяц","profesor.alumnos_activos":"Активные ученики","profesor.registrar_sesion_2":"Внести занятие","profesor.registra_la_clase_de_hoy":"Внесите сегодняшнее занятие","profesor.mis_alumnos_2":"Мои ученики","profesor.ficha_completa_de_cada_alumno":"Полная карточка каждого ученика","profesor.programa_y_gestiona_tus_clases":"Планируйте и управляйте своими занятиями","profesor.historial_y_estadisticas":"История и статистика","profesor.crea_tests_para_tus_alumnos":"Создавайте тесты для своих учеников","profesor.sesiones":"Занятия","profesor.historial_de_tus_sesiones_registradas":"История внесённых занятий","profesor.registrar_nueva_sesion":"Внести новое занятие","profesor.alumno":"Ученик *","profesor.seleccionar_alumno":"Выберите ученика","profesor.fecha":"Дата *","profesor.hora_de_inicio":"Время начала *","profesor.duracion":"Продолжительность *","profesor.tiene_el_alumno_un_examen":"У ученика скоро экзамен? *","profesor.rellena_fecha_y_tema_para":"Укажите дату и тему для каждого предмета, по которому скоро экзамен. Остальные оставьте пустыми.","profesor.cancelar":"Отмена","profesor.alumno_2":"Ученик","profesor.nivel":"Класс/курс","profesor.asignatura":"Предмет","profesor.horario":"Расписание","profesor.horas_mes":"Часы за месяц","profesor.estado_bono":"Статус пакета часов","profesor.tus_clases_programadas":"Ваши запланированные занятия","profesor.lun":"Пн","profesor.mar":"Вт","profesor.mie":"Ср","profesor.jue":"Чт","profesor.vie":"Пт","profesor.sab":"Сб","profesor.dom":"Вс","profesor.historial_y_estadisticas_de_tus":"История и статистика ваших занятий","profesor.accede_al_historial_y_registra":"Откройте историю или внесите новое занятие","profesor.todos_los_meses":"Все месяцы","profesor.todos_los_alumnos":"Все ученики","profesor.todos_los_estados":"Все статусы","profesor.confirmadas":"Подтверждённые","profesor.pendientes":"Ожидающие","profesor.rechazadas":"Отклонённые","profesor.canceladas":"Отменённые","profesor.comunicaciones_del_equipo_de_nexo":"Сообщения от команды Nexo Académico","profesor.recomendado":"Рекомендуется","profesor.instalar_desc":"Добавьте приложение на главный экран, и вы получите уведомление, когда появится занятие для подтверждения, новый материал, задание или отчёт за месяц. На iPhone это обязательно: без установки уведомления не приходят.","profesor.instala_nexo_en_tu_movil":"Установите Nexo на телефон","profesor.crea_y_gestiona_tests_para":"Создавайте и управляйте тестами для своих учеников","profesor.sube_y_gestiona_material_para":"Загружайте и управляйте материалами для своих учеников","profesor.asigna_y_corrige_tareas_para":"Назначайте и проверяйте задания своих учеников","profesor.pendiente":"Ожидает","profesor.entregada":"Отправлено","profesor.corregida":"Проверено","profesor.nueva_tarea":"Новое задание","profesor.tema":"Тема *","profesor.titulo":"Название *","profesor.instrucciones":"Инструкции","profesor.adjunto_enunciado_pdf_imagen":"Вложение с заданием (PDF / изображение)","profesor.crear_tarea":"Создать задание","profesor.detalle_de_tarea":"Детали задания","profesor.nuevo_test":"Новый тест","profesor.asignatura_2":"Предмет *","profesor.titulo_del_test":"Название теста *","profesor.preguntas":"Вопросы","profesor.tema_2":"Тема","profesor.pdf_de_teoria_o_test":"PDF с теорией или тестом *","profesor.arrastra_un_pdf_o_pulsa":"Перетащите PDF или нажмите, чтобы выбрать файл","profesor.test":"Тест","profesor.ficha_del_alumno":"Карточка ученика","profesor.nueva_clase":"Новое занятие","profesor.sin_alumno_especifico":"Без конкретного ученика","profesor.fecha_2":"Дата","profesor.hora_de_inicio_2":"Время начала","profesor.duracion_2":"Продолжительность","profesor.notas":"Заметки","profesor.dia_de_la_semana":"День недели","profesor.lunes":"Понедельник","profesor.martes":"Вторник","profesor.miercoles":"Среда","profesor.jueves":"Четверг","profesor.viernes":"Пятница","profesor.sabado":"Суббота","profesor.domingo":"Воскресенье","profesor.repetir_hasta":"Повторять до","profesor.fin_de_mes":"Конец месяца","profesor.fin_de_trimestre":"Конец триместра","profesor.guardar":"Сохранить","profesor.sesion_excede_el_bono":"Занятие превышает пакет часов","profesor.continuar_de_todos_modos":"Продолжить всё равно","profesor.sesion_registrada":"Занятие внесено","profesor.clase_pendiente_de_confirmacion_por":"Занятие ожидает подтверждения от ученика.","profesor.volver_al_panel":"Назад в кабинет","profesor.anadir_material":"Добавить материал","profesor.archivo_pdf":"Файл (PDF) *","profesor.subir_material":"Загрузить материал","profesor.detalle_de_la_sesion":"Детали занятия","profesor.nueva_version_disponible":"Доступна новая версия","profesor.actualizar":"Обновить","profesor.calendario_2":"Календарь —","profesor.expandir":"Развернуть","profesor.sesiones_recientes":"Последние занятия","profesor.historial":"История","profesor.acciones_rapidas":"Быстрые действия","profesor.nueva_sesion":"Новое занятие","profesor.1_datos_de_la_sesion":"1 — Данные занятия","profesor.2_asignaturas_y_temas_trabajados":"2 — Предметы и темы занятия","profesor.anadir_otra_asignatura":"Добавить ещё один предмет","profesor.3_examen_proximo":"3 — Предстоящий экзамен","profesor.enviar_registro":"Отправить","profesor.ver_la_guia":"Посмотреть инструкцию","profesor.guia_titulo":"Инструкция по установке","profesor.cerrar":"Закрыть","profesor.activar_los_avisos":"Включить уведомления","profesor.test_desde_pdf":"Тест из PDF","profesor.subir_archivo":"Загрузить файл","profesor.anadir_pregunta":"Добавить вопрос","profesor.guardar_test":"Сохранить тест","profesor.generar_test":"Создать тест","profesor.eliminar":"Удалить","profesor.ph.buscar_por_nombre_asignatura_o":"Поиск по имени, предмету или классу...","profesor.ph.ej_ejercicios_tema_5_ecuaciones":"Напр.: Упражнения, тема 5 — Уравнения","profesor.ph.describe_que_tiene_que_hacer":"Опишите, что должен сделать ученик…","profesor.ph.ej_repaso_tema_3_algebra":"Напр.: Повторение темы 3 — Алгебра","profesor.ph.ej_test_funciones_matematicas":"Напр.: Тест по функциям — Математика","profesor.ph.ej_tema_3_resumen":"Напр.: Тема 3 — краткое содержание","profesor.ph.cerrar":"Закрыть"});
 registrarTraducciones("es", {"profesor.msg.error_al_registrar_la_sesion":"Error al registrar la sesión: ","profesor.msg.error_al_eliminar":"Error al eliminar: ","profesor.msg.clase_eliminada":"Clase eliminada","profesor.msg.elige_hasta_que_fecha_repetir":"Elige hasta qué fecha repetir","profesor.msg.no_hay_fechas_en_ese_rango":"No hay fechas en ese rango para el día seleccionado","profesor.msg.error_al_crear_clases_recurrentes":"Error al crear clases recurrentes","profesor.msg.error_al_guardar":"Error al guardar","profesor.msg.clase_guardada_en_el_calendario":"Clase guardada en el calendario","profesor.msg.selecciona_un_alumno_primero":"Selecciona un alumno primero","profesor.msg.selecciona_el_tema_de_cada_bloque":"Selecciona el tema de cada bloque antes de enviar","profesor.msg.los_tiempos_de_los_temas_de":"Los tiempos de los temas de \"{0}\" ({1} min) superan el tiempo de la asignatura ({2} min).","profesor.msg.rellena_los_tiempos_de_las_asignaturas":"Rellena los tiempos de las asignaturas trabajadas.","profesor.msg.el_total_de_asignaturas_0_min":"El total de asignaturas ({0} min) debe ser igual a la duración de la sesión ({1} min).","profesor.msg.indica_al_menos_un_examen_proximo":"Indica al menos un examen próximo con fecha","profesor.msg.error_al_guardar_sesion":"Error al guardar sesión: ","profesor.msg.sesion_guardada_para_activar_el_desglose":"Sesión guardada. Para activar el desglose por temas ejecuta la migración SQL en Supabase.","profesor.msg.error_al_guardar_temas_la_sesion":"Error al guardar temas. La sesión no se ha guardado: ","profesor.msg.sesion_registrada_correctamente":"Sesión registrada correctamente","profesor.msg.el_tema_0_ya_esta_anadido":"El tema \"{0}\" ya está añadido","profesor.msg.error":"Error: ","profesor.msg.error_al_cargar_el_test":"Error al cargar el test","profesor.msg.error_al_actualizar_test":"Error al actualizar test: ","profesor.msg.error_al_actualizar_preguntas":"Error al actualizar preguntas: ","profesor.msg.test_guardado_pero_error_en_preguntas":"Test guardado pero error en preguntas: ","profesor.msg.rellena_todos_los_campos_obligatorios":"Rellena todos los campos obligatorios","profesor.msg.test_generado_con_0_preguntas_el":"¡Test generado con {0} preguntas! El alumno ha sido notificado.","profesor.msg.el_alumno_puede_repetir_el_test":"El alumno puede repetir el test","profesor.msg.test_bloqueado_el_alumno_ya_no":"Test bloqueado — el alumno ya no puede repetirlo","profesor.msg.la_fecha_limite_es_obligatoria":"La fecha límite es obligatoria","profesor.msg.selecciona_un_tema":"Selecciona un tema","profesor.msg.tarea_creada_correctamente":"Tarea creada correctamente","profesor.msg.material_subido_correctamente":"Material subido correctamente","profesor.msg.error_al_eliminar_asignaciones":"Error al eliminar asignaciones: ","profesor.msg.material_eliminado":"Material eliminado","profesor.msg.material_sin_permiso":"No se ha podido eliminar: solo puedes borrar el material que hayas subido tú.","profesor.msg.eliminar_esta_clase_del_calendario":"¿Eliminar esta clase del calendario?","profesor.msg.eliminar_este_material":"¿Eliminar este material?","profesor.msg.hola":"Hola, ","profesor.msg.este_alumno_tiene_una_sesion_del":"Este alumno tiene una sesión del {0} con {1} pendiente de confirmación ","profesor.msg.atencion_este_alumno_no_tiene_horas":"Atención: este alumno no tiene horas suficientes en su bono activo. ","profesor.msg.nueva_clase":"Nueva clase","profesor.msg.editar_clase":"Editar clase","profesor.msg.la_suma_solo_ayuda_sin_resolver":"La suma (solo + ayuda + sin resolver) supera los propuestos.","profesor.msg.obligatorio":"Obligatorio","profesor.msg.anade_al_menos_un_tema_trabajado":"Añade al menos un tema trabajado en el bloque 2.","profesor.msg.rellena_la_fecha_de_al_menos":"Rellena la fecha de al menos un examen próximo.","profesor.msg.nuevo_test":"Nuevo test","profesor.msg.editar_test":"Editar test","profesor.msg.pregunta":"Pregunta ","profesor.msg.guardando":"Guardando…","profesor.msg.crear_tarea":"Crear tarea"}); /*_msg_es*/
 registrarTraducciones("en", {"profesor.msg.error_al_registrar_la_sesion":"Could not log the session: ","profesor.msg.error_al_eliminar":"Could not delete: ","profesor.msg.clase_eliminada":"Lesson deleted","profesor.msg.elige_hasta_que_fecha_repetir":"Choose the date to repeat until","profesor.msg.no_hay_fechas_en_ese_rango":"There are no dates in that range for the day you chose","profesor.msg.error_al_crear_clases_recurrentes":"Could not create the repeating lessons","profesor.msg.error_al_guardar":"Could not save","profesor.msg.clase_guardada_en_el_calendario":"Lesson saved to the calendar","profesor.msg.selecciona_un_alumno_primero":"Choose a student first","profesor.msg.selecciona_el_tema_de_cada_bloque":"Choose the topic for each block before submitting","profesor.msg.los_tiempos_de_los_temas_de":"The topic times for \"{0}\" ({1} min) add up to more than the time for the subject ({2} min).","profesor.msg.rellena_los_tiempos_de_las_asignaturas":"Fill in the time spent on each subject.","profesor.msg.el_total_de_asignaturas_0_min":"The subjects add up to {0} min and the session lasted {1} min. They have to match.","profesor.msg.indica_al_menos_un_examen_proximo":"Add at least one upcoming exam with its date","profesor.msg.error_al_guardar_sesion":"Could not save the session: ","profesor.msg.sesion_guardada_para_activar_el_desglose":"Session saved. To break it down by topic, run the SQL migration in Supabase.","profesor.msg.error_al_guardar_temas_la_sesion":"Could not save the topics, so the session was not saved either: ","profesor.msg.sesion_registrada_correctamente":"Session logged","profesor.msg.el_tema_0_ya_esta_anadido":"The topic \"{0}\" is already on the list","profesor.msg.error":"Error: ","profesor.msg.error_al_cargar_el_test":"Could not load the quiz","profesor.msg.error_al_actualizar_test":"Could not update the quiz: ","profesor.msg.error_al_actualizar_preguntas":"Could not update the questions: ","profesor.msg.test_guardado_pero_error_en_preguntas":"The quiz was saved, but the questions failed: ","profesor.msg.rellena_todos_los_campos_obligatorios":"Fill in every required field","profesor.msg.test_generado_con_0_preguntas_el":"Quiz created with {0} questions. The student has been notified.","profesor.msg.el_alumno_puede_repetir_el_test":"The student can retake the quiz","profesor.msg.test_bloqueado_el_alumno_ya_no":"Quiz locked — the student can no longer retake it","profesor.msg.la_fecha_limite_es_obligatoria":"The due date is required","profesor.msg.selecciona_un_tema":"Choose a topic","profesor.msg.tarea_creada_correctamente":"Assignment created","profesor.msg.material_subido_correctamente":"Materials uploaded","profesor.msg.error_al_eliminar_asignaciones":"Could not remove the assignments: ","profesor.msg.material_eliminado":"Materials deleted","profesor.msg.material_sin_permiso":"Could not delete: you can only remove materials you uploaded yourself.","profesor.msg.eliminar_esta_clase_del_calendario":"Delete this lesson from the calendar?","profesor.msg.eliminar_este_material":"Delete these materials?","profesor.msg.hola":"Hello, ","profesor.msg.este_alumno_tiene_una_sesion_del":"This student has a session from {0} with {1} still waiting to be confirmed ","profesor.msg.atencion_este_alumno_no_tiene_horas":"Careful: this student does not have enough hours left in their pack. ","profesor.msg.nueva_clase":"New lesson","profesor.msg.editar_clase":"Edit lesson","profesor.msg.la_suma_solo_ayuda_sin_resolver":"The total (on their own + with help + unsolved) is higher than the number set.","profesor.msg.obligatorio":"Required","profesor.msg.anade_al_menos_un_tema_trabajado":"Add at least one topic covered in block 2.","profesor.msg.rellena_la_fecha_de_al_menos":"Fill in the date of at least one upcoming exam.","profesor.msg.nuevo_test":"New quiz","profesor.msg.editar_test":"Edit quiz","profesor.msg.pregunta":"Question ","profesor.msg.guardando":"Saving…","profesor.msg.crear_tarea":"Create assignment"});
-iniciarIdioma().then(() => montarSelectorIdioma("selector-idioma"));
+registrarTraducciones("ru", {"profesor.msg.error_al_registrar_la_sesion":"Не удалось внести занятие: ","profesor.msg.error_al_eliminar":"Не удалось удалить: ","profesor.msg.clase_eliminada":"Занятие удалено","profesor.msg.elige_hasta_que_fecha_repetir":"Выберите дату, до которой повторять","profesor.msg.no_hay_fechas_en_ese_rango":"В этом диапазоне нет дат для выбранного дня","profesor.msg.error_al_crear_clases_recurrentes":"Не удалось создать повторяющиеся занятия","profesor.msg.error_al_guardar":"Не удалось сохранить","profesor.msg.clase_guardada_en_el_calendario":"Занятие сохранено в календаре","profesor.msg.selecciona_un_alumno_primero":"Сначала выберите ученика","profesor.msg.selecciona_el_tema_de_cada_bloque":"Выберите тему для каждого блока перед отправкой","profesor.msg.los_tiempos_de_los_temas_de":"Время по темам «{0}» ({1} мин) превышает время предмета ({2} мин).","profesor.msg.rellena_los_tiempos_de_las_asignaturas":"Укажите время по каждому пройденному предмету.","profesor.msg.el_total_de_asignaturas_0_min":"Сумма по предметам ({0} мин) должна совпадать с продолжительностью занятия ({1} мин).","profesor.msg.indica_al_menos_un_examen_proximo":"Укажите хотя бы один предстоящий экзамен с датой","profesor.msg.error_al_guardar_sesion":"Не удалось сохранить занятие: ","profesor.msg.sesion_guardada_para_activar_el_desglose":"Занятие сохранено. Чтобы включить разбивку по темам, выполните SQL-миграцию в Supabase.","profesor.msg.error_al_guardar_temas_la_sesion":"Не удалось сохранить темы. Занятие не сохранено: ","profesor.msg.sesion_registrada_correctamente":"Занятие успешно внесено","profesor.msg.el_tema_0_ya_esta_anadido":"Тема «{0}» уже добавлена","profesor.msg.error":"Ошибка: ","profesor.msg.error_al_cargar_el_test":"Не удалось загрузить тест","profesor.msg.error_al_actualizar_test":"Не удалось обновить тест: ","profesor.msg.error_al_actualizar_preguntas":"Не удалось обновить вопросы: ","profesor.msg.test_guardado_pero_error_en_preguntas":"Тест сохранён, но с вопросами возникла ошибка: ","profesor.msg.rellena_todos_los_campos_obligatorios":"Заполните все обязательные поля","profesor.msg.test_generado_con_0_preguntas_el":"Тест создан: {0} вопросов! Ученик получил уведомление.","profesor.msg.el_alumno_puede_repetir_el_test":"Ученик может пройти тест повторно","profesor.msg.test_bloqueado_el_alumno_ya_no":"Тест заблокирован — ученик больше не может его повторить","profesor.msg.la_fecha_limite_es_obligatoria":"Срок сдачи обязателен","profesor.msg.selecciona_un_tema":"Выберите тему","profesor.msg.tarea_creada_correctamente":"Задание создано","profesor.msg.material_subido_correctamente":"Материал загружен","profesor.msg.error_al_eliminar_asignaciones":"Не удалось удалить назначения: ","profesor.msg.material_eliminado":"Материал удалён","profesor.msg.material_sin_permiso":"Не удалось удалить: вы можете удалять только материалы, загруженные вами.","profesor.msg.eliminar_esta_clase_del_calendario":"Удалить это занятие из календаря?","profesor.msg.eliminar_este_material":"Удалить этот материал?","profesor.msg.hola":"Привет, ","profesor.msg.este_alumno_tiene_una_sesion_del":"У этого ученика есть занятие от {0} на {1}, ожидающее подтверждения ","profesor.msg.atencion_este_alumno_no_tiene_horas":"Внимание: у этого ученика не хватает часов в активном пакете. ","profesor.msg.nueva_clase":"Новое занятие","profesor.msg.editar_clase":"Редактировать занятие","profesor.msg.la_suma_solo_ayuda_sin_resolver":"Сумма (самостоятельно + с помощью + не решено) больше заданного количества.","profesor.msg.obligatorio":"Обязательно","profesor.msg.anade_al_menos_un_tema_trabajado":"Добавьте хотя бы одну пройденную тему в блоке 2.","profesor.msg.rellena_la_fecha_de_al_menos":"Укажите дату хотя бы одного предстоящего экзамена.","profesor.msg.nuevo_test":"Новый тест","profesor.msg.editar_test":"Редактировать тест","profesor.msg.pregunta":"Вопрос ","profesor.msg.guardando":"Сохранение…","profesor.msg.crear_tarea":"Создать задание"});
+registrarTraducciones("es", {"profesor.nses.sin_sesiones":"Sin sesiones registradas aún","profesor.nses.st_confirmada":"Confirmada","profesor.nses.st_pendiente":"Pendiente","profesor.nses.st_rechazada":"Rechazada","profesor.nses.st_cancelada":"Cancelada","profesor.nses.ver":"Ver","profesor.nses.cargando_asignaturas":"Cargando asignaturas…","profesor.nses.sin_asignaturas_con_alumno":"No hay asignaturas asignadas entre tú y este alumno.","profesor.nses.selecciona_asignatura_primero":"— Selecciona asignatura primero —","profesor.nses.tiempo_dedicado":"Tiempo dedicado","profesor.nses.anadir_tema":"Añadir tema","profesor.nses.nota_profesor_label":"Nota del profesor (opcional, máx. 200 caracteres)","profesor.nses.nota_profesor_ph":"Solo si hay algo relevante…","profesor.nses.cat_gram_norma":"Gramática / Norma","profesor.nses.cat_compr_expr":"Comprensión y Expresión","profesor.nses.cat_gram_vocab":"Gramática / Vocabulario","profesor.nses.cat_compr_expr_escrita":"Comprensión y Expresión escrita","profesor.nses.cat_fisica":"Física","profesor.nses.cat_quimica":"Química","profesor.nses.cat_historia":"Historia","profesor.nses.cat_geografia":"Geografía","profesor.nses.preguntas_universales":"Preguntas universales","profesor.nses.rendimiento_especifico":"Rendimiento específico","profesor.nses.categoria_contenido_label":"Categoría del contenido trabajado *","profesor.nses.anadir":"Añadir","profesor.nses.ocultar":"Ocultar","profesor.nses.ph_tema_examen":"Tema del examen","profesor.nses.fecha_examen_label":"Fecha del examen","profesor.nses.ph_nombre_tema":"Nombre del tema…","profesor.nses.eliminar_tema":"Eliminar tema","profesor.nses.ph_nombre_asignatura":"Nombre de la asignatura…","profesor.nses.pulsa_anadir_tema":"Pulsa \"+ Añadir otro tema\" para registrar los temas trabajados.","profesor.nses.anadir_otro_tema":"Añadir otro tema","profesor.nses.no_datos":"No se encontraron datos.","profesor.nses.map_planteamiento":"En el planteamiento","profesor.nses.map_procedimiento":"En el procedimiento","profesor.nses.map_operatoria":"En la operatoria básica","profesor.nses.map_no_errores":"Sin errores relevantes","profesor.nses.map_si":"Sí, detectaba solo","profesor.nses.map_pregunta":"Al preguntar","profesor.nses.map_no":"No detectaba","profesor.nses.map_bloqueo":"Se bloqueaba","profesor.nses.map_intenta":"Lo intentaba solo","profesor.nses.map_pide_adelanta":"Pedía ayuda y seguía","profesor.nses.map_lento":"Disperso y lento","profesor.nses.map_normal":"Normal","profesor.nses.map_constante":"Concentrado y constante","profesor.nses.info_general":"Información general","profesor.nses.estado_label":"Estado","profesor.nses.detalle_no_disponible":"Detalle de temas no disponible. Ejecuta la migración SQL en Supabase para activarlo.","profesor.nses.sin_desglose":"Sin desglose de temas para esta sesión.","profesor.nses.tiempo_label":"Tiempo","profesor.nses.categoria_label":"Categoría","profesor.nses.bateria_respondida":"Batería respondida","profesor.nses.ejercicios_label":"Ejercicios","profesor.nses.abv_prop":"prop","profesor.nses.abv_solo":"solo","profesor.nses.abv_ayuda":"ayuda","profesor.nses.abv_sin":"sin","profesor.nses.tipo_label":"Tipo","profesor.nses.errores_label":"Errores","profesor.nses.detecta_errores_label":"Detecta errores","profesor.nses.dificultad_label":"Dificultad","profesor.nses.ritmo_label":"Ritmo","profesor.nses.test_inicio_label":"Test inicio","profesor.nses.test_cierre_label":"Test cierre","profesor.nses.nota_label":"Nota","profesor.nses.sin_asignatura_fallback":"(sin asignatura)"});
+registrarTraducciones("en", {"profesor.nses.sin_sesiones":"No sessions logged yet","profesor.nses.st_confirmada":"Confirmed","profesor.nses.st_pendiente":"Pending","profesor.nses.st_rechazada":"Rejected","profesor.nses.st_cancelada":"Cancelled","profesor.nses.ver":"View","profesor.nses.cargando_asignaturas":"Loading subjects…","profesor.nses.sin_asignaturas_con_alumno":"You have no subjects assigned with this student.","profesor.nses.selecciona_asignatura_primero":"— Choose a subject first —","profesor.nses.tiempo_dedicado":"Time spent","profesor.nses.anadir_tema":"Add topic","profesor.nses.nota_profesor_label":"Teacher's note (optional, max. 200 characters)","profesor.nses.nota_profesor_ph":"Only if there is something worth noting…","profesor.nses.cat_gram_norma":"Grammar / Usage","profesor.nses.cat_compr_expr":"Comprehension and Expression","profesor.nses.cat_gram_vocab":"Grammar / Vocabulary","profesor.nses.cat_compr_expr_escrita":"Reading and Written Expression","profesor.nses.cat_fisica":"Physics","profesor.nses.cat_quimica":"Chemistry","profesor.nses.cat_historia":"History","profesor.nses.cat_geografia":"Geography","profesor.nses.preguntas_universales":"General questions","profesor.nses.rendimiento_especifico":"Subject-specific performance","profesor.nses.categoria_contenido_label":"Category of the content covered *","profesor.nses.anadir":"Add","profesor.nses.ocultar":"Hide","profesor.nses.ph_tema_examen":"Exam topic","profesor.nses.fecha_examen_label":"Exam date","profesor.nses.ph_nombre_tema":"Topic name…","profesor.nses.eliminar_tema":"Delete topic","profesor.nses.ph_nombre_asignatura":"Subject name…","profesor.nses.pulsa_anadir_tema":"Tap \"+ Add another topic\" to log the topics covered.","profesor.nses.anadir_otro_tema":"Add another topic","profesor.nses.no_datos":"No data was found.","profesor.nses.map_planteamiento":"In the approach","profesor.nses.map_procedimiento":"In the method","profesor.nses.map_operatoria":"In basic calculation","profesor.nses.map_no_errores":"No significant errors","profesor.nses.map_si":"Yes, spotted them alone","profesor.nses.map_pregunta":"When asked","profesor.nses.map_no":"Did not notice","profesor.nses.map_bloqueo":"Got stuck","profesor.nses.map_intenta":"Tried it alone","profesor.nses.map_pide_adelanta":"Asked for help and carried on","profesor.nses.map_lento":"Distracted and slow","profesor.nses.map_normal":"Normal","profesor.nses.map_constante":"Focused and steady","profesor.nses.info_general":"General information","profesor.nses.estado_label":"Status","profesor.nses.detalle_no_disponible":"Topic detail is not available. Run the SQL migration in Supabase to turn it on.","profesor.nses.sin_desglose":"No topic breakdown for this session.","profesor.nses.tiempo_label":"Time","profesor.nses.categoria_label":"Category","profesor.nses.bateria_respondida":"Questions answered","profesor.nses.ejercicios_label":"Exercises","profesor.nses.abv_prop":"set","profesor.nses.abv_solo":"alone","profesor.nses.abv_ayuda":"with help","profesor.nses.abv_sin":"unsolved","profesor.nses.tipo_label":"Type","profesor.nses.errores_label":"Errors","profesor.nses.detecta_errores_label":"Spots errors","profesor.nses.dificultad_label":"Difficulty","profesor.nses.ritmo_label":"Pace","profesor.nses.test_inicio_label":"Starting test","profesor.nses.test_cierre_label":"Closing test","profesor.nses.nota_label":"Note","profesor.nses.sin_asignatura_fallback":"(no subject)"});
+registrarTraducciones("ru", {"profesor.nses.sin_sesiones":"Занятий пока нет","profesor.nses.st_confirmada":"Подтверждено","profesor.nses.st_pendiente":"Ожидает","profesor.nses.st_rechazada":"Отклонено","profesor.nses.st_cancelada":"Отменено","profesor.nses.ver":"Открыть","profesor.nses.cargando_asignaturas":"Загрузка предметов…","profesor.nses.sin_asignaturas_con_alumno":"У вас не назначено ни одного предмета с этим учеником.","profesor.nses.selecciona_asignatura_primero":"— Сначала выберите предмет —","profesor.nses.tiempo_dedicado":"Затраченное время","profesor.nses.anadir_tema":"Добавить тему","profesor.nses.nota_profesor_label":"Заметка преподавателя (необязательно, макс. 200 символов)","profesor.nses.nota_profesor_ph":"Только если есть что-то важное…","profesor.nses.cat_gram_norma":"Грамматика / Нормы языка","profesor.nses.cat_compr_expr":"Понимание и выражение мысли","profesor.nses.cat_gram_vocab":"Грамматика / Словарный запас","profesor.nses.cat_compr_expr_escrita":"Понимание текста и письменная речь","profesor.nses.cat_fisica":"Физика","profesor.nses.cat_quimica":"Химия","profesor.nses.cat_historia":"История","profesor.nses.cat_geografia":"География","profesor.nses.preguntas_universales":"Общие вопросы","profesor.nses.rendimiento_especifico":"Успеваемость по предмету","profesor.nses.categoria_contenido_label":"Категория пройденного материала *","profesor.nses.anadir":"Добавить","profesor.nses.ocultar":"Скрыть","profesor.nses.ph_tema_examen":"Тема экзамена","profesor.nses.fecha_examen_label":"Дата экзамена","profesor.nses.ph_nombre_tema":"Название темы…","profesor.nses.eliminar_tema":"Удалить тему","profesor.nses.ph_nombre_asignatura":"Название предмета…","profesor.nses.pulsa_anadir_tema":"Нажмите «+ Добавить ещё тему», чтобы внести пройденные темы.","profesor.nses.anadir_otro_tema":"Добавить ещё тему","profesor.nses.no_datos":"Данные не найдены.","profesor.nses.map_planteamiento":"В постановке задачи","profesor.nses.map_procedimiento":"В ходе решения","profesor.nses.map_operatoria":"В базовых вычислениях","profesor.nses.map_no_errores":"Без значимых ошибок","profesor.nses.map_si":"Да, замечал сам","profesor.nses.map_pregunta":"Если спросить","profesor.nses.map_no":"Не замечал","profesor.nses.map_bloqueo":"Терялся","profesor.nses.map_intenta":"Пытался сам","profesor.nses.map_pide_adelanta":"Просил помощь и продолжал","profesor.nses.map_lento":"Невнимательный и медленный","profesor.nses.map_normal":"Обычный темп","profesor.nses.map_constante":"Сосредоточенный и стабильный","profesor.nses.info_general":"Общая информация","profesor.nses.estado_label":"Статус","profesor.nses.detalle_no_disponible":"Детали по темам недоступны. Выполните SQL-миграцию в Supabase, чтобы включить их.","profesor.nses.sin_desglose":"Для этого занятия нет разбивки по темам.","profesor.nses.tiempo_label":"Время","profesor.nses.categoria_label":"Категория","profesor.nses.bateria_respondida":"Вопросы заполнены","profesor.nses.ejercicios_label":"Упражнения","profesor.nses.abv_prop":"задано","profesor.nses.abv_solo":"сам","profesor.nses.abv_ayuda":"с помощью","profesor.nses.abv_sin":"не решил","profesor.nses.tipo_label":"Тип","profesor.nses.errores_label":"Ошибки","profesor.nses.detecta_errores_label":"Замечает ошибки","profesor.nses.dificultad_label":"Трудность","profesor.nses.ritmo_label":"Темп","profesor.nses.test_inicio_label":"Тест в начале","profesor.nses.test_cierre_label":"Тест в конце","profesor.nses.nota_label":"Заметка","profesor.nses.sin_asignatura_fallback":"(без предмета)"});
+iniciarIdioma().then(() => {
+  montarSelectorIdioma("selector-idioma", { arriba: true });
+  montarSelectorIdioma("selector-idioma-inicio", { compacto: true });
+});
 </script>
 </body>
 </html>
